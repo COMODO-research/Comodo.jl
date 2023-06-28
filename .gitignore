@@ -1,0 +1,5 @@
+# Ignore the temporary file directory in the data folder
+/data/temp
+
+#Ignore .backup files
+*.backup

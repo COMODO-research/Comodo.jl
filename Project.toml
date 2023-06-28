@@ -1,0 +1,10 @@
+name = "Gibbon"
+uuid = "59095408-2761-4f7a-bdc2-044e78630271"
+authors = ["Kevin-Mattheus-Moerman <kevin.moerman@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
