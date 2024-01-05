@@ -34,4 +34,4 @@ A detailed roadmap is under construction.
 Your help would be greatly appreciated! If you can contribute please do so by posting a pull-request. 
 
 ## License 
-This wrapper is released open source under the [Apache 2.0 license](https://github.com/gibbonCode/Gibbon.jl/blob/master/LICENSE).
+GIBBON.jl is released open source under the [Apache 2.0 license](https://github.com/gibbonCode/Gibbon.jl/blob/master/LICENSE).
