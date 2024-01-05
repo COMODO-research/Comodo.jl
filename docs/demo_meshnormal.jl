@@ -2,23 +2,35 @@
 using Gibbon
 using GLMakie
 
-testCase=1
-if testCase==1
-    M=icosahedron()
-elseif testCase==2
-    M=tetrahedron()
-elseif testCase==3
-    M=cube()
+"""
+This demo shows the use of the `meshnormal` function to obtain mesh face normal
+directions. The demo shows visualisations for a triangular, quadrilateral, and 
+a pentagonal mesh. 
+"""
+
+fig = Figure(size=(1600,800))
+
+for q=1:1:3
+    if q==1
+        M=icosahedron()
+        titleString="triangles"
+        colorNow=:red
+    elseif q==2
+        M=cube()
+        titleString="quadrilaterals"
+        colorNow=:green
+    elseif q==3
+        M=dodecahedron()
+        titleString="pentagons"
+        colorNow=:blue
+    end
+
+    # Compute mesh normals
+    N,VN=meshnormal(M)
+
+    ax1=Axis3(fig[1, q], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
+    hp1=poly!(ax1,M, strokewidth=3,shading=FastShading,color=colorNow, transparency=true, overdraw=false)
+    hpa=arrows!(ax1,VN,N)
 end
-
-N,VN=meshnormal(M)
-
-#Visualize mesh
-GLMakie.activate!(inline=false) # To avoid plotting in plotpane as per: https://github.com/MakieOrg/Makie.jl/issues/2956
-fig = Figure()
-
-ax1=Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A mesh with face normals visualized")
-hp1=poly!(ax1,M, strokewidth=3,shading=true,color=:white, transparency=true, overdraw=false)
-hpa=arrows!(ax1,VN,N)
 
 fig

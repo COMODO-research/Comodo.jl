@@ -2,10 +2,13 @@ module Gibbon
 
 import GeometryBasics
 import LinearAlgebra
-# import GLMakie
+import XML
+import DataStructures
+import FEBio
+
 # import GLMakie
 
-export icosahedron, tetrahedron, cube, dodecahedron, octahedron, platonicsolid, meshnormal, toGeometryBasicsMesh 
+export gibbonDir, elements2indices, rot3, hexMeshBox, minDist, distND, lerp, gridPoints, interp_biharmonicSpline, interp_biharmonic_ND, gunique, ind2sub,sub2ind, meshEdges, unique_simplices, unique_dict, midEdgePoints, subtri, geoSphere, icosahedron, tetrahedron, cube, dodecahedron, octahedron, platonicsolid, meshnormal, toGeometryBasicsMesh, toGeometryBasicsSimplices, toGeometryBasicsPoints 
 
 include("functions.jl")
 

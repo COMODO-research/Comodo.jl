@@ -4,7 +4,17 @@ authors = ["Kevin-Mattheus-Moerman <kevin.moerman@gmail.com>"]
 version = "0.1.0"
 
 [deps]
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+FEBio = "c57eab10-e7d7-41f3-9039-a27761009b26"
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
+Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+MeshIO = "7269a6da-0436-5bbc-96c2-40638cbb6118"
+Profile = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
+Reactive = "a223df75-4e93-5b7c-acf9-bdd599c0f4de"
+StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
+TetGen = "c5d3f3f7-f850-59f6-8a2e-ffc6dc1317ea"
+WebIO = "0f1e0344-ec1d-5b48-a673-e5cf874b6c29"
+XML = "72c71f33-b9b6-44de-8c94-c961784809e2"

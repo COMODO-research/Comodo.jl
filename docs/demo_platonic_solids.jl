@@ -21,28 +21,21 @@ N5,VN5=meshnormal(M5)
 
 #Visualize mesh
 GLMakie.activate!(inline=false) # To avoid plotting in plotpane as per: https://github.com/MakieOrg/Makie.jl/issues/2956
-fig = Figure()
+fig = Figure(size=(1600,800))
 
 ax1=Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Tetrahedron")
-hp1=poly!(ax1,M1, strokewidth=3,shading=true,color=:red, transparency=true, overdraw=false)
+hp1=poly!(ax1,M1, strokewidth=3,color=:red, shading=FastShading, overdraw=false)
 
 ax2=Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Hexahedron (cube)")
-hp2=poly!(ax2,M2, strokewidth=3,shading=true,color=:green, transparency=true, overdraw=false)
+hp2=poly!(ax2,M2, strokewidth=3,color=:green, shading=FastShading, overdraw=false)
 
 ax3=Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Octahedron")
-hp3=poly!(ax3,M3, strokewidth=3,shading=true,color=:blue, transparency=true, overdraw=false)
+hp3=poly!(ax3,M3, strokewidth=3,color=:blue, shading=FastShading, overdraw=false)
 
 ax4=Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Icosahedron")
-hp4=poly!(ax4,M4, strokewidth=3,shading=true,color=:yellow, transparency=true, overdraw=false)
+hp4=poly!(ax4,M4, strokewidth=3,color=:yellow, shading=FastShading, overdraw=false)
 
 ax5=Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Dodecahedron")
-hp5=poly!(ax5,M5, strokewidth=3,shading=true,color=:magenta, transparency=true, overdraw=false)
-
-ax6=Axis3(fig[2, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "All")
-hp61=poly!(ax6,M1, strokewidth=3,shading=true,color=:red, transparency=true, overdraw=false)
-hp62=poly!(ax6,M2, strokewidth=3,shading=true,color=:green, transparency=true, overdraw=false)
-hp63=poly!(ax6,M3, strokewidth=3,shading=true,color=:blue, transparency=true, overdraw=false)
-hp64=poly!(ax6,M4, strokewidth=3,shading=true,color=:yellow, transparency=true, overdraw=false)
-hp65=poly!(ax6,M5, strokewidth=3,shading=true,color=:magenta, transparency=true, overdraw=false)
+hp5=poly!(ax5,M5, strokewidth=3,color=:magenta, shading=FastShading, overdraw=false)
 
 fig
