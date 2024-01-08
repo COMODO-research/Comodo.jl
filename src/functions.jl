@@ -20,27 +20,6 @@ function elements2indices(F)
     return unique(ind)
 end
 
-function rot3(α=0.0,β=0.0,γ=0.5*pi)
-    # Creates a rotation tensor (matrix) based on the input Euler angles α, β, and γ
-
-    # Rotation around x-axis
-    Qx=[ 1.0     0.0     0.0
-         0.0     cos(α) -sin(α)
-         0.0     sin(α)  cos(α)]
-
-    # Rotation around y-axis
-    Qy=[ cos(β)  0.0     sin(β)
-         0.0     1.0     0.0
-        -sin(β)  0.0     cos(β)]
-
-    # Rotation around z-axis
-    Qz=[ cos(γ) -sin(γ)  0.0
-         sin(γ)  cos(γ)  0.0
-         0.0     0.0     1.0]
-        
-    return Qx*Qy*Qz # Return combined rotation tensor
-end
-
 function gridPoints(X,Y=X,Z=X)    
     # Creates a 3D grid of GeometryBasics type 3D points based on the iterable input defining the ranges in the x, y, and z direction
     Vg = Vector{GeometryBasics.Point{3, Float64}}(undef,length(X)*length(Y)*length(Z)) # Allocate grid point set
@@ -980,3 +959,24 @@ function hexMeshBox(boxDim,boxEl)
 
     return E,V,F,Fb,CFb_type
 end
+
+# function rot3(α=0.0,β=0.0,γ=0.5*pi)
+#     # Creates a rotation tensor (matrix) based on the input Euler angles α, β, and γ
+
+#     # Rotation around x-axis
+#     Qx=[ 1.0     0.0     0.0
+#          0.0     cos(α) -sin(α)
+#          0.0     sin(α)  cos(α)]
+
+#     # Rotation around y-axis
+#     Qy=[ cos(β)  0.0     sin(β)
+#          0.0     1.0     0.0
+#         -sin(β)  0.0     cos(β)]
+
+#     # Rotation around z-axis
+#     Qz=[ cos(γ) -sin(γ)  0.0
+#          sin(γ)  cos(γ)  0.0
+#          0.0     0.0     1.0]
+        
+#     return Qx*Qy*Qz # Return combined rotation tensor
+# end

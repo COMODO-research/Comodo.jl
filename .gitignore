@@ -1,5 +1,5 @@
 # Ignore the temporary file directory in the data folder
-/data/temp
+assets/temp
 
 # Ignore vscode settings folder
 /.vscode
