@@ -4,10 +4,63 @@ using GeometryBasics # For point and mesh format
 using LinearAlgebra # For things like dot and cross products
 using DataStructures # For unique_dict
 using Interpolations # E.g. for resampling curves
+using Statistics # For: mean
 
 function gibbonDir()
     joinpath(@__DIR__, "..")
 end
+
+function indIn(E::Vector{Vector{Int}},F)
+    A = Vector{Vector{Int64}}(undef,length(E))    
+    for q ∈ eachindex(E)        
+        A[q] = indIn(E[q],F)       
+    end
+    return A
+end
+
+function indIn(e::Vector{Int},F)    
+    n = length(e)
+    indIn = Vector{Int64}()   
+    for qf ∈ eachindex(F)
+        for qe ∈ eachindex(e)
+            if e[qe] ∉ F[qf]                
+                break
+            elseif qe==n
+                push!(indIn,qf)
+            end
+        end
+    end
+    return indIn
+end
+
+function indIn(e::Int,F)       
+    indIn = Vector{Int64}()   
+    for qf ∈ eachindex(F)        
+        if e ∈ F[qf]            
+            push!(indIn,qf)
+        end        
+    end
+    return indIn
+end
+
+
+# function touches(E::Vector{Vector{Int}},F)
+#     A = Vector{Vector{Int64}}(undef,length(E))
+#     for q ∈ eachindex(E)
+#         A[q] = touches(E[q],F)
+#     end
+#     return A
+# end
+
+# function touches(e,F)
+#     indIn = Vector{Int64}()
+#     for q ∈ eachindex(F)
+#         if all([i ∈ F[q] for i in e])
+#             push!(indIn,q)
+#         end
+#     end
+#     return indIn
+# end
 
 function elements2indices(F)
     n = length(F) # Number of elements
@@ -830,15 +883,15 @@ function unique_simplices(F,V)
     return F[ind1], ind1, ind2
 end
 
-function midEdgePoints(E,V)
+function midPoints(E,V) 
     Vm = Vector{GeometryBasics.Point{3, Float64}}(undef,length(E)) 
     for q ∈ eachindex(E)
-        Vm[q]=0.5.*(V[E[q][1]].+V[E[q][2]])
+        Vm[q] = mean(Vector{GeometryBasics.Point{3,Float64}}(V[E[q]]),dims=1)[1]
     end
     return Vm
 end
 
-function subtri(F,V,n)
+function subTri(F,V,n)
     
     if n==0
         return F,V
@@ -846,7 +899,7 @@ function subtri(F,V,n)
         E = meshEdges(F)
         numEdges = size(E,1)
         Eu, ~, ind2 = unique_simplices(E,V)  
-        Vm = midEdgePoints(Eu,V)
+        Vm = midPoints(Eu,V)
         Fmm = reshape(ind2,3,Int64(numEdges/3))'.+length(V)
         Fm1 = toGeometryBasicsSimplices(Fmm)
 
@@ -865,8 +918,67 @@ function subtri(F,V,n)
 
     elseif n>1
         for _ =1:1:n
-            F,V = subtri(F,V,1)
+            F,V = subTri(F,V,1)
         end
+        return F,V
+    end
+end
+
+function subQuad(F,V,n; method="linear")
+    if n==0
+        return F,V
+    elseif n==1
+
+        # Get edges
+        E = meshEdges(F) # Non-unique edges
+        Eu, ~, indE_uni = unique_simplices(E,V) # Unique edges
+        
+        # Define vertices
+        if method =="linear"
+            Ve = midPoints(Eu,V) # Mid edge points
+            Vf = midPoints(F,V)  # Mid face points
+            Vn = [V;Ve;Vf] # Joined point set
+        elseif method =="Catmull-Clark"
+            # Mid face points
+            Vf = midPoints(F,V)  
+            Ve_mid = midPoints(Eu,V) # Mid edge points
+
+            # Edge points 
+            Ve = Vector{GeometryBasics.Point{3, Float64}}(undef,length(Eu)) # Initialize edge points
+            for q ∈ eachindex(Eu)
+                e = Eu[q] # Current edge
+                indTouch = indIn(e,F)
+                Ve[q] = (mean(Vf[indTouch],dims=1)[1] .+ Ve_mid[q])./2.0
+            end
+
+            # Vertex points 
+            Vv = Vector{GeometryBasics.Point{3, Float64}}(undef,length(V)) # Initialize vertex points
+            for q ∈ eachindex(V) # Loop over all vertices
+                indF = indIn(q,F)
+                indE = indIn(q,Eu)
+                N = length(indF) # Number of faces (or edges) touching this vertex                    
+                Vv[q] = (mean(Vf[indF],dims=1)[1] .+ 2.0.*mean(Ve_mid[indE],dims=1)[1] .+ (N-3.0).*V[q])./N
+            end
+
+            Vn = [Vv;Ve;Vf] # Joined point set
+        end
+
+        # Define faces
+        Fn = Vector{QuadFace{Int64}}(undef,length(F)*4)        
+        nv = length(V)
+        ne = length(Eu)
+        for q ∈ eachindex(F)
+            i = 1 + (q-1)*4
+            for ii = 0:1:3
+                Fn[i+ii] = QuadFace{Int64}([F[q][ii+1],indE_uni[i+ii]+nv,nv+ne+q,indE_uni[i+mod(3+ii,4)]+nv])                
+            end            
+        end
+        return Fn,Vn
+    elseif n>1
+        for _ =1:1:n
+            F,V = subQuad(F,V,1;method=method)
+        end
+
         return F,V
     end
 end
@@ -877,7 +989,7 @@ function geoSphere(n,r)
     V = coordinates(M)
     F = faces(M)
     for _ = 1:n
-        F,V = subtri(F,V,1)
+        F,V = subTri(F,V,1)
         for q ∈ eachindex(V)
             v = V[q]
             rn = sqrt(sum(v.^2))
