@@ -214,18 +214,18 @@ DD_stress = importFebioLogfile(joinpath(saveDir,filename_stress))
 fig = Figure(size=(800,800))
 
 stepRange = 0:1:length(DD)-1
-sl_step = Slider(fig[2, 1], range = stepRange, startvalue = length(DD)-1,linewidth=30)
+hSlider = Slider(fig[2, 1], range = stepRange, startvalue = length(DD)-1,linewidth=30)
 
-nodalColor = lift(sl_step.value) do stepIndex
+nodalColor = lift(hSlider.value) do stepIndex
     norm.(DD[stepIndex].data)
 end
 
 
-M = lift(sl_step.value) do stepIndex    
+M = lift(hSlider.value) do stepIndex    
     return GeometryBasics.Mesh(V.+DD[stepIndex].data,Fb)
 end
 
-titleString = lift(sl_step.value) do stepIndex
+titleString = lift(hSlider.value) do stepIndex
   "Step: "*string(stepIndex)
 end
 
@@ -238,34 +238,11 @@ Colorbar(fig[1, 2],hp.plots[1],label = "Displacement magnitude [mm]")
 # hb=Button(fig, label = "Start")
 # on(hb.clicks) do n
 #     @async for s ∈  [collect(0:1:length(DD)-1); collect(length(DD)-2:-1:0)]
-#         set_close_to!(sl_step, s)
+#         set_close_to!(hSlider, s)
 #         sleep(0.05)
 #      end   
 # end
 
-on(events(ax).keyboardbutton) do event
-    if event.action == Keyboard.press || event.action == Keyboard.repeat # Pressed or held for instance
-        if event.key == Keyboard.up                                  
-            sliderValue = sl_step.value.val              
-            if sliderValue ==sl_step.range.val[end]                
-                set_close_to!(sl_step, sl_step.range.val[1])
-            else                
-                set_close_to!(sl_step, sl_step.value.val+1)
-            end            
-        elseif event.key == Keyboard.down
-            sliderValue = sl_step.value.val            
-            if sliderValue ==sl_step.range.val[1]
-                set_close_to!(sl_step, sl_step.range.val[end])
-            else                
-                set_close_to!(sl_step, sl_step.value.val-1)
-            end                        
-        end
-        if event.key == Keyboard.right                                              
-            set_close_to!(sl_step, sl_step.value.val+1)            
-        elseif event.key == Keyboard.left            
-            set_close_to!(sl_step, sl_step.value.val-1)
-        end
-    end
-end
+sliderControl(hSlider,ax)
 
 fig

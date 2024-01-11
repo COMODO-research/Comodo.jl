@@ -5,9 +5,37 @@ using LinearAlgebra # For things like dot and cross products
 using DataStructures # For unique_dict
 using Interpolations # E.g. for resampling curves
 using Statistics # For: mean
+using GLMakie # For sliderControl
 
 function gibbonDir()
     joinpath(@__DIR__, "..")
+end
+
+function sliderControl(hSlider,ax)    
+    on(events(ax).keyboardbutton) do event
+        if event.action == Keyboard.press || event.action == Keyboard.repeat # Pressed or held for instance
+            if event.key == Keyboard.up                                  
+                sliderValue = hSlider.value.val              
+                if sliderValue ==hSlider.range.val[end]                
+                    set_close_to!(hSlider, hSlider.range.val[1])
+                else                
+                    set_close_to!(hSlider, hSlider.value.val+1)
+                end            
+            elseif event.key == Keyboard.down
+                sliderValue = hSlider.value.val            
+                if sliderValue ==hSlider.range.val[1]
+                    set_close_to!(hSlider, hSlider.range.val[end])
+                else                
+                    set_close_to!(hSlider, hSlider.value.val-1)
+                end                        
+            end
+            if event.key == Keyboard.right                                              
+                set_close_to!(hSlider, hSlider.value.val+1)            
+            elseif event.key == Keyboard.left            
+                set_close_to!(hSlider, hSlider.value.val-1)
+            end
+        end
+    end    
 end
 
 function indIn(E::Vector{Vector{Int}},F)
@@ -533,25 +561,23 @@ function meshEdges(M)
     else
         S = M        
     end    
-    n=length(S) #Number of simplices
+    n = length(S) #Number of simplices
     
     # Get number of nodes per simplex, use first for now (better to get this from some property)
-    s1 = S[1]
-    m=length(s1) #Number of nodes per simplex
+    s1 = S[1] # First simplex
+    m = length(s1) #Number of nodes per simplex
     
-    # E = Vector{Vector{Int64}}(undef,n*m)  
-    E = [Vector{Int64}(undef,2) for _ in 1:n*m]
-    i=1
-    for q ∈ eachindex(S)
-        s = S[q]        
-        for j1 ∈ 1:1:m            
+    E = [Vector{Int64}(undef,2) for _ in 1:n*m] # Initialise edge vector
+    i = 1
+    for s ∈ S # Loop over each simplex        
+        for j1 ∈ 1:1:m # Loop over each node/point for the current simplex           
             if j1<m
-                j2=j1+1
+                j2 = j1+1
             else
-                j2=1
+                j2 = 1
             end            
-            E[i]=[s[j1],s[j2]]
-            i+=1
+            E[i] = [s[j1],s[j2]]
+            i += 1
         end 
     end
     return E
@@ -891,18 +917,18 @@ function midPoints(E,V)
     return Vm
 end
 
-function subTri(F,V,n)
+function subTri(F,V,n; method = "linear")
     
     if n==0
         return F,V
     elseif n==1
+
         E = meshEdges(F)
         numEdges = size(E,1)
-        Eu, ~, ind2 = unique_simplices(E,V)  
-        Vm = midPoints(Eu,V)
+        Eu, ~, ind2 = unique_simplices(E,V)          
         Fmm = reshape(ind2,3,Int64(numEdges/3))'.+length(V)
-        Fm1 = toGeometryBasicsSimplices(Fmm)
 
+        Fm1 = toGeometryBasicsSimplices(Fmm)
         Fm2 = Vector{TriangleFace{Int64}}(undef,length(Fm1))
         Fm3 = Vector{TriangleFace{Int64}}(undef,length(Fm1))
         Fm4 = Vector{TriangleFace{Int64}}(undef,length(Fm1))        
@@ -911,14 +937,58 @@ function subTri(F,V,n)
             Fm3[i] = TriangleFace{Int64}([Fm1[i][2], Fm1[i][1], F[i][2]])
             Fm4[i] = TriangleFace{Int64}([Fm1[i][3], Fm1[i][2], F[i][3]])
         end
-        # Join new point and face sets
-        Vn = [V;Vm]
+
+        # Create combined face set
         Fn = [Fm1; Fm2; Fm3; Fm4]        
-        return Fn,Vn
+
+        # Create new vertices depending on method
+        if method == "linear" # Simple linear splitting
+            # Create complete point set
+            Vn = [V; midPoints(Eu,V)]  # Old and new mid-edge points          
+        elseif method == "loop" #Loop subdivision 
+    
+            # New mid-edge like vertices
+            Vm = Vector{GeometryBasics.Point{3, Float64}}(undef,length(Eu)) 
+            for q ∈ eachindex(Eu) # For each edge index                        
+                F_touch = F[indIn(Eu[q],F)] # Faces sharing current edge, mostly 2 but 1 for a boundary edge
+                indVerticesTouch = Vector{Int64}() 
+                for f ∈ F_touch        
+                    b = f.!=Eu[q][1] .&& f.!=Eu[q][2]      
+                    if any(b)  
+                        append!(indVerticesTouch,f[b])           
+                    end
+                end        
+                Vm[q]=3/8 .*(V[Eu[q][1]] .+ V[Eu[q][2]])  .+ 1/8 .* (V[indVerticesTouch[1]] .+ V[indVerticesTouch[2]])
+            end
+    
+            # Modified vertices for original vertices
+            Vv = Vector{GeometryBasics.Point{3, Float64}}(undef,length(V))
+            for q ∈ eachindex(V)            
+                B_vert_face = [any(f.==q) for f in F]
+                F_touch = F[B_vert_face] # Faces mostly 2 but 1 for a boundary edge
+                indVerticesTouch = Vector{Int64}()
+                for f ∈ F_touch                
+                    indTouch = f[f.!=q]        
+                    for i ∈ indTouch 
+                        if i ∉ indVerticesTouch 
+                            push!(indVerticesTouch,i)
+                        end
+                    end
+                end
+                N = length(indVerticesTouch)                
+                v_sum = sum(V[indVerticesTouch],dims=1)[1]                
+                β = 1/N * (5/8-(3/8 +1/4*cos((2*π)/N))^2)        
+                Vv[q] = (1-N*β) .* V[q] .+ β*v_sum                
+            end    
+            # Create complete point set
+            Vn = [Vv;Vm] # Updated orignals and new "mid-edge-ish" points
+        end
+
+        return Fn,Vn    
 
     elseif n>1
         for _ =1:1:n
-            F,V = subTri(F,V,1)
+            F,V = subTri(F,V,1; method=method)
         end
         return F,V
     end
