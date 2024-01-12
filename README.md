@@ -17,7 +17,7 @@ pkg> add https://github.com/gibbonCode/Gibbon.jl
 ```
 
 ## Getting started
-The `docs` folder contains usage examples. See for instance: `demo_febio_input_file_01.jl`. This example should produce:
+The `docs` folder contains usage examples. See for instance: [`demo_febio_0001_cube_uniaxial_hyperelastic.jl`](https://github.com/gibbonCode/Gibbon.jl/blob/master/docs/demo_febio_0001_cube_uniaxial_hyperelastic.jl). 
 
 ![](assets/img/febio_example_01.gif) 
 
