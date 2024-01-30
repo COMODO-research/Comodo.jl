@@ -20,7 +20,6 @@ M5=platonicsolid(5,r)
 N5,VN5=meshnormal(M5)
 
 #Visualize mesh
-GLMakie.activate!(inline=false) # To avoid plotting in plotpane as per: https://github.com/MakieOrg/Makie.jl/issues/2956
 fig = Figure(size=(1600,800))
 
 ax1=Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Tetrahedron")

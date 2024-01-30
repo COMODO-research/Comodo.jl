@@ -555,7 +555,7 @@ function sub2ind(siz,A::Vector{Int64})
 end
 
 # Function to obtain the edges of a face based mesh
-function meshEdges(M)
+function meshEdges(M; unique_only=false)
     if isa(M,GeometryBasics.Mesh)
         S = faces(M) #Get simplices
     else
@@ -569,17 +569,24 @@ function meshEdges(M)
     
     E = [Vector{Int64}(undef,2) for _ in 1:n*m] # Initialise edge vector
     i = 1
-    for s ∈ S # Loop over each simplex        
-        for j1 ∈ 1:1:m # Loop over each node/point for the current simplex           
-            if j1<m
-                j2 = j1+1
-            else
-                j2 = 1
-            end            
+    
+    for j1 ∈ 1:1:m # Loop over each node/point for the current simplex           
+        if j1<m
+            j2 = j1+1
+        else
+            j2 = 1
+        end            
+        for s ∈ S # Loop over each simplex        
             E[i] = [s[j1],s[j2]]
             i += 1
         end 
     end
+
+    # Remove doubles e.g. 1-2 seen as same as 2-1
+    if unique_only
+        E = gunique(E; sort_entries=true);
+    end
+
     return E
 end
 
@@ -926,7 +933,7 @@ function subTri(F,V,n; method = "linear")
         E = meshEdges(F)
         numEdges = size(E,1)
         Eu, ~, ind2 = unique_simplices(E,V)          
-        Fmm = reshape(ind2,3,Int64(numEdges/3))'.+length(V)
+        Fmm = reshape(ind2,Int64(numEdges/3),3).+length(V)
 
         Fm1 = toGeometryBasicsSimplices(Fmm)
         Fm2 = Vector{TriangleFace{Int64}}(undef,length(Fm1))
@@ -1001,6 +1008,8 @@ function subQuad(F,V,n; method="linear")
 
         # Get edges
         E = meshEdges(F) # Non-unique edges
+        E = E[sortperm(repeat(1:1:length(F),4))] # TEMP FIX, reorder faces
+
         Eu, ~, indE_uni = unique_simplices(E,V) # Unique edges
         
         # Define vertices
@@ -1142,23 +1151,3 @@ function hexMeshBox(boxDim,boxEl)
     return E,V,F,Fb,CFb_type
 end
 
-# function rot3(α=0.0,β=0.0,γ=0.5*pi)
-#     # Creates a rotation tensor (matrix) based on the input Euler angles α, β, and γ
-
-#     # Rotation around x-axis
-#     Qx=[ 1.0     0.0     0.0
-#          0.0     cos(α) -sin(α)
-#          0.0     sin(α)  cos(α)]
-
-#     # Rotation around y-axis
-#     Qy=[ cos(β)  0.0     sin(β)
-#          0.0     1.0     0.0
-#         -sin(β)  0.0     cos(β)]
-
-#     # Rotation around z-axis
-#     Qz=[ cos(γ) -sin(γ)  0.0
-#          sin(γ)  cos(γ)  0.0
-#          0.0     0.0     1.0]
-        
-#     return Qx*Qy*Qz # Return combined rotation tensor
-# end
