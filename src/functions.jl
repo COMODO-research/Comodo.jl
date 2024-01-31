@@ -72,6 +72,7 @@ function indIn(e::Int,F)
 end
 
 
+
 # function touches(E::Vector{Vector{Int}},F)
 #     A = Vector{Vector{Int64}}(undef,length(E))
 #     for q ∈ eachindex(E)
@@ -561,25 +562,46 @@ function meshEdges(M)
     else
         S = M        
     end    
-    n = length(S) #Number of simplices
-    
-    # Get number of nodes per simplex, use first for now (better to get this from some property)
-    s1 = S[1] # First simplex
-    m = length(s1) #Number of nodes per simplex
-    
-    E = [Vector{Int64}(undef,2) for _ in 1:n*m] # Initialise edge vector
-    i = 1
-    for s ∈ S # Loop over each simplex        
+
+    if eltype(S) <: Number
+        n = 1 #Number of simplices
+        m = length(S) #Number of nodes per simplex from first
+
+        E = [Vector{Int64}(undef,2) for _ in 1:n*m] # Initialise edge vector
+        i = 1
         for j1 ∈ 1:1:m # Loop over each node/point for the current simplex           
             if j1<m
                 j2 = j1+1
             else
                 j2 = 1
             end            
-            E[i] = [s[j1],s[j2]]
+            E[i] = [S[j1],S[j2]]
             i += 1
         end 
+    
+    else
+        n = length(S) #Number of simplices
+
+        # Get number of nodes per simplex, use first for now (better to get this from some property)        
+        m = length(S[1]) #Number of nodes per simplex from first
+
+        E = [Vector{Int64}(undef,2) for _ in 1:n*m] # Initialise edge vector
+
+        i = 1
+        for s ∈ S # Loop over each simplex        
+            for j1 ∈ 1:1:m # Loop over each node/point for the current simplex           
+                if j1<m
+                    j2 = j1+1
+                else
+                    j2 = 1
+                end            
+                E[i] = [s[j1],s[j2]]
+                i += 1
+            end 
+        end
     end
+    
+    
     return E
 end
 
@@ -793,9 +815,18 @@ function toGeometryBasicsPoints(VM)
     return V
 end
 
-function toGeometryBasicsPoints(VM::Vector{Vector{Float64}})
+function toGeometryBasicsPoints(VM::Matrix{Float64})
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef,size(VM,1))
+    V=Vector{GeometryBasics.Point{3, Float64}}(undef,length(VM))
+    for q ∈ 1:1:size(VM,1)
+        V[q] = GeometryBasics.Point{3, Float64}(VM[q,:])
+    end
+    return V
+end
+
+function toGeometryBasicsPoints(VM)
+    # Loop over vertex matrix and convert to GeometryBasics vector of Points
+    V=Vector{GeometryBasics.Point{3, Float64}}(undef,length(VM))
     for q ∈ 1:1:size(VM,1)
         V[q] = GeometryBasics.Point{3, Float64}(VM[q])
     end
@@ -804,7 +835,7 @@ end
 
 function toGeometryBasicsPoints(VM::Vector{Vector{Int64}})
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef,size(VM,1))
+    V=Vector{GeometryBasics.Point{3, Float64}}(undef,length(VM))
     for q ∈ 1:1:size(VM,1)
         V[q] = GeometryBasics.Point{3, Float64}(VM[q])
     end
@@ -982,6 +1013,8 @@ function subTri(F,V,n; method = "linear")
             end    
             # Create complete point set
             Vn = [Vv;Vm] # Updated orignals and new "mid-edge-ish" points
+        else
+            error("""Incorrect metod. Use: "linear" or "loop" """)
         end
 
         return Fn,Vn    

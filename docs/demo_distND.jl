@@ -19,7 +19,7 @@ V = coordinates(M) # Get the mesh coordinates
 F = faces(M) # Get the mesh faces
 
 # Created refined version
-Fn,Vn = subtri(F,V,n) # Subdevide/refine the mesh linearly 
+Fn,Vn = subTri(F,V,n) # Subdevide/refine the mesh linearly 
 
 # Use distND to compute distances from all in set 1 to all in set 2
 DD = distND(Vn,V)

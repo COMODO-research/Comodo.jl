@@ -19,7 +19,7 @@ V = coordinates(M) # Get the mesh coordinates
 F = faces(M) # Get the mesh faces
 
 # Created refined version
-Fn,Vn = subtri(F,V,n) # Subdevide/refine the mesh linearly 
+Fn,Vn = subTri(F,V,n) # Subdevide/refine the mesh linearly 
 
 # Compute nearest point distances
 Dn = minDist(Vn,V; getIndex = false)
