@@ -9,6 +9,7 @@ M = platonicsolid(2,r) # Get an example quadrilateral mesh (for a cube in this c
 V = coordinates(M)
 F = faces(M)
 
+C = meshCon(F,V)
 ## Refine mesh using `subQuad` and the Catmull-Clark method
 Fn1,Vn1=subQuad(F,V,1; method="Catmull-Clark") # Refined once 
 Fn2,Vn2=subQuad(F,V,2; method="Catmull-Clark") # Refined twice

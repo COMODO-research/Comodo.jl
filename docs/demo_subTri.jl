@@ -2,7 +2,6 @@ using Gibbon
 using GLMakie
 using GeometryBasics
 
-
 """
 This demo shows the use of `subTri` to refine triangulated meshes. Each 
 original input triangle spawns 4 triangles for the regined mesh (one central 
@@ -13,7 +12,7 @@ one, and 3 at each corner). The following refinement methods are implemented:
     new mid-edge node. 
     
     method="loop" : This method features Loop-subdivision. Rather than linearly 
-    splitting edges and maintainin the original coordinates, as for the linear 
+    splitting edges and maintaining the original coordinates, as for the linear 
     method, this method computes the new points in a special weighted sense 
     such that the surface effectively approaches a "quartic box spline". Hence 
     this method both refines and smoothes the geometry through spline 

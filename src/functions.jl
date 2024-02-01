@@ -6,6 +6,7 @@ using DataStructures # For unique_dict
 using Interpolations # E.g. for resampling curves
 using Statistics # For: mean
 using GLMakie # For sliderControl
+using SparseArrays # For meshCon
 
 function gibbonDir()
     joinpath(@__DIR__, "..")
@@ -556,52 +557,35 @@ function sub2ind(siz,A::Vector{Int64})
 end
 
 # Function to obtain the edges of a face based mesh
-function meshEdges(M)
+function meshEdges(M; unique_only=false)
     if isa(M,GeometryBasics.Mesh)
         S = faces(M) #Get simplices
     else
         S = M        
     end    
-
-    if eltype(S) <: Number
-        n = 1 #Number of simplices
-        m = length(S) #Number of nodes per simplex from first
-
-        E = [Vector{Int64}(undef,2) for _ in 1:n*m] # Initialise edge vector
-        i = 1
-        for j1 ∈ 1:1:m # Loop over each node/point for the current simplex           
-            if j1<m
-                j2 = j1+1
-            else
-                j2 = 1
-            end            
-            E[i] = [S[j1],S[j2]]
-            i += 1
-        end 
+    n = length(S) #Number of simplices
     
-    else
-        n = length(S) #Number of simplices
-
-        # Get number of nodes per simplex, use first for now (better to get this from some property)        
-        m = length(S[1]) #Number of nodes per simplex from first
-
-        E = [Vector{Int64}(undef,2) for _ in 1:n*m] # Initialise edge vector
-
-        i = 1
+    # Get number of nodes per simplex, use first for now (better to get this from some property)
+    s1 = S[1] # First simplex
+    m = length(s1) #Number of nodes per simplex
+    
+    E = GeometryBasics.LineFace{Int}[]    
+    for j1 ∈ 1:1:m # Loop over each node/point for the current simplex           
+        if j1<m
+            j2 = j1+1
+        else
+            j2 = 1
+        end            
         for s ∈ S # Loop over each simplex        
-            for j1 ∈ 1:1:m # Loop over each node/point for the current simplex           
-                if j1<m
-                    j2 = j1+1
-                else
-                    j2 = 1
-                end            
-                E[i] = [s[j1],s[j2]]
-                i += 1
-            end 
-        end
+            push!(E,(s[j1],s[j2]))            
+        end 
     end
-    
-    
+
+    # Remove doubles e.g. 1-2 seen as same as 2-1
+    if unique_only
+        E = gunique(E; sort_entries=true);
+    end
+
     return E
 end
 
@@ -786,6 +770,21 @@ end
 
 function toGeometryBasicsSimplices(FM)
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)
+    n = length(FM)
+    m = length(FM[1])
+    if m == 3 # Triangles
+        F = [TriangleFace{Int64}(FM[q]) for q ∈ eachindex(FM)]        
+    elseif m ==4 # Quads
+        F = [QuadFace{Int64}(FM[q]) for q ∈ eachindex(FM)]        
+    else # Other mesh type        
+        F = [NgonFace{Int64}(FM[q]) for q ∈ eachindex(FM)]        
+    end
+    return F
+end
+
+
+function toGeometryBasicsSimplices(FM::Matrix{Int64})
+    # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)
     if size(FM,2)==3 # Triangles
         F = Vector{TriangleFace{Int64}}(undef,size(FM,1))
         for q ∈ 1:1:size(FM,1)            
@@ -808,27 +807,18 @@ end
 
 function toGeometryBasicsPoints(VM)
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef,size(VM,1))
+    V=Vector{GeometryBasics.Point{3, Float64}}(undef,length(VM))
     for q ∈ 1:1:size(VM,1)
-        V[q] = GeometryBasics.Point{3, Float64}(VM[q,:])
+        V[q] = GeometryBasics.Point{3, Float64}(VM[q])
     end
     return V
 end
 
 function toGeometryBasicsPoints(VM::Matrix{Float64})
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef,length(VM))
+    V=Vector{GeometryBasics.Point{3, Float64}}(undef,size(VM,1))
     for q ∈ 1:1:size(VM,1)
         V[q] = GeometryBasics.Point{3, Float64}(VM[q,:])
-    end
-    return V
-end
-
-function toGeometryBasicsPoints(VM)
-    # Loop over vertex matrix and convert to GeometryBasics vector of Points
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef,length(VM))
-    for q ∈ 1:1:size(VM,1)
-        V[q] = GeometryBasics.Point{3, Float64}(VM[q])
     end
     return V
 end
@@ -857,7 +847,7 @@ function meshnormal(M::GeometryBasics.Mesh)
     V=coordinates(M) # Get vertices
 
     # Computes the normal vectors for the input surface geometry defined by the vertices V and the faces F
-    N = Vector{GeometryBasics.Point{3, Float64}}(undef,length(F)) # Allocate array for normal vectors
+    N = Vector{GeometryBasics.Vec{3, Float64}}(undef,length(F)) # Allocate array for normal vectors
     VN = Vector{GeometryBasics.Point{3, Float64}}(undef,length(F))  # Allocate mid-face coordinates
     n =  length(F[1]) # Number of nodes per face    
     for q ∈ eachindex(F) # Loop over all faces
@@ -875,21 +865,21 @@ function meshnormal(M::GeometryBasics.Mesh)
 end
 
 # Computes mesh face normals
-function meshnormal(V::Matrix{Float64},F::Matrix{Int64})
+function meshnormal(F,V)
     # Computes the normal vectors for the input surface geometry defined by the vertices V and the faces F
-    N = zeros(Float64,size(F,1),3) # Allocate array for normal vectors
-    VN = zeros(Float64,size(F,1),3) # Allocate mid-face coordinates
-    n = size(F,2) # Number of nodes per face
-    for q ∈ 1:1:size(F,1) # Loop over all faces
-        c  = cross(V[F[q,n],:],V[F[q,1],:]) # Initialise as cross product of last and first vertex position vector
-        vn = V[F[q,n],:]./n # Initialise mean face coordinate computation (hence division by n)
+    N = Vector{GeometryBasics.Vec{3, Float64}}(undef,length(F)) # Allocate array for normal vectors
+    VN = Vector{GeometryBasics.Point{3, Float64}}(undef,length(F))  # Allocate mid-face coordinates
+    n =  length(F[1]) # Number of nodes per face    
+    for q ∈ eachindex(F) # Loop over all faces
+        c  = cross(V[F[q][n]],V[F[q][1]]) # Initialise as cross product of last and first vertex position vector
+        vn = V[F[q][n]]./n # Initialise mean face coordinate computation (hence division by n)
         for qe ∈ 1:1:n-1 # Loop from first to end-1            
-            c  += cross(V[F[q,qe],:],V[F[q,qe+1],:]) # Add next edge contribution          
-            vn += V[F[q,qe],:]./n # Add next vertex contribution
+            c  += cross(V[F[q][qe]],V[F[q][qe+1]]) # Add next edge contribution          
+            vn += V[F[q][qe]]./n # Add next vertex contribution
         end
         a = sqrt(sum(c.^2)) # Compute vector magnitude
-        N[q,:] = c./a # Normalise vector length and add
-        VN[q,:] = vn # Add mean face coordinate
+        N[q] = c./a # Normalise vector length and add
+        VN[q] = vn # Add mean face coordinate        
     end
     return N, VN
 end
@@ -953,17 +943,14 @@ function subTri(F,V,n; method = "linear")
     if n==0
         return F,V
     elseif n==1
-
         E = meshEdges(F)
-        numEdges = size(E,1)
-        Eu, ~, ind2 = unique_simplices(E,V)          
-        Fmm = reshape(ind2,3,Int64(numEdges/3))'.+length(V)
-
-        Fm1 = toGeometryBasicsSimplices(Fmm)
+        Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        
+        Fm1 = [TriangleFace{Int64}(a.+length(V)) for a ∈ eachrow(reshape(indReverse,length(F),length(F[1])))] 
         Fm2 = Vector{TriangleFace{Int64}}(undef,length(Fm1))
         Fm3 = Vector{TriangleFace{Int64}}(undef,length(Fm1))
         Fm4 = Vector{TriangleFace{Int64}}(undef,length(Fm1))        
-       for i ∈ eachindex(F)                        
+        for i ∈ eachindex(F)                        
             Fm2[i] = TriangleFace{Int64}([Fm1[i][1], Fm1[i][3], F[i][1]])
             Fm3[i] = TriangleFace{Int64}([Fm1[i][2], Fm1[i][1], F[i][2]])
             Fm4[i] = TriangleFace{Int64}([Fm1[i][3], Fm1[i][2], F[i][3]])
@@ -971,6 +958,8 @@ function subTri(F,V,n; method = "linear")
 
         # Create combined face set
         Fn = [Fm1; Fm2; Fm3; Fm4]        
+
+        con_E2F = con_edge_face(F,Eu,indReverse)
 
         # Create new vertices depending on method
         if method == "linear" # Simple linear splitting
@@ -981,7 +970,7 @@ function subTri(F,V,n; method = "linear")
             # New mid-edge like vertices
             Vm = Vector{GeometryBasics.Point{3, Float64}}(undef,length(Eu)) 
             for q ∈ eachindex(Eu) # For each edge index                        
-                F_touch = F[indIn(Eu[q],F)] # Faces sharing current edge, mostly 2 but 1 for a boundary edge
+                F_touch = F[con_E2F[q]] # Faces sharing current edge, mostly 2 but 1 for a boundary edge
                 indVerticesTouch = Vector{Int64}() 
                 for f ∈ F_touch        
                     b = f.!=Eu[q][1] .&& f.!=Eu[q][2]      
@@ -1034,8 +1023,14 @@ function subQuad(F,V,n; method="linear")
 
         # Get edges
         E = meshEdges(F) # Non-unique edges
-        Eu, ~, indE_uni = unique_simplices(E,V) # Unique edges
+
+        Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
         
+        con_F2E = con_face_edge(F,Eu,indReverse)
+        con_E2F = con_edge_face(F,Eu,indReverse)
+        con_V2E = con_vertex_edge(Eu,V)
+        con_V2F = con_vertex_face(F,V)
+
         # Define vertices
         if method =="linear"
             Ve = midPoints(Eu,V) # Mid edge points
@@ -1048,17 +1043,15 @@ function subQuad(F,V,n; method="linear")
 
             # Edge points 
             Ve = Vector{GeometryBasics.Point{3, Float64}}(undef,length(Eu)) # Initialize edge points
-            for q ∈ eachindex(Eu)
-                e = Eu[q] # Current edge
-                indTouch = indIn(e,F)
-                Ve[q] = (mean(Vf[indTouch],dims=1)[1] .+ Ve_mid[q])./2.0
+            for q ∈ eachindex(Eu)                         
+                Ve[q] = (mean(Vf[con_E2F[q]],dims=1)[1] .+ Ve_mid[q])./2.0
             end
 
             # Vertex points 
             Vv = Vector{GeometryBasics.Point{3, Float64}}(undef,length(V)) # Initialize vertex points
             for q ∈ eachindex(V) # Loop over all vertices
-                indF = indIn(q,F)
-                indE = indIn(q,Eu)
+                indF = con_V2F[q]
+                indE = con_V2E[q]
                 N = length(indF) # Number of faces (or edges) touching this vertex                    
                 Vv[q] = (mean(Vf[indF],dims=1)[1] .+ 2.0.*mean(Ve_mid[indE],dims=1)[1] .+ (N-3.0).*V[q])./N
             end
@@ -1073,7 +1066,7 @@ function subQuad(F,V,n; method="linear")
         for q ∈ eachindex(F)
             i = 1 + (q-1)*4
             for ii = 0:1:3
-                Fn[i+ii] = QuadFace{Int64}([F[q][ii+1],indE_uni[i+ii]+nv,nv+ne+q,indE_uni[i+mod(3+ii,4)]+nv])                
+                Fn[i+ii] = QuadFace{Int64}([F[q][ii+1], con_F2E[q][ii+1]+nv, q+nv+ne, con_F2E[q][1+mod(3+ii,4)]+nv])                
             end            
         end
         return Fn,Vn
@@ -1175,23 +1168,187 @@ function hexMeshBox(boxDim,boxEl)
     return E,V,F,Fb,CFb_type
 end
 
-# function rot3(α=0.0,β=0.0,γ=0.5*pi)
-#     # Creates a rotation tensor (matrix) based on the input Euler angles α, β, and γ
+mutable struct connectivitySet
+    edge_vertex::Vector{LineFace{Int64}}
+    edge_face::Vector{Vector{Int64}}
+    edge_edge::Vector{Vector{Int64}}
+    face_vertex#::Vector{Vector{Int64}}
+    face_edge::Vector{Vector{Int64}}        
+    face_face::Vector{Vector{Int64}}
+    vertex_edge::Vector{Vector{Int64}}
+    vertex_face::Vector{Vector{Int64}}        
+    vertex_vertex::Vector{Vector{Int64}}
+    connectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V) = new(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V) 
+end
 
-#     # Rotation around x-axis
-#     Qx=[ 1.0     0.0     0.0
-#          0.0     cos(α) -sin(α)
-#          0.0     sin(α)  cos(α)]
+function con_face_edge(F,E_uni=missing,indReverse=missing)
+    if ismissing(E_uni) | ismissing(indReverse)
+        E = meshEdges(F)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+    end
+    return [Vector{Int64}(a) for a ∈ eachrow(reshape(indReverse,length(F),length(F[1])))] # [indReverse[[1,2,3].+ (i-1)*3] for i ∈ eachindex(F)]
+end
 
-#     # Rotation around y-axis
-#     Qy=[ cos(β)  0.0     sin(β)
-#          0.0     1.0     0.0
-#         -sin(β)  0.0     cos(β)]
+function con_edge_face(F,E_uni=missing,indReverse=missing)
+    if ismissing(E_uni)| ismissing(indReverse)
+        E = meshEdges(F)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+    end
+    indF = repeat(1:1:length(F); outer=length(F[1]))
+    A = sparse(indReverse,indF,indF)
+    con_E2F = Vector{Vector{Int64}}(undef,length(E_uni))
+    for q ∈ eachindex(E_uni)
+        _,v = findnz(A[q,:])
+        con_E2F[q] = v
+    end    
+    return con_E2F
+end
 
-#     # Rotation around z-axis
-#     Qz=[ cos(γ) -sin(γ)  0.0
-#          sin(γ)  cos(γ)  0.0
-#          0.0     0.0     1.0]
-        
-#     return Qx*Qy*Qz # Return combined rotation tensor
-# end
+function con_face_face(F,E_uni=missing,indReverse=missing,con_E2F=missing,con_F2E=missing)
+    if ismissing(E_uni)| ismissing(indReverse)
+        E = meshEdges(F)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+    end
+    
+    if ismissing(con_E2F) 
+        con_E2F = con_edge_face(F,E_uni)
+    end
+
+    if ismissing(con_F2E)
+        con_F2E = con_face_edge(F,E_uni,indReverse)                 
+    end
+
+    con_F2F = Vector{Vector{Int64}}(undef,length(F))
+    for q ∈ eachindex(F)
+        s = sparsevec(reduce(vcat,con_E2F[con_F2E[q]]),1)
+        s[q] = 0 # Null and thus remove the "self" entry
+        con_F2F[q] = findall(!iszero, s)
+    end
+
+    return con_F2F
+end
+
+function con_vertex_face(F,V=missing)
+    if ismissing(V)
+        n = maximum(reduce(vcat,F))
+    else
+        n = length(V)
+    end
+    indF = repeat(1:1:length(F); inner=length(F[1]))
+    B = sparse(reduce(vcat,F),indF,indF)
+    con_V2F = Vector{Vector{Int64}}(undef,n)
+    for q ∈ 1:1:n
+        _,v = findnz(B[q,:])
+        con_V2F[q] = v
+    end
+    return con_V2F
+end
+function con_vertex_edge(E_uni,V=missing)
+    if ismissing(V)
+        n = maximum(reduce(vcat,E_uni))
+    else 
+        n = length(V)
+    end
+    indE = repeat(1:1:length(E_uni); inner=length(E_uni[1]))
+    C = sparse(reduce(vcat,E_uni),indE,indE)
+    con_V2E = Vector{Vector{Int64}}(undef,n)
+    for q ∈ 1:1:n
+        _,v = findnz(C[q,:])
+        con_V2E[q] = v
+    end
+    return con_V2E
+end
+
+function con_edge_edge(E_uni,con_V2E=missing)
+    if ismissing(con_V2E)
+        con_V2E = con_vertex_edge(E_uni) 
+    end    
+    con_E2E = Vector{Vector{Int64}}(undef,length(E_uni))
+    for q ∈ eachindex(E_uni)
+        s = sparsevec(reduce(vcat,con_V2E[E_uni[q]]),1)
+        s[q] = 0 # Null and thus remove the "self" entry
+        con_E2E[q] = findall(!iszero, s)
+    end
+    return con_E2E
+end
+
+function con_vertex_vertex(E_uni,V=missing,con_V2E=missing)
+    if ismissing(V)
+        n = maximum(reduce(vcat,E_uni))
+    else 
+        n = length(V)
+    end
+    if ismissing(con_V2E)
+        con_V2E = con_vertex_edge(E_uni,V)
+    end
+
+    con_V2V = Vector{Vector{Int64}}(undef,n)
+    for q ∈ 1:1:n
+        s = sparsevec(reduce(vcat,E_uni[con_V2E[q]]),1)
+        s[q] = 0 # Null and thus remove the "self" entry
+        con_V2V[q] = findall(!iszero, s)
+    end
+    return con_V2V
+end
+
+function meshCon(F,V) #conType = ["ev","ef","ef","fv","fe","ff","ve","vf","vv"]
+
+    # EDGE-VERTEX connectivity
+    E = meshEdges(F)
+    E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+
+    # FACE-EDGE connectivity
+    con_F2E = con_face_edge(F,E_uni,indReverse)    
+
+    # EDGE-FACE connectivity
+    con_E2F = con_edge_face(F,E_uni)
+
+    # FACE-FACE connectivity
+    con_F2F = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
+
+    # VERTEX-FACE connectivity
+    con_V2F = con_vertex_face(F,V)
+
+    # VERTEX-EDGE connectivity
+    con_V2E = con_vertex_edge(E_uni,V)
+
+    # EDGE-EDGE connectivity
+    con_E2E = con_edge_edge(E_uni,con_V2E)
+
+    # VERTEX-VERTEX connectivity
+    con_V2V = con_vertex_vertex(E_uni,V,con_V2E)
+
+    return connectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V)
+end 
+
+function mergeVertices(F,V; roundVertices = true, numDigitsMerge=missing)
+
+    m = length(V)
+    if roundVertices
+        if ismissing(numDigitsMerge)
+            E = meshEdges(F)
+            d = [sqrt( sum((V[e[1]] .- V[e[2]]).^2) ) for e ∈ E]
+            pointSpacing = mean(d)
+            m = round(Int64,log10(pointSpacing))
+            numDigitsMerge = 6-m
+        end
+
+        # Create rounded coordinates to help obtain unique set
+        VR = [round.(v,digits = numDigitsMerge) for v ∈ V]
+
+        # Get unique indices and reverse for rounded vertices
+        _,ind1,ind2 = gunique(VR; return_index=true, return_inverse=true,sort_entries=false)
+        V = V[ind1] # The unique node set
+    else
+        V,ind1,ind2 = gunique(V; return_index=true, return_inverse=true,sort_entries=false)
+    end
+
+    if length(V) != m # If the length has changed
+        # Correct indices for faces
+        for q ∈ eachindex(F)
+            F[q] = ind2[F[q]]
+        end
+    end
+
+    return F,V,ind1,ind2
+end
