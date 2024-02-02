@@ -923,8 +923,14 @@ function unique_dict(X)
     return collect(keys(d)), indUnique, indReverse #, c
 end
 
-function unique_simplices(F,V)        
-    virtualFaceIndices = sub2ind(length(V).*ones(Int64,length(F[1])),sort.(F))    
+function unique_simplices(F,V=missing)
+    if ismissing(V)
+        n = maximum(reduce(vcat,F)) 
+    else
+        n = length(V)
+    end
+
+    virtualFaceIndices = sub2ind(n.*ones(Int64,length(F[1])),sort.(F))    
     ~, ind1, ind2 = unique_dict(virtualFaceIndices) 
 
     return F[ind1], ind1, ind2

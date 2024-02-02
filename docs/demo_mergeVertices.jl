@@ -41,18 +41,7 @@ NV2 = face2vertex(F2,V2,N2)
 
 ## Visualisation
 
-fig = Figure(size = (1200,800))
-
-ax1 = Axis3(fig[1, 1], aspect = :data)
-hp1 = poly!(ax1, M, strokewidth=2,color=:white,transparency=false,shading = FastShading)
-
-ax2 = Axis3(fig[1, 2], aspect = :data)
-hp2 = poly!(ax2, M2, strokewidth=2,color=:white,transparency=false,shading = FastShading)
-
-fig
-
-
-fig = Figure(size=(800,800))
+fig = Figure(size=(1200,800))
 
 stepRange = 0:1:50
 hSlider = Slider(fig[2, 1], range = stepRange, startvalue = 0,linewidth=30)
