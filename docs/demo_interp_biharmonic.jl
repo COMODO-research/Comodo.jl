@@ -17,16 +17,15 @@ V = Vector{GeometryBasics.Point{3, Float64}}(undef,m) # Initialize point vector
 C = Vector{Float64}(undef,m) # Initialize value/color vector
 for q = 1:m # Loop over all points
     V[q] = 2.0*pi*rand(3) # Assign a randon point from 0-2*pi 
-    # C[q] = V[q][1]
     C[q] = sin(2*sqrt(sum(V[q].^2))) # An interesting function with distance from origin
 end
 
 # Define points for interpolation 
 n = 25
-Vi = gridPoints(range(0.0,2.0*pi,n),range(0.0,2.0*pi,n),range(0,2.0*pi,5)) # Define a grid of points 
+Vi = gridpoints(range(0.0,2.0*pi,n),range(0.0,2.0*pi,n),range(0,2.0*pi,5)) # Define a grid of points 
 
 # Interpolate the data onto the grid
-Ci = interp_biharmonic_ND(V,C,Vi)
+Ci = interp_biharmonic(V,C,Vi)
 
 # Visualize 
 fig = Figure(size = (800, 800))

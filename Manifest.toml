@@ -387,7 +387,7 @@ version = "0.1.2"
 
 [[deps.FEBio]]
 deps = ["GeometryBasics", "XML"]
-git-tree-sha1 = "531d3670ace0ba4a4bd438e877a0d937a04faf81"
+git-tree-sha1 = "21b504bca0b418b73ab23be15486bc1907f697ed"
 repo-rev = "main"
 repo-url = "https://github.com/febiosoftware/FEBio.jl"
 uuid = "c57eab10-e7d7-41f3-9039-a27761009b26"

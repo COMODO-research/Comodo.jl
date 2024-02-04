@@ -24,7 +24,7 @@ E_youngs = 1
 # Creating a hexahedral mesh for a cube 
 boxDim = sampleSize.*[1,1,1] # Dimensionsions for the box in each direction
 boxEl = ceil.(Int64,boxDim./pointSpacing) # Number of elements to use in each direction 
-E,V,F,Fb,CFb_type = hexMeshBox(boxDim,boxEl)
+E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
 
 # Defining displacement of the top surface in terms of x, y, and z components
 if loadingOption=="tension"
@@ -35,7 +35,7 @@ end
 
 ######
 # Define file names
-saveDir = joinpath(gibbonDir(),"assets","temp") # Main directory to save FEBio input and output files
+saveDir = joinpath(gibbondir(),"assets","temp") # Main directory to save FEBio input and output files
 if !isdir(saveDir)
     mkdir(saveDir)      
     println("Hello")
@@ -48,7 +48,7 @@ filename_disp = "febioInputFile_01_DISP.txt" # A log file for results saved in s
 filename_stress = "febioInputFile_01_STRESS.txt"
 ######
 # Define febio input file XML
-doc,febio_spec_node = febIni()
+doc,febio_spec_node = feb_doc_initialize()
 
 aen(febio_spec_node,"Module"; type = "solid") # Define Module node: <Module type="solid"/>
 
@@ -202,12 +202,12 @@ XML.write(filename_FEB, doc)
 
 #######
 # Run FEBio
-runMonitorFebio(filename_FEB,FEBIO_PATH)
+run_febio(filename_FEB,FEBIO_PATH)
 
 #######
 # Import results
-DD = importFebioLogfile(joinpath(saveDir,filename_disp))
-DD_stress = importFebioLogfile(joinpath(saveDir,filename_stress))
+DD = read_logfile(joinpath(saveDir,filename_disp))
+DD_stress = read_logfile(joinpath(saveDir,filename_stress))
 
 #######
 # Visualization
@@ -243,6 +243,6 @@ Colorbar(fig[1, 2],hp.plots[1],label = "Displacement magnitude [mm]")
 #      end   
 # end
 
-sliderControl(hSlider,ax)
+slidercontrol(hSlider,ax)
 
 fig

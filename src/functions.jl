@@ -5,14 +5,14 @@ using LinearAlgebra # For things like dot and cross products
 using DataStructures # For unique_dict
 using Interpolations # E.g. for resampling curves
 using Statistics # For: mean
-using GLMakie # For sliderControl
-using SparseArrays # For meshCon
+using GLMakie # For slidercontrol
+using SparseArrays # For meshconnectivity
 
-function gibbonDir()
+function gibbondir()
     joinpath(@__DIR__, "..")
 end
 
-function sliderControl(hSlider,ax)    
+function slidercontrol(hSlider,ax)    
     on(events(ax).keyboardbutton) do event
         if event.action == Keyboard.press || event.action == Keyboard.repeat # Pressed or held for instance
             if event.key == Keyboard.up                                  
@@ -39,59 +39,6 @@ function sliderControl(hSlider,ax)
     end    
 end
 
-function indIn(E::Vector{Vector{Int}},F)
-    A = Vector{Vector{Int64}}(undef,length(E))    
-    for q ∈ eachindex(E)        
-        A[q] = indIn(E[q],F)       
-    end
-    return A
-end
-
-function indIn(e::Vector{Int},F)    
-    n = length(e)
-    indIn = Vector{Int64}()   
-    for qf ∈ eachindex(F)
-        for qe ∈ eachindex(e)
-            if e[qe] ∉ F[qf]                
-                break
-            elseif qe==n
-                push!(indIn,qf)
-            end
-        end
-    end
-    return indIn
-end
-
-function indIn(e::Int,F)       
-    indIn = Vector{Int64}()   
-    for qf ∈ eachindex(F)        
-        if e ∈ F[qf]            
-            push!(indIn,qf)
-        end        
-    end
-    return indIn
-end
-
-
-
-# function touches(E::Vector{Vector{Int}},F)
-#     A = Vector{Vector{Int64}}(undef,length(E))
-#     for q ∈ eachindex(E)
-#         A[q] = touches(E[q],F)
-#     end
-#     return A
-# end
-
-# function touches(e,F)
-#     indIn = Vector{Int64}()
-#     for q ∈ eachindex(F)
-#         if all([i ∈ F[q] for i in e])
-#             push!(indIn,q)
-#         end
-#     end
-#     return indIn
-# end
-
 function elements2indices(F)
     n = length(F) # Number of elements
     m = length(F[1]) # Number of nodes per element
@@ -103,7 +50,7 @@ function elements2indices(F)
     return unique(ind)
 end
 
-function gridPoints(X,Y=X,Z=X)    
+function gridpoints(X,Y=X,Z=X)    
     # Creates a 3D grid of GeometryBasics type 3D points based on the iterable input defining the ranges in the x, y, and z direction
     Vg = Vector{GeometryBasics.Point{3, Float64}}(undef,length(X)*length(Y)*length(Z)) # Allocate grid point set
     q=0 # Initialize index 
@@ -118,7 +65,7 @@ function gridPoints(X,Y=X,Z=X)
     return Vg # Return the grid point set
 end
 
-function interp_biharmonicSpline(x,y,xi; extrapolate_method="linear",pad_data="linear")
+function interp_biharmonic_spline(x,y,xi; extrapolate_method="linear",pad_data="linear")
     # This function uses biharmonic spline interpolation. The input is assumed to represent ordered data representing a curve
     # 
     # Reference:  David T. Sandwell, Biharmonic spline interpolation of 
@@ -171,9 +118,9 @@ function interp_biharmonicSpline(x,y,xi; extrapolate_method="linear",pad_data="l
         if any(L) # If any points outside of the range were encountered
             yi = Vector{Float64}(undef,length(xi)) # Initialise yi
             yi[L] = lerp(xx,yy,xi[L]) # Linearly extrapolate outside of the input range
-            yi[.!L] = interp_biharmonic_ND(xx,yy,xi[.!L]) # Use biharmonic interpolation for points within range
+            yi[.!L] = interp_biharmonic(xx,yy,xi[.!L]) # Use biharmonic interpolation for points within range
         else # Nothing to extrapolate
-            yi = interp_biharmonic_ND(xx,yy,xi)
+            yi = interp_biharmonic(xx,yy,xi)
         end
     elseif extrapolate_method=="constant"
         # Simple constant extrapolation (last/first value is repeated indefinately)
@@ -188,21 +135,21 @@ function interp_biharmonicSpline(x,y,xi; extrapolate_method="linear",pad_data="l
                 yi[Ll] .= yy[end] # Just copy the end for these
             end
             L = .!Ls .&& .!Ll # Boolean for points to interpolate using biharmonic interpolation
-            yi[L] = interp_biharmonic_ND(xx,yy,xi[L]) # Use biharmonic interpolation for points within range
+            yi[L] = interp_biharmonic(xx,yy,xi[L]) # Use biharmonic interpolation for points within range
         else # Nothing to extrapolate
-            yi = interp_biharmonic_ND(xx,yy,xi)
+            yi = interp_biharmonic(xx,yy,xi)
         end
     elseif extrapolate_method=="biharmonic"
         # Allow extrapolation as per the biharmonic function
-        yi = interp_biharmonic_ND(xx,yy,xi) 
+        yi = interp_biharmonic(xx,yy,xi) 
     end
 
     return yi
 end
 
-function interp_biharmonic_ND(x,y,xi)
+function interp_biharmonic(x,y,xi)
     # Distances from all points in X to all points in X
-    Dxx = distND(x,x)
+    Dxx = dist(x,x)
 
     # Determine weights for interpolation
     g = (Dxx.^2) .* (log.(Dxx).-1.0)   # Green's function.
@@ -210,7 +157,7 @@ function interp_biharmonic_ND(x,y,xi)
     g[isnan.(g)] .= 0.0 # Replace NaN entries by zeros 
     W = g \ y # Weights  
 
-    D = distND(xi,x) # Distance between points in X and XI
+    D = dist(xi,x) # Distance between points in X and XI
 
     G = (D.^2).*(log.(D).-1.0) # Green's function.
     G[isnan.(G)] .= 0.0 # Replace NaN entries by zeros
@@ -247,17 +194,17 @@ function lerp_(x,y,xi)
     return yi
 end
 
-function distND(V1,V2)
+function dist(V1,V2)
     D = Matrix{Float64}(undef,length(V1),length(V2))   
     for i ∈ eachindex(V1)
         for j ∈ eachindex(V2)          
-            D[i,j] = sqrt(sum((V1[i].-V2[j]).^2))       
+            D[i,j] = norm((V1[i].-V2[j]))       
         end
     end
     return D
 end
 
-function minDist(V1,V2; getIndex=false, skipSelf = false )
+function mindist(V1,V2; getIndex=false, skipSelf = false )
     D = Vector{Float64}(undef,length(V1))
     d = Vector{Float64}(undef,length(V2))
     if getIndex
@@ -557,7 +504,7 @@ function sub2ind(siz,A::Vector{Int64})
 end
 
 # Function to obtain the edges of a face based mesh
-function meshEdges(M; unique_only=false)
+function meshedges(M; unique_only=false)
     if isa(M,GeometryBasics.Mesh)
         S = faces(M) #Get simplices
     else
@@ -768,7 +715,7 @@ function tetrahedron(r=1.0)
     return GeometryBasics.Mesh(V,F)
 end
 
-function toGeometryBasicsSimplices(FM)
+function togeometrybasics_faces(FM)
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)
     n = length(FM)
     m = length(FM[1])
@@ -782,8 +729,7 @@ function toGeometryBasicsSimplices(FM)
     return F
 end
 
-
-function toGeometryBasicsSimplices(FM::Matrix{Int64})
+function togeometrybasics_faces(FM::Matrix{Int64})
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)
     if size(FM,2)==3 # Triangles
         F = Vector{TriangleFace{Int64}}(undef,size(FM,1))
@@ -805,7 +751,7 @@ function toGeometryBasicsSimplices(FM::Matrix{Int64})
     return F
 end
 
-function toGeometryBasicsPoints(VM)
+function togeometrybasics_points(VM)
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
     V=Vector{GeometryBasics.Point{3, Float64}}(undef,length(VM))
     for q ∈ 1:1:size(VM,1)
@@ -814,7 +760,7 @@ function toGeometryBasicsPoints(VM)
     return V
 end
 
-function toGeometryBasicsPoints(VM::Matrix{Float64})
+function togeometrybasics_points(VM::Matrix{Float64})
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
     V=Vector{GeometryBasics.Point{3, Float64}}(undef,size(VM,1))
     for q ∈ 1:1:size(VM,1)
@@ -823,7 +769,7 @@ function toGeometryBasicsPoints(VM::Matrix{Float64})
     return V
 end
 
-function toGeometryBasicsPoints(VM::Vector{Vector{Int64}})
+function togeometrybasics_points(VM::Vector{Vector{Int64}})
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
     V=Vector{GeometryBasics.Point{3, Float64}}(undef,length(VM))
     for q ∈ 1:1:size(VM,1)
@@ -832,36 +778,51 @@ function toGeometryBasicsPoints(VM::Vector{Vector{Int64}})
     return V
 end
 
-function toGeometryBasicsMesh(VM,FM)
+function togeometrybasics_mesh(VM,FM)
 
-    V=toGeometryBasicsPoints(VM)
-    F=toGeometryBasicsSimplices(FM)
+    V=togeometrybasics_points(VM)
+    F=togeometrybasics_faces(FM)
 
     return GeometryBasics.Mesh(V,F)
 
 end
 
+function vertexnormal(M::GeometryBasics.Mesh) 
+    F=faces(M) # Get faces
+    V=coordinates(M) # Get vertices
+    return vertexnormal(F,V)
+end
+
+function vertexnormal(F,V) 
+    NF = facenormal(F,V)
+    return vertexnormal(F,V)
+end
+
+function facenormal(M::GeometryBasics.Mesh) 
+    F=faces(M) # Get faces
+    V=coordinates(M) # Get vertices
+    return facenormal(F,V)
+end
+
+# Computes mesh face normals
+function facenormal(F,V)
+    # Computes the normal vectors for the input surface geometry defined by the vertices V and the faces F
+    N = Vector{GeometryBasics.Vec{3, Float64}}(undef,length(F)) # Allocate array for normal vectors
+    n =  length(F[1]) # Number of nodes per face    
+    for q ∈ eachindex(F) # Loop over all faces
+        c  = cross(V[F[q][n]],V[F[q][1]]) # Initialise as cross product of last and first vertex position vector
+        for qe ∈ 1:1:n-1 # Loop from first to end-1            
+            c  += cross(V[F[q][qe]],V[F[q][qe+1]]) # Add next edge contribution          
+        end
+        N[q] = c./norm(c) # Normalise vector length and add
+    end
+    return N
+end
 
 function meshnormal(M::GeometryBasics.Mesh) 
     F=faces(M) # Get faces
     V=coordinates(M) # Get vertices
-
-    # Computes the normal vectors for the input surface geometry defined by the vertices V and the faces F
-    N = Vector{GeometryBasics.Vec{3, Float64}}(undef,length(F)) # Allocate array for normal vectors
-    VN = Vector{GeometryBasics.Point{3, Float64}}(undef,length(F))  # Allocate mid-face coordinates
-    n =  length(F[1]) # Number of nodes per face    
-    for q ∈ eachindex(F) # Loop over all faces
-        c  = cross(V[F[q][n]],V[F[q][1]]) # Initialise as cross product of last and first vertex position vector
-        vn = V[F[q][n]]./n # Initialise mean face coordinate computation (hence division by n)
-        for qe ∈ 1:1:n-1 # Loop from first to end-1            
-            c  += cross(V[F[q][qe]],V[F[q][qe+1]]) # Add next edge contribution          
-            vn += V[F[q][qe]]./n # Add next vertex contribution
-        end
-        a = sqrt(sum(c.^2)) # Compute vector magnitude
-        N[q] = c./a # Normalise vector length and add
-        VN[q] = vn # Add mean face coordinate        
-    end
-    return N, VN
+    return meshnormal(F,V)
 end
 
 # Computes mesh face normals
@@ -877,8 +838,7 @@ function meshnormal(F,V)
             c  += cross(V[F[q][qe]],V[F[q][qe+1]]) # Add next edge contribution          
             vn += V[F[q][qe]]./n # Add next vertex contribution
         end
-        a = sqrt(sum(c.^2)) # Compute vector magnitude
-        N[q] = c./a # Normalise vector length and add
+        N[q] = c./norm(c) # Normalise vector length and add
         VN[q] = vn # Add mean face coordinate        
     end
     return N, VN
@@ -886,7 +846,6 @@ end
 
 # Creates mesh data for a platonic solid of choice
 function platonicsolid(n,r=1.0)
-
     if n==1
         M = tetrahedron(r)
     elseif n==2
@@ -898,7 +857,6 @@ function platonicsolid(n,r=1.0)
     elseif n==5
         M = dodecahedron(r)
     end
-
     return M
 end
 
@@ -913,11 +871,9 @@ function unique_dict(X)
             j+=1
             d[X[i]] = j # reverse index in dict            
             push!(indUnique, i)                     
-            # push!(c, 1) 
             indReverse[i] = j 
         else
             indReverse[i] = d[X[i]]            
-            # c[d[X[i]]] += 1
         end        
     end
     return collect(keys(d)), indUnique, indReverse #, c
@@ -936,20 +892,12 @@ function unique_simplices(F,V=missing)
     return F[ind1], ind1, ind2
 end
 
-function midPoints(E,V) 
-    Vm = Vector{GeometryBasics.Point{3, Float64}}(undef,length(E)) 
-    for q ∈ eachindex(E)
-        Vm[q] = mean(Vector{GeometryBasics.Point{3,Float64}}(V[E[q]]),dims=1)[1]
-    end
-    return Vm
-end
-
-function subTri(F,V,n; method = "linear")
+function subtri(F,V,n; method = "linear")
     
     if n==0
         return F,V
     elseif n==1
-        E = meshEdges(F)
+        E = meshedges(F)
         Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
         
         Fm1 = [TriangleFace{Int64}(a.+length(V)) for a ∈ eachrow(reshape(indReverse,length(F),length(F[1])))] 
@@ -970,7 +918,7 @@ function subTri(F,V,n; method = "linear")
         # Create new vertices depending on method
         if method == "linear" # Simple linear splitting
             # Create complete point set
-            Vn = [V; midPoints(Eu,V)]  # Old and new mid-edge points          
+            Vn = [V; simplexcenter(Eu,V)]  # Old and new mid-edge points          
         elseif method == "loop" #Loop subdivision 
     
             # New mid-edge like vertices
@@ -1016,19 +964,19 @@ function subTri(F,V,n; method = "linear")
 
     elseif n>1
         for _ =1:1:n
-            F,V = subTri(F,V,1; method=method)
+            F,V = subtri(F,V,1; method=method)
         end
         return F,V
     end
 end
 
-function subQuad(F,V,n; method="linear")
+function subquad(F,V,n; method="linear")
     if n==0
         return F,V
     elseif n==1
 
         # Get edges
-        E = meshEdges(F) # Non-unique edges
+        E = meshedges(F) # Non-unique edges
 
         Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
         
@@ -1039,13 +987,13 @@ function subQuad(F,V,n; method="linear")
 
         # Define vertices
         if method =="linear"
-            Ve = midPoints(Eu,V) # Mid edge points
-            Vf = midPoints(F,V)  # Mid face points
+            Ve = simplexcenter(Eu,V) # Mid edge points
+            Vf = simplexcenter(F,V)  # Mid face points
             Vn = [V;Ve;Vf] # Joined point set
         elseif method =="Catmull-Clark"
             # Mid face points
-            Vf = midPoints(F,V)  
-            Ve_mid = midPoints(Eu,V) # Mid edge points
+            Vf = simplexcenter(F,V)  
+            Ve_mid = simplexcenter(Eu,V) # Mid edge points
 
             # Edge points 
             Ve = Vector{GeometryBasics.Point{3, Float64}}(undef,length(Eu)) # Initialize edge points
@@ -1078,7 +1026,7 @@ function subQuad(F,V,n; method="linear")
         return Fn,Vn
     elseif n>1
         for _ =1:1:n
-            F,V = subQuad(F,V,1;method=method)
+            F,V = subquad(F,V,1;method=method)
         end
 
         return F,V
@@ -1086,12 +1034,12 @@ function subQuad(F,V,n; method="linear")
 end
 
 # Create geodesic dome
-function geoSphere(n,r)
+function geosphere(n,r)
     M = platonicsolid(4,r)
     V = coordinates(M)
     F = faces(M)
     for _ = 1:n
-        F,V = subTri(F,V,1)
+        F,V = subtri(F,V,1)
         for q ∈ eachindex(V)
             v = V[q]
             rn = sqrt(sum(v.^2))
@@ -1101,7 +1049,7 @@ function geoSphere(n,r)
     return F,V
 end
 
-function hexMeshBox(boxDim,boxEl)    
+function hexbox(boxDim,boxEl)    
     boxNod = boxEl.+1 # Number of nodes in each direction
     numElements = prod(boxEl) # Total number of elements
     numNodes = prod(boxNod) # Total number of nodes
@@ -1174,7 +1122,7 @@ function hexMeshBox(boxDim,boxEl)
     return E,V,F,Fb,CFb_type
 end
 
-mutable struct connectivitySet
+mutable struct ConnectivitySet
     edge_vertex::Vector{LineFace{Int64}}
     edge_face::Vector{Vector{Int64}}
     edge_edge::Vector{Vector{Int64}}
@@ -1184,12 +1132,12 @@ mutable struct connectivitySet
     vertex_edge::Vector{Vector{Int64}}
     vertex_face::Vector{Vector{Int64}}        
     vertex_vertex::Vector{Vector{Int64}}
-    connectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V) = new(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V) 
+    ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V) = new(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V) 
 end
 
 function con_face_edge(F,E_uni=missing,indReverse=missing)
     if ismissing(E_uni) | ismissing(indReverse)
-        E = meshEdges(F)
+        E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
     end
     return [Vector{Int64}(a) for a ∈ eachrow(reshape(indReverse,length(F),length(F[1])))] # [indReverse[[1,2,3].+ (i-1)*3] for i ∈ eachindex(F)]
@@ -1197,7 +1145,7 @@ end
 
 function con_edge_face(F,E_uni=missing,indReverse=missing)
     if ismissing(E_uni)| ismissing(indReverse)
-        E = meshEdges(F)
+        E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
     end
     indF = repeat(1:1:length(F); outer=length(F[1]))
@@ -1212,7 +1160,7 @@ end
 
 function con_face_face(F,E_uni=missing,indReverse=missing,con_E2F=missing,con_F2E=missing)
     if ismissing(E_uni)| ismissing(indReverse)
-        E = meshEdges(F)
+        E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
     end
     
@@ -1297,10 +1245,10 @@ function con_vertex_vertex(E_uni,V=missing,con_V2E=missing)
     return con_V2V
 end
 
-function meshCon(F,V) #conType = ["ev","ef","ef","fv","fe","ff","ve","vf","vv"]
+function meshconnectivity(F,V) #conType = ["ev","ef","ef","fv","fe","ff","ve","vf","vv"]
 
     # EDGE-VERTEX connectivity
-    E = meshEdges(F)
+    E = meshedges(F)
     E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
 
     # FACE-EDGE connectivity
@@ -1324,15 +1272,15 @@ function meshCon(F,V) #conType = ["ev","ef","ef","fv","fe","ff","ve","vf","vv"]
     # VERTEX-VERTEX connectivity
     con_V2V = con_vertex_vertex(E_uni,V,con_V2E)
 
-    return connectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V)
+    return ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V)
 end 
 
-function mergeVertices(F,V; roundVertices = true, numDigitsMerge=missing)
+function mergevertices(F,V; roundVertices = true, numDigitsMerge=missing)
 
     m = length(V)
     if roundVertices
         if ismissing(numDigitsMerge)
-            E = meshEdges(F)
+            E = meshedges(F)
             d = [sqrt( sum((V[e[1]] .- V[e[2]]).^2) ) for e ∈ E]
             pointSpacing = mean(d)
             m = round(Int64,log10(pointSpacing))
@@ -1358,3 +1306,133 @@ function mergeVertices(F,V; roundVertices = true, numDigitsMerge=missing)
 
     return F,V,ind1,ind2
 end
+
+function smoothmesh_laplacian(F,V,con_V2V=missing; n=1, λ=0.5)
+    """
+    This function implements Weighted Laplacian mesh smoothing. At each 
+    iteration, this method replaces each point by the weighted sum of the 
+    Laplacian mean for the point and the point itself. The weighting is 
+    controlled by the parameter λ which is in the range (0,1). If λ=0 no 
+    smoothing occurs. If λ=0 pure Laplacian mean based smoothing occurs. For 
+    intermediate values a linear blending between the two occurs.     
+    """
+    if λ!=1
+        # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if missing
+        if ismissing(con_V2V)
+            E = meshedges(F)
+            E_uni,_,_ = unique_simplices(E)
+            con_V2V = con_vertex_vertex(E_uni)
+        end
+        for _ = 1:1:n
+            Vs = deepcopy(V)
+            for q ∈ eachindex(V)
+                # Linear blend between original and pure Laplacian
+                Vs[q] = (1.0-λ).*Vs[q] .+ λ*mean(V[con_V2V[q]])
+            end
+            V = Vs
+        end
+    end
+    return V
+end
+
+function smoothmesh_hc(F,V, con_V2V=missing; n=1, α=0.1, β=0.5, tolDist=missing)
+    """
+    This function implements HC (Humphrey's Classes) smoothing. This method uses
+    Laplacian like smoothing but aims to compensate for the shrinkage/swelling 
+    seen with pure Laplacian smoothing. 
+    
+    REF: 
+    Vollmer et al. Improved Laplacian Smoothing of Noisy Surface Meshes, 1999
+    https://doi.org/10.1111/1467-8659.00334
+    """
+    # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if missing
+    if ismissing(con_V2V)
+        E = meshedges(F)
+        E_uni,_,_ = unique_simplices(E)
+        con_V2V = con_vertex_vertex(E_uni)
+    end
+    P = deepcopy(V) # Copy original input points
+    B = deepcopy(V) # Initialise B
+    c = 0
+    while c<n       
+        Q = deepcopy(P) # Reset Q as P for this iteration
+        for i ∈ eachindex(V)
+            P[i] = mean(Q[con_V2V[i]]) # Laplacian 
+            # Compute different vector between P and a point between original 
+            # point and Q (which is P before laplacian)
+            B[i] = P[i] .- (α.*V[i] .+ (1-α).*Q[i])
+        end
+        d = 0.0        
+        for i ∈ eachindex(V)      
+            # Push points back based on blending between pure difference vector
+            # B and the Laplacian mean of these      
+            P[i] = P[i] .- (β.*B[i] .+ (1-β).* mean(B[con_V2V[i]]))
+        end   
+        c+=1 
+        if !ismissing(tolDist) # Include tolerance based termination
+            d = 0.0
+            for i ∈ eachindex(V)
+                d+=sqrt(sum((P[i].-Q[i]).^2)) # Sum of distances
+            end
+            if d<tolDist # Sum of distance smaller than tolerance?
+                break
+            end            
+        end
+    end
+    return P
+end
+
+function quadplate(plateDim,plateElem)
+    num_x = plateElem[1]+1
+    num_y = plateElem[2]+1
+    V = Vector{GeometryBasics.Point{3, Float64}}()
+    for y = range(-plateDim[2]/2,plateDim[2]/2,num_y)
+        for x = range(-plateDim[1]/2,plateDim[1]/2,num_x)
+            push!(V,GeometryBasics.Point{3, Float64}(x,y,0.0))
+        end
+    end
+
+    F = Vector{QuadFace{Int64}}()
+    ij2ind(i,j) = i + ((j-1)*num_x) # function to convert subscript to linear indices
+
+    for i = 1:1:plateElem[1]
+        for j = 1:1:plateElem[2]        
+            push!(F,QuadFace{Int64}([ij2ind(i,j),ij2ind(i+1,j),ij2ind(i+1,j+1),ij2ind(i,j+1)]))
+        end
+    end
+    return F, V
+end
+
+function simplex2vertexdata(F,DF,V=missing)
+    con_V2F = con_vertex_face(F,V)
+    DV = (typeof(DF))(undef,length(con_V2F))
+    T = eltype(DV)
+    for q ∈ eachindex(DV)
+        DV[q] = mean(T,DF[con_V2F[q]])
+    end
+    return DV
+end
+
+function vertex2simplexdata(F,DV)
+    T = eltype(DV) # Element type of data in DV
+    DF =  (typeof(DV))(undef,length(F)) # Allocate data for F
+    for q ∈ eachindex(F)
+        DF[q] = mean(T,DV[F[q]]) # The mean of the vertex data for each entry in F
+    end
+    return DF
+end
+
+function simplexcenter(F,V)
+    return vertex2simplexdata(F,V)
+end
+
+function normalizevector(A)
+    return A./norm.(A)
+end
+
+# function normalPlot!(ax,M; typeFlag=1, color=:black)
+#     N,VN = facenormal(M)
+#     hp=arrows!(ax,VN,N,color)
+#     return hp 
+# end
+

@@ -4,20 +4,20 @@ using GLMakie
 using GeometryBasics
 
 """
-This demo shows the use of the geoSphere function. An unrefined sphere is an 
+This demo shows the use of the geosphere function. An unrefined sphere is an 
 icosahedron. Through subdivision (see `subtri`) a refined geodesic dome is 
 obtained. 
 """
 
 r = 1.0 # radius
 n1 = 0 # Number of refinement iterations
-F1,V1 = geoSphere(n1,r)
+F1,V1 = geosphere(n1,r)
 
 n2 = 1 # Number of refinement iterations
-F2,V2 = geoSphere(n2,r)
+F2,V2 = geosphere(n2,r)
 
 n3 = 3 # Number of refinement iterations
-F3,V3 = geoSphere(n3,r)
+F3,V3 = geosphere(n3,r)
 
 #Visualize mesh
 fig = Figure(size=(1600,800))

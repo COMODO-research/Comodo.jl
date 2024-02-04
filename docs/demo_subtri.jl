@@ -3,7 +3,7 @@ using GLMakie
 using GeometryBasics
 
 """
-This demo shows the use of `subTri` to refine triangulated meshes. Each 
+This demo shows the use of `subtri` to refine triangulated meshes. Each 
 original input triangle spawns 4 triangles for the regined mesh (one central 
 one, and 3 at each corner). The following refinement methods are implemented: 
     
@@ -25,15 +25,15 @@ M = platonicsolid(4,r) # Get example triangulated mesh (e.g. icosahedron)
 V = coordinates(M)
 F = faces(M)
 
-## Refine triangulation using `subTri` and the default "linear" method
+## Refine triangulation using `subtri` and the default "linear" method
 
-Fn1,Vn1=subTri(F,V,1) # Split once, default is same as: Fn1,Vn1=subTri(F,V,1; method="linear")
-Fn2,Vn2=subTri(F,V,2) # Split twice
-Fn3,Vn3=subTri(F,V,3) # Split 3 times
+Fn1,Vn1=subtri(F,V,1) # Split once, default is same as: Fn1,Vn1=subtri(F,V,1; method="linear")
+Fn2,Vn2=subtri(F,V,2) # Split twice
+Fn3,Vn3=subtri(F,V,3) # Split 3 times
 
-Fn4,Vn4=subTri(F,V,1; method="loop") # Split once 
-Fn5,Vn5=subTri(F,V,2; method="loop") # Split twice
-Fn6,Vn6=subTri(F,V,3; method="loop") # Split 3 times
+Fn4,Vn4=subtri(F,V,1; method="loop") # Split once 
+Fn5,Vn5=subtri(F,V,2; method="loop") # Split twice
+Fn6,Vn6=subtri(F,V,3; method="loop") # Split 3 times
 
 ## Visualization
 fig = Figure(size=(1600,800))

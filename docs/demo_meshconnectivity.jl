@@ -11,19 +11,19 @@ if testCase==1
     V = coordinates(M) # Get vertices
     F = faces(M) # Get faces
     F = F[2:end-1]
-    F,V = subTri(F,V,1)
+    F,V = subtri(F,V,1)
 elseif testCase ==2
     r = 1 
     M = platonicsolid(2,r) # Get icosahedron
     V = coordinates(M) # Get vertices
     F = faces(M) # Get faces    
-    F,V = subQuad(F,V,2)
+    F,V = subquad(F,V,2)
 end
 
-E = meshEdges(F)
+E = meshedges(F)
 E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
 
-C = meshCon(F,V)
+C = meshconnectivity(F,V)
 
 E_uni = C.edge_vertex
 

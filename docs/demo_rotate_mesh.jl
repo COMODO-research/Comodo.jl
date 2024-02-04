@@ -11,7 +11,7 @@ are visualized.
 """
 
 # Loading a mesh
-fileName_mesh = joinpath(gibbonDir(),"assets","stl","stanford_bunny_low.stl")
+fileName_mesh = joinpath(gibbondir(),"assets","stl","stanford_bunny_low.stl")
 M = load(fileName_mesh)
 
 # Obtain mesh faces and vertices

@@ -19,12 +19,12 @@ titleString = lift(hSlider.value) do stepIndex
 end
 
 Mn = lift(hSlider.value) do stepIndex
-    Fn,Vn = subTri(F,V,stepIndex; method="loop") 
+    Fn,Vn = subtri(F,V,stepIndex; method="loop") 
     return GeometryBasics.Mesh(Vn,Fn)
 end
 
 ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
-sliderControl(hSlider,ax)
+slidercontrol(hSlider,ax)
 
 hp1=wireframe!(ax,M,linewidth=3,color=:red, overdraw=false)
 hp2=poly!(ax,Mn,strokewidth=2,color=:white, shading = FastShading)
