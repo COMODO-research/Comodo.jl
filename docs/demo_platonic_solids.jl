@@ -4,21 +4,12 @@ using GeometryBasics
 
 r = 1.0 #radius
 M1 = platonicsolid(1,r)
-N1,VN1 = meshnormal(M1)
-
 M2 = platonicsolid(2,r)
-N2,VN2 = meshnormal(M2)
-
 M3 = platonicsolid(3,r)
-N3,VN3 = meshnormal(M3)
-
 M4 = platonicsolid(4,r)
-N4,VN4 = meshnormal(M4)
-
 M5 = platonicsolid(5,r)
-N5,VN5 = meshnormal(M5)
 
-#Visualize mesh
+## Visualize mesh
 fig = Figure(size = (1600,800))
 
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Tetrahedron")

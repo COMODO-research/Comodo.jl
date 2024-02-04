@@ -20,11 +20,12 @@ export ind2sub, sub2ind, meshedges, unique_simplices, unique_dict
 export subtri, subquad, geosphere 
 export icosahedron, tetrahedron, cube, dodecahedron, octahedron, platonicsolid
 export togeometrybasics_faces, togeometrybasics_points, togeometrybasics_mesh
-export quadplate, smoothmesh_laplacian, smoothmesh_hc
-export mergevertices, meshnormal, vecnormalize
+export quadplate, quadsphere, smoothmesh_laplacian, smoothmesh_hc
+export mergevertices, facenormal, vertexnormal, vecnormalize, normalplot
 export con_edge_face, con_edge_edge, con_face_edge, con_face_face, con_vertex_edge
 export con_vertex_face, con_vertex_vertex, meshconnectivity
 export simplexcenter, vertex2simplexdata, simplex2vertexdata
+export circlepoints, loftlinear
 
 # Export functions: Visualization related
 export slidercontrol

@@ -26,8 +26,9 @@ for q=1:1:3
     end
 
     # Compute mesh normals
-    N,VN=meshnormal(M)
-
+    N = facenormal(M)
+    VN = simplexcenter(faces(M),coordinates(M))
+    
     ax1=Axis3(fig[1, q], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
     hp1=poly!(ax1,M, strokewidth=3,shading=FastShading,color=colorNow, transparency=true, overdraw=false)
     hpa=arrows!(ax1,VN,N)

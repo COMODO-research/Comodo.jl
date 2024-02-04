@@ -819,29 +819,36 @@ function facenormal(F,V)
     return N
 end
 
-function meshnormal(M::GeometryBasics.Mesh) 
+function facenormal(M::GeometryBasics.Mesh) 
     F=faces(M) # Get faces
     V=coordinates(M) # Get vertices
-    return meshnormal(F,V)
+    return facenormal(F,V)
 end
 
 # Computes mesh face normals
-function meshnormal(F,V)
+function facenormal(F,V)
     # Computes the normal vectors for the input surface geometry defined by the vertices V and the faces F
     N = Vector{GeometryBasics.Vec{3, Float64}}(undef,length(F)) # Allocate array for normal vectors
-    VN = Vector{GeometryBasics.Point{3, Float64}}(undef,length(F))  # Allocate mid-face coordinates
     n =  length(F[1]) # Number of nodes per face    
     for q ∈ eachindex(F) # Loop over all faces
         c  = cross(V[F[q][n]],V[F[q][1]]) # Initialise as cross product of last and first vertex position vector
-        vn = V[F[q][n]]./n # Initialise mean face coordinate computation (hence division by n)
         for qe ∈ 1:1:n-1 # Loop from first to end-1            
             c  += cross(V[F[q][qe]],V[F[q][qe+1]]) # Add next edge contribution          
-            vn += V[F[q][qe]]./n # Add next vertex contribution
         end
         N[q] = c./norm(c) # Normalise vector length and add
-        VN[q] = vn # Add mean face coordinate        
     end
-    return N, VN
+    return N
+end
+
+function vertexnormal(M::GeometryBasics.Mesh) 
+    NF = facenormal(M)
+    V = coordinates(M)
+    return simplex2vertexdata(faces(M),NF,V)
+end
+
+function vertexnormal(F,V) 
+    NF = facenormal(F,V)
+    return simplex2vertexdata(F,NF,V)
 end
 
 # Creates mesh data for a platonic solid of choice
@@ -1403,6 +1410,19 @@ function quadplate(plateDim,plateElem)
     return F, V
 end
 
+function quadsphere(r,n)
+    M = platonicsolid(2,r)
+    F = faces(M)
+    V = coordinates(M)
+    if n > 0
+        for q ∈ 1:1:n
+            F,V = subquad(F,V,1)
+            V = r .* (V ./ norm.(V))
+        end
+    end
+    return F,V
+end
+
 function simplex2vertexdata(F,DF,V=missing)
     con_V2F = con_vertex_face(F,V)
     DV = (typeof(DF))(undef,length(con_V2F))
@@ -1430,9 +1450,62 @@ function normalizevector(A)
     return A./norm.(A)
 end
 
-# function normalPlot!(ax,M; typeFlag=1, color=:black)
-#     N,VN = facenormal(M)
-#     hp=arrows!(ax,VN,N,color)
-#     return hp 
-# end
+function circlepoints(r,n)
+    return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0,2*π-(2*π)/n,n)]
+end
+
+
+function loftlinear(V1,V2;num_loft=2,close_loop=true)
+
+    num_loop = length(V1)
+    T = eltype(V1)
+    # Linearly blending points from first to last
+    V = Vector{T}()
+    for q ∈ range(0,num_loft,num_loft)
+        λ = q/num_loft
+        Vn = (1.0-λ).*V1 .+ λ.* V2 
+        append!(V,Vn)
+    end
+
+    # Build faces
+    F = Vector{QuadFace{Int64}}()
+    ij2ind(i,j) = i + ((j-1)*num_loop) # function to convert subscript to linear indices
+
+    for i = 1:1:num_loop-1
+        for j = 1:1:num_loft-1        
+            push!(F,QuadFace{Int64}([ij2ind(i,j),ij2ind(i+1,j),ij2ind(i+1,j+1),ij2ind(i,j+1)]))
+        end
+    end
+
+    # Add faces to close over shape if requested
+    if close_loop
+        for q ∈ 1:1:num_loft-1
+            push!(F,QuadFace{Int64}([ij2ind(1,q),ij2ind(1,q+1),ij2ind(num_loop,q+1),ij2ind(num_loop,q)]))
+        end
+    end
+
+    return F, V
+end 
+
+function normalplot(ax,M; type_flag="face", color=:black,linewidth=2)
+    F = faces(M)
+    V = coordinates(M)
+    E = meshedges(F)
+    d = mean([norm(V[e[1]]-V[e[2]]) for e ∈ E])
+    if type_flag == "face"        
+        N = facenormal(F,V)
+        V = simplexcenter(F,V)        
+    elseif type_flag == "vertex"
+        N = vertexnormal(F,V)          
+    else
+        error(""" Incorrect type_flag, use "face" or "vertex" """)
+    end 
+    # hp = arrows!(ax,V,N.*d,color=color,quality=6)    
+    E = [GeometryBasics.LineFace{Int}(i,i+length(V)) for i ∈ 1:1:length(V)]
+    V = append!(V,V.+N.*d)
+    hp = wireframe!(ax,GeometryBasics.Mesh(V,E),linewidth=linewidth, transparency=false, color=color)
+    return hp 
+end
+
+
 

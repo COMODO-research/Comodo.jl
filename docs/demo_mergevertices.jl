@@ -22,11 +22,8 @@ V2 = deepcopy(V1)
 F2,V2,ind1,ind2 = mergevertices(F2,V2; roundVertices=true)
 M2 = GeometryBasics.Mesh(V2,F2)
 
-N1,VN=meshnormal(F1,V1)
-NV1 = simplex2vertexdata(F1,N1)
-
-N2,VN=meshnormal(F2,V2)
-NV2 = simplex2vertexdata(F2,N2)
+NV1 = vertexnormal(F1,V1)
+NV2 = vertexnormal(F2,V2)
 
 ## Visualisation
 
