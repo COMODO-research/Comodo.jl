@@ -310,7 +310,6 @@ function unique_dict_index_count(X; sort_entries=false)
     return xUni, indUnique, c
 end
 
-
 function unique_dict_index_inverse_count(X; sort_entries=false)
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
@@ -779,12 +778,9 @@ function togeometrybasics_points(VM::Vector{Vector{Int64}})
 end
 
 function togeometrybasics_mesh(VM,FM)
-
     V=togeometrybasics_points(VM)
     F=togeometrybasics_faces(FM)
-
     return GeometryBasics.Mesh(V,F)
-
 end
 
 function vertexnormal(M::GeometryBasics.Mesh) 
@@ -1454,8 +1450,11 @@ function circlepoints(r,n)
     return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0,2*π-(2*π)/n,n)]
 end
 
+function circlepoints(f::Function,n)
+    return [GeometryBasics.Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t ∈ range(0,2*π-(2*π)/n,n)]
+end
 
-function loftlinear(V1,V2;num_loft=2,close_loop=true)
+function loftlinear(V1,V2;num_loft=2,close_loop=true,face_type="tri")
 
     num_loop = length(V1)
     T = eltype(V1)
@@ -1467,23 +1466,80 @@ function loftlinear(V1,V2;num_loft=2,close_loop=true)
         append!(V,Vn)
     end
 
-    # Build faces
-    F = Vector{QuadFace{Int64}}()
+    if face_type == "tri"
+        V0 = deepcopy(V)
+        for qq ∈ 2:2:num_loft-1
+            i = (1:1:num_loop) .+ (qq-1) *num_loop
+            for q ∈ 1:1:num_loop    
+                if q == num_loop       
+                    V[i[q]] = 0.5 .* (V0[i[q]]+V0[i[1]]) 
+                else
+                    V[i[q]] = 0.5 .* (V0[i[q]]+V0[i[q]+1])
+                end
+            end
+        end 
+    end
+
     ij2ind(i,j) = i + ((j-1)*num_loop) # function to convert subscript to linear indices
 
-    for i = 1:1:num_loop-1
-        for j = 1:1:num_loft-1        
-            push!(F,QuadFace{Int64}([ij2ind(i,j),ij2ind(i+1,j),ij2ind(i+1,j+1),ij2ind(i,j+1)]))
+    # Build faces
+    if face_type == "quad"    
+        F = Vector{QuadFace{Int64}}()
+        for i = 1:1:num_loop-1
+            for j = 1:1:num_loft-1    
+                push!(F,QuadFace{Int64}([ij2ind(i,j),ij2ind(i+1,j),ij2ind(i+1,j+1),ij2ind(i,j+1)]))
+            end
+        end
+
+        # Add faces to close over shape if requested
+        if close_loop
+            for q ∈ 1:1:num_loft-1                
+                push!(F,QuadFace{Int64}([ ij2ind(num_loop,q), ij2ind(1,q), ij2ind(1,q+1), ij2ind(num_loop,q+1)])) # 1 2 3 4
+            end
+        end
+    elseif face_type == "tri_slash" 
+        F = Vector{TriangleFace{Int64}}()
+        for i = 1:1:num_loop-1
+            for j = 1:1:num_loft-1    
+                push!(F,TriangleFace{Int64}([     ij2ind(i,j), ij2ind(i+1,j), ij2ind(i+1,j+1) ])) # 1 2 3
+                push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i,j+1),     ij2ind(i,j) ])) # 3 4 1
+            end
+        end
+
+        # Add faces to close over shape if requested
+        if close_loop
+            for q ∈ 1:1:num_loft-1
+                push!(F,TriangleFace{Int64}([ ij2ind(num_loop,q),          ij2ind(1,q),      ij2ind(1,q+1) ])) # 1 2 3
+                push!(F,TriangleFace{Int64}([      ij2ind(1,q+1), ij2ind(num_loop,q+1), ij2ind(num_loop,q) ])) # 3 4 1
+            end
+        end
+    elseif face_type == "tri" 
+        F = Vector{TriangleFace{Int64}}()
+        for i = 1:1:num_loop-1
+            for j = 1:1:num_loft-1    
+                if iseven(j) # Normal slash
+                    push!(F,TriangleFace{Int64}([     ij2ind(i,j), ij2ind(i+1,j), ij2ind(i+1,j+1) ])) # 1 2 3
+                    push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i,j+1),     ij2ind(i,j) ])) # 3 4 1
+                else # Other slash 
+                    push!(F,TriangleFace{Int64}([    ij2ind(i+1,j), ij2ind(i+1,j+1), ij2ind(i,j+1) ])) # 2 3 4
+                    push!(F,TriangleFace{Int64}([ ij2ind(i,j+1), ij2ind(i,j),ij2ind(i+1,j) ])) # 4 1 2                 
+                end
+            end
+        end
+
+        # Add faces to close over shape if requested
+        if close_loop
+            for q ∈ 1:1:num_loft-1
+                if iseven(q) 
+                    push!(F,TriangleFace{Int64}([      ij2ind(1,q+1), ij2ind(num_loop,q+1), ij2ind(num_loop,q) ])) 
+                    push!(F,TriangleFace{Int64}([ ij2ind(num_loop,q),          ij2ind(1,q), ij2ind(1,q+1)      ])) 
+                else
+                    push!(F,TriangleFace{Int64}([         ij2ind(1,q),      ij2ind(1,q+1), ij2ind(num_loop,q+1) ]))
+                    push!(F,TriangleFace{Int64}([ij2ind(num_loop,q+1), ij2ind(num_loop,q), ij2ind(1,q)          ]))   
+                end
+            end
         end
     end
-
-    # Add faces to close over shape if requested
-    if close_loop
-        for q ∈ 1:1:num_loft-1
-            push!(F,QuadFace{Int64}([ij2ind(1,q),ij2ind(1,q+1),ij2ind(num_loop,q+1),ij2ind(num_loop,q)]))
-        end
-    end
-
     return F, V
 end 
 
