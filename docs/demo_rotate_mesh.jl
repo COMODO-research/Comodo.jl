@@ -19,7 +19,7 @@ F = faces(M)
 V = coordinates(M)
 
 # Define a rotation tensor using Euler angles
-Q = RotXYZ(0.0,0.25*pi,0.25*pi)
+Q = RotXYZ(0.0,0.25*π,0.25*π)
 
 # Rotate the coordinates
 V2 = [GeometryBasics.Point{3, Float64}(Q*v) for v ∈ V] 

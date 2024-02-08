@@ -39,15 +39,9 @@ function slidercontrol(hSlider,ax)
     end    
 end
 
+
 function elements2indices(F)
-    n = length(F) # Number of elements
-    m = length(F[1]) # Number of nodes per element
-    ind = Vector{Int64}(undef,n*m)
-    for i ∈ eachindex(F)
-        ii = 1 + (i-1)*m
-        ind[ii:ii+m-1] = F[i] #convert(Vector{Int64},F[i])
-    end
-    return unique(ind)
+    return unique(reduce(vcat,F))
 end
 
 function gridpoints(X,Y=X,Z=X)    
@@ -783,38 +777,6 @@ function togeometrybasics_mesh(VM,FM)
     return GeometryBasics.Mesh(V,F)
 end
 
-function vertexnormal(M::GeometryBasics.Mesh) 
-    F=faces(M) # Get faces
-    V=coordinates(M) # Get vertices
-    return vertexnormal(F,V)
-end
-
-function vertexnormal(F,V) 
-    NF = facenormal(F,V)
-    return vertexnormal(F,V)
-end
-
-function facenormal(M::GeometryBasics.Mesh) 
-    F=faces(M) # Get faces
-    V=coordinates(M) # Get vertices
-    return facenormal(F,V)
-end
-
-# Computes mesh face normals
-function facenormal(F,V)
-    # Computes the normal vectors for the input surface geometry defined by the vertices V and the faces F
-    N = Vector{GeometryBasics.Vec{3, Float64}}(undef,length(F)) # Allocate array for normal vectors
-    n =  length(F[1]) # Number of nodes per face    
-    for q ∈ eachindex(F) # Loop over all faces
-        c  = cross(V[F[q][n]],V[F[q][1]]) # Initialise as cross product of last and first vertex position vector
-        for qe ∈ 1:1:n-1 # Loop from first to end-1            
-            c  += cross(V[F[q][qe]],V[F[q][qe+1]]) # Add next edge contribution          
-        end
-        N[q] = c./norm(c) # Normalise vector length and add
-    end
-    return N
-end
-
 function facenormal(M::GeometryBasics.Mesh) 
     F=faces(M) # Get faces
     V=coordinates(M) # Get vertices
@@ -837,9 +799,9 @@ function facenormal(F,V)
 end
 
 function vertexnormal(M::GeometryBasics.Mesh) 
-    NF = facenormal(M)
-    V = coordinates(M)
-    return simplex2vertexdata(faces(M),NF,V)
+    F=faces(M) # Get faces
+    V=coordinates(M) # Get vertices
+    return vertexnormal(F,V)
 end
 
 function vertexnormal(F,V) 
@@ -1443,7 +1405,11 @@ function simplexcenter(F,V)
 end
 
 function normalizevector(A)
-    return A./norm.(A)
+    if eltype(A) <: Number
+        return A./norm(A)
+    else
+        return A./norm.(A)
+    end
 end
 
 function circlepoints(r,n)
@@ -1547,7 +1513,7 @@ function normalplot(ax,M; type_flag="face", color=:black,linewidth=2)
     F = faces(M)
     V = coordinates(M)
     E = meshedges(F)
-    d = mean([norm(V[e[1]]-V[e[2]]) for e ∈ E])
+    d = mean([norm(V[e[1]]-V[e[2]])/2.0 for e ∈ E])
     if type_flag == "face"        
         N = facenormal(F,V)
         V = simplexcenter(F,V)        
@@ -1563,5 +1529,161 @@ function normalplot(ax,M; type_flag="face", color=:black,linewidth=2)
     return hp 
 end
 
+function wrapindex(i::UnitRange{Int64},n)
+    return 1 .+ mod.(i .+ (n-1),n)
+end
 
+function wrapindex(i::Vector{Int64},n)
+    return 1 .+ mod.(i .+ (n-1),n)
+end
+
+function wrapindex(i::Int64,n)
+    return 1+mod(i+(n-1),n)
+end
+
+function edgeAngles(F,V)
+    # TO DO: Fix vector type for variable `a` below
+    m = length(F[1])
+    A = Vector{GeometryBasics.Vec{m, Float64}}()
+    for f ∈ F
+        a = Vector{Float64}(undef,m)
+        for i ∈ 1:1:m                        
+            ip1 = wrapindex(i+1,m)            
+            ip2 = wrapindex(i+2,m)
+            n1 = normalizevector(V[f[ip1]]-V[f[i]])
+            n2 = normalizevector(V[f[ip2]]-V[f[ip1]])
+            a[i] = acos( dot(n1,n2) )
+        end
+        push!(A,a)
+    end
+    return A
+end
+
+function quad2tri(F,V; convert_method = "angle")
+    # Local functions for slash based conversion   
+    forw_slash(f) = [[f[1],f[2],f[3]],[f[3],f[4],f[1]]] # Forward slash 
+    back_slash(f) = [[f[1],f[2],f[4]],[f[2],f[3],f[4]]] # Back slash
+
+    Ft = Vector{TriangleFace{Int64}}()#(undef,length(Fn1)*2)
+    for f ∈ F        
+        if convert_method == "forward"
+            ft = forw_slash(f)
+        elseif convert_method == "backward"
+            ft = back_slash(f)
+        elseif convert_method == "angle" 
+            ff = forw_slash(f)
+            fb = back_slash(f)
+            # Get edge angles
+            af = edgeAngles(ff,V)
+            ab = edgeAngles(fb,V)
+            # Compare angles to perfect triangle angle π/3
+            δaf = sum(abs.(reduce(vcat,af) .- (π/3)))
+            δab = sum(abs.(reduce(vcat,ab) .- (π/3)))
+            if δaf<δab
+                ft = ff
+            else
+                ft = fb
+            end    
+        else
+            error("""Incorrect conver_method set, use "forward", "backward", or "angle" """)
+        end
+        push!(Ft,ft[1])
+        push!(Ft,ft[2])
+    end
+    return Ft
+end
+
+function remove_unused_vertices(F,V)
+    T = eltype(F)
+    indUsed = elements2indices(F)
+    Vc = V[indUsed] # Remove unused points    
+    indFix = zeros(length(V))
+    indFix[indUsed].=1:1:length(indUsed)
+    
+    #     indSort = sortperm(indUsed)
+    #     indFix = SparseVector(length(V),indUsed[indSort],indSort)     
+    #     m=length(F[1])
+    #     Fc = [(T)([indFix[f[i]] for i ∈ 1:3]) for f ∈ F] # Fix indices in F 
+
+    Fc = [(T)(indFix[f]) for f ∈ F] # Fix indices in F 
+    return Fc, Vc, indFix
+end
+
+function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance = 0, output_type="full")
+
+    intersectFunc(v1,v2,d,n) = v1 .- d/dot(n,v2.-v1) .* (v2.-v1)
+    
+    # Compute dot product with normal of slicing plane
+    d = map(v-> dot(n,v.-p),V)
+    if snapTolerance != 0.0
+        d[abs.(d).<snapTolerance] .= 0
+    end
+    LV = d.<0
+    
+    Fn =  Vector{TriangleFace{Int64}}()
+    Vn = deepcopy(V)
+    D = Dict{Vector{Int64},Int64}() # For pointing from edge to intersection point index
+    for f ∈ F
+        lf = LV[f]
+        
+        if any(lf) # Some or all below
+            if all(lf) # All below
+                if output_type == "full" || output_type == "below"            
+                    push!(Fn,f)
+                end                 
+            else # Some below -> cut
+                nBelow = sum(lf) # Number of nodes below
+                if nBelow==1 # 2-above, 1 below 
+                    indP = f[wrapindex(findfirst(lf) .+ (0:2),3)]
+                    
+                    e1 = sort(indP[[1,2]])
+                    if ~haskey(D,e1)
+                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[2]],d[indP[1]],n))
+                        D[e1] = length(Vn)
+                    end
+                    
+                    e2 = sort(indP[[1,3]])
+                    if ~haskey(D,e2)
+                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[3]],d[indP[1]],n))
+                        D[e2] = length(Vn)
+                    end
+
+                    if output_type == "above" || output_type == "full"                        
+                        push!(Fn,TriangleFace{Int64}(D[e1],indP[2],indP[3]))
+                        push!(Fn,TriangleFace{Int64}(D[e1],indP[3],D[e2]))
+                    elseif output_type == "below" || output_type == "full"
+                        push!(Fn,TriangleFace{Int64}(indP[1],D[e1],D[e2]))
+                    end
+
+                else # 1-above, 2 below
+                    indP = f[wrapindex(findfirst(.~lf) .+ (0:2),3)]
+
+                    e1 = sort(indP[[1,2]])
+                    if ~haskey(D,e1)
+                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[2]],d[indP[1]],n))
+                        D[e1] = length(Vn)
+                    end                    
+
+                    e2 = sort(indP[[1,3]])
+                    if ~haskey(D,e2)
+                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[3]],d[indP[1]],n))
+                        D[e2] = length(Vn)
+                    end
+                    
+                    if output_type == "below" || output_type == "full"                        
+                        push!(Fn,TriangleFace{Int64}(D[e1],indP[2],indP[3]))
+                        push!(Fn,TriangleFace{Int64}(D[e1],indP[3],D[e2]))
+                    elseif output_type == "above" || output_type == "full"
+                        push!(Fn,TriangleFace{Int64}(indP[1],D[e1],D[e2]))
+                    end
+                end
+            end
+        else # Not any below -> all above
+            if output_type == "full" || output_type == "above"            
+                push!(Fn,f)
+            end    
+        end
+    end    
+    return remove_unused_vertices(Fn,Vn)
+end
 
