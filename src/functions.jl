@@ -1687,3 +1687,19 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
     return remove_unused_vertices(Fn,Vn)
 end
 
+function count_edge_face(F,E_uni=missing,indReverse=missing)
+    if ismissing(E_uni) | ismissing(indReverse)
+        E = meshedges(F)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+    end
+    indF = repeat(1:1:length(F); outer=length(F[1]))
+    A = sparse(indReverse,indF,1)
+    return reduce(vcat,sum(A,dims=2))
+end
+
+function boundaryedges(F)
+    E = meshedges(F)
+    Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+    count_E2F = count_edge_face(F,Eu,indReverse)
+    return Eu[count_E2F.==1]
+end

@@ -8,7 +8,7 @@ using FileIO
 using SparseArrays
 
 # Example geometry
-testCase = 3
+testCase = 1
 if testCase == 1
     F,V = geosphere(2,1.0)
 elseif testCase == 2
@@ -62,7 +62,7 @@ hSlider = Slider(fig[2, 1], range = stepRange, startvalue = 0,linewidth=30)
 
 Mn = lift(hSlider.value) do stepIndex       
     pp = [p[1],p[2],p[3]+stepIndex]
-    Fn,Vn = trisurfslice4(F,V,n,pp; output_type="below")        
+    Fn,Vn = trisurfslice(F,V,n,pp; output_type="below")        
     return GeometryBasics.Mesh(Vn,Fn)
 end
 
@@ -76,7 +76,7 @@ end
 
 hp1 = mesh!(ax1,GeometryBasics.Mesh(V,F),color=:white, shading = FastShading, transparency=true)
 hp2 = wireframe!(ax1,MG, linewidth=5, color=:red)
-hp3 = poly!(ax1,Mn, strokewidth=1,color=:white, strokecolor=:blue, shading = FastShading, transparency=false)
+hp3 = poly!(ax1,Mn, strokewidth=2,color=:white, strokecolor=:blue, shading = FastShading, transparency=false)
 # hp3 = normalplot(ax1,Mn)
 
 slidercontrol(hSlider,ax1)
