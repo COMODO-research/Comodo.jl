@@ -27,7 +27,8 @@ export con_edge_face, con_edge_edge, con_face_edge, con_face_face, con_vertex_ed
 export con_vertex_face, con_vertex_vertex, meshconnectivity
 export simplexcenter, vertex2simplexdata, simplex2vertexdata
 export circlepoints, loftlinear, trisurfslice
-export wrapindex, edgeAngles, count_edge_face, boundaryedges
+export wrapindex, edgeangles, count_edge_face, boundaryedges, edges2curve
+export pointspacingmean, extrudecurve, meshgroup
 
 # Export functions: Visualization related
 export slidercontrol

@@ -1412,29 +1412,50 @@ function normalizevector(A)
     end
 end
 
-function circlepoints(r,n)
-    return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0,2*π-(2*π)/n,n)]
+function circlepoints(r,n; dir="acw")
+    if dir=="acw"
+        return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0,2*π-(2*π)/n,n)]
+    else
+        return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0,(2*π)/n-2*π,n)]
+    end
 end
 
-function circlepoints(f::Function,n)
-    return [GeometryBasics.Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t ∈ range(0,2*π-(2*π)/n,n)]
+function circlepoints(f::Function,n; dir="acw")
+    if dir=="acw"
+        return [GeometryBasics.Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t ∈ range(0,2*π-(2*π)/n,n)]
+    else
+        return [GeometryBasics.Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t ∈ range(0,(2*π)/n-2*π,n)]
+    end
 end
 
-function loftlinear(V1,V2;num_loft=2,close_loop=true,face_type="tri")
-
+function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type="tri")
+    """
+    The `loftlinear` function spans a surface from input curve `V1` to curve 
+    `V2`. The surface is formed by "lerping" curves form V1 to V2 in `num_loft` 
+    steps, and forming mesh faces between each curve. If `close_loop==true`
+    then it is assumed the curves and surface should be closed over. The user 
+    can request different face types for the output. The default is 
+    `face_type="tri"` which will form isoceles triangles (or equilateral 
+    triangles if the spacing is even) for a planar curve. The other `face_type`
+    options supported are `"quad"` (quadrilateral), and `"tri_slash"`. For the 
+    latter, triangles are formed by slashing the quads.  
+    The point order here causes normal directions to conform to a surface if 
+    the input curves were derived from a surface (in 2D this means "clockwise
+     curves" would result in an outward normal surface. 
+    """
     num_loop = length(V1)
     T = eltype(V1)
     # Linearly blending points from first to last
     V = Vector{T}()
-    for q ∈ range(0,num_loft,num_loft)
-        λ = q/num_loft
+    for q ∈ range(0,num_steps,num_steps)
+        λ = q/num_steps
         Vn = (1.0-λ).*V1 .+ λ.* V2 
         append!(V,Vn)
     end
 
     if face_type == "tri"
         V0 = deepcopy(V)
-        for qq ∈ 2:2:num_loft-1
+        for qq ∈ 2:2:num_steps-1
             i = (1:1:num_loop) .+ (qq-1) *num_loop
             for q ∈ 1:1:num_loop    
                 if q == num_loop       
@@ -1452,56 +1473,56 @@ function loftlinear(V1,V2;num_loft=2,close_loop=true,face_type="tri")
     if face_type == "quad"    
         F = Vector{QuadFace{Int64}}()
         for i = 1:1:num_loop-1
-            for j = 1:1:num_loft-1    
-                push!(F,QuadFace{Int64}([ij2ind(i,j),ij2ind(i+1,j),ij2ind(i+1,j+1),ij2ind(i,j+1)]))
+            for j = 1:1:num_steps-1    
+                push!(F,QuadFace{Int64}([ij2ind(i,j+1),ij2ind(i+1,j+1),ij2ind(i+1,j),ij2ind(i,j)  ]))
             end
         end
 
         # Add faces to close over shape if requested
         if close_loop
-            for q ∈ 1:1:num_loft-1                
-                push!(F,QuadFace{Int64}([ ij2ind(num_loop,q), ij2ind(1,q), ij2ind(1,q+1), ij2ind(num_loop,q+1)])) # 1 2 3 4
+            for q ∈ 1:1:num_steps-1                
+                push!(F,QuadFace{Int64}([ ij2ind(num_loop,q+1), ij2ind(1,q+1), ij2ind(1,q), ij2ind(num_loop,q) ])) 
             end
         end
     elseif face_type == "tri_slash" 
         F = Vector{TriangleFace{Int64}}()
         for i = 1:1:num_loop-1
-            for j = 1:1:num_loft-1    
-                push!(F,TriangleFace{Int64}([     ij2ind(i,j), ij2ind(i+1,j), ij2ind(i+1,j+1) ])) # 1 2 3
-                push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i,j+1),     ij2ind(i,j) ])) # 3 4 1
+            for j = 1:1:num_steps-1    
+                push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i+1,j), ij2ind(i,j)     ])) # 1 2 3
+                push!(F,TriangleFace{Int64}([ ij2ind(i,j),     ij2ind(i,j+1), ij2ind(i+1,j+1) ])) # 3 4 1
             end
         end
 
         # Add faces to close over shape if requested
         if close_loop
-            for q ∈ 1:1:num_loft-1
-                push!(F,TriangleFace{Int64}([ ij2ind(num_loop,q),          ij2ind(1,q),      ij2ind(1,q+1) ])) # 1 2 3
-                push!(F,TriangleFace{Int64}([      ij2ind(1,q+1), ij2ind(num_loop,q+1), ij2ind(num_loop,q) ])) # 3 4 1
+            for q ∈ 1:1:num_steps-1
+                push!(F,TriangleFace{Int64}([ ij2ind(1,q+1),      ij2ind(1,q),          ij2ind(num_loop,q)  ])) # 1 2 3
+                push!(F,TriangleFace{Int64}([ ij2ind(num_loop,q), ij2ind(num_loop,q+1), ij2ind(1,q+1)       ])) # 3 4 1
             end
         end
     elseif face_type == "tri" 
         F = Vector{TriangleFace{Int64}}()
         for i = 1:1:num_loop-1
-            for j = 1:1:num_loft-1    
+            for j = 1:1:num_steps-1    
                 if iseven(j) # Normal slash
-                    push!(F,TriangleFace{Int64}([     ij2ind(i,j), ij2ind(i+1,j), ij2ind(i+1,j+1) ])) # 1 2 3
-                    push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i,j+1),     ij2ind(i,j) ])) # 3 4 1
+                    push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i+1,j),  ij2ind(i,j)     ])) # 1 2 3
+                    push!(F,TriangleFace{Int64}([ ij2ind(i,j),     ij2ind(i,j+1),  ij2ind(i+1,j+1) ])) # 3 4 1
                 else # Other slash 
-                    push!(F,TriangleFace{Int64}([    ij2ind(i+1,j), ij2ind(i+1,j+1), ij2ind(i,j+1) ])) # 2 3 4
-                    push!(F,TriangleFace{Int64}([ ij2ind(i,j+1), ij2ind(i,j),ij2ind(i+1,j) ])) # 4 1 2                 
+                    push!(F,TriangleFace{Int64}([ ij2ind(i,j+1), ij2ind(i+1,j+1), ij2ind(i+1,j) ])) # 2 3 4
+                    push!(F,TriangleFace{Int64}([ ij2ind(i+1,j), ij2ind(i,j),     ij2ind(i,j+1) ])) # 4 1 2                 
                 end
             end
         end
 
         # Add faces to close over shape if requested
         if close_loop
-            for q ∈ 1:1:num_loft-1
+            for q ∈ 1:1:num_steps-1
                 if iseven(q) 
-                    push!(F,TriangleFace{Int64}([      ij2ind(1,q+1), ij2ind(num_loop,q+1), ij2ind(num_loop,q) ])) 
-                    push!(F,TriangleFace{Int64}([ ij2ind(num_loop,q),          ij2ind(1,q), ij2ind(1,q+1)      ])) 
+                    push!(F,TriangleFace{Int64}([ ij2ind(num_loop,q), ij2ind(num_loop,q+1), ij2ind(1,q+1)      ])) 
+                    push!(F,TriangleFace{Int64}([ ij2ind(1,q+1),      ij2ind(1,q),          ij2ind(num_loop,q) ])) 
                 else
-                    push!(F,TriangleFace{Int64}([         ij2ind(1,q),      ij2ind(1,q+1), ij2ind(num_loop,q+1) ]))
-                    push!(F,TriangleFace{Int64}([ij2ind(num_loop,q+1), ij2ind(num_loop,q), ij2ind(1,q)          ]))   
+                    push!(F,TriangleFace{Int64}([ ij2ind(num_loop,q+1), ij2ind(1,q+1),      ij2ind(1,q)          ]))
+                    push!(F,TriangleFace{Int64}([ ij2ind(1,q),          ij2ind(num_loop,q), ij2ind(num_loop,q+1) ]))   
                 end
             end
         end
@@ -1541,7 +1562,7 @@ function wrapindex(i::Int64,n)
     return 1+mod(i+(n-1),n)
 end
 
-function edgeAngles(F,V)
+function edgeangles(F,V)
     # TO DO: Fix vector type for variable `a` below
     m = length(F[1])
     A = Vector{GeometryBasics.Vec{m, Float64}}()
@@ -1574,8 +1595,8 @@ function quad2tri(F,V; convert_method = "angle")
             ff = forw_slash(f)
             fb = back_slash(f)
             # Get edge angles
-            af = edgeAngles(ff,V)
-            ab = edgeAngles(fb,V)
+            af = edgeangles(ff,V)
+            ab = edgeangles(fb,V)
             # Compare angles to perfect triangle angle π/3
             δaf = sum(abs.(reduce(vcat,af) .- (π/3)))
             δab = sum(abs.(reduce(vcat,ab) .- (π/3)))
@@ -1702,4 +1723,93 @@ function boundaryedges(F)
     Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
     count_E2F = count_edge_face(F,Eu,indReverse)
     return Eu[count_E2F.==1]
+end
+
+function edges2curve(Eb)
+    # TO DO: 
+    # Handle while loop safety/breaking
+    # Cope with non-ordered meshes (normals not coherent) 
+
+    con_E2E = con_edge_edge(Eb) # Edge-edge connectivity
+    seen = fill(false,length(Eb)) # Bool to keep track of visited points
+    i = 1 # Start with first edge
+    ind = [Eb[i][1]] # Add first edge point and grow this list
+    while !all(seen) # loop until all edges have been visited        
+        push!(ind,Eb[i][2]) # Add edge end point (start is already in list)
+        seen[i] = true # Lable current edge as visited       
+        e_ind = con_E2E[i] # Indices for connected edges
+        if Eb[e_ind[1]][1]==ind[end] #Check if 1st point of 1st edge equals end
+            i = e_ind[1]
+        elseif Eb[e_ind[2]][1]==ind[end] #Check if 1st point of 2nd edge equals end
+            i = e_ind[2]
+        end
+    end
+    return ind
+end
+
+function pointspacingmean(V)
+    # Equivalent to:  mean(norm.(diff(V,dims=1)))
+    p = 0.0
+    n = length(V)
+    for i ∈ 1:1:n-1
+        p += norm(V[i].-V[i+1])/(n-1)
+    end
+    return p
+end
+
+function extrudecurve(V1,d; s=1, n=Point{3, Float64}(0.0,0.0,1.0),num_steps=missing,close_loop=false,face_type="quad")
+    if ismissing(num_steps)
+        num_steps = ceil(Int64,d/pointspacingmean(V1))
+        if face_type=="tri"
+            num_steps = num_steps + Int64(iseven(num_steps)) # Force uneven
+        end
+    end
+    if s==1 # Allong n from V1
+        p = d.*n
+    elseif s==-1 # Against n from V1
+        p = -d.*n
+    elseif s==0 # Extrude both ways from V1
+        p = d.*n
+        V1 = [(eltype(V1))(v.-p./2) for v ∈ V1] #Shift V1 in negative direction
+    end
+    V2 = [(eltype(V1))(v.+p) for v ∈ V1]  
+    return loftlinear(V1,V2;num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+end
+
+function meshgroup(F)
+    # EDGE-VERTEX connectivity
+    E = meshedges(F)
+    E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+
+    # FACE-EDGE connectivity
+    con_F2E = con_face_edge(F,E_uni,indReverse)    
+
+    # EDGE-FACE connectivity
+    con_E2F = con_edge_face(F,E_uni)
+
+    # FACE-FACE connectivity
+    con_F2F = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
+
+    C = fill(0,length(F))
+    i = 1
+    c = 1
+    C[i] = c 
+    seen = Set{Int64}()
+    while length(seen)<length(F)
+        np = length(seen)
+        ind_F = reduce(vcat,con_F2F[i])
+        i = Vector{Int64}()
+        for ii ∈  ind_F
+            if !in(ii,seen)
+                push!(seen,ii)
+                C[ii] = c
+                push!(i,ii)
+            end
+        end
+        if np == length(seen) # Group full
+            c += 1 # Increment group counter
+            i = findfirst(C.==0)
+        end
+    end
+    return C
 end
