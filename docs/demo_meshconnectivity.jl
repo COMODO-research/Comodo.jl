@@ -1,7 +1,5 @@
-using Gibbon
+using Comodo
 using GeometryBasics
-using BenchmarkTools
-using SparseArrays
 using GLMakie
 
 testCase = 1
@@ -33,6 +31,7 @@ con_E2F = C.edge_face
 con_F2E = C.face_edge
 con_F2V = C.face_vertex
 con_F2F = C.face_face
+con_F2F_v = C.face_face_v
 
 con_V2E = C.vertex_edge
 con_V2F = C.vertex_face
@@ -90,5 +89,12 @@ hp=poly!(ax,GeometryBasics.Mesh(V,F), strokewidth=3,color=:white, shading=FastSh
 indE = 41
 hp1=wireframe!(ax,GeometryBasics.Mesh(V,[E_uni[indE]]), linewidth=5, transparency=true, depth_shift=-1.0f-3, color=:blue)
 hp2=wireframe!(ax,GeometryBasics.Mesh(V,E_uni[con_E2E[indE]]),linewidth=5, transparency=true, depth_shift=-1.0f-3, color=:red)
+
+ax=Axis3(fig[2, 4], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z")
+hp=poly!(ax,GeometryBasics.Mesh(V,F), strokewidth=3,color=:white, shading=FastShading, overdraw=false)
+
+indF = 5
+hp1=poly!(ax,GeometryBasics.Mesh(V,[F[indF]]), strokewidth=4,color=:blue, shading=FastShading, overdraw=false)
+hp2=poly!(ax,GeometryBasics.Mesh(V,F[con_F2F_v[indF]]), strokewidth=4,color=:red, shading=FastShading, overdraw=false)
 
 fig

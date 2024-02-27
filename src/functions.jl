@@ -7,8 +7,9 @@ using Interpolations # E.g. for resampling curves
 using Statistics # For: mean
 using GLMakie # For slidercontrol
 using SparseArrays # For meshconnectivity
+using Rotations 
 
-function gibbondir()
+function comododir()
     joinpath(@__DIR__, "..")
 end
 
@@ -39,7 +40,6 @@ function slidercontrol(hSlider,ax)
     end    
 end
 
-
 function elements2indices(F)
     return unique(reduce(vcat,F))
 end
@@ -52,7 +52,7 @@ function gridpoints(X,Y=X,Z=X)
         for y ∈ Y # For all y entries
             for z ∈ Z # For all z entries
                 q+=1 # Increment index
-                Vg[q]=GeometryBasics.Point{3, Float64}([x,y,z]) # Add the current point
+                Vg[q]=GeometryBasics.Point{3, Float64}(x,y,z) # Add the current point
             end
         end
     end
@@ -139,6 +139,24 @@ function interp_biharmonic_spline(x,y,xi; extrapolate_method="linear",pad_data="
     end
 
     return yi
+end
+
+function nbezier(P,n)
+    t = range(0,1,n) # t range
+    N = length(P) # Number of control points 
+    nn = 0:1:N-1
+    nnr = N-1:-1:0
+    f = factorial.(nn) 
+    s = factorial(N-1)./( f.*reverse(f) ); # Sigma
+
+    V =  [GeometryBasics.Point{3, Float64}(0.0,0.0,0.0) for _ ∈ 1:n]
+    for i ∈ 1:n
+        b = s.* ((1.0-t[i]).^nnr) .* (t[i].^nn)
+        for j = 1:1:N
+            V[i] += P[j].*b[j]
+        end
+    end 
+    return V
 end
 
 function interp_biharmonic(x,y,xi)
@@ -497,14 +515,7 @@ function sub2ind(siz,A::Vector{Int64})
 end
 
 # Function to obtain the edges of a face based mesh
-function meshedges(M; unique_only=false)
-    if isa(M,GeometryBasics.Mesh)
-        S = faces(M) #Get simplices
-    else
-        S = M        
-    end    
-    n = length(S) #Number of simplices
-    
+function meshedges(S; unique_only=false)
     # Get number of nodes per simplex, use first for now (better to get this from some property)
     s1 = S[1] # First simplex
     m = length(s1) #Number of nodes per simplex
@@ -527,6 +538,10 @@ function meshedges(M; unique_only=false)
     end
 
     return E
+end
+
+function meshedges(M::GeometryBasics.Mesh; unique_only=false)   
+    return meshedges(faces(M); unique_only=unique_only)
 end
 
 # Function to create the surface geometry data for an icosahedron
@@ -777,38 +792,54 @@ function togeometrybasics_mesh(VM,FM)
     return GeometryBasics.Mesh(V,F)
 end
 
-function facenormal(M::GeometryBasics.Mesh) 
-    F=faces(M) # Get faces
-    V=coordinates(M) # Get vertices
-    return facenormal(F,V)
-end
 
-# Computes mesh face normals
-function facenormal(F,V)
-    # Computes the normal vectors for the input surface geometry defined by the vertices V and the faces F
-    N = Vector{GeometryBasics.Vec{3, Float64}}(undef,length(F)) # Allocate array for normal vectors
+function edgecrossproduct(F,V)    
+    C = Vector{GeometryBasics.Vec{3, Float64}}(undef,length(F)) # Allocate array cross-product vectors
     n =  length(F[1]) # Number of nodes per face    
     for q ∈ eachindex(F) # Loop over all faces
         c  = cross(V[F[q][n]],V[F[q][1]]) # Initialise as cross product of last and first vertex position vector
         for qe ∈ 1:1:n-1 # Loop from first to end-1            
             c  += cross(V[F[q][qe]],V[F[q][qe+1]]) # Add next edge contribution          
         end
-        N[q] = c./norm(c) # Normalise vector length and add
+        C[q] = c./2 # Length = face area, direction is along normal vector
     end
-    return N
+    return C
 end
 
-function vertexnormal(M::GeometryBasics.Mesh) 
-    F=faces(M) # Get faces
-    V=coordinates(M) # Get vertices
-    return vertexnormal(F,V)
+function edgecrossproduct(M::GeometryBasics.Mesh) 
+    return edgecrossproduct(faces(M),coordinates(M))
 end
 
-function vertexnormal(F,V) 
-    NF = facenormal(F,V)
-    return simplex2vertexdata(F,NF,V)
+function facenormal(M::GeometryBasics.Mesh) 
+    return facenormal(faces(M),coordinates(M))
 end
 
+# Computes mesh face normals
+function facenormal(F,V)
+    C = edgecrossproduct(F,V)
+    return C./norm.(C)
+end
+
+# Computes mesh face areas
+function facearea(F,V)        
+    return norm.(edgecrossproduct(F,V))
+end
+
+function facearea(M::GeometryBasics.Mesh)         
+    return facearea(faces(M),coordinates(M))
+end
+
+function vertexnormal(M::GeometryBasics.Mesh; weighting="area")     
+    return normalizevector(vertexnormal(faces(M),coordinates(M); weighting=weighting))
+end
+
+function vertexnormal(F,V; weighting="area")     
+    return normalizevector(simplex2vertexdata(F,facenormal(F,V),V; weighting=weighting))
+end
+
+function edgelengths(F,V)    
+    return [norm(V[e[1]]-V[e[2]]) for e ∈ meshedges(F; unique_only=true)]
+end
 # Creates mesh data for a platonic solid of choice
 function platonicsolid(n,r=1.0)
     if n==1
@@ -1087,17 +1118,19 @@ function hexbox(boxDim,boxEl)
     return E,V,F,Fb,CFb_type
 end
 
-mutable struct ConnectivitySet
+struct ConnectivitySet
     edge_vertex::Vector{LineFace{Int64}}
     edge_face::Vector{Vector{Int64}}
     edge_edge::Vector{Vector{Int64}}
-    face_vertex#::Vector{Vector{Int64}}
+    face_vertex#::Vector{Vector{Int64}} # Could be triangle/quad etc
     face_edge::Vector{Vector{Int64}}        
     face_face::Vector{Vector{Int64}}
     vertex_edge::Vector{Vector{Int64}}
     vertex_face::Vector{Vector{Int64}}        
     vertex_vertex::Vector{Vector{Int64}}
-    ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V) = new(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V) 
+    vertex_vertex_f::Vector{Vector{Int64}}
+    face_face_v::Vector{Vector{Int64}}
+    ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) = new(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) 
 end
 
 function con_face_edge(F,E_uni=missing,indReverse=missing)
@@ -1109,17 +1142,18 @@ function con_face_edge(F,E_uni=missing,indReverse=missing)
 end
 
 function con_edge_face(F,E_uni=missing,indReverse=missing)
-    if ismissing(E_uni)| ismissing(indReverse)
+    if ismissing(E_uni) || ismissing(indReverse)
         E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
     end
-    indF = repeat(1:1:length(F); outer=length(F[1]))
-    A = sparse(indReverse,indF,indF)
-    con_E2F = Vector{Vector{Int64}}(undef,length(E_uni))
-    for q ∈ eachindex(E_uni)
-        _,v = findnz(A[q,:])
-        con_E2F[q] = v
-    end    
+    con_F2E = con_face_edge(F,E_uni,indReverse)
+    
+    con_E2F = [Vector{Int64}() for _ ∈ 1:1:length(E_uni)]
+    for i_f ∈ eachindex(F)
+        for i ∈ con_F2E[i_f]
+            push!(con_E2F[i],i_f)
+        end
+    end 
     return con_E2F
 end
 
@@ -1127,86 +1161,119 @@ function con_face_face(F,E_uni=missing,indReverse=missing,con_E2F=missing,con_F2
     if ismissing(E_uni)| ismissing(indReverse)
         E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
-    end
-    
+    end    
     if ismissing(con_E2F) 
         con_E2F = con_edge_face(F,E_uni)
     end
-
     if ismissing(con_F2E)
         con_F2E = con_face_edge(F,E_uni,indReverse)                 
     end
-
-    con_F2F = Vector{Vector{Int64}}(undef,length(F))
-    for q ∈ eachindex(F)
-        s = sparsevec(reduce(vcat,con_E2F[con_F2E[q]]),1)
-        s[q] = 0 # Null and thus remove the "self" entry
-        con_F2F[q] = findall(!iszero, s)
+    con_F2F = [Vector{Int64}() for _ ∈ 1:1:length(F)]
+    for i_f ∈ eachindex(F)
+        for i ∈ reduce(vcat,con_E2F[con_F2E[i_f]])    
+            if i!=i_f     
+                push!(con_F2F[i_f],i)
+            end 
+        end
     end
-
     return con_F2F
 end
 
-function con_vertex_face(F,V=missing)
+function con_face_face_v(F,V=missing,con_V2F=missing)
+    if ismissing(con_V2F) 
+        con_V2F = con_vertex_face(F,V)  # VERTEX-FACE connectivity
+    end
+    con_F2F = [Vector{Int64}() for _ ∈ 1:1:length(F)]
+    for i_f ∈ eachindex(F)
+        for i ∈ reduce(vcat,con_V2F[F[i_f]])    
+            if i!=i_f     
+                push!(con_F2F[i_f],i)
+            end 
+        end
+    end
+    return con_F2F
+end
+
+function con_vertex_simplex(F,V=missing)
     if ismissing(V)
         n = maximum(reduce(vcat,F))
     else
         n = length(V)
     end
-    indF = repeat(1:1:length(F); inner=length(F[1]))
-    B = sparse(reduce(vcat,F),indF,indF)
-    con_V2F = Vector{Vector{Int64}}(undef,n)
-    for q ∈ 1:1:n
-        _,v = findnz(B[q,:])
-        con_V2F[q] = v
+    con_V2F = [Vector{Int64}() for _ ∈ 1:1:n]
+    for i_f ∈ eachindex(F)
+        for i ∈ F[i_f]
+            push!(con_V2F[i],i_f)
+        end
     end
     return con_V2F
 end
-function con_vertex_edge(E_uni,V=missing)
-    if ismissing(V)
-        n = maximum(reduce(vcat,E_uni))
-    else 
-        n = length(V)
-    end
-    indE = repeat(1:1:length(E_uni); inner=length(E_uni[1]))
-    C = sparse(reduce(vcat,E_uni),indE,indE)
-    con_V2E = Vector{Vector{Int64}}(undef,n)
-    for q ∈ 1:1:n
-        _,v = findnz(C[q,:])
-        con_V2E[q] = v
-    end
-    return con_V2E
+
+function con_vertex_face(F,V=missing)
+    return con_vertex_simplex(F,V)
+end
+
+function con_vertex_edge(E,V=missing)
+    return con_vertex_simplex(E,V)
 end
 
 function con_edge_edge(E_uni,con_V2E=missing)
     if ismissing(con_V2E)
         con_V2E = con_vertex_edge(E_uni) 
     end    
-    con_E2E = Vector{Vector{Int64}}(undef,length(E_uni))
-    for q ∈ eachindex(E_uni)
-        s = sparsevec(reduce(vcat,con_V2E[E_uni[q]]),1)
-        s[q] = 0 # Null and thus remove the "self" entry
-        con_E2E[q] = findall(!iszero, s)
+    con_E2E = [Vector{Int64}() for _ ∈ 1:1:length(E_uni)]
+    for i_e ∈ eachindex(E_uni)
+        for i ∈ reduce(vcat,con_V2E[E_uni[i_e]])    
+            if i!=i_e     
+                push!(con_E2E[i_e],i)
+            end 
+        end
     end
     return con_E2E
 end
 
-function con_vertex_vertex(E_uni,V=missing,con_V2E=missing)
+function con_vertex_vertex_f(F,V=missing,con_V2F=missing)
     if ismissing(V)
-        n = maximum(reduce(vcat,E_uni))
+        n = maximum(reduce(vcat,E))
+    else 
+        n = length(V)
+    end
+    
+    if ismissing(con_V2F)
+        con_V2F = con_vertex_face(F,V)
+    end
+
+    con_V2V = [Vector{Int64}() for _ ∈ 1:1:n]
+    for i_v ∈ 1:1:n
+        for i ∈ unique(reduce(vcat,F[con_V2F[i_v]]))
+            if i_v!=i
+                push!(con_V2V[i_v],i)
+            end
+        end
+    end
+
+    return con_V2V
+end
+
+function con_vertex_vertex(E,V=missing,con_V2E=missing)
+    if ismissing(V)
+        n = maximum(reduce(vcat,E))
     else 
         n = length(V)
     end
     if ismissing(con_V2E)
-        con_V2E = con_vertex_edge(E_uni,V)
+        con_V2E = con_vertex_edge(E,V)
     end
 
-    con_V2V = Vector{Vector{Int64}}(undef,n)
-    for q ∈ 1:1:n
-        s = sparsevec(reduce(vcat,E_uni[con_V2E[q]]),1)
-        s[q] = 0 # Null and thus remove the "self" entry
-        con_V2V[q] = findall(!iszero, s)
+    con_V2V = [Vector{Int64}() for _ ∈ 1:1:n]
+    for i_v ∈ 1:1:n
+        for i ∈ reduce(vcat,E[con_V2E[i_v]])
+            if i_v!=i
+                push!(con_V2V[i_v],i)
+            end
+        end
     end
+
     return con_V2V
 end
 
@@ -1222,7 +1289,7 @@ function meshconnectivity(F,V) #conType = ["ev","ef","ef","fv","fe","ff","ve","v
     # EDGE-FACE connectivity
     con_E2F = con_edge_face(F,E_uni)
 
-    # FACE-FACE connectivity
+    # FACE-FACE connectivity wrt edges
     con_F2F = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
 
     # VERTEX-FACE connectivity
@@ -1234,10 +1301,16 @@ function meshconnectivity(F,V) #conType = ["ev","ef","ef","fv","fe","ff","ve","v
     # EDGE-EDGE connectivity
     con_E2E = con_edge_edge(E_uni,con_V2E)
 
-    # VERTEX-VERTEX connectivity
+    # VERTEX-VERTEX connectivity wrt edges
     con_V2V = con_vertex_vertex(E_uni,V,con_V2E)
 
-    return ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V)
+    # VERTEX-VERTEX connectivity wrt faces
+    con_V2V_f = con_vertex_vertex_f(E_uni,V,con_V2E)
+
+    # FACE-FACE connectivity wrt vertices
+    con_F2F_v = con_face_face_v(F,con_V2F)
+
+    return ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) 
 end 
 
 function mergevertices(F,V; roundVertices = true, numDigitsMerge=missing)
@@ -1368,7 +1441,7 @@ function quadplate(plateDim,plateElem)
     return F, V
 end
 
-function quadsphere(r,n)
+function quadsphere(n,r)
     M = platonicsolid(2,r)
     F = faces(M)
     V = coordinates(M)
@@ -1381,12 +1454,27 @@ function quadsphere(r,n)
     return F,V
 end
 
-function simplex2vertexdata(F,DF,V=missing)
-    con_V2F = con_vertex_face(F,V)
+function simplex2vertexdata(F,DF,V=missing; con_V2F=missing, weighting="none")
+    
+    if ismissing(con_V2F)
+        con_V2F = con_vertex_face(F,V)
+    end
+    if weighting=="area"
+        if ismissing(V)
+           error("Vertices need to be provided for area based weighting.") 
+        else
+            A = facearea(F,V)
+        end
+    end    
     DV = (typeof(DF))(undef,length(con_V2F))
     T = eltype(DV)
     for q ∈ eachindex(DV)
-        DV[q] = mean(T,DF[con_V2F[q]])
+        if weighting=="none"
+            DV[q] = mean(T,DF[con_V2F[q]])
+        elseif weighting=="area"            
+            a = A[con_V2F[q]]
+            DV[q] = sum(T,DF[con_V2F[q]].*a)./sum(a)
+        end
     end
     return DV
 end
@@ -1530,11 +1618,27 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type="tri")
     return F, V
 end 
 
-function normalplot(ax,M; type_flag="face", color=:black,linewidth=2)
+function dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style="from")
+    E = [GeometryBasics.LineFace{Int}(i,i+length(V)) for i ∈ 1:1:length(V)]
+    if style=="from"
+        P = vcat(V,V.+(scaleval.*U))
+    elseif style=="to"
+        P = vcat(V.-(scaleval.*U),V)
+    elseif style=="through"
+        UU = (scaleval.*U)/2
+        P = vcat(V.-UU,V.+UU)
+    end
+    hp = wireframe!(ax,GeometryBasics.Mesh(P,E),linewidth=linewidth, transparency=false, color=color)
+    return hp
+end
+
+function normalplot(ax,M; type_flag="face", color=:black,linewidth=3,scaleval=missing)
     F = faces(M)
     V = coordinates(M)
     E = meshedges(F)
-    d = mean([norm(V[e[1]]-V[e[2]])/2.0 for e ∈ E])
+    if ismissing(scaleval)
+        scaleval = mean([norm(V[e[1]]-V[e[2]])/2.0 for e ∈ E])
+    end
     if type_flag == "face"        
         N = facenormal(F,V)
         V = simplexcenter(F,V)        
@@ -1543,10 +1647,10 @@ function normalplot(ax,M; type_flag="face", color=:black,linewidth=2)
     else
         error(""" Incorrect type_flag, use "face" or "vertex" """)
     end 
+    
+    hp = dirplot(ax,V,N; color=color,linewidth=linewidth,scaleval=scaleval,style="from")
+
     # hp = arrows!(ax,V,N.*d,color=color,quality=6)    
-    E = [GeometryBasics.LineFace{Int}(i,i+length(V)) for i ∈ 1:1:length(V)]
-    V = append!(V,V.+N.*d)
-    hp = wireframe!(ax,GeometryBasics.Mesh(V,E),linewidth=linewidth, transparency=false, color=color)
     return hp 
 end
 
@@ -1776,40 +1880,280 @@ function extrudecurve(V1,d; s=1, n=Point{3, Float64}(0.0,0.0,1.0),num_steps=miss
     return loftlinear(V1,V2;num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 end
 
-function meshgroup(F)
-    # EDGE-VERTEX connectivity
-    E = meshedges(F)
-    E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+function meshgroup(F; con_type = "v")
 
-    # FACE-EDGE connectivity
-    con_F2E = con_face_edge(F,E_uni,indReverse)    
+    if con_type == "v" # Group based on vertex connectivity 
+        con_F2F = con_face_face_v(F)
+    elseif con_type == "e" # Group based on edge connectivity
+        # EDGE-VERTEX connectivity
+        E = meshedges(F)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
 
-    # EDGE-FACE connectivity
-    con_E2F = con_edge_face(F,E_uni)
+        # FACE-EDGE connectivity
+        con_F2E = con_face_edge(F,E_uni,indReverse)    
 
-    # FACE-FACE connectivity
-    con_F2F = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
+        # EDGE-FACE connectivity
+        con_E2F = con_edge_face(F,E_uni)
 
-    C = fill(0,length(F))
-    i = 1
-    c = 1
-    C[i] = c 
-    seen = Set{Int64}()
-    while length(seen)<length(F)
-        np = length(seen)
-        ind_F = reduce(vcat,con_F2F[i])
-        i = Vector{Int64}()
-        for ii ∈  ind_F
-            if !in(ii,seen)
-                push!(seen,ii)
-                C[ii] = c
-                push!(i,ii)
+        # FACE-FACE connectivity
+        con_F2F = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
+    else 
+        error(""" Wrong `con_type`, use "e" or "f" """)
+    end
+
+    if all(isempty.(con_F2F)) # Completely disconnected face set (e.g. raw STL import)
+        C = collect(1:1:length(F))
+    else
+        C = fill(0,length(F))
+        i = 1
+        c = 1
+        C[i] = c 
+        seen = Set{Int64}(1)
+        while length(seen)<length(F)
+            np = length(seen)
+            con_f2f = con_F2F[i]
+            if ~isempty(con_f2f)
+                ind_F = reduce(vcat,con_f2f)
+                i = Vector{Int64}()
+                for ii ∈  ind_F
+                    if !in(ii,seen)
+                        push!(seen,ii)
+                        C[ii] = c
+                        push!(i,ii)
+                    end
+                end
+            else
+                if !in(i,seen)
+                    push!(seen,i)
+                    C[i] = c 
+                end
             end
-        end
-        if np == length(seen) # Group full
-            c += 1 # Increment group counter
-            i = findfirst(C.==0)
+            if np == length(seen) # Group full
+                c += 1 # Increment group counter
+                i = findfirst(C.==0)
+            end
         end
     end
     return C
+end
+
+function distmarch(F,V,indStart; d=missing, dd=missing, dist_tol=1e-3,con_V2V=missing,l=missing)
+
+    # Get vertex-vertex connectivity
+    if ismissing(con_V2V)
+        con_V2V = con_vertex_vertex_f(F,V) 
+    end
+
+    # Compute "Laplacian umbrella" distances
+    if ismissing(dd)
+        dd = Dict{Vector{Int64},Float64}()  
+        for i ∈ eachindex(V)
+            for ii ∈ con_V2V[i]
+                k = sort([i,ii])
+                if !haskey(dd,k)
+                    dd[sort(k)] = norm(V[i]-V[ii])
+                end 
+            end
+        end
+    end
+
+    # Get/allocate distance vector
+    if ismissing(d)
+        d = fill(Inf,length(V))
+    end
+
+    if ismissing(l)
+        l = fill(0,length(V))
+    end
+
+    # Set start distances to zero 
+    d[indStart] .= 0.0
+    l[indStart] .= 1:1:length(indStart)
+    
+    c = false
+    ds = -1.0 # Set negative initially 
+
+    boolCheck = fill(true,length(V))
+    while true                          
+        for i ∈ eachindex(V) # For each point            
+            for ii ∈ con_V2V[i] # Check umbrella neighbourhood
+                minVal,minInd = findmin([d[ii],dd[sort([i,ii])]+d[i]])            
+                if minInd==2
+                    d[ii] = minVal                          
+                    l[ii] = l[i]
+                end
+            end            
+        end
+        if ~any(isinf.(d)) # Start checking once all are no longer Inf
+            if c # If we were here before
+                if abs(sum(d)-ds)<dist_tol                                        
+                    break                    
+                end
+            end
+            c = true # Flip to denote we've been here           
+            ds = sum(d) # Now start computing the sum to check convergence
+        end
+    end
+    return d,dd,l
+end
+
+# function distseedpoints(F,V,numPoints; ind=[1],dist_tol=1e-3)
+    
+#     con_V2V = con_vertex_vertex_f(F,V) 
+#     d,dd,l = distmarch(F,V,ind; dist_tol=dist_tol,con_V2V=con_V2V)
+
+#     if numPoints>1
+#         @showprogress 1 "<distseedpoints>: Seeding points..." for q ∈ 2:1:numPoints            
+#             push!(ind,findmax(d)[2])
+#             d,dd,l = distmarch(F,V,ind; dist_tol=dist_tol, dd=dd,d=d,con_V2V=con_V2V,l=l)        
+#         end
+#     end
+#     return ind,d,l
+# end
+
+function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = "ray", triSide = 1, tolEps = eps(Float64))
+    """
+    Implementation of the Möller-Trumbore triangle-ray intersection algorithm. 
+
+    Möller, Tomas; Trumbore, Ben (1997). "Fast, Minimum Storage Ray-Triangle Intersection".
+    Journal of Graphics Tools. 2: 21-28. doi:10.1080/10867651.1997.10487468.    
+    """
+    
+    # Edge vectors
+    P1 = V[f[1]] # First corner point
+    vec_edge_1 = V[f[2]].-P1 # Edge vector 1-2
+    vec_edge_2 = V[f[3]].-P1 # Edge vector 1-3
+
+    # Determine if ray/lines is capable of intersecting based on direction
+    ray_cross_e2 = cross(ray_vector,vec_edge_2) 
+    det_vec = dot(vec_edge_1,ray_cross_e2)  # Determinant det([-n' P21' P31'])
+    if triSide == 1 # Pointing at face normals
+        boolDet = det_vec>tolEps
+    elseif triSide == 0 # Both ways
+        boolDet = abs(det_vec)>tolEps
+    elseif triSide == -1 # Pointing allong face normals
+        boolDet = det_vec<tolEps
+    end
+
+    p = GeometryBasics.Point{3, Float64}(NaN,NaN,NaN)
+    if boolDet        
+        s = ray_origin.-P1
+        u = dot(s,ray_cross_e2)/det_vec    
+        if u >= 0 && u <= 1 # On triangle according to u            
+            s_cross_e1 = cross(s,vec_edge_1)
+            v = dot(ray_vector,s_cross_e1)/det_vec
+            if v >= 0 && (u+v) <= 1 # On triangle according to both u and v
+                # Allong ray/line coordinates i.e. intersection is at ray_origin + t.*ray_vector 
+                t = dot(vec_edge_2,s_cross_e1)/det_vec                      
+                if rayType == "ray" || (rayType == "line" && t>=0 && t<=1.0)                                                   
+                    p = ray_origin .+ t.*ray_vector # same as: push!(P, P1 .+ u.*P21 .+ v.*P31)            
+                end
+            end
+        end    
+    end    
+    return p 
+end
+
+function ray_triangle_intersect(F::Vector{TriangleFace{Int64}},V,ray_origin,ray_vector; rayType = "ray", triSide = 1, tolEps = eps(Float64))
+    P = Vector{GeometryBasics.Point{3, Float64}}()
+    indIntersect = Vector{Int64}()
+    for qf ∈ eachindex(F)
+        p = ray_triangle_intersect(F[qf],V,ray_origin,ray_vector; rayType = rayType, triSide = triSide, tolEps = tolEps)        
+        if ~any(isnan.(p))
+            push!(P,p)
+            push!(indIntersect,qf)
+        end
+    end
+    return P,indIntersect
+end
+
+function mesh_curvature_polynomial(F,V)
+    """
+    
+    Implemented with the aid of: 
+    https://github.com/alecjacobson/geometry-processing-curvature/blob/master/README.md
+    
+    Algorithm reference: 
+    F. Cazals and M. Pouget, "Estimating differential quantities using polynomial 
+    fitting of osculating jets", Computer Aided Geometric Design, vol. 22, no. 2, 
+    pp. 121-146, Feb. 2005, doi: 10.1016/j.cagd.2004.09.004.
+    """
+    
+    E = meshedges(F)
+    E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)  
+
+    con_V2V = con_vertex_vertex(E_uni,V)
+
+
+    N = vertexnormal(F,V)
+    nz = Vec{3,Float64}(0.0,0.0,1.0)
+
+    K1 = Vector{Float64}(undef,length(V))
+    K2 = Vector{Float64}(undef,length(V))
+    U1 = Vector{Vec3{Float64}}(undef,length(V))
+    U2 = Vector{Vec3{Float64}}(undef,length(V))
+    for q ∈ eachindex(V)
+        n = N[q]
+        Q = rotation_between(n,nz)
+        ind = con_V2V[q]        
+        vr = [Q*(v-V[q]) for v in V[ind]]
+
+        T = Matrix{Float64}(undef,(length(ind),5))
+        w = Matrix{Float64}(undef,(length(ind),1))
+        for i = 1:1:length(ind)
+            T[i,:] = [vr[i][1],vr[i][2],vr[i][1]^2,vr[i][1]*vr[i][2],vr[i][2]^2]
+            w[i] = vr[i][3]
+        end     
+        a = T\w  # x = A\B solves the system of linear equations A*x = B
+
+        E = 1.0 + a[1]^2
+        F = a[1]*a[2]
+        G = 1.0 + a[2]^2
+        d = sqrt(a[1]^2+1.0+a[2]^2)
+        e = (2.0*a[3]) / d
+        f =       a[4] / d
+        g = (2.0*a[5]) / d
+
+        S = -[e f; f g] * inv([E F; F G])
+        d,u = eigen(S) # Eigen decomposition to get first/second eigenvalue and vectors
+        
+        K1[q] = d[2]
+        K2[q] = d[1]
+        U1[q] = Q'*Vec3{Float64}(u[1,2],u[2,2],0.0)
+        U2[q] = Q'*Vec3{Float64}(u[1,1],u[2,1],0.0)    
+    end
+
+    H = 0.5 * (K1.+K2)
+    G = K1.*K2
+
+    return K1,K2,U1,U2,H,G
+end
+    
+function mesh_curvature_polynomial(M::GeometryBasics.Mesh) 
+        return mesh_curvature_polynomial(faces(M),coordinates(V))
+end
+
+function seperate_vertices(F,V)
+    Vn = Vector{eltype(V)}()
+    Fn = deepcopy(F)
+    c = 0 
+    for q ∈ eachindex(F)
+        f = F[q]
+        m = length(f)
+        Fn[q] = c .+ (1:m)
+        c += m
+        append!(Vn,V[f])
+    end
+    return Fn,Vn
+end
+
+function seperate_vertices(M::GeometryBasics.Mesh)
+    F = faces(M)
+    V = coordinates(M)
+    Fn,Vn = seperate_vertices(F,V)    
+    return GeometryBasics.Mesh(Vn,Fn)
+end
+
+function curve_length(V)
+    return pushfirst!(cumsum(norm.(diff(V))),0.0) # Along curve distance from start
 end

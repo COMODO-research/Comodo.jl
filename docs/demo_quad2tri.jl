@@ -1,4 +1,4 @@
-using Gibbon
+using Comodo
 using GLMakie
 using GeometryBasics
 using LinearAlgebra
@@ -6,7 +6,7 @@ using LinearAlgebra
 # Example data 
 r = 1.0 # Radius
 n = 3 # Number of refinement steps from cube
-F,V = quadsphere(r,n)
+F,V = quadsphere(n,r)
 
 convert_method = "angle"
 Ft = quad2tri(F,V; convert_method = convert_method)

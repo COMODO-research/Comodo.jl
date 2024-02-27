@@ -1,11 +1,9 @@
-using Gibbon
+using Comodo
 using GLMakie
 using GeometryBasics
 using Statistics
 using Rotations
 using LinearAlgebra
-using FileIO
-using SparseArrays
 
 # Example curve
 r = 1

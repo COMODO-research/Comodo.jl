@@ -1,5 +1,5 @@
+using Comodo
 using GLMakie
-using Gibbon
 using GeometryBasics
 using FileIO
 using Rotations
@@ -11,7 +11,7 @@ are visualized.
 """
 
 # Loading a mesh
-fileName_mesh = joinpath(gibbondir(),"assets","stl","stanford_bunny_low.stl")
+fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
 M = load(fileName_mesh)
 
 # Obtain mesh faces and vertices

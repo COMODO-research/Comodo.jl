@@ -1,6 +1,6 @@
+using Comodo
 using GeometryBasics # For point and mesh format
 using GLMakie
-using Gibbon
 
 """
 This demo shows the use of distND to compute distances for ND points. A 3D 

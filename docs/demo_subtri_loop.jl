@@ -1,4 +1,4 @@
-using Gibbon, GLMakie, GeometryBasics
+using Comodo, GLMakie, GeometryBasics
 
 r = 1.0 #radius
 M = platonicsolid(4,r)
@@ -11,7 +11,7 @@ F = faces(M)
 
 fig = Figure(size=(800,800))
 
-stepRange = 0:1:4
+stepRange = 0:1:5
 hSlider = Slider(fig[2, 1], range = stepRange, startvalue = 0,linewidth=30)
 
 titleString = lift(hSlider.value) do stepIndex

@@ -1,4 +1,4 @@
-using Gibbon
+using Comodo
 using GLMakie
 using GeometryBasics
 using LinearAlgebra
@@ -6,10 +6,10 @@ using LinearAlgebra
 r = 1.0 # Radius
 n = 1 # Number of refinement steps from cube
 
-Fn1,Vn1 = quadsphere(r,n)
+Fn1,Vn1 = quadsphere(n,1)
 
-Fn2,Vn2 = quadsphere(r,2)
-Fn3,Vn3 = quadsphere(r,3)
+Fn2,Vn2 = quadsphere(2,r)
+Fn3,Vn3 = quadsphere(3,r)
 
 ## Visualization
 fig = Figure(size=(1600,800))

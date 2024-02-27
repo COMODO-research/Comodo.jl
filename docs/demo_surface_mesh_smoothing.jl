@@ -1,9 +1,9 @@
-using Gibbon, GLMakie, GeometryBasics, FileIO, Statistics, Random
+using Comodo, GLMakie, GeometryBasics, FileIO, Statistics, Random
 
 Random.seed!(1) # Set seed so demo performs the same each time
 
 # Loading a mesh
-fileName_mesh = joinpath(gibbondir(),"assets","stl","stanford_bunny_low.stl")
+fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
 M = load(fileName_mesh)
 F = faces(M)
 V = coordinates(M)

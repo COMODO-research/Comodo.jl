@@ -1,14 +1,14 @@
+using Comodo
 using GLMakie
-using Gibbon
 using GeometryBasics
 using FileIO
 using Statistics
 
 """
-dfasdf
+Demonstration of the mergevertices function
 """
 # Loading a mesh
-fileName_mesh = joinpath(gibbondir(),"assets","stl","stanford_bunny_low.stl")
+fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
 M1 = load(fileName_mesh)
 F1 = faces(M1)
 V1 = coordinates(M1)

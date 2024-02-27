@@ -1,5 +1,5 @@
+using Comodo
 using FEBio
-using Gibbon
 using Printf
 using GLMakie
 using LinearAlgebra
@@ -35,7 +35,7 @@ end
 
 ######
 # Define file names
-saveDir = joinpath(gibbondir(),"assets","temp") # Main directory to save FEBio input and output files
+saveDir = joinpath(comododir(),"assets","temp") # Main directory to save FEBio input and output files
 if !isdir(saveDir)
     mkdir(saveDir)      
     println("Hello")
