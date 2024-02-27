@@ -44,20 +44,16 @@ function elements2indices(F)
     return unique(reduce(vcat,F))
 end
 
-function gridpoints(X,Y=X,Z=X)    
-    # Creates a 3D grid of GeometryBasics type 3D points based on the iterable input defining the ranges in the x, y, and z direction
-    Vg = Vector{GeometryBasics.Point{3, Float64}}(undef,length(X)*length(Y)*length(Z)) # Allocate grid point set
-    q=0 # Initialize index 
-    for x ∈ X # For all x entries
-        for y ∈ Y # For all y entries
-            for z ∈ Z # For all z entries
-                q+=1 # Increment index
-                Vg[q]=GeometryBasics.Point{3, Float64}(x,y,z) # Add the current point
-            end
-        end
-    end
-    return Vg # Return the grid point set
-end
+function gridpoints(x::Vector{T}, y=x::Vector{T}, z=x::Vector{T}) where T<:Real
+    reshape([GeometryBasics.Point{3, T}(x, y, z) for z in z, y in y, x in x], 
+                             length(x)*length(y)*length(z))
+end  
+
+function gridpoints(x::AbstractRange{T}, y=x::AbstractRange{T}, z=x::AbstractRange{T}) where T<:Real
+    reshape([GeometryBasics.Point{3, T}(x, y, z) for z in z, y in y, x in x], 
+                             length(x)*length(y)*length(z))
+end  
+
 
 function interp_biharmonic_spline(x,y,xi; extrapolate_method="linear",pad_data="linear")
     # This function uses biharmonic spline interpolation. The input is assumed to represent ordered data representing a curve
