@@ -1512,8 +1512,7 @@ function circlepoints(f::FunctionType,n; dir="acw") where {FunctionType <: Funct
     end
 end
 
-function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type="tri")
-    """
+"""
     The `loftlinear` function spans a surface from input curve `V1` to curve 
     `V2`. The surface is formed by "lerping" curves form V1 to V2 in `num_loft` 
     steps, and forming mesh faces between each curve. If `close_loop==true`
@@ -1526,7 +1525,8 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type="tri")
     The point order here causes normal directions to conform to a surface if 
     the input curves were derived from a surface (in 2D this means "clockwise
      curves" would result in an outward normal surface. 
-    """
+"""
+function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type="tri")
     num_loop = length(V1)
     T = eltype(V1)
     # Linearly blending points from first to last
