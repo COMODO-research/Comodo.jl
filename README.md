@@ -1,3 +1,5 @@
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache-blue.svg)](https://github.com/COMODO-research/Comodo.jl/blob/main/LICENSE)
+
 ![](assets/img/COMODO.png)
 
 # About Comodo
