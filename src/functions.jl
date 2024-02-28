@@ -1504,7 +1504,7 @@ function circlepoints(r,n; dir="acw")
     end
 end
 
-function circlepoints(f::Function,n; dir="acw")
+function circlepoints(f::FunctionType,n; dir="acw") where {FunctionType <: Function}
     if dir=="acw"
         return [GeometryBasics.Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t ∈ range(0,2*π-(2*π)/n,n)]
     else
