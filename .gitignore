@@ -6,3 +6,7 @@ assets/temp
 
 # Ignore .backup files
 *.backup
+
+# Ignore Manifest.toml
+Manifest.toml
+
