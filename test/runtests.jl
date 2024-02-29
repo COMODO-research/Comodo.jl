@@ -220,24 +220,108 @@ end
 end
 
 
-@testset "circle points" begin 
+@testset "circle points" begin
 
-    @testset "with value" begin
-        V1 = circlepoints(1.0, 40)
+	@testset "with value" begin
+		V1 = circlepoints(1.0, 40)
 
-        @test V1 isa Vector{Point3{Float64}}
-        @test length(V1) == 40
-        @test V1[1] == [1.0, 0.0, 0.0]
-    end 
+		@test V1 isa Vector{Point3{Float64}}
+		@test length(V1) == 40
+		@test V1[1] == [1.0, 0.0, 0.0]
+	end
 
-    @testset "with function" begin 
-        r = 1.0
-        n = 40
-        rFun(t) = r + 0.5.*sin(3*t)
-        V2 = circlepoints(rFun, n)
-        @test V2 isa Vector{Point3{Float64}}
-        @test length(V2) == 40
-        @test V2[1] == [1.0, 0.0, 0.0]
-    end 
+	@testset "with function" begin
+		r = 1.0
+		n = 40
+		rFun(t) = r + 0.5 .* sin(3 * t)
+		V2 = circlepoints(rFun, n)
 
-end 
+		@test V2 isa Vector{Point3{Float64}}
+		@test length(V2) == 40
+		@test V2[1] == [1.0, 0.0, 0.0]
+	end
+
+end
+
+
+@testset "platonic solid" begin
+	r = 1
+	n = 3
+	eps = 0.001
+
+	M = platonicsolid(4, r)
+
+	@test M isa Mesh{3, Float64, GeometryBasics.Ngon{3, Float64, 3, Point3{Float64}}, SimpleFaceView{3, Float64, 3, Int64, Point3{Float64}, TriangleFace{Int64}}}
+	@test length(M) == 20
+	@test isapprox(M[1][1], [-0.85065080835204, 0.0, -0.5257311121191336], atol = eps)
+
+end
+
+
+@testset "coordinates" begin
+	r = 1
+	n = 3
+	eps = 0.001
+
+	M = platonicsolid(4, r)
+
+	V = coordinates(M)
+
+	@test V isa Vector{Point3{Float64}}
+	@test length(V) == 12
+	@test isapprox(V[1], [0.0, -0.5257311121191336, -0.85065080835204], atol = eps)
+
+end
+
+
+@testset "faces" begin
+	r = 1
+	n = 3
+
+	M = platonicsolid(4, r)
+
+	F = faces(M)
+
+	@test F isa Vector{TriangleFace{Int64}}
+	@test length(F) == 20
+	@test F[1] == TriangleFace(9, 4, 1)
+end
+
+@testset "subtri" begin
+	r = 1
+	n = 3
+	eps = 0.001
+
+	M = platonicsolid(4, r)
+	V = coordinates(M)
+	F = faces(M)
+
+	Fn, Vn = subtri(F, V, n)
+
+	@test Fn isa Vector{TriangleFace{Int64}}
+	@test length(Fn) == 1280
+	@test Fn[1] == TriangleFace(163, 323, 243)
+
+	@test Vn isa Vector{Point3{Float64}}
+	@test length(Vn) == 642
+	@test isapprox(Vn[1], [0.0, -0.5257311121191336, -0.85065080835204], atol = eps)
+end
+
+
+@testset "dist(Vn, V)" begin
+	r = 1
+	n = 3
+	eps = 0.001
+
+	M = platonicsolid(4, r)
+	V = coordinates(M)
+	F = faces(M)
+
+	_, Vn = subtri(F, V, n)
+
+	DD = dist(Vn, V)
+
+	@test DD isa Matrix{Float64}
+	@test size(DD) == (642, 12)
+	@test isapprox(DD[1, :], [0.0, 1.70130161670408, 2.0, 1.0514622242382672, 1.0514622242382672, 1.70130161670408, 1.70130161670408, 1.0514622242382672, 1.0514622242382672, 1.0514622242382672, 1.70130161670408, 1.70130161670408], atol = eps)
+end
