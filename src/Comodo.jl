@@ -11,6 +11,8 @@ import Statistics
 import SparseArrays
 import GLMakie
 import Rotations
+import BSplineKit
+import Distances
 
 include("functions.jl")
 
