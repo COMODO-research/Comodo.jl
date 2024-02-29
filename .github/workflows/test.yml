@@ -18,7 +18,7 @@ jobs:
         arch:
           - x64
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.version }}
@@ -40,3 +40,4 @@ jobs:
         with:
           verbose: true
           files: lcov.info
+          prefix: xvfb-run -s '-screen 0 1024x768x24'
