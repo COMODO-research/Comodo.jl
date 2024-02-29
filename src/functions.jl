@@ -44,12 +44,12 @@ function elements2indices(F)
     return unique(reduce(vcat,F))
 end
 
-function gridpoints(x::Vector{T}, y=x::Vector{T}, z=x::Vector{T}) where T<:Real
+function gridpoints(x::Vector{T}, y=x, z=x) where T<:Real
     reshape([GeometryBasics.Point{3, T}(x, y, z) for z in z, y in y, x in x], 
                              length(x)*length(y)*length(z))
 end  
 
-function gridpoints(x::AbstractRange{T}, y=x::AbstractRange{T}, z=x::AbstractRange{T}) where T<:Real
+function gridpoints(x::AbstractRange{T}, y=x, z=x) where T<:Real
     reshape([GeometryBasics.Point{3, T}(x, y, z) for z in z, y in y, x in x], 
                              length(x)*length(y)*length(z))
 end  
