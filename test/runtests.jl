@@ -218,3 +218,26 @@ end
 	@test M[1][1] == [-0.5642542117657715, -0.5133754412304479, 0.6465777917977317]
 
 end
+
+
+@testset "circle points" begin 
+
+    @testset "with value" begin
+        V1 = circlepoints(1.0, 40)
+
+        @test V1 isa Vector{Point3{Float64}}
+        @test length(V1) == 40
+        @test V1[1] == [1.0, 0.0, 0.0]
+    end 
+
+    @testset "with function" begin 
+        r = 1.0
+        n = 40
+        rFun(t) = r + 0.5.*sin(3*t)
+        V2 = circlepoints(rFun, n)
+        @test V2 isa Vector{Point3{Float64}}
+        @test length(V2) == 40
+        @test V2[1] == [1.0, 0.0, 0.0]
+    end 
+
+end 
