@@ -40,3 +40,4 @@ jobs:
         with:
           verbose: true
           files: lcov.info
+          prefix: xvfb-run -s '-screen 0 1024x768x24'
