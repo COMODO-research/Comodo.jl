@@ -2,7 +2,7 @@ using Comodo
 using GLMakie
 using GeometryBasics
 
-"""
+#=
 This demo shows the use of `subtri` to refine triangulated meshes. Each 
 original input triangle spawns 4 triangles for the regined mesh (one central 
 one, and 3 at each corner). The following refinement methods are implemented: 
@@ -17,7 +17,7 @@ one, and 3 at each corner). The following refinement methods are implemented:
     such that the surface effectively approaches a "quartic box spline". Hence 
     this method both refines and smoothes the geometry through spline 
     approximation. 
-"""
+=#
 
 ## Define example input
 r = 0.5 #radius

@@ -3,10 +3,10 @@ using GLMakie
 using GeometryBasics
 using LinearAlgebra
 
-"""
+#=
 This demo shows the use of the gridpoints function. This function can be used to create
 a grid of points. 
-"""
+=#
 
 
 # Define a set of points on a grid using a range, y and z are assumed equal to x when not provided

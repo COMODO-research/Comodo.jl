@@ -2,9 +2,9 @@ using Comodo
 using GeometryBasics
 using GLMakie
 
-"""
-This demo shows the use of nbezier for Bezier curve interpolation. 
-"""
+
+# This demo shows the use of nbezier for Bezier curve interpolation. 
+
 
 # Define raw data
 P = Vector{GeometryBasics.Point{3, Float64}}(undef,4)

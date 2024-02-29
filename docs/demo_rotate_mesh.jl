@@ -4,11 +4,11 @@ using GeometryBasics
 using FileIO
 using Rotations
 
-"""
+#=
 In this demo a mesh is loaded, in this case a triangulated surface from an STL 
 file. Next the coordinates are rotated, and the unrotated and rotated meshes 
 are visualized. 
-"""
+=#
 
 # Loading a mesh
 fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")

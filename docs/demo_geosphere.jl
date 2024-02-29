@@ -2,11 +2,11 @@ using Comodo
 using GLMakie
 using GeometryBasics
 
-"""
+#=
 This demo shows the use of the geosphere function. An unrefined sphere is an 
 icosahedron. Through subdivision (see `subtri`) a refined geodesic dome is 
 obtained. 
-"""
+=#
 
 r = 1.0 # radius
 n1 = 0 # Number of refinement iterations

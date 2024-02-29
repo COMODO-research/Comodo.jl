@@ -4,9 +4,9 @@ using GeometryBasics
 using FileIO
 using Statistics
 
-"""
-Demonstration of the mergevertices function
-"""
+
+# Demonstration of the mergevertices function
+
 # Loading a mesh
 fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
 M1 = load(fileName_mesh)

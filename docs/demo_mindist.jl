@@ -2,12 +2,12 @@ using Comodo
 using GeometryBasics # For point and mesh format
 using GLMakie
 
-"""
+#=
 This demo shows the use of distND to compute distances for ND points. A 3D 
 point set is defined on an icosahedron. Next a refined (using subtri) version is
 created and the distance from the refined to the unrefined are computed. Next
 the minimum distances are visualised on the mesh. 
-"""
+=#
 
 # Defining icosahedron
 r = 1 # radius of icosahedron
