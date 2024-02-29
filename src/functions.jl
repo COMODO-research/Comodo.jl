@@ -8,6 +8,8 @@ using Statistics # For: mean
 using GLMakie # For slidercontrol
 using SparseArrays # For meshconnectivity
 using Rotations 
+using BSplineKit
+using Distances
 
 function comododir()
     joinpath(@__DIR__, "..")
@@ -206,7 +208,7 @@ function dist(V1,V2)
     D = Matrix{Float64}(undef,length(V1),length(V2))   
     for i ∈ eachindex(V1)
         for j ∈ eachindex(V2)          
-            D[i,j] = norm((V1[i].-V2[j]))       
+            D[i,j] = euclidean(V1[i],V2[j]) # norm(V1[i]-V2[j])       
         end
     end
     return D
@@ -223,7 +225,7 @@ function mindist(V1,V2; getIndex=false, skipSelf = false )
             if skipSelf && i==j
                 d[j] = Inf
             else
-                d[j] = sqrt(sum((V1[i].-V2[j]).^2)) 
+                d[j] = euclidean(V1[i],V2[j]) # norm(V1[i]-V2[j]) 
             end       
         end
         if getIndex

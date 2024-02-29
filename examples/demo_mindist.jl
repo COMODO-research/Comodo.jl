@@ -3,36 +3,42 @@ using GeometryBasics # For point and mesh format
 using GLMakie
 
 #=
-This demo shows the use of distND to compute distances for ND points. A 3D 
-point set is defined on an icosahedron. Next a refined (using subtri) version is
-created and the distance from the refined to the unrefined are computed. Next
-the minimum distances are visualised on the mesh. 
+This demo shows the use of dist to compute distances for ND points. A 3D 
+point set is defined on an geodesic sphere. Next another, more refined version
+is created, and the distance from this sphere to the coarser one is computed. 
+Next the minimum distances are visualised on the mesh. 
 =#
 
 # Defining icosahedron
 r = 1 # radius of icosahedron
-n = 3 # Number of refinement steps
+n = 5 # Number of refinement steps
 
-# Define an icosahedron
-M = platonicsolid(4,r) # GeometryBasics mesh description of icosahedron
-V = coordinates(M) # Get the mesh coordinates
-F = faces(M) # Get the mesh faces
+# Define a mesh
+F,V = geosphere(1,r) 
 
-# Created refined version
-Fn,Vn = subtri(F,V,n) # Subdevide/refine the mesh linearly 
+# Define a mesh
+Fn,Vn = geosphere(n,r)  # Subdevide/refine the mesh linearly 
 
 # Compute nearest point distances
-Dn = mindist(Vn,V; getIndex = false)
+Dn,indMin = mindist(Vn,V; getIndex = true)
 
 # Visualization
-fig = Figure(size = (800,800))
+fig = Figure(size = (1200,500))
 
-ax=Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z")
+ax1=Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z")
 
-hp = poly!(ax,GeometryBasics.Mesh(Vn,Fn),strokewidth=0,color=Dn, shading=FastShading, overdraw=false)
-hs1 = scatter!(ax, V,markersize=35,color=:black)
-hs2 = scatter!(ax, Vn,markersize=15,color=Dn,strokewidth=1)
+hp1 = poly!(ax1,GeometryBasics.Mesh(Vn,Fn),strokewidth=0,color=Dn,shading=FastShading, overdraw=false)
+hs1 = scatter!(ax1, V,markersize=35,color=:black)
 
-Colorbar(fig[1, 2], hs2,label="Distance")
-Legend(fig[1, 3],[hp,hs1],["Distances on mesh","Point set"])
+Colorbar(fig[1, 2], hp1,label="Distance")
+Legend(fig[1, 3],[hp1,hs1],["Distances on mesh","Point set"])
+
+ax2=Axis3(fig[1, 4], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z")
+
+hp2 = poly!(ax2,GeometryBasics.Mesh(Vn,Fn),strokewidth=0,color=indMin,shading=FastShading, overdraw=false)
+hs2 = scatter!(ax2, V,markersize=35,color=:black)
+
+Colorbar(fig[1, 5], hp2,label="Nearest point index")
+Legend(fig[1, 6],[hp2,hs2],["Point indices","Point set"])
+
 fig
