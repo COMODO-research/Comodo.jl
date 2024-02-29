@@ -1,43 +1,40 @@
-name: CI
+name: Test
 on:
-  - push
-  - pull_request
+  push:
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+    branches:
+      - master
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 jobs:
-  test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
-    runs-on: ${{ matrix.os }}
+  benchmark:
+    name: ${{ matrix.package }}
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
-        version:
-          - '1.10'
-        os:
-          - ubuntu-latest
-          - macOS-latest
-          - windows-latest
-        arch:
-          - x64
+        package:
+          - CairoMakie
+          - GLMakie
+          - WGLMakie
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xorg-dev mesa-utils xvfb libgl1 freeglut3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
       - uses: julia-actions/setup-julia@v1
         with:
-          version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
-      - uses: actions/cache@v1
+          version: '1'
+          include-all-prereleases: true
+          arch: x64
+      - uses: julia-actions/cache@v1
+      - name: Benchmark
+        continue-on-error: true
         env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-test-${{ env.cache-name }}-
-            ${{ runner.os }}-test-
-            ${{ runner.os }}-
-      - uses: julia-actions/julia-buildpkg@latest
-      - uses: julia-actions/julia-runtest@latest
-      - uses: julia-actions/julia-processcoverage@latest
-      - uses: codecov/codecov-action@v2
-        with:
-          verbose: true
-          files: lcov.info
-          prefix: xvfb-run -s '-screen 0 1024x768x24'
+          GITHUB_TOKEN: ${{ secrets.BENCHMARK_KEY }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: >
+          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=./metrics/ttfp/ ./metrics/ttfp/run-benchmark.jl ${{ matrix.package }} 7 ${{ github.event.pull_request.base.ref }}
