@@ -9,23 +9,19 @@ Loosely Comodo could stand for **Com**putational **Mo**delling for **D**esign **
 
 Comodo.jl started out as a modern re-implementation in Julia of the MATLAB toolbox [GIBBON](https://github.com/gibbonCode/GIBBON). However, rather than literally porting each functional unit, it instead aims to follow a similar philosophy and cover similar but more advanced core functionaly.
 
-# Getting started
-The `docs` folder contains examples on the use of Comodo's functionality. 
-
 ## Installation
 ```julia
 pkg> add https://github.com/COMODO-research/Comodo.jl
 ```
-
-## Getting started
-The `docs` folder contains usage examples. 
+# Getting started
+The `examples` folder contains examples on the use of Comodo's functionality. 
 
 # Documentation 
 Under construction
 
 ## Using FEBio
 To use Comodo with FEBio one needs to install this external library. You can obtain an official binary from [their website](https://febio.org/) or compile [their source available on GitHub](https://github.com/febiosoftware/FEBio). 
-The Comodo `docs` folder contains FEBio demo's, for instance [`demo_febio_0001_cube_uniaxial_hyperelastic.jl`](https://github.com/COMODO-research/Comodo.jl/blob/main/docs/demo_febio_0001_cube_uniaxial_hyperelastic.jl) which features a demonstration for uniaxial loading of a hyperelastic solid cube. 
+The Comodo `examples` folder contains FEBio demo's, for instance [`demo_febio_0001_cube_uniaxial_hyperelastic.jl`](https://github.com/COMODO-research/Comodo.jl/blob/main/examples/demo_febio_0001_cube_uniaxial_hyperelastic.jl) which features a demonstration for uniaxial loading of a hyperelastic solid cube. 
 For now users need to tell Comodo specifically where the FEBio executable is on your system, which means one needs to add the equivalent of following to the top of codes featuring the FEBio functionality: 
 ```
 const FEBIO_PATH = "/home/kevin/FEBioStudio/bin/febio4"
