@@ -3,11 +3,11 @@ using GLMakie
 using GeometryBasics
 using Random
 
-"""
+#=
 In this demo biharmonic interpolation is used for 3D scattered data 
 interpolation. First a set of random 3D points and "value data" is defined. Next
 a grid of points are defined onto which this value data is interpolated. 
-"""
+=#
 
 Random.seed!(1) # Set seed so demo performs the same each time
 
