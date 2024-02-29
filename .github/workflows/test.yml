@@ -1,4 +1,4 @@
-name: Benchmark
+name: Test
 on:
   push:
     paths-ignore:
