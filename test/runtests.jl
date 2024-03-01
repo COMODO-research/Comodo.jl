@@ -363,14 +363,14 @@ end
 end
 
 @testset "extrudecurve" begin
-	eps = 0.001
+    eps = 0.001
     r = 1
     nc = 16
     d = 3.0
     Vc = circlepoints(r, nc; dir="cw")
     F, V = extrudecurve(Vc, d; s=1, close_loop=true, face_type="quad")
 
-	@test V isa Vector{Point3{Float64}}
+    @test V isa Vector{Point3{Float64}}
     @test length(V) == 128
     @test isapprox(V[1], [1.0, 0.0, 0.0], atol=eps)
 
@@ -379,79 +379,97 @@ end
     @test F[1] == [17, 18, 2, 1]
 end
 
-@testset "cube" begin 
-	r=2*sqrt(3)/2
+@testset "cube" begin
+    r = 2 * sqrt(3) / 2
     M = cube(r)
 
-	@test M isa Mesh{3, Float64, GeometryBasics.Ngon{3, Float64, 4, Point3{Float64}}, SimpleFaceView{3, Float64, 4, Int64, Point3{Float64}, QuadFace{Int64}}}
+    @test M isa Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,4,Point3{Float64}},SimpleFaceView{3,Float64,4,Int64,Point3{Float64},QuadFace{Int64}}}
     @test length(M) == 6
     @test M[1][1] == [-1.0, -1.0, -1.0]
-	@test M[1][2] == [-1.0,  1.0, -1.0]
-	@test M[1][3] == [ 1.0,  1.0, -1.0]
-	@test M[1][4] == [ 1.0, -1.0, -1.0]
-end 
+    @test M[1][2] == [-1.0, 1.0, -1.0]
+    @test M[1][3] == [1.0, 1.0, -1.0]
+    @test M[1][4] == [1.0, -1.0, -1.0]
+end
 
-@testset "mergevertices" begin 
-	eps = 0.001
-	r=2*sqrt(3)/2
+@testset "mergevertices" begin
+    eps = 0.001
+    r = 2 * sqrt(3) / 2
     M = cube(r)
 
-	F = togeometrybasics_faces(faces(M))
+    F = togeometrybasics_faces(faces(M))
     V = togeometrybasics_points(coordinates(M))
-    F,V,_ = mergevertices(F,V)
+    F, V, _ = mergevertices(F, V)
 
-	@test V isa Vector{Point3{Float64}}
+    @test V isa Vector{Point3{Float64}}
     @test length(V) == 8
     @test isapprox(V[1], [-1.0, -1.0, -1.0], atol=eps)
 
     @test F isa Vector{QuadFace{Int64}}
     @test length(F) == 6
     @test F[1] == [1, 2, 3, 4]
-end 
+end
 
-@testset "seperate vertices" begin 
+@testset "seperate vertices" begin
 
-	eps = 0.001
-	r=2*sqrt(3)/2
+    eps = 0.001
+    r = 2 * sqrt(3) / 2
     M = cube(r)
 
-	F = togeometrybasics_faces(faces(M))
+    F = togeometrybasics_faces(faces(M))
     V = togeometrybasics_points(coordinates(M))
-    F,V,_ = mergevertices(F,V)
+    F, V, _ = mergevertices(F, V)
 
-	Fn,Vn = seperate_vertices(F,V)
+    Fn, Vn = seperate_vertices(F, V)
 
-	@test Vn isa Vector{Point3{Float64}}
+    @test Vn isa Vector{Point3{Float64}}
     @test length(Vn) == 24
     @test isapprox(Vn[1], [-1.0, -1.0, -1.0], atol=eps)
 
     @test Fn isa Vector{QuadFace{Int64}}
     @test length(Fn) == 6
     @test Fn[1] == [1, 2, 3, 4]
-end 
+end
 
 @testset "icosahedron" begin
-	
-	eps = 0.001
-	M=icosahedron()
 
-	@test M isa Mesh{3, Float64, GeometryBasics.Ngon{3, Float64, 3, Point3{Float64}}, SimpleFaceView{3, Float64, 3, Int64, Point3{Float64}, TriangleFace{Int64}}}
+    eps = 0.001
+    M = icosahedron()
+
+    @test M isa Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
     @test length(M) == 20
-    @test isapprox(M[1][1], [-0.85065080835204, 0.0, -0.5257311121191336], atol = eps)
-	@test isapprox(M[1][2], [0.0, 0.5257311121191336, -0.85065080835204], atol = eps)
-	@test isapprox(M[1][3], [0.0, -0.5257311121191336, -0.85065080835204], atol = eps)
+    @test isapprox(M[1][1], [-0.85065080835204, 0.0, -0.5257311121191336], atol=eps)
+    @test isapprox(M[1][2], [0.0, 0.5257311121191336, -0.85065080835204], atol=eps)
+    @test isapprox(M[1][3], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps)
 
-end 
+end
 
-@testset "dodecahedron" begin 
-   	
+@testset "dodecahedron" begin
+
+    eps = 0.001
+    M = dodecahedron()
+
+
+    @test M isa Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,5,Point3{Float64}},SimpleFaceView{3,Float64,5,Int64,Point3{Float64},NgonFace{5,Int64}}}
+    @test length(M) == 12
+    @test isapprox(M[1][1], [0.0, 0.9341723589627159, 0.35682208977309], atol=eps)
+    @test isapprox(M[1][2], [-0.5773502691896258, 0.5773502691896258, 0.5773502691896258], atol=eps)
+    @test isapprox(M[1][3], [-0.35682208977309, 0.0, 0.9341723589627159], atol=eps)
+end
+
+
+@testset "interp_biharmonic_spline" begin
 	eps = 0.001
-	M = dodecahedron()
-	
-	
-	@test M isa Mesh{3, Float64, GeometryBasics.Ngon{3, Float64, 5, Point3{Float64}}, SimpleFaceView{3, Float64, 5, Int64, Point3{Float64}, NgonFace{5, Int64}}}
- 	@test length(M) == 12
- 	@test isapprox(M[1][1], [0.0, 0.9341723589627159, 0.35682208977309], atol = eps)
-	@test isapprox(M[1][2], [-0.5773502691896258, 0.5773502691896258, 0.5773502691896258], atol = eps)
-	@test isapprox(M[1][3], [-0.35682208977309, 0.0, 0.9341723589627159], atol = eps)
-end 
+    x = range(0, 9, 9) # Interval definition
+    y = 5.0 * cos.(x .^ 2 ./ 9.0)
+    n = 50
+    xi = range(-0.5, 9.5, n) # Interval definition
+
+    yi = interp_biharmonic_spline(x, y, xi; extrapolate_method="linear", pad_data="linear")
+
+    expected = Float64[
+        5.021936470288651, 5.012982808946344, 5.004029147604038, 5.003883984828356, 5.013423891770618, 5.016926459732009, 5.008877412957425, 4.986252200086639, 4.949095584901485, 4.900712801046797, 4.827338182066324, 4.718702733147323, 4.565299270988856, 4.355206727041269, 4.0643384202727155, 3.690302768049275, 3.2486120048531575, 2.741142656288753, 2.162741179324234, 1.4930428723452422, 0.6894521660239601, -0.17909936207112054, -1.066850736215498, -1.9394165202437383, -2.7620787973653123, -3.4863618240707703, -4.084745304595619, -4.548097090450917, -4.844487814719076, -4.919816101979883, -4.660991193954443, -3.8522496267669797, -2.7401507061437558, -1.4800073431767586, -0.17052435774788544, 1.0996489364430322, 2.2142992537631168, 3.1162872228104126, 3.812960510488512, 4.267335427319159, 4.415016001115535, 4.129059686282873, 3.1623787726296135, 1.7686560575217602, 0.11532807455604117, -1.6929812437232494, -3.556979551860928, -5.26268898629401, -6.833883823784279, -8.405078661274548
+    ]
+    @test yi isa Vector{Float64}
+    @test length(yi) == 50
+    @test isapprox(yi, expected, atol=eps)
+end
