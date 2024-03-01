@@ -9,6 +9,7 @@ using GLMakie # For slidercontrol
 using SparseArrays # For meshconnectivity
 using Rotations 
 using BSplineKit
+using QuadGK: quadgk # For numerical integration
 using Distances
 
 function comododir()
@@ -2154,4 +2155,27 @@ end
 
 function curve_length(V)
     return pushfirst!(cumsum(norm.(diff(V))),0.0) # Along curve distance from start
+end
+
+function evenly_sample(V, n; rtol = 1e-8, niter = 1)
+    m = length(V)
+    T = curve_length(V) # Initialise as along curve (multi-linear) distance
+    T ./= last(T) # Normalise
+    S = BSplineKit.interpolate(T, V, BSplineOrder(4), BSplineKit.Natural()) # Create interpolator
+    for _ ∈ 1:niter
+        dS = Derivative() * S  # spline derivative
+        L = similar(T) # Initialise spline length vector
+        L[1] = 0
+        for i ∈ 2:m
+            # Compute length of segment [i-1, i]
+            segment_length, _ = quadgk(T[i-1], T[i]; rtol) do t
+                norm(dS(t))  # integrate |S'(t)| in segment [i, i + 1]
+            end        
+            L[i] = L[i - 1] + segment_length
+        end
+        L ./= last(L) # Normalise to 0-1 range
+        S = BSplineKit.interpolate(L, V, BSplineOrder(4), BSplineKit.Natural()) # Create interpolator
+    end
+    l = range(0.0, 1.0, n) #Even allong curve distance 
+    return S.(l), S # Evaluate interpolator at even distance increments
 end
