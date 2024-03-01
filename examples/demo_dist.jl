@@ -11,7 +11,7 @@ the minimum distances are visualised on the mesh.
 
 # Defining icosahedron
 r = 1 # radius of icosahedron
-n = 3 # Number of refinement steps
+n = 2 # Number of refinement steps
 
 # Define an icosahedron
 M = platonicsolid(4,r) # GeometryBasics mesh description of icosahedron
@@ -20,7 +20,7 @@ F = faces(M) # Get the mesh faces
 
 # Created refined version
 Fn,Vn = subtri(F,V,n) # Subdevide/refine the mesh linearly 
-F,V = subtri(F,V,2)
+F,V = subtri(F,V,1)
 # Use distND to compute distances from all in set 1 to all in set 2
 DD = dist(Vn,V)
 

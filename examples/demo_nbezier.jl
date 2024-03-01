@@ -25,6 +25,6 @@ hp1 = scatter!(ax, P,markersize=25,color=:black)
 scatter!(ax, V,markersize=15,color=:red)
 hp2 = lines!(ax, V,linewidth=3,color=:red)
 
-Legend(fig[1, 2],[hp1,hp2],["Raw","Interpolated"])
+Legend(fig[1, 2],[hp1,hp2],["Control points","Bezier spline"])
 
 fig

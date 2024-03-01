@@ -42,13 +42,13 @@ for q=1:1:4
     end
 
     # Compute mesh vertex normals
-    NV = vertexnormal(F,V; weighting="area")
+    NV = vertexnormal(F,V; weighting=:area)
     
     ax1 = Axis3(fig[1, q], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
     hp1 = poly!(ax1,M, strokewidth=1,shading=FastShading,color=:white, transparency=false, overdraw=false)    
     # hpa = normalplot(ax1,M,color=:red,linewidth=2)
     # hpa = arrows!(ax1,V,NV,color=:blue)
-    hpa = dirplot(ax1,V,NV.*mean(edgelengths(F,V)); color=:blue,linewidth=3,scaleval=1.0,style="from")
+    hpa = dirplot(ax1,V,NV.*mean(edgelengths(F,V)); color=:blue,linewidth=3,scaleval=1.0,style=:from)
 end
 
 fig

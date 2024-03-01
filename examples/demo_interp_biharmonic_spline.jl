@@ -11,7 +11,7 @@ y = 5.0*cos.(x.^2 ./ 9.0)
 n = 50
 xi = range(-0.5,9.5,n) # Interval definition
 
-yi = interp_biharmonic_spline(x,y,xi; extrapolate_method="linear",pad_data="linear")
+yi = interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:linear)
 
 # Visualization
 fig = Figure(size = (800,800))

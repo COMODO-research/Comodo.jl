@@ -16,28 +16,6 @@ F,V = remove_unused_vertices(F,V)
     
 Eb = boundaryedges(F)
 
-
-# function edges2curve(Eb)
-#     con_E2E = con_edge_edge(Eb)
-#     ind = convert(Vector{Int64},Eb[1])
-#     seen = fill(false,length(Eb))
-#     i = 1 # Start with first edge
-#     while !all(seen) # loop until all edges have been visited
-#         ij = con_E2E[i]
-#         seen[i] = true
-#         if Eb[ij[1]][1]==ind[end]
-#             i = ij[1]
-#             push!(ind,Eb[i][2])
-#             seen[i] = true
-#         elseif Eb[ij[2]][1]==ind[end]
-#             i = ij[2]
-#             push!(ind,Eb[i][2])
-#             seen[i] = true
-#         end
-#     end
-#     return ind
-# end
-    # ind[end]
 ind = edges2curve(Eb)
 
 M = GeometryBasics.Mesh(V,F)

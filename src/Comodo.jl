@@ -13,6 +13,7 @@ import GLMakie
 import Rotations
 import BSplineKit
 import Distances
+import QuadGK
 
 include("functions.jl")
 

@@ -30,7 +30,7 @@ elseif testCase==4 # Merged STL for single object
     F = togeometrybasics_faces(faces(M))
     V = togeometrybasics_points(coordinates(M))
     F,V,_ = mergevertices(F,V)
-    F,V = subtri(F,V,2; method = "loop")
+    F,V = subtri(F,V,2; method = :loop)
 elseif testCase==5 # Merged STL for single object
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")
@@ -62,12 +62,12 @@ fig = Figure(size=(800,800))
 
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "1st principal curvature")
 hp1 =mesh!(ax1,M, color=K1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(K1)).*0.1.*(-1,1))
-hpn1 = dirplot(ax1,V,U1; color=:black,linewidth=1,scaleval=3,style="through")
+hpn1 = dirplot(ax1,V,U1; color=:black,linewidth=1,scaleval=3,style=:through)
 Colorbar(fig[1, 2],hp1)
 
 ax1 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "2nd principal curvature")
 hp2 =mesh!(ax1,M, color=K2, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(K2)).*0.1.*(-1,1))
-hpn2 = dirplot(ax1,V,U2; color=:black,linewidth=1,scaleval=3,style="through")
+hpn2 = dirplot(ax1,V,U2; color=:black,linewidth=1,scaleval=3,style=:through)
 Colorbar(fig[1, 4],hp1)
 
 ax1 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Mean curvature")

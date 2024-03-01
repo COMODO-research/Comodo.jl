@@ -6,8 +6,7 @@ using LinearAlgebra
 using Statistics
 
 # Example geometry
-# Example geometry
-testCase = 1
+testCase = 2
 if testCase == 1
     r = 1
     F,V = geosphere(3,r)  
@@ -35,7 +34,7 @@ elseif testCase==4 # Merged STL for single object
     F = togeometrybasics_faces(faces(M))
     V = togeometrybasics_points(coordinates(M))
     F,V,_ = mergevertices(F,V)
-    F,V = subtri(F,V,2; method = "loop")
+    F,V = subtri(F,V,2; method = :loop)
 elseif testCase==5 # Merged STL for single object
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")
@@ -67,7 +66,7 @@ Fn,Vn = seperate_vertices(F,V)
 
 fig = Figure(size=(800,800))
 
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Distance marching")
+ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Face area")
 hp1 = poly!(ax1,GeometryBasics.Mesh(Vn,Fn), color=simplex2vertexdata(Fn,A), shading = FastShading, transparency=false,strokecolor=:black,strokewidth=1)
 Colorbar(fig[1, 2],hp1)
 fig

@@ -11,9 +11,9 @@ V = coordinates(M)
 F = faces(M)
 
 ## Refine mesh using `subquad` and the Catmull-Clark method
-Fn1,Vn1 = subquad(F,V,1; method = "Catmull-Clark") # Refined once 
-Fn2,Vn2 = subquad(F,V,2; method = "Catmull-Clark") # Refined twice
-Fn3,Vn3 = subquad(F,V,3; method = "Catmull-Clark") # Refined 3 times
+Fn1,Vn1 = subquad(F,V,1; method = :Catmull_Clark) # Refined once 
+Fn2,Vn2 = subquad(F,V,2; method = :Catmull_Clark) # Refined twice
+Fn3,Vn3 = subquad(F,V,3; method = :Catmull_Clark) # Refined 3 times
 
 Rn3 = [norm(v) for v in Vn3] 
 rs3 = mean(Rn3)

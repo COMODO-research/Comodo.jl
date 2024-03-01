@@ -5,7 +5,7 @@ M = platonicsolid(4,r)
 V = coordinates(M)
 F = faces(M)
 
-# Fn,Vn = subTri(F,V,1; method="loop")
+# Fn,Vn = subTri(F,V,1; method=:loop)
 
 ################# 
 
@@ -19,7 +19,7 @@ titleString = lift(hSlider.value) do stepIndex
 end
 
 Mn = lift(hSlider.value) do stepIndex
-    Fn,Vn = subtri(F,V,stepIndex; method="loop") 
+    Fn,Vn = subtri(F,V,stepIndex; method=:loop) 
     return GeometryBasics.Mesh(Vn,Fn)
 end
 

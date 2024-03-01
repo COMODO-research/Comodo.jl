@@ -42,7 +42,7 @@ p = mean(V,dims=1)[1]; # Point on cutting plane
 n = normalizevector(Vec{3, Float64}(0.0,1.0,1.0))# Cutting plane normal
 snapTolerance = 1e-6
 
-Fn,Vn = trisurfslice(F,V,n,p; output_type="below")
+Fn,Vn = trisurfslice(F,V,n,p; output_type=:below)
 Mn = GeometryBasics.Mesh(Vn,Fn)
 
 
@@ -62,7 +62,7 @@ hSlider = Slider(fig[2, 1], range = stepRange, startvalue = 0,linewidth=30)
 
 Mn = lift(hSlider.value) do stepIndex       
     pp = [p[1],p[2],p[3]+stepIndex]
-    Fn,Vn = trisurfslice(F,V,n,pp; output_type="below")        
+    Fn,Vn = trisurfslice(F,V,n,pp; output_type=:below)        
     return GeometryBasics.Mesh(Vn,Fn)
 end
 

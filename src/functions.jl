@@ -57,7 +57,6 @@ function gridpoints(x::AbstractRange{T}, y=x, z=x) where T<:Real
                              length(x)*length(y)*length(z))
 end  
 
-
 function interp_biharmonic_spline(x,y,xi; extrapolate_method="linear",pad_data="linear")
     # This function uses biharmonic spline interpolation. The input is assumed to represent ordered data representing a curve
     # 
@@ -68,7 +67,7 @@ function interp_biharmonic_spline(x,y,xi; extrapolate_method="linear",pad_data="
     # Pad data if needed
     xx = collect(x)
     yy = collect(y)
-    if pad_data=="linear"
+    if pad_data==:linear
         # Linearly extended ends are added 
         dx1 = x[1]-x[2]
         dy1 = y[1]-y[2]    
@@ -84,7 +83,7 @@ function interp_biharmonic_spline(x,y,xi; extrapolate_method="linear",pad_data="
         pushfirst!(yy,y[1]+2.0*dy1) 
         push!(yy,y[end]+dy2)
         push!(yy,y[end]+2.0*dy2)
-    elseif pad_data=="constant"
+    elseif pad_data==:constant
         # The start and end are copied twice 
         dx1 = x[1]-x[2]       
         dx2 = x[end]-x[end-1]
@@ -98,14 +97,14 @@ function interp_biharmonic_spline(x,y,xi; extrapolate_method="linear",pad_data="
         pushfirst!(yy,y[1]) 
         push!(yy,y[end])
         push!(yy,y[end])
-    elseif  pad_data=="none"
+    elseif  pad_data==:none
         # No padding
     else
-        error(""" Invalid pad_data method provided, valued options are: "linear", "constant", and "none" """)
+        error(""" Invalid pad_data method provided, valued options are: linear, constant, and none """)
     end
 
     # Change behaviour depending on extrapolation method
-    if extrapolate_method=="linear"
+    if extrapolate_method==:linear
         # Simple data based linear extrapolation 
         L = [xii<x[1] || xii>x[end] for xii in xi] # Boolean for points to extrapolate for
         if any(L) # If any points outside of the range were encountered
@@ -115,7 +114,7 @@ function interp_biharmonic_spline(x,y,xi; extrapolate_method="linear",pad_data="
         else # Nothing to extrapolate
             yi = interp_biharmonic(xx,yy,xi)
         end
-    elseif extrapolate_method=="constant"
+    elseif extrapolate_method==:constant
         # Simple constant extrapolation (last/first value is repeated indefinately)
         Ls = xi.<x[1] # Boolean for points preceeding the start
         Ll = xi.>x[end] # Boolean for points after the end
@@ -132,9 +131,11 @@ function interp_biharmonic_spline(x,y,xi; extrapolate_method="linear",pad_data="
         else # Nothing to extrapolate
             yi = interp_biharmonic(xx,yy,xi)
         end
-    elseif extrapolate_method=="biharmonic"
+    elseif extrapolate_method==:biharmonic
         # Allow extrapolation as per the biharmonic function
         yi = interp_biharmonic(xx,yy,xi) 
+    else
+        error(""" Invalid extrapolate_method method provided, valued options are: linear, constant, and biharmonic """)
     end
 
     return yi
@@ -828,11 +829,11 @@ function facearea(M::GeometryBasics.Mesh)
     return facearea(faces(M),coordinates(M))
 end
 
-function vertexnormal(M::GeometryBasics.Mesh; weighting="area")     
+function vertexnormal(M::GeometryBasics.Mesh; weighting=:area)     
     return normalizevector(vertexnormal(faces(M),coordinates(M); weighting=weighting))
 end
 
-function vertexnormal(F,V; weighting="area")     
+function vertexnormal(F,V; weighting=:area)     
     return normalizevector(simplex2vertexdata(F,facenormal(F,V),V; weighting=weighting))
 end
 
@@ -887,7 +888,7 @@ function unique_simplices(F,V=missing)
     return F[ind1], ind1, ind2
 end
 
-function subtri(F,V,n; method = "linear")
+function subtri(F,V,n; method = :linear)
     
     if n==0
         return F,V
@@ -911,10 +912,10 @@ function subtri(F,V,n; method = "linear")
         con_E2F = con_edge_face(F,Eu,indReverse)
 
         # Create new vertices depending on method
-        if method == "linear" # Simple linear splitting
+        if method == :linear # Simple linear splitting
             # Create complete point set
             Vn = [V; simplexcenter(Eu,V)]  # Old and new mid-edge points          
-        elseif method == "loop" #Loop subdivision 
+        elseif method == :loop #Loop subdivision 
     
             # New mid-edge like vertices
             Vm = Vector{GeometryBasics.Point{3, Float64}}(undef,length(Eu)) 
@@ -965,7 +966,7 @@ function subtri(F,V,n; method = "linear")
     end
 end
 
-function subquad(F,V,n; method="linear")
+function subquad(F,V,n; method=:linear)
     if n==0
         return F,V
     elseif n==1
@@ -981,11 +982,11 @@ function subquad(F,V,n; method="linear")
         con_V2F = con_vertex_face(F,V)
 
         # Define vertices
-        if method =="linear"
+        if method ==:linear
             Ve = simplexcenter(Eu,V) # Mid edge points
             Vf = simplexcenter(F,V)  # Mid face points
             Vn = [V;Ve;Vf] # Joined point set
-        elseif method =="Catmull-Clark"
+        elseif method ==:Catmull_Clark
             # Mid face points
             Vf = simplexcenter(F,V)  
             Ve_mid = simplexcenter(Eu,V) # Mid edge points
@@ -1453,12 +1454,12 @@ function quadsphere(n,r)
     return F,V
 end
 
-function simplex2vertexdata(F,DF,V=missing; con_V2F=missing, weighting="none")
+function simplex2vertexdata(F,DF,V=missing; con_V2F=missing, weighting=:none)
     
     if ismissing(con_V2F)
         con_V2F = con_vertex_face(F,V)
     end
-    if weighting=="area"
+    if weighting==:area
         if ismissing(V)
            error("Vertices need to be provided for area based weighting.") 
         else
@@ -1468,9 +1469,9 @@ function simplex2vertexdata(F,DF,V=missing; con_V2F=missing, weighting="none")
     DV = (typeof(DF))(undef,length(con_V2F))
     T = eltype(DV)
     for q ∈ eachindex(DV)
-        if weighting=="none"
+        if weighting==:none
             DV[q] = mean(T,DF[con_V2F[q]])
-        elseif weighting=="area"            
+        elseif weighting==:area            
             a = A[con_V2F[q]]
             DV[q] = sum(T,DF[con_V2F[q]].*a)./sum(a)
         end
@@ -1499,18 +1500,20 @@ function normalizevector(A)
     end
 end
 
-function circlepoints(r,n; dir="acw")
-    if dir=="acw"
+function circlepoints(r,n; dir=:acw)
+    if dir==:acw
         return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0,2*π-(2*π)/n,n)]
-    else
+    elseif dir==:cw
         return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0,(2*π)/n-2*π,n)]
+    else
+        error("Invalid dir specified, use :acw or :cw")
     end
 end
 
-function circlepoints(f::FunctionType,n; dir="acw") where {FunctionType <: Function}
-    if dir=="acw"
+function circlepoints(f::FunctionType,n; dir=:acw) where {FunctionType <: Function}
+    if dir==:acw
         return [GeometryBasics.Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t ∈ range(0,2*π-(2*π)/n,n)]
-    else
+    elseif dir==:cw
         return [GeometryBasics.Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t ∈ range(0,(2*π)/n-2*π,n)]
     end
 end
@@ -1521,15 +1524,15 @@ end
     steps, and forming mesh faces between each curve. If `close_loop==true`
     then it is assumed the curves and surface should be closed over. The user 
     can request different face types for the output. The default is 
-    `face_type="tri"` which will form isoceles triangles (or equilateral 
+    `face_type=:tri` which will form isoceles triangles (or equilateral 
     triangles if the spacing is even) for a planar curve. The other `face_type`
-    options supported are `"quad"` (quadrilateral), and `"tri_slash"`. For the 
+    options supported are `:quad` (quadrilateral), and `:tri_slash`. For the 
     latter, triangles are formed by slashing the quads.  
     The point order here causes normal directions to conform to a surface if 
     the input curves were derived from a surface (in 2D this means "clockwise
      curves" would result in an outward normal surface. 
 """
-function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type="tri")
+function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
     num_loop = length(V1)
     T = eltype(V1)
     # Linearly blending points from first to last
@@ -1540,7 +1543,7 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type="tri")
         append!(V,Vn)
     end
 
-    if face_type == "tri"
+    if face_type == :tri
         V0 = deepcopy(V)
         for qq ∈ 2:2:num_steps-1
             i = (1:1:num_loop) .+ (qq-1) *num_loop
@@ -1557,7 +1560,7 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type="tri")
     ij2ind(i,j) = i + ((j-1)*num_loop) # function to convert subscript to linear indices
 
     # Build faces
-    if face_type == "quad"    
+    if face_type == :quad    
         F = Vector{QuadFace{Int64}}()
         for i = 1:1:num_loop-1
             for j = 1:1:num_steps-1    
@@ -1571,7 +1574,7 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type="tri")
                 push!(F,QuadFace{Int64}([ ij2ind(num_loop,q+1), ij2ind(1,q+1), ij2ind(1,q), ij2ind(num_loop,q) ])) 
             end
         end
-    elseif face_type == "tri_slash" 
+    elseif face_type == :tri_slash 
         F = Vector{TriangleFace{Int64}}()
         for i = 1:1:num_loop-1
             for j = 1:1:num_steps-1    
@@ -1587,7 +1590,7 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type="tri")
                 push!(F,TriangleFace{Int64}([ ij2ind(num_loop,q), ij2ind(num_loop,q+1), ij2ind(1,q+1)       ])) # 3 4 1
             end
         end
-    elseif face_type == "tri" 
+    elseif face_type == :tri 
         F = Vector{TriangleFace{Int64}}()
         for i = 1:1:num_loop-1
             for j = 1:1:num_steps-1    
@@ -1613,41 +1616,45 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type="tri")
                 end
             end
         end
+    else
+        error("Invalid face_type specified, use :tri, :tri_slash, or :quad")
     end
     return F, V
 end 
 
-function dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style="from")
+function dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:from)
     E = [GeometryBasics.LineFace{Int}(i,i+length(V)) for i ∈ 1:1:length(V)]
-    if style=="from"
+    if style==:from
         P = vcat(V,V.+(scaleval.*U))
-    elseif style=="to"
+    elseif style==:to
         P = vcat(V.-(scaleval.*U),V)
-    elseif style=="through"
+    elseif style==:through
         UU = (scaleval.*U)/2
         P = vcat(V.-UU,V.+UU)
+    else
+        error("Invalid style specified, use :from, :to, or :through")
     end
     hp = wireframe!(ax,GeometryBasics.Mesh(P,E),linewidth=linewidth, transparency=false, color=color)
     return hp
 end
 
-function normalplot(ax,M; type_flag="face", color=:black,linewidth=3,scaleval=missing)
+function normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=missing)
     F = faces(M)
     V = coordinates(M)
     E = meshedges(F)
     if ismissing(scaleval)
         scaleval = mean([norm(V[e[1]]-V[e[2]])/2.0 for e ∈ E])
     end
-    if type_flag == "face"        
+    if type_flag == :face        
         N = facenormal(F,V)
         V = simplexcenter(F,V)        
-    elseif type_flag == "vertex"
+    elseif type_flag == :vertex
         N = vertexnormal(F,V)          
     else
-        error(""" Incorrect type_flag, use "face" or "vertex" """)
+        error(""" Incorrect type_flag, use :face or :vertex """)
     end 
     
-    hp = dirplot(ax,V,N; color=color,linewidth=linewidth,scaleval=scaleval,style="from")
+    hp = dirplot(ax,V,N; color=color,linewidth=linewidth,scaleval=scaleval,style=:from)
 
     # hp = arrows!(ax,V,N.*d,color=color,quality=6)    
     return hp 
@@ -1683,18 +1690,18 @@ function edgeangles(F,V)
     return A
 end
 
-function quad2tri(F,V; convert_method = "angle")
+function quad2tri(F,V; convert_method = :angle)
     # Local functions for slash based conversion   
     forw_slash(f) = [[f[1],f[2],f[3]],[f[3],f[4],f[1]]] # Forward slash 
     back_slash(f) = [[f[1],f[2],f[4]],[f[2],f[3],f[4]]] # Back slash
 
     Ft = Vector{TriangleFace{Int64}}()#(undef,length(Fn1)*2)
     for f ∈ F        
-        if convert_method == "forward"
+        if convert_method == :forward
             ft = forw_slash(f)
-        elseif convert_method == "backward"
+        elseif convert_method == :backward
             ft = back_slash(f)
-        elseif convert_method == "angle" 
+        elseif convert_method == :angle 
             ff = forw_slash(f)
             fb = back_slash(f)
             # Get edge angles
@@ -1709,7 +1716,7 @@ function quad2tri(F,V; convert_method = "angle")
                 ft = fb
             end    
         else
-            error("""Incorrect conver_method set, use "forward", "backward", or "angle" """)
+            error("""Incorrect conver_method set, use forward, backward, or angle """)
         end
         push!(Ft,ft[1])
         push!(Ft,ft[2])
@@ -1723,17 +1730,11 @@ function remove_unused_vertices(F,V)
     Vc = V[indUsed] # Remove unused points    
     indFix = zeros(length(V))
     indFix[indUsed].=1:1:length(indUsed)
-    
-    #     indSort = sortperm(indUsed)
-    #     indFix = SparseVector(length(V),indUsed[indSort],indSort)     
-    #     m=length(F[1])
-    #     Fc = [(T)([indFix[f[i]] for i ∈ 1:3]) for f ∈ F] # Fix indices in F 
-
     Fc = [(T)(indFix[f]) for f ∈ F] # Fix indices in F 
     return Fc, Vc, indFix
 end
 
-function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance = 0, output_type="full")
+function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance = 0, output_type=:full)
 
     intersectFunc(v1,v2,d,n) = v1 .- d/dot(n,v2.-v1) .* (v2.-v1)
     
@@ -1752,7 +1753,7 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
         
         if any(lf) # Some or all below
             if all(lf) # All below
-                if output_type == "full" || output_type == "below"            
+                if output_type == :full || output_type == :below            
                     push!(Fn,f)
                 end                 
             else # Some below -> cut
@@ -1772,10 +1773,10 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
                         D[e2] = length(Vn)
                     end
 
-                    if output_type == "above" || output_type == "full"                        
+                    if output_type == :above || output_type == :full                        
                         push!(Fn,TriangleFace{Int64}(D[e1],indP[2],indP[3]))
                         push!(Fn,TriangleFace{Int64}(D[e1],indP[3],D[e2]))
-                    elseif output_type == "below" || output_type == "full"
+                    elseif output_type == :below || output_type == :full
                         push!(Fn,TriangleFace{Int64}(indP[1],D[e1],D[e2]))
                     end
 
@@ -1794,16 +1795,16 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
                         D[e2] = length(Vn)
                     end
                     
-                    if output_type == "below" || output_type == "full"                        
+                    if output_type == :below || output_type == :full                        
                         push!(Fn,TriangleFace{Int64}(D[e1],indP[2],indP[3]))
                         push!(Fn,TriangleFace{Int64}(D[e1],indP[3],D[e2]))
-                    elseif output_type == "above" || output_type == "full"
+                    elseif output_type == :above || output_type == :full
                         push!(Fn,TriangleFace{Int64}(indP[1],D[e1],D[e2]))
                     end
                 end
             end
         else # Not any below -> all above
-            if output_type == "full" || output_type == "above"            
+            if output_type == :full || output_type == :above            
                 push!(Fn,f)
             end    
         end
@@ -1860,10 +1861,10 @@ function pointspacingmean(V)
     return p
 end
 
-function extrudecurve(V1,d; s=1, n=Point{3, Float64}(0.0,0.0,1.0),num_steps=missing,close_loop=false,face_type="quad")
+function extrudecurve(V1,d; s=1, n=Point{3, Float64}(0.0,0.0,1.0),num_steps=missing,close_loop=false,face_type=:quad)
     if ismissing(num_steps)
         num_steps = ceil(Int64,d/pointspacingmean(V1))
-        if face_type=="tri"
+        if face_type==:tri
             num_steps = num_steps + Int64(iseven(num_steps)) # Force uneven
         end
     end
@@ -1879,11 +1880,11 @@ function extrudecurve(V1,d; s=1, n=Point{3, Float64}(0.0,0.0,1.0),num_steps=miss
     return loftlinear(V1,V2;num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 end
 
-function meshgroup(F; con_type = "v")
+function meshgroup(F; con_type = :v)
 
-    if con_type == "v" # Group based on vertex connectivity 
+    if con_type == :v # Group based on vertex connectivity 
         con_F2F = con_face_face_v(F)
-    elseif con_type == "e" # Group based on edge connectivity
+    elseif con_type == :e # Group based on edge connectivity
         # EDGE-VERTEX connectivity
         E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
@@ -1897,7 +1898,7 @@ function meshgroup(F; con_type = "v")
         # FACE-FACE connectivity
         con_F2F = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
     else 
-        error(""" Wrong `con_type`, use "e" or "f" """)
+        error(""" Wrong `con_type`, use :v or :e """)
     end
 
     if all(isempty.(con_F2F)) # Completely disconnected face set (e.g. raw STL import)
@@ -2010,7 +2011,7 @@ end
 #     return ind,d,l
 # end
 
-function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = "ray", triSide = 1, tolEps = eps(Float64))
+function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
     """
     Implementation of the Möller-Trumbore triangle-ray intersection algorithm. 
 
@@ -2044,7 +2045,7 @@ function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; 
             if v >= 0 && (u+v) <= 1 # On triangle according to both u and v
                 # Allong ray/line coordinates i.e. intersection is at ray_origin + t.*ray_vector 
                 t = dot(vec_edge_2,s_cross_e1)/det_vec                      
-                if rayType == "ray" || (rayType == "line" && t>=0 && t<=1.0)                                                   
+                if rayType == :ray || (rayType == :line && t>=0 && t<=1.0)                                                   
                     p = ray_origin .+ t.*ray_vector # same as: push!(P, P1 .+ u.*P21 .+ v.*P31)            
                 end
             end
@@ -2053,7 +2054,7 @@ function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; 
     return p 
 end
 
-function ray_triangle_intersect(F::Vector{TriangleFace{Int64}},V,ray_origin,ray_vector; rayType = "ray", triSide = 1, tolEps = eps(Float64))
+function ray_triangle_intersect(F::Vector{TriangleFace{Int64}},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
     P = Vector{GeometryBasics.Point{3, Float64}}()
     indIntersect = Vector{Int64}()
     for qf ∈ eachindex(F)

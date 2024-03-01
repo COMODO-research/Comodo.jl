@@ -28,7 +28,7 @@ for q=1:1:3
     ax1=Axis3(fig[1, q], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
     hp1=poly!(ax1,M, strokewidth=3,shading=FastShading,color=:white, transparency=true, overdraw=false)
     # hpa=arrows!(ax1,VN,N,color=:blue)  
-    hpa = dirplot(ax1,VN,N; color=:blue,linewidth=3,scaleval=1.0,style="from")
+    hpa = dirplot(ax1,VN,N; color=:blue,linewidth=3,scaleval=1.0,style=:from)
 end
 
 fig
