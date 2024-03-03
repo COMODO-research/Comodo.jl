@@ -1,5 +1,23 @@
 using Test, Comodo, GeometryBasics
 
+@testset "elements2indices" verbose = true begin
+    # Check if an order/sorting invariant test should be created 
+    
+    @testset "Traingular faces (vector with members of type GeometryBasics TriangleFace)" begin
+        
+        F = Vector{TriangleFace{Int64}}(undef,3)
+        F[1 ] = TriangleFace{Int64}(9,4,1)
+        F[2 ] = TriangleFace{Int64}(1,5,9)
+        F[3 ] = TriangleFace{Int64}(1,8,5)
+        result = elements2indices(F)
+        @test result == [9,4,1,5,8] 
+    end
+
+    # @testset "Quadrilateral faces" begin
+
+    # end
+end
+
 @testset "dist" verbose = true begin
 
     @testset "vector to vector" begin
