@@ -1,51 +1,25 @@
 using Test, Comodo, GeometryBasics
 
-@testset "elements2indices" verbose = true begin
-    # Check if an order/sorting invariant test should be created 
-    
-    @testset "Traingular faces (vector with members of type GeometryBasics TriangleFace)" begin
-        
+@testset "elements2indices" verbose = true begin    
+    @testset "Tri. faces" begin
         F = Vector{TriangleFace{Int64}}(undef,3)
         F[1 ] = TriangleFace{Int64}(9,4,1)
         F[2 ] = TriangleFace{Int64}(1,5,9)
         F[3 ] = TriangleFace{Int64}(1,8,5)
         result = elements2indices(F)
-        @test result == [9,4,1,5,8] 
+        @test sort(result) == [1,4,5,8,9] 
     end
 
-    # @testset "Quadrilateral faces" begin
-
-    # end
-end
-
-@testset "dist" verbose = true begin
-
-    @testset "vector to vector" begin
-        v1 = Float64[0, 0, 0]
-        v2 = Float64[0, 0, 5]
-        result = dist(v1, v2) 
-        @test result == [0.0 0.0 5.0; 0.0 0.0 5.0; 0.0 0.0 5.0]
-    end
-
-    @testset "vector of points to vector of points" begin
-        V1 = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-        V1[1 ] = GeometryBasics.Point{3, Float64}( 1.0,   0.0,  0.0)
-        V1[2 ] = GeometryBasics.Point{3, Float64}( 0.0,   1.0,  0.0)
-        V1[3 ] = GeometryBasics.Point{3, Float64}( 0.0,   0.0,  1.0)
-        V1[4 ] = GeometryBasics.Point{3, Float64}( 1.0,   1.0,  1.0)
-
-        V2 = Vector{GeometryBasics.Point{3, Float64}}(undef,3)
-        V2[1 ] = GeometryBasics.Point{3, Float64}( π,   0.0,  0.0)
-        V2[2 ] = GeometryBasics.Point{3, Float64}( 0.0,  π,  0.0)
-        V2[3 ] = GeometryBasics.Point{3, Float64}( 0.0,   0.0,  π)
-
-        result = dist(V1, V2)
-        eps_level = maximum(eps.(result))
-
-        @test isapprox(result,[2.141592653589793 3.296908309475615 3.296908309475615; 
-                         3.296908309475615 2.141592653589793 3.296908309475615; 
-                         3.296908309475615 3.296908309475615 2.141592653589793; 
-                         2.5664019743426345 2.5664019743426345 2.5664019743426345],atol=eps_level)
+    @testset "Quad. faces" begin
+        F = Vector{QuadFace{Int64}}(undef,6)
+        F[1 ] = QuadFace{Int64}(1,2,3,4)
+        F[2 ] = QuadFace{Int64}(8,7,6,5)
+        F[3 ] = QuadFace{Int64}(5,6,2,1)
+        F[4 ] = QuadFace{Int64}(6,7,3,2)    
+        F[5 ] = QuadFace{Int64}(7,8,4,3)    
+        F[6 ] = QuadFace{Int64}(8,5,1,4) 
+        result = elements2indices(F)
+        @test sort(result) == [1,2,3,4,5,6,7,8] 
     end
 end
 
@@ -93,7 +67,7 @@ end
         a = Float64[1, 2, 3]
         b = Float64[2, 3, 5]
 
-        expected = Point3{Float64}[
+        expected = GeometryBasics.Point3{Float64}[
             [1.0, 2.0, 1.0],
             [1.0, 2.0, 2.0],
             [1.0, 2.0, 3.0],
@@ -179,6 +153,125 @@ end
     end
 end
 
+@testset "interp_biharmonic_spline" verbose = true begin  
+          
+    @testset "linear / linear" begin        
+        x = Float64[0.0,1.0,2.0,3.0] 
+        y = Float64[0.0,1.0,0.0,1.0] 
+        xi = range(-0.5,3.5,9)         
+        result = interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:linear)        
+        true_result = [-0.5, -2.220446049250313e-16, 0.650942317501349, 
+                      0.9999999999999994, 0.501564606542732, 
+                      -2.983724378680108e-16, 0.3537866863312682, 
+                      0.9999999999999997, 1.5]    
+        eps_level = maximum(eps.(result))
+        @test isapprox(result,true_result,atol=eps_level)
+    end
+
+    @testset "linear / constant" begin        
+        x = Float64[0.0,1.0,2.0,3.0] 
+        y = Float64[0.0,1.0,0.0,1.0] 
+        xi = range(-0.5,3.5,9)         
+        result = interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:constant)        
+        true_result = [ 0.0, -1.7763568394002505e-15, 0.5861167655113347, 
+                        0.9999999999999998, 0.5015646065427324, 
+                       -2.42861286636753e-16, 0.41861223832128147, 
+                       0.9999999999999993, 1.0]    
+        eps_level = maximum(eps.(result))
+        @test isapprox(result,true_result,atol=eps_level)
+    end
+
+    @testset "linear / none" begin        
+        x = Float64[0.0,1.0,2.0,3.0] 
+        y = Float64[0.0,1.0,0.0,1.0] 
+        xi = range(-0.5,3.5,9)         
+        result = interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:none)        
+        true_result = [-0.5, -1.1102230246251565e-16, 0.9548390432176067,
+                       0.9999999999999999, 0.5061519335211898, 
+                       -1.1102230246251565e-16, 0.18162885699253484, 1.0, 1.5]    
+        eps_level = maximum(eps.(result))
+        @test isapprox(result,true_result,atol=eps_level)
+    end
+    
+    @testset "constant / none" begin        
+        x = Float64[0.0,1.0,2.0,3.0] 
+        y = Float64[0.0,1.0,0.0,1.0] 
+        xi = range(-0.5,3.5,9)         
+        result = interp_biharmonic_spline(x,y,xi; extrapolate_method=:constant,pad_data=:none)        
+        true_result = [0.0, -1.1102230246251565e-16, 0.9548390432176067, 
+                       0.9999999999999999, 0.5061519335211898, 
+                       -1.1102230246251565e-16, 0.18162885699253484, 1.0, 1.0] 
+        eps_level = maximum(eps.(result))
+        @test isapprox(result,true_result,atol=eps_level)
+    end
+
+    @testset "biharmonic / none" begin        
+        x = Float64[0.0,1.0,2.0,3.0] 
+        y = Float64[0.0,1.0,0.0,1.0] 
+        xi = range(-0.5,3.5,9)         
+        result = interp_biharmonic_spline(x,y,xi; extrapolate_method=:biharmonic,pad_data=:none)        
+        true_result = [-2.3709643220609977, -1.1102230246251565e-16, 
+                        0.9548390432176067, 0.9999999999999999, 
+                        0.5061519335211898, -1.1102230246251565e-16, 
+                        0.1816288569925348, 1.0, 2.801059658186898]
+        eps_level = maximum(eps.(true_result))
+        @test isapprox(result,true_result,atol=eps_level)
+    end
+    
+end
+
+@testset "interp_biharmonic" verbose = true begin 
+    @testset "3D points 1D data, vectors" begin        
+        result = interp_biharmonic([[0.0,0.0,-1.0],[0.0,0.0,1.0]],[-10,10],[[0.0,0.0,x] for x in range(-1,1,5)])
+        true_result = [-10.0, -7.449961786934791, 0.0, 7.449961786934791, 10.0]
+        eps_level = maximum(eps.(true_result))
+        @test isapprox(result,true_result,atol=eps_level)
+    end
+
+    @testset "3D points 1D data, geometry basics point vectors" begin        
+        result = interp_biharmonic(GeometryBasics.Point3{Float64}[[0.0,0.0,-1.0],[0.0,0.0,1.0]],[-10,10],
+                                  [GeometryBasics.Point3{Float64}(0.0,0.0,x) for x in range(-1,1,5)])
+        true_result = [-10.0, -7.449961786934791, 0.0, 7.449961786934791, 10.0]
+        eps_level = maximum(eps.(true_result))
+        @test isapprox(result,true_result,atol=eps_level)
+    end
+
+end
+
+Ci = interp_biharmonic([[0.0,0.0,-1.0],[0.0,0.0,1.0]],[-10,10],[[0.0,0.0,x] for x in range(-1,1,3)])
+
+@testset "dist" verbose = true begin
+
+    @testset "vector to vector" begin
+        v1 = Float64[0, 0, 0]
+        v2 = Float64[0, 0, 5]
+        result = dist(v1, v2) 
+        @test result == [0.0 0.0 5.0; 0.0 0.0 5.0; 0.0 0.0 5.0]
+    end
+
+    @testset "vector of points to vector of points" begin
+        V1 = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
+        V1[1 ] = GeometryBasics.Point{3, Float64}( 1.0,   0.0,  0.0)
+        V1[2 ] = GeometryBasics.Point{3, Float64}( 0.0,   1.0,  0.0)
+        V1[3 ] = GeometryBasics.Point{3, Float64}( 0.0,   0.0,  1.0)
+        V1[4 ] = GeometryBasics.Point{3, Float64}( 1.0,   1.0,  1.0)
+
+        V2 = Vector{GeometryBasics.Point{3, Float64}}(undef,3)
+        V2[1 ] = GeometryBasics.Point{3, Float64}( π,   0.0,  0.0)
+        V2[2 ] = GeometryBasics.Point{3, Float64}( 0.0,  π,  0.0)
+        V2[3 ] = GeometryBasics.Point{3, Float64}( 0.0,   0.0,  π)
+
+        result = dist(V1, V2)
+        eps_level = maximum(eps.(result))
+
+        @test isapprox(result,[2.141592653589793 3.296908309475615 3.296908309475615; 
+                         3.296908309475615 2.141592653589793 3.296908309475615; 
+                         3.296908309475615 3.296908309475615 2.141592653589793; 
+                         2.5664019743426345 2.5664019743426345 2.5664019743426345],atol=eps_level)
+    end
+end
+
+
 
 @testset "geosphere(3,1.0)" begin
     F, V = geosphere(3, 1.0)
@@ -204,7 +297,7 @@ end
 end
 
 
-@testset "remove unused vertices" begin
+@testset "remove_unused_vertices" begin
     F, V = geosphere(3, 1.0)
     VC = simplexcenter(F, V)
     F = [F[i] for i in findall(map(v -> v[3] > 0, VC))] # Remove some faces
@@ -218,7 +311,7 @@ end
 end
 
 
-@testset "boundry edges" begin
+@testset "boundaryedges" begin
     F, V = geosphere(3, 1.0)
     VC = simplexcenter(F, V)
     F = [F[i] for i in findall(map(v -> v[3] > 0, VC))] # Remove some faces
@@ -230,7 +323,7 @@ end
     @test Eb[1] == [272, 205]
 end
 
-@testset "edges to curve" begin
+@testset "edges2curve" begin
     F, V = geosphere(3, 1.0)
     VC = simplexcenter(F, V)
     F = [F[i] for i in findall(map(v -> v[3] > 0, VC))] # Remove some faces
@@ -244,7 +337,7 @@ end
 end
 
 
-@testset "circle points" begin
+@testset "circlepoints" begin
 
     @testset "with value" begin
         V1 = circlepoints(1.0, 40)
@@ -267,13 +360,10 @@ end
 
 end
 
-@testset "platonic solid" begin
-    r = 1
-    n = 3
+@testset "platonicsolid" begin
+    
     eps = 0.001
-
-    M = platonicsolid(4, r)
-
+    M = platonicsolid(4, 1.0) # icosahedron
     @test M isa Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
     @test length(M) == 20
     @test isapprox(M[1][1], [-0.85065080835204, 0.0, -0.5257311121191336], atol=eps)

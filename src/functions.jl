@@ -57,7 +57,7 @@ function gridpoints(x::AbstractRange{T}, y=x, z=x) where T<:Real
                              length(x)*length(y)*length(z))
 end  
 
-function interp_biharmonic_spline(x,y,xi; extrapolate_method="linear",pad_data="linear")
+function interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:linear)
     # This function uses biharmonic spline interpolation. The input is assumed to represent ordered data representing a curve
     # 
     # Reference:  David T. Sandwell, Biharmonic spline interpolation of 
@@ -141,6 +141,23 @@ function interp_biharmonic_spline(x,y,xi; extrapolate_method="linear",pad_data="
     return yi
 end
 
+function interp_biharmonic(x,y,xi)
+    # Distances from all points in X to all points in X
+    Dxx = dist(x,x)
+
+    # Determine weights for interpolation
+    g = (Dxx.^2) .* (log.(Dxx).-1.0)   # Green's function.
+    g[1:size(g,1)+1:length(g)] .= 0.0 # Fix values along diagonal
+    g[isnan.(g)] .= 0.0 # Replace NaN entries by zeros 
+    W = g \ y # Weights  
+
+    D = dist(xi,x) # Distance between points in X and XI
+
+    G = (D.^2).*(log.(D).-1.0) # Green's function.
+    G[isnan.(G)] .= 0.0 # Replace NaN entries by zeros
+    return G * W
+end
+
 function nbezier(P,n)
     t = range(0,1,n) # t range
     N = length(P) # Number of control points 
@@ -157,23 +174,6 @@ function nbezier(P,n)
         end
     end 
     return V
-end
-
-function interp_biharmonic(x,y,xi)
-    # Distances from all points in X to all points in X
-    Dxx = dist(x,x)
-
-    # Determine weights for interpolation
-    g = (Dxx.^2) .* (log.(Dxx).-1.0)   # Green's function.
-    g[1:size(g,1)+1:length(g)] .= 0.0 # Fix values along diagonal
-    g[isnan.(g)] .= 0.0 # Replace NaN entries by zeros 
-    W = g \ y # Weights  
-
-    D = dist(xi,x) # Distance between points in X and XI
-
-    G = (D.^2).*(log.(D).-1.0) # Green's function.
-    G[isnan.(G)] .= 0.0 # Replace NaN entries by zeros
-    return G * W
 end
 
 function lerp(x,y,xi)    
@@ -212,6 +212,22 @@ function dist(V1,V2)
         for j ∈ eachindex(V2)          
             D[i,j] = euclidean(V1[i],V2[j]) # norm(V1[i]-V2[j])       
         end
+    end
+    return D
+end
+
+function dist(V1::Vector{T},v2::T) where T <: AbstractVector
+    D = Matrix{Float64}(undef,length(V1),1)   
+    for i ∈ eachindex(V1)        
+        D[i,1] = euclidean(V1[i],v2)
+    end
+    return D
+end
+
+function dist(v1::T,V2::Vector{T}) where T <: AbstractVector
+    D = Matrix{Float64}(undef,1,length(V2))   
+    for j ∈ eachindex(V2)        
+        D[1,j] = euclidean(v1,V2[j])
     end
     return D
 end
@@ -438,10 +454,10 @@ function gunique(X; return_unique=true, return_index=false, return_inverse=false
     end
 end
 
-"""
-    ind2sub(siz,ind)
+#=
+ind2sub(siz,ind)
 Converts the linear indices in `ind`, for a matrix/array with size `siz`, to the equivalent subscript indices.  
-"""
+=#
 
 function ind2sub(siz,ind)
     
@@ -480,10 +496,10 @@ function ind2sub_(ind,numDim,k)
     return a
 end
 
-"""
-    sub2ind(siz,A)
+#=
+sub2ind(siz,A)
 Converts the subscript indices in `A`, for a matrix/array with size `siz`, to the equivalent linear indices.  
-"""
+=#
 
 function sub2ind(siz,A)
     
@@ -1346,14 +1362,15 @@ function mergevertices(F,V; roundVertices = true, numDigitsMerge=missing)
 end
 
 function smoothmesh_laplacian(F,V,con_V2V=missing; n=1, λ=0.5)
-    """
+    #=
     This function implements Weighted Laplacian mesh smoothing. At each 
     iteration, this method replaces each point by the weighted sum of the 
     Laplacian mean for the point and the point itself. The weighting is 
     controlled by the parameter λ which is in the range (0,1). If λ=0 no 
     smoothing occurs. If λ=0 pure Laplacian mean based smoothing occurs. For 
     intermediate values a linear blending between the two occurs.     
-    """
+    =#
+
     if λ!=1
         # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if missing
         if ismissing(con_V2V)
@@ -1374,7 +1391,7 @@ function smoothmesh_laplacian(F,V,con_V2V=missing; n=1, λ=0.5)
 end
 
 function smoothmesh_hc(F,V, con_V2V=missing; n=1, α=0.1, β=0.5, tolDist=missing)
-    """
+    #=
     This function implements HC (Humphrey's Classes) smoothing. This method uses
     Laplacian like smoothing but aims to compensate for the shrinkage/swelling 
     seen with pure Laplacian smoothing. 
@@ -1382,7 +1399,8 @@ function smoothmesh_hc(F,V, con_V2V=missing; n=1, α=0.1, β=0.5, tolDist=missin
     REF: 
     Vollmer et al. Improved Laplacian Smoothing of Noisy Surface Meshes, 1999
     https://doi.org/10.1111/1467-8659.00334
-    """
+    =#
+
     # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if missing
     if ismissing(con_V2V)
         E = meshedges(F)
@@ -1518,7 +1536,8 @@ function circlepoints(f::FunctionType,n; dir=:acw) where {FunctionType <: Functi
     end
 end
 
-"""
+function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
+    #=
     The `loftlinear` function spans a surface from input curve `V1` to curve 
     `V2`. The surface is formed by "lerping" curves form V1 to V2 in `num_loft` 
     steps, and forming mesh faces between each curve. If `close_loop==true`
@@ -1529,10 +1548,10 @@ end
     options supported are `:quad` (quadrilateral), and `:tri_slash`. For the 
     latter, triangles are formed by slashing the quads.  
     The point order here causes normal directions to conform to a surface if 
-    the input curves were derived from a surface (in 2D this means "clockwise
-     curves" would result in an outward normal surface. 
-"""
-function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
+    the input curves were derived from a surface (in 2D this means "clockwise 
+    curves" would result in an outward normal surface. 
+    =#
+
     num_loop = length(V1)
     T = eltype(V1)
     # Linearly blending points from first to last
@@ -2012,12 +2031,12 @@ end
 # end
 
 function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
-    """
+    #=
     Implementation of the Möller-Trumbore triangle-ray intersection algorithm. 
 
     Möller, Tomas; Trumbore, Ben (1997). "Fast, Minimum Storage Ray-Triangle Intersection".
     Journal of Graphics Tools. 2: 21-28. doi:10.1080/10867651.1997.10487468.    
-    """
+    =#
     
     # Edge vectors
     P1 = V[f[1]] # First corner point
@@ -2068,8 +2087,7 @@ function ray_triangle_intersect(F::Vector{TriangleFace{Int64}},V,ray_origin,ray_
 end
 
 function mesh_curvature_polynomial(F,V)
-    """
-    
+    #=    
     Implemented with the aid of: 
     https://github.com/alecjacobson/geometry-processing-curvature/blob/master/README.md
     
@@ -2077,7 +2095,7 @@ function mesh_curvature_polynomial(F,V)
     F. Cazals and M. Pouget, "Estimating differential quantities using polynomial 
     fitting of osculating jets", Computer Aided Geometric Design, vol. 22, no. 2, 
     pp. 121-146, Feb. 2005, doi: 10.1016/j.cagd.2004.09.004.
-    """
+    =#
     
     E = meshedges(F)
     E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)  
