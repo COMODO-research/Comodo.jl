@@ -5,7 +5,9 @@ import GeometryBasics
 import LinearAlgebra
 import XML
 import DataStructures
-import FEBio
+# Do we really need FEBio in functions.jl?
+# If it is not a library dependency, we can remove it.
+# import FEBio
 import Rotations
 import Statistics
 import SparseArrays
