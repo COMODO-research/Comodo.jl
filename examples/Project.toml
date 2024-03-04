@@ -1,5 +1,6 @@
 [deps]
 Comodo = "59095408-2761-4f7a-bdc2-044e78630271"
+FEBio = "c57eab10-e7d7-41f3-9039-a27761009b26"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 GeometryBasics = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
