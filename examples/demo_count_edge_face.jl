@@ -10,18 +10,26 @@ VC = simplexcenter(F,V) # Finding triangle centre coordiantes
 F = [F[i] for i in findall(map(v-> v[3]>0,VC))] # Remove some faces using z of central coordinates
 F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
 
-# Using `boundaryedges` to find the boundary edges (edges only touching one face)
-Eb = boundaryedges(F)
+# get mesh edges
+E = meshedges(F)
 
-# Using `edges2curve` to convert the set of boundary edges to a list of points defining a curve
-ind = edges2curve(Eb)
+# Get unique edges
+Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+
+# Count number of faces touching edges
+C = count_edge_face(F,Eu,indReverse)
 
 ## Visualization
+
+Eun,Vn = seperate_vertices(Eu,V)
+Cn = simplex2vertexdata(Eun,C,Vn)
+
 fig = Figure(size=(1200,1200))
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary curve Visualization")
 
 hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
-hp2 = lines!(V[ind],color=:red,linewidth=6)
-Legend(fig[1, 2],[hp1,hp2],["Surface","Boundary curve"])
+hp2 = wireframe!(ax1,GeometryBasics.Mesh(Vn,Eun), linewidth=5,color=Cn,colormap= colormap=Makie.Categorical(:viridis))
 
+Legend(fig[1, 2],[hp1,hp2],["Surface","Edges"])
+Colorbar(fig[1, 3],hp2, label = "Number of faces touching edge")
 fig

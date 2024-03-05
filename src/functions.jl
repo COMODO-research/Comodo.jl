@@ -3,12 +3,11 @@
 using GeometryBasics # For point and mesh format
 using LinearAlgebra # For things like dot and cross products
 using DataStructures # For unique_dict
-using Interpolations # E.g. for resampling curves
-using Statistics # For: mean
+using Statistics # For: mean etc.
 using GLMakie # For slidercontrol
-using SparseArrays # For meshconnectivity
 using Rotations 
-using BSplineKit
+using Interpolations # E.g. for resampling curves
+using BSplineKit # E.g. for resampling curves
 using QuadGK: quadgk # For numerical integration
 using Distances
 
@@ -1832,13 +1831,19 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
 end
 
 function count_edge_face(F,E_uni=missing,indReverse=missing)
-    if ismissing(E_uni) | ismissing(indReverse)
+    if ismissing(E_uni) || ismissing(indReverse)
         E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
     end
-    indF = repeat(1:1:length(F); outer=length(F[1]))
-    A = sparse(indReverse,indF,1)
-    return reduce(vcat,sum(A,dims=2))
+    con_F2E = con_face_edge(F,E_uni,indReverse)
+    
+    C = zeros(Int64,length(E_uni))
+    for i_f ∈ eachindex(F)
+        for i ∈ con_F2E[i_f]
+            C[i]+=1
+        end
+    end 
+    return C
 end
 
 function boundaryedges(F)

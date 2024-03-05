@@ -3,19 +3,14 @@ module Comodo
 # Import dependancy libraries
 import GeometryBasics
 import LinearAlgebra
-import XML
 import DataStructures
-# Do we really need FEBio in functions.jl?
-# If it is not a library dependency, we can remove it.
-# import FEBio
 import Rotations
 import Statistics
-import SparseArrays
 import GLMakie
-import Rotations
+import Interpolations # E.g. for resampling curves
 import BSplineKit
-import Distances
 import QuadGK
+import Distances
 
 include("functions.jl")
 

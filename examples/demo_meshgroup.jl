@@ -1,7 +1,6 @@
 using Comodo
 using GLMakie
 using GeometryBasics
-using FileIO
 
 # Example geometry
 testCase = 3
@@ -62,6 +61,7 @@ elseif testCase==4
     end
 elseif testCase==5 # Unmerged STL, each triangle is seperate group
     # Loading a mesh
+    using FileIO
     fileName_mesh = joinpath(gibbondir(),"assets","stl","stanford_bunny_low.stl")
     M = load(fileName_mesh)
 
@@ -70,6 +70,7 @@ elseif testCase==5 # Unmerged STL, each triangle is seperate group
     V = togeometrybasics_points(coordinates(M))
 elseif testCase==6 # Merged STL for single object
     # Loading a mesh
+    using FileIO
     fileName_mesh = joinpath(gibbondir(),"assets","stl","stanford_bunny_low.stl")
     M = load(fileName_mesh)
 
@@ -79,6 +80,7 @@ elseif testCase==6 # Merged STL for single object
     F,V,_ = mergevertices(F,V)
 elseif testCase==7 # Merged STL for single object
     # Loading a mesh
+    using FileIO
     fileName_mesh = joinpath(gibbondir(),"assets","stl","david.stl")
     M = load(fileName_mesh)
 
@@ -91,7 +93,6 @@ elseif testCase==7 # Merged STL for single object
     V2 = map(v-> Point{3, Float64}(v[1],150+v[2],v[3]),deepcopy(V))
     append!(F,F2)
     append!(V,V2)
-
 end
 
 C = meshgroup(F)
@@ -99,15 +100,22 @@ numGroups = maximum(C)
 
 c = cgrad(:Spectral,numGroups,categorical = true)
 
-M=GeometryBasics.Mesh(V,F)
+Fn,Vn = seperate_vertices(F,V)
+Cn = simplex2vertexdata(Fn,C,Vn)
+
+# Visualization
+
 fig = Figure(size=(800,800))
+
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A multi-object mesh")
-poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=2,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
-# normalplot(ax1,M,color=:red,linewidth=3)
-ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Grouping")
-for q = 1:1:maximum(C)
-    poly!(ax2,GeometryBasics.Mesh(V,F[C.==q]), strokewidth=2,color=c[q], strokecolor=:black, shading = FastShading, transparency=false)
-end
+hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
+
+ax2 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Grouping")
+hp2 = poly!(ax2,GeometryBasics.Mesh(Vn,Fn), strokewidth=1,color=Cn, strokecolor=:black, shading = FastShading, transparency=false,colormap=Makie.Categorical(:viridis))
+
+Legend(fig[1, 2],[hp1,hp2],["Mesh object","Grouped mesh"])
+Colorbar(fig[2, 2],hp2, label = "Group labelling")
+
 fig
 
 
