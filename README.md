@@ -5,6 +5,7 @@
 ![](assets/img/COMODO.png) 
 
 [![Mastodon](https://img.shields.io/badge/-MASTODON-%232B90D9?style=for-the-badge&logo=mastodon&logoColor=white)](https://fosstodon.org/@kevinmoerman) 
+[![Doc](https://img.shields.io/badge/docs-dev-blue.svg)](https://comodo-research.github.io/Comodo.jl/dev/)
 
 
 
@@ -20,11 +21,12 @@ Comodo.jl started out as a modern re-implementation in Julia of the MATLAB toolb
 ```julia
 pkg> add https://github.com/COMODO-research/Comodo.jl
 ```
+
 # Getting started
 The `examples` folder contains examples on the use of Comodo's functionality. 
 
 # Documentation 
-Under construction
+[Functional Documentation](https://comodo-research.github.io/Comodo.jl/dev/)
 
 # Combinding with finite element analysis
 For finite element analysis users are encouraged to combine the Comodo capabilities with the open source C++ solver [FEBio](https://febio.org/), e.g. based on the Julia wrapper [FEBio.jl](https://github.com/febiosoftware/FEBio.jl). In addition, users may want to explore the Julia packages [Gridap.jl](https://github.com/gridap/Gridap.jl) and [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl).
