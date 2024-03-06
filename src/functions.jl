@@ -1535,6 +1535,16 @@ function circlepoints(f::FunctionType,n; dir=:acw) where {FunctionType <: Functi
     end
 end
 
+"""
+    loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
+
+    Apply loftlinear for given vectors 
+
+# Arguments:
+- `V1::Vector`: n-vector 
+- `V2::Vector`: n-vector
+
+"""
 function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
     #=
     The `loftlinear` function spans a surface from input curve `V1` to curve 

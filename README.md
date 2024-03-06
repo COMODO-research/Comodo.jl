@@ -27,10 +27,10 @@ The `examples` folder contains examples on the use of Comodo's functionality.
 Under construction
 
 # Combinding with finite element analysis
-For finite element analysis users are encouraged to combine the Comodo capabilities with the open source C++ solver [FEBio](https://febio.org/), e.g. based on the Julia wrapper [FEBio.jl](https://github.com/febiosoftware/FEBio.jl). In addition, users may want to explore the Julia packages [Gridap.jl](https://github.com/gridap/Gridap.jl) and [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl) for finite element analysis will be explored. 
+For finite element analysis users are encouraged to combine the Comodo capabilities with the open source C++ solver [FEBio](https://febio.org/), e.g. based on the Julia wrapper [FEBio.jl](https://github.com/febiosoftware/FEBio.jl). In addition, users may want to explore the Julia packages [Gridap.jl](https://github.com/gridap/Gridap.jl) and [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl).
 
 # Testing 
-Under construction
+Under construction.
 
 # Roadmap
 A detailed roadmap is under construction. 
