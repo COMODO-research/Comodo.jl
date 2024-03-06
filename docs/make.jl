@@ -9,7 +9,7 @@ makedocs(
          sitename="A Julia package for computational (bio)mechanics and computational design",
          authors = "Kevin-Mattheus-Moerman <kevin.moerman@gmail.com>",
          pages = [
-                  "functions" => "functions.md",
+                  "Functions" => "functions.md",
                  ]
         )
 
