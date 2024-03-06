@@ -56,12 +56,18 @@ function gridpoints(x::AbstractRange{T}, y=x, z=x) where T<:Real
                              length(x)*length(y)*length(z))
 end  
 
+
+"""
+    interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:linear)
+
+    This function uses biharmonic spline interpolation. The input is assumed to represent ordered data representing a curve
+
+# References
+    David T. Sandwell, Biharmonic spline interpolation of 
+    GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2,
+    139-142, 1987.  
+"""
 function interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:linear)
-    # This function uses biharmonic spline interpolation. The input is assumed to represent ordered data representing a curve
-    # 
-    # Reference:  David T. Sandwell, Biharmonic spline interpolation of 
-    # GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2,
-    # 139-142, 1987.  
 
     # Pad data if needed
     xx = collect(x)
@@ -453,11 +459,12 @@ function gunique(X; return_unique=true, return_index=false, return_inverse=false
     end
 end
 
-#=
-ind2sub(siz,ind)
-Converts the linear indices in `ind`, for a matrix/array with size `siz`, to the equivalent subscript indices.  
-=#
 
+"""
+    ind2sub(siz,ind)
+
+    Converts the linear indices in `ind`, for a matrix/array with size `siz`, to the equivalent subscript indices.  
+"""
 function ind2sub(siz,ind)
     
     numDim = length(siz)
@@ -495,11 +502,12 @@ function ind2sub_(ind,numDim,k)
     return a
 end
 
-#=
-sub2ind(siz,A)
-Converts the subscript indices in `A`, for a matrix/array with size `siz`, to the equivalent linear indices.  
-=#
 
+"""
+    sub2ind(siz,A)
+
+    Converts the subscript indices in `A`, for a matrix/array with size `siz`, to the equivalent linear indices.  
+"""
 function sub2ind(siz,A)
     
     numDim = length(siz)
@@ -855,7 +863,14 @@ end
 function edgelengths(F,V)    
     return [norm(V[e[1]]-V[e[2]]) for e ∈ meshedges(F; unique_only=true)]
 end
-# Creates mesh data for a platonic solid of choice
+
+
+"""
+    platonicsolid(n,r=1.0)
+
+    Creates mesh data for a platonic solid of choice
+
+"""
 function platonicsolid(n,r=1.0)
     if n==1
         M = tetrahedron(r)
@@ -1360,15 +1375,20 @@ function mergevertices(F,V; roundVertices = true, numDigitsMerge=missing)
     return F,V,ind1,ind2
 end
 
-function smoothmesh_laplacian(F,V,con_V2V=missing; n=1, λ=0.5)
-    #=
+"""
+
+    smoothmesh_laplacian(F,V,con_V2V=missing; n=1, λ=0.5)
+
+# Description
+
     This function implements Weighted Laplacian mesh smoothing. At each 
     iteration, this method replaces each point by the weighted sum of the 
     Laplacian mean for the point and the point itself. The weighting is 
     controlled by the parameter λ which is in the range (0,1). If λ=0 no 
     smoothing occurs. If λ=0 pure Laplacian mean based smoothing occurs. For 
-    intermediate values a linear blending between the two occurs.     
-    =#
+    intermediate values a linear blending between the two occurs.  
+"""
+function smoothmesh_laplacian(F,V,con_V2V=missing; n=1, λ=0.5)
 
     if λ!=1
         # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if missing
@@ -1389,16 +1409,23 @@ function smoothmesh_laplacian(F,V,con_V2V=missing; n=1, λ=0.5)
     return V
 end
 
-function smoothmesh_hc(F,V, con_V2V=missing; n=1, α=0.1, β=0.5, tolDist=missing)
-    #=
+
+"""
+    smoothmesh_hc(F,V, con_V2V=missing; n=1, α=0.1, β=0.5, tolDist=missing)
+
+# Description 
+
     This function implements HC (Humphrey's Classes) smoothing. This method uses
     Laplacian like smoothing but aims to compensate for the shrinkage/swelling 
     seen with pure Laplacian smoothing. 
-    
-    REF: 
+
+# References 
+
     Vollmer et al. Improved Laplacian Smoothing of Noisy Surface Meshes, 1999
     https://doi.org/10.1111/1467-8659.00334
-    =#
+
+"""
+function smoothmesh_hc(F,V, con_V2V=missing; n=1, α=0.1, β=0.5, tolDist=missing)
 
     # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if missing
     if ismissing(con_V2V)
@@ -1540,13 +1567,8 @@ end
 
     Apply loftlinear for given vectors 
 
-# Arguments:
-- `V1::Vector`: n-vector 
-- `V2::Vector`: n-vector
+# Description 
 
-"""
-function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
-    #=
     The `loftlinear` function spans a surface from input curve `V1` to curve 
     `V2`. The surface is formed by "lerping" curves form V1 to V2 in `num_loft` 
     steps, and forming mesh faces between each curve. If `close_loop==true`
@@ -1558,8 +1580,15 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
     latter, triangles are formed by slashing the quads.  
     The point order here causes normal directions to conform to a surface if 
     the input curves were derived from a surface (in 2D this means "clockwise 
-    curves" would result in an outward normal surface. 
-    =#
+    curves" would result in an outward normal surface.
+
+# Arguments:
+- `V1::Vector`: n-vector 
+- `V2::Vector`: n-vector
+
+"""
+function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
+
 
     num_loop = length(V1)
     T = eltype(V1)
@@ -2045,14 +2074,20 @@ end
 #     return ind,d,l
 # end
 
-function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
-    #=
+
+"""
+    ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
+
     Implementation of the Möller-Trumbore triangle-ray intersection algorithm. 
 
-    Möller, Tomas; Trumbore, Ben (1997). "Fast, Minimum Storage Ray-Triangle Intersection".
-    Journal of Graphics Tools. 2: 21-28. doi:10.1080/10867651.1997.10487468.    
-    =#
-    
+# References 
+
+Möller, Tomas; Trumbore, Ben (1997). "Fast, Minimum Storage Ray-Triangle Intersection".
+Journal of Graphics Tools. 2: 21-28. doi:10.1080/10867651.1997.10487468. 
+
+"""
+function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
+
     # Edge vectors
     P1 = V[f[1]] # First corner point
     vec_edge_1 = V[f[2]].-P1 # Edge vector 1-2
@@ -2101,16 +2136,22 @@ function ray_triangle_intersect(F::Vector{TriangleFace{Int64}},V,ray_origin,ray_
     return P,indIntersect
 end
 
-function mesh_curvature_polynomial(F,V)
-    #=    
+
+"""
+    mesh_curvature_polynomial(F,V)
+
+# Notes
+
     Implemented with the aid of: 
     https://github.com/alecjacobson/geometry-processing-curvature/blob/master/README.md
-    
-    Algorithm reference: 
+
+# References 
+
     F. Cazals and M. Pouget, "Estimating differential quantities using polynomial 
     fitting of osculating jets", Computer Aided Geometric Design, vol. 22, no. 2, 
     pp. 121-146, Feb. 2005, doi: 10.1016/j.cagd.2004.09.004.
-    =#
+"""
+function mesh_curvature_polynomial(F,V)
     
     E = meshedges(F)
     E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)  
