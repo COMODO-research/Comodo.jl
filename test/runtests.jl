@@ -670,3 +670,51 @@ end
     @test isapprox(V, expected, atol = eps)
 
 end 
+
+@testset "mindist" begin 
+    
+    eps = 0.01
+
+    V1 = [[1, 2, 3], [0, 0, 0]]
+    V2 = [[4, 5, 6], [0, 0, 0]]
+
+    result = mindist(V1, V2)
+
+    @test result isa Vector{Float64}
+
+    @test isapprox(result, [3.7416573867739413, 0.0], atol = eps)
+
+end 
+
+
+@testset "unique_dict_index" begin 
+
+    result1, result2 = Comodo.unique_dict_index([1, 2, 3, 3, 3, 4, 4, 4, 5])
+
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [1, 2, 3, 6, 9]
+
+end 
+
+
+@testset "unique_dict_index_count" begin 
+
+    result1, result2, result3 = Comodo.unique_dict_index_count([1, 2, 3, 3, 3, 4, 4, 4, 5])
+
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [1, 2, 3, 6, 9]
+    @test result3 == [1, 1, 3, 3, 1]
+
+end 
+
+
+@testset "unique_dict_index_inverse_count" begin 
+
+    r1, r2, r3, r4 = Comodo.unique_dict_index_inverse_count([1, 2, 3, 3, 3, 4, 4, 4, 5])
+
+    @test r1 == [1, 2, 3, 4, 5]
+    @test r2 == [1, 2, 3, 6, 9]
+    @test r3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    @test r4 == [1, 1, 3, 3, 1]
+
+end 
