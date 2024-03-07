@@ -1698,7 +1698,6 @@ latter, triangles are formed by slashing the quads.
 """
 function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
 
-
     num_loop = length(V1)
     T = eltype(V1)
     # Linearly blending points from first to last
@@ -2042,7 +2041,7 @@ function extrudecurve(V1,d; s=1, n=Point{3, Float64}(0.0,0.0,1.0),num_steps=miss
     end
     if isone(s) # Allong n from V1
         p = d.*n
-    elseif s==-1 # Against n from V1
+    elseif isone(-s) # Against n from V1
         p = -d.*n
     elseif iszero(s) # Extrude both ways from V1
         p = d.*n
