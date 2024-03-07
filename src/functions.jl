@@ -1864,7 +1864,7 @@ function edgeangles(F,V)
     return A
 end
 
-function quad2tri(F,V; convert_method = :angle)
+function quad2tri(F,V; convert_method = :angle)::Vector{TriangleFace{Int64}}
     # Local functions for slash based conversion   
     forw_slash(f) = [[f[1],f[2],f[3]],[f[3],f[4],f[1]]] # Forward slash 
     back_slash(f) = [[f[1],f[2],f[4]],[f[2],f[3],f[4]]] # Back slash
@@ -1898,7 +1898,7 @@ function quad2tri(F,V; convert_method = :angle)
     return Ft
 end
 
-function remove_unused_vertices(F,V)
+function remove_unused_vertices(F,V)::Tuple
     T = eltype(F)
     indUsed = elements2indices(F)
     Vc = V[indUsed] # Remove unused points    
@@ -1986,7 +1986,7 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
     return remove_unused_vertices(Fn,Vn)
 end
 
-function count_edge_face(F,E_uni=missing,indReverse=missing)
+function count_edge_face(F,E_uni=missing,indReverse=missing)::Vector{Int64}
     if ismissing(E_uni) || ismissing(indReverse)
         E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
@@ -2031,7 +2031,7 @@ function edges2curve(Eb)
     return ind
 end
 
-function pointspacingmean(V)
+function pointspacingmean(V)::Float64
     # Equivalent to:  mean(norm.(diff(V,dims=1)))
     p = 0.0
     n = length(V)
