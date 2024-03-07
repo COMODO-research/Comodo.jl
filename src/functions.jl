@@ -35,7 +35,7 @@ left arrow keys, however, rather than stopping at the slider extrema, the
 sliders position will "wrap" back to the start when advancing beyond the end 
 position, and vice versa. 
 """
-function slidercontrol(hSlider,ax)    
+function slidercontrol(hSlider::Slider,ax::Union{Axis3, Figure})    
     on(events(ax).keyboardbutton) do event
         if event.action == Keyboard.press || event.action == Keyboard.repeat # Pressed or held for instance
             if event.key == Keyboard.up                                  
