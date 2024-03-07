@@ -179,7 +179,7 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
     elseif  pad_data==:none
         # No padding
     else
-        error("Invalid pad_data method provided, valued options are: linear, constant, and none")
+        error("Invalid pad_data method provided, valued options are :linear, :constant, and :none")
     end
 
     # Change behaviour depending on extrapolation method
@@ -214,7 +214,7 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
         # Allow extrapolation as per the biharmonic function
         yi = interp_biharmonic(xx,yy,xi) 
     else
-        error("Invalid extrapolate_method method provided, valued options are: linear, constant, and biharmonic")
+        error("Invalid extrapolate_method method provided, valued options are :linear, :constant, and :biharmonic")
     end
 
     return yi
@@ -581,7 +581,7 @@ function ind2sub(siz,ind)
     m = prod(siz)
     
     if any(ind.>m) || any(ind.<1)
-        error("Encountered index value of out of valid range 1:"*string(m))
+        error("Encountered index value of out of valid range 1:$m")
     end
 
     if length(ind)>1
@@ -1112,7 +1112,7 @@ function subtri(F,V,n; method = :linear)
             # Create complete point set
             Vn = [Vv;Vm] # Updated orignals and new "mid-edge-ish" points
         else
-            error("""Incorrect metod. Use: "linear" or "loop" """)
+            error("Incorrect metod. Use: :linear or :loop")
         end
 
         return Fn,Vn    
@@ -1819,7 +1819,7 @@ function normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=mis
     elseif type_flag == :vertex
         N = vertexnormal(F,V)          
     else
-        error(""" Incorrect type_flag, use :face or :vertex """)
+        error("Incorrect type_flag, use :face or :vertex")
     end 
     
     hp = dirplot(ax,V,N; color=color,linewidth=linewidth,scaleval=scaleval,style=:from)
@@ -1884,7 +1884,7 @@ function quad2tri(F,V; convert_method = :angle)
                 ft = fb
             end    
         else
-            error("""Incorrect conver_method set, use forward, backward, or angle """)
+            error("Incorrect conver_method set, use :forward, :backward, or :angle")
         end
         push!(Ft,ft[1])
         push!(Ft,ft[2])
@@ -2072,7 +2072,7 @@ function meshgroup(F; con_type = :v)
         # FACE-FACE connectivity
         con_F2F = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
     else 
-        error(""" Wrong `con_type`, use :v or :e """)
+        error("Wrong `con_type`, use :v or :e")
     end
 
     if all(isempty.(con_F2F)) # Completely disconnected face set (e.g. raw STL import)
