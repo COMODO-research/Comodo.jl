@@ -1112,7 +1112,7 @@ function subtri(F,V,n; method = :linear)
             # Create complete point set
             Vn = [Vv;Vm] # Updated orignals and new "mid-edge-ish" points
         else
-            error("Incorrect metod. Use: :linear or :loop")
+            error("Incorrect metod. Use :linear or :loop")
         end
 
         return Fn,Vn    
@@ -1828,13 +1828,19 @@ function normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=mis
     return hp 
 end
 
-function wrapindex(i::UnitRange{Int64},n)
-    return 1 .+ mod.(i .+ (n-1),n)
-end
+# function wrapindex(i::UnitRange{Int64},n)
+#     return 1 .+ mod.(i .+ (n-1),n)
+# end
+# 
+# function wrapindex(i::Vector{Int64},n)
+#     return 1 .+ mod.(i .+ (n-1),n)
+# end
 
-function wrapindex(i::Vector{Int64},n)
+# Both Vector{Int64} and UnitRange{Int64} are subtypes of 
+# AbstractVector{Int64}
+function wrapindex(i::AbstractVector{Int64}, n)
     return 1 .+ mod.(i .+ (n-1),n)
-end
+end 
 
 function wrapindex(i::Int64,n)
     return 1+mod(i+(n-1),n)
