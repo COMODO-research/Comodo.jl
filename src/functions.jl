@@ -13,7 +13,10 @@ using Distances
 
 """
     ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v)
-A struct featuring the connecticity data for a mesh.   
+
+# Description 
+
+A struct featuring the connectivity data for a mesh.   
 """
 struct ConnectivitySet
     edge_vertex::Vector{LineFace{Int64}}
@@ -33,6 +36,8 @@ end
 """
     comododir()
 
+# Description 
+
 This function simply returns the string for the Comodo path. This is helpful for instance to load items from the `assets`` folder. 
 """
 function comododir()
@@ -42,6 +47,8 @@ end
 
 """
     slidercontrol(hSlider,ax)    
+
+# Description 
 
 This function adds arrow key control to GLMakie sliders. The inputs are the 
 slider handle `hSlider` as well as the axis `ax`. If this function is called the
@@ -84,15 +91,14 @@ end
 """
     elements2indices(F)
 
+# Description
+    
 This function obtains the unique set of indices for the vertices (nodes) 
 used by the the simplices defined by `F`. The vector `F` may contain any type of 
 simplices. For instance the elements in `F` may be of the type 
 `GeometryBasics.TriangleFace` or `GeometryBasics.QuadFace` (or any other) for 
 surface mesh data. However volumetric elements of any type are permitted. In
-essence this function simply returns:  
-```julia
-unique(reduce(vcat,F))
-````
+essence this function simply returns `unique(reduce(vcat,F))`.
 Hence any suitable vector containing vectors of numbers permitted by 
 `reduce(vcat,F)` is supported. 
 """
@@ -103,13 +109,11 @@ end
 """
     gridpoints(x::Vector{T}, y=x, z=x) where T<:Real
 
-Description:
+# Description
+
 The `gridpoints` function returns a vector of 3D points which span a grid in 3D 
 space. Points are defined as per the input ranges or range vectors. The output 
 point vector contains elements of the type `GeometryBasics.Point3`. 
-
-Arguments: 
-
 """
 function gridpoints(x::Union{Vector{T}, AbstractRange{T}}, y=x, z=x) where T<:Real
     reshape([GeometryBasics.Point{3, T}(x, y, z) for z in z, y in y, x in x], 
@@ -119,10 +123,12 @@ end
 """
     interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:linear)
 
+# Description
+
 This function uses biharmonic spline interpolation. The input is assumed to 
 represent ordered data representing a curve. 
 
-Reference: 
+# References
 [David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
 """
 function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union{Vector{T}, AbstractRange{T}},xi::Union{Vector{T}, AbstractRange{T}}; extrapolate_method=:linear,pad_data=:linear) where T<:Real
@@ -217,11 +223,14 @@ end
 """
     interp_biharmonic(x,y,xi)
 
+# Description 
+
 This function uses biharmonic interpolation. The input `x` should define a 
 vector consisting of m points which are n-dimensional, and the input `y` should
 be a vector consisting of m scalar data values. 
 
-Reference: 
+# References 
+
 [David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
 """
 function interp_biharmonic(x,y,xi)
@@ -243,6 +252,8 @@ end
 
 """
     nbezier(P,n)
+
+# Description 
 
 This function returns `n` points for an m-th order Bézier spline, based on the 
 m control points contained in the input vector `P`. This function supports point
@@ -557,7 +568,9 @@ end
 """
     ind2sub(siz,ind)
 
-    Converts the linear indices in `ind`, for a matrix/array with size `siz`, to the equivalent subscript indices.  
+# Description
+Converts the linear indices in `ind`, for a matrix/array with size `siz`, to the 
+equivalent subscript indices.  
 """
 function ind2sub(siz,ind)
     
@@ -600,7 +613,10 @@ end
 """
     sub2ind(siz,A)
 
-Converts the subscript indices in `A`, for a matrix/array with size `siz`, to the equivalent linear indices.  
+# Description
+
+Converts the subscript indices in `A`, for a matrix/array with size `siz`, to 
+the equivalent linear indices.  
 """
 function sub2ind(siz,A)
     
@@ -960,10 +976,26 @@ end
 """
     platonicsolid(n,r=1.0)
 
-    Creates mesh data for a platonic solid of choice
+# Description
+
+Creates a GeometryBasics mesh description for a platonic solid of choice. The 
+input `n` defines the choice.
+1. tetrahedron
+2. cube
+3. octahedron
+4. icosahedron
+5. dodecahedron
+
+The final input parameter `r` defines the radius of the platonic solid (the 
+radius of the circumsphere to the vertices).
+
+# Arguments
+
+n::Integer, defining platonic solid type
+r::Float64, defining circumsphere radius
 
 """
-function platonicsolid(n,r=1.0)
+function platonicsolid(n::Integer,r=1.0)
     if n==1
         M = tetrahedron(r)
     elseif n==2
@@ -1498,8 +1530,8 @@ seen with pure Laplacian smoothing.
 
 # Reference 
 
-Vollmer et al. Improved Laplacian Smoothing of Noisy Surface Meshes, 1999
-https://doi.org/10.1111/1467-8659.00334
+[Vollmer et al. Improved Laplacian Smoothing of Noisy Surface Meshes, 1999. doi: 10.1111/1467-8659.00334](https://doi.org/10.1111/1467-8659.00334)
+
 
 """
 function smoothmesh_hc(F,V, con_V2V=missing; n=1, α=0.1, β=0.5, tolDist=missing)
@@ -2153,13 +2185,12 @@ end
 """
     ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
 
-Implementation of the Möller-Trumbore triangle-ray intersection algorithm. 
+# Description 
+This function can compute triangle-ray or triangle-line intersections. The 
+function implements the "Möller-Trumbore triangle-ray intersection algorithm". 
 
 # References 
-
-Möller, Tomas; Trumbore, Ben (1997). "Fast, Minimum Storage Ray-Triangle Intersection".
-Journal of Graphics Tools. 2: 21-28. doi:10.1080/10867651.1997.10487468. 
-
+[Möller, Tomas; Trumbore, Ben (1997). "Fast, Minimum Storage Ray-Triangle Intersection". Journal of Graphics Tools. 2: 21-28. doi: 10.1080/10867651.1997.10487468.](https://doi.org/10.1080/10867651.1997.10487468)
 """
 function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
 
@@ -2215,16 +2246,16 @@ end
 """
     mesh_curvature_polynomial(F,V)
 
-# Notes
+# Description
+Thisi function computes the per vertex curvature for the input mesh defined by 
+the face `F` and the vertices `V`. A local polynomial is fitted (x+y+x^2+xy+y^2) to each points
+"Laplacian umbrella" (point neighbourhood), and the curvature of this fitted
+form is  
 
-    Implemented with the aid of: 
-    https://github.com/alecjacobson/geometry-processing-curvature/blob/master/README.md
+Implemented with the aid of [this helpful document](https://github.com/alecjacobson/geometry-processing-curvature/blob/master/README.md)
 
 # References 
-
-    F. Cazals and M. Pouget, "Estimating differential quantities using polynomial 
-    fitting of osculating jets", Computer Aided Geometric Design, vol. 22, no. 2, 
-    pp. 121-146, Feb. 2005, doi: 10.1016/j.cagd.2004.09.004.
+[F. Cazals and M. Pouget, "Estimating differential quantities using polynomial fitting of osculating jets", Computer Aided Geometric Design, vol. 22, no. 2, pp. 121-146, Feb. 2005, doi: 10.1016/j.cagd.2004.09.004](https://doi.org/10.1016/j.cagd.2004.09.004)
 """
 function mesh_curvature_polynomial(F,V)
     
