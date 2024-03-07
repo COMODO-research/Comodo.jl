@@ -251,6 +251,24 @@ Ci = interp_biharmonic([[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10], [[0.0, 0.
         @test result == [0.0 0.0 5.0; 0.0 0.0 5.0; 0.0 0.0 5.0]
     end
 
+    @testset "vectors to vector" begin 
+        eps = 0.001
+        v1 = [[1, 2, 3], [0, 0, 0]]
+        v2 = [0, 0, 0]
+        result = dist(v1, v2)
+        @test result isa Matrix
+        @test isapprox(result, [3.7416573867739413; 0.0;;], atol = eps)
+    end 
+
+    @testset "vector to vectors" begin 
+        eps = 0.001
+        v1 = [[1, 2, 3], [0, 0, 0]]
+        v2 = [0, 0, 0]
+        result = dist(v2, v1)
+        @test result isa Matrix
+        @test isapprox(result, [3.7416573867739413 0.0], atol = eps)
+    end 
+
     @testset "vector of points to vector of points" begin
         V1 = Vector{GeometryBasics.Point{3,Float64}}(undef, 4)
         V1[1] = GeometryBasics.Point{3,Float64}(1.0, 0.0, 0.0)
