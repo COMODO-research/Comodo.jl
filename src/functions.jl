@@ -872,20 +872,20 @@ end
 
 function togeometrybasics_faces(FM::Matrix{Int64})
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)
-    if size(FM,2)==3 # Triangles
-        F = Vector{TriangleFace{Int64}}(undef,size(FM,1))
-        for q ∈ 1:1:size(FM,1)            
+    n, m = size(FM)
+    if m == 3 # Triangles
+        F = Vector{TriangleFace{Int64}}(undef, n)
+        for q ∈ 1:1:n            
             F[q] = TriangleFace{Int64}(FM[q,:])
         end
-    elseif size(FM,2)==4 # Quads
-        F = Vector{QuadFace{Int64}}(undef,size(FM,1))
-        for q ∈ 1:1:size(FM,1)            
+    elseif m == 4 # Quads
+        F = Vector{QuadFace{Int64}}(undef, n)
+        for q ∈ 1:1:n            
             F[q] = QuadFace{Int64}(FM[q,:])
         end
     else # Other mesh type
-        m=size(FM,2)
-        F = Vector{m,NgonFace{Int64}}(undef,size(FM,1))        
-        for q ∈ 1:1:size(FM,1)            
+        F = Vector{m,NgonFace{Int64}}(undef, n)        
+        for q ∈ 1:1:n            
             F[q] = NgonFace{m,Int64}(FM[q,:])
         end
     end
