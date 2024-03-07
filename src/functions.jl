@@ -12,6 +12,25 @@ using QuadGK: quadgk # For numerical integration
 using Distances
 
 """
+    ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v)
+A struct featuring the connecticity data for a mesh.   
+"""
+struct ConnectivitySet
+    edge_vertex::Vector{LineFace{Int64}}
+    edge_face::Vector{Vector{Int64}}
+    edge_edge::Vector{Vector{Int64}}
+    face_vertex#::Vector{Vector{Int64}} # Could be triangle/quad etc
+    face_edge::Vector{Vector{Int64}}        
+    face_face::Vector{Vector{Int64}}
+    vertex_edge::Vector{Vector{Int64}}
+    vertex_face::Vector{Vector{Int64}}        
+    vertex_vertex::Vector{Vector{Int64}}
+    vertex_vertex_f::Vector{Vector{Int64}}
+    face_face_v::Vector{Vector{Int64}}
+    ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) = new(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) 
+end
+
+"""
     comododir()
 
 This function simply returns the string for the Comodo path. This is helpful for instance to load items from the `assets`` folder. 
@@ -74,10 +93,9 @@ essence this function simply returns:
 ```julia
 unique(reduce(vcat,F))
 ````
-Hence any suitable vector containing vectors permitted by `reduce(vcat,F)` 
-is supported. 
+Hence any suitable vector containing vectors of numbers permitted by 
+`reduce(vcat,F)` is supported. 
 """
-
 function elements2indices(F)
     return unique(reduce(vcat,F))
 end
@@ -93,16 +111,10 @@ point vector contains elements of the type `GeometryBasics.Point3`.
 Arguments: 
 
 """
-function gridpoints(x::Vector{T}, y=x, z=x) where T<:Real
+function gridpoints(x::Union{Vector{T}, AbstractRange{T}}, y=x, z=x) where T<:Real
     reshape([GeometryBasics.Point{3, T}(x, y, z) for z in z, y in y, x in x], 
                              length(x)*length(y)*length(z))
 end  
-
-function gridpoints(x::AbstractRange{T}, y=x, z=x) where T<:Real
-    reshape([GeometryBasics.Point{3, T}(x, y, z) for z in z, y in y, x in x], 
-                             length(x)*length(y)*length(z))
-end  
-
 
 """
     interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:linear)
@@ -113,16 +125,21 @@ represent ordered data representing a curve.
 Reference: 
 [David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
 """
-
-function interp_biharmonic_spline(x::AbstractRange{T},y::Vector{T},xi; extrapolate_method=:linear,pad_data=:linear) where T<:Real
-    interp_biharmonic_spline(collect(x),y,xi; extrapolate_method=extrapolate_method,pad_data=pad_data)
-end
-
-function interp_biharmonic_spline(x::Vector{T},y::Vector{T},xi; extrapolate_method=:linear,pad_data=:linear) where T<:Real
+function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union{Vector{T}, AbstractRange{T}},xi::Union{Vector{T}, AbstractRange{T}}; extrapolate_method=:linear,pad_data=:linear) where T<:Real
 
     # Pad data if needed
-    xx = deepcopy(x)
-    yy = deepcopy(y)
+    if isa(x,AbstractRange{eltype(x)})
+        xx = collect(x)
+    else
+        xx = deepcopy(x)
+    end
+
+    if isa(y,AbstractRange{eltype(y)})
+        yy = collect(y)
+    else
+        yy = deepcopy(y)
+    end
+
     if pad_data==:linear
         # Linearly extended ends are added 
         dx1 = x[1]-x[2]
@@ -228,20 +245,27 @@ end
     nbezier(P,n)
 
 This function returns `n` points for an m-th order Bézier spline, based on the 
-m control points contained in the input vector `P`. Although this function was 
-developed for point vectors with elements of the type 
-`GeometryBasics.Point{3, Float64}`, other points types are permitted. The 
-output points are returned as a vector with elements of the type `eltype(P)`.
+m control points contained in the input vector `P`. This function supports point
+vectors with elements of the type `AbstractPoint{3}` (e.g.
+`GeometryBasics.Point{3, Float64}`) or `Vector{Float64}`.
 """
-function nbezier(P,n)
+function nbezier(P::Vector{T},n::Integer) where T<:Union{AbstractPoint{3},Vector{Float64}}
+    if n<2
+        error("The vale of n is too low. Request at least two data points")
+    end
     t = range(0,1,n) # t range
     N = length(P) # Number of control points 
     nn = 0:1:N-1
     nnr = N-1:-1:0
     f = factorial.(nn) 
     s = factorial(N-1)./( f.*reverse(f) ); # Sigma
-
-    V =  [eltype(P)(undef,3) for _ ∈ 1:n]
+    
+    if T<:AbstractPoint{3}
+        V =  [T(0.0,0.0,0.0) for _ ∈ 1:n]
+    else
+        V =  fill(zeros(Float64,3),n)
+    end    
+    
     for i ∈ 1:n
         b = s.* ((1.0-t[i]).^nnr) .* (t[i].^nn)
         for j = 1:1:N
@@ -1214,21 +1238,6 @@ function hexbox(boxDim,boxEl)
     CFb_type = CF_type_uni[Lb]
 
     return E,V,F,Fb,CFb_type
-end
-
-struct ConnectivitySet
-    edge_vertex::Vector{LineFace{Int64}}
-    edge_face::Vector{Vector{Int64}}
-    edge_edge::Vector{Vector{Int64}}
-    face_vertex#::Vector{Vector{Int64}} # Could be triangle/quad etc
-    face_edge::Vector{Vector{Int64}}        
-    face_face::Vector{Vector{Int64}}
-    vertex_edge::Vector{Vector{Int64}}
-    vertex_face::Vector{Vector{Int64}}        
-    vertex_vertex::Vector{Vector{Int64}}
-    vertex_vertex_f::Vector{Vector{Int64}}
-    face_face_v::Vector{Vector{Int64}}
-    ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) = new(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) 
 end
 
 function con_face_edge(F,E_uni=missing,indReverse=missing)

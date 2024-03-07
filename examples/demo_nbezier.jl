@@ -5,8 +5,7 @@ using GLMakie
 
 # This demo shows the use of nbezier for Bezier curve interpolation. 
 
-
-# Define raw data
+# Define control points
 P = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
 P[1 ] = GeometryBasics.Point{3, Float64}( 0.0, 0.0, 0.0)
 P[2 ] = GeometryBasics.Point{3, Float64}( 1.0, 0.0, 0.0)
