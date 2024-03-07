@@ -11,10 +11,30 @@ using BSplineKit # E.g. for resampling curves
 using QuadGK: quadgk # For numerical integration
 using Distances
 
+"""
+    comododir()
+
+This function simply returns the string for the Comodo path. This is helpful for instance to load items from the `assets`` folder. 
+"""
 function comododir()
     joinpath(@__DIR__, "..")
 end
 
+
+"""
+    slidercontrol(hSlider,ax)    
+
+This function adds arrow key control to GLMakie sliders. The inputs are the 
+slider handle `hSlider` as well as the axis `ax`. If this function is called the
+slider can be advanced a step by pressing the right arrow, and returned one step 
+by pressing the left arrow. When one presses and holds the right or left arrow 
+key, the slider will continue to move (as fast as graphics updating is possible
+on your system) up to the end or start slider position respectively. Users may 
+also use the up or down arrow keys. These function the same as the right and 
+left arrow keys, however, rather than stopping at the slider extrema, the 
+sliders position will "wrap" back to the start when advancing beyond the end 
+position, and vice versa. 
+"""
 function slidercontrol(hSlider,ax)    
     on(events(ax).keyboardbutton) do event
         if event.action == Keyboard.press || event.action == Keyboard.repeat # Pressed or held for instance
@@ -42,10 +62,37 @@ function slidercontrol(hSlider,ax)
     end    
 end
 
+"""
+    elements2indices(F)
+
+This function obtains the unique set of indices for the vertices (nodes) 
+used by the the simplices defined by `F`. The vector `F` may contain any type of 
+simplices. For instance the elements in `F` may be of the type 
+`GeometryBasics.TriangleFace` or `GeometryBasics.QuadFace` (or any other) for 
+surface mesh data. However volumetric elements of any type are permitted. In
+essence this function simply returns:  
+```julia
+unique(reduce(vcat,F))
+````
+Hence any suitable vector containing vectors permitted by `reduce(vcat,F)` 
+is supported. 
+"""
+
 function elements2indices(F)
     return unique(reduce(vcat,F))
 end
 
+"""
+    gridpoints(x::Vector{T}, y=x, z=x) where T<:Real
+
+Description:
+The `gridpoints` function returns a vector of 3D points which span a grid in 3D 
+space. Points are defined as per the input ranges or range vectors. The output 
+point vector contains elements of the type `GeometryBasics.Point3`. 
+
+Arguments: 
+
+"""
 function gridpoints(x::Vector{T}, y=x, z=x) where T<:Real
     reshape([GeometryBasics.Point{3, T}(x, y, z) for z in z, y in y, x in x], 
                              length(x)*length(y)*length(z))
@@ -60,17 +107,22 @@ end
 """
     interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:linear)
 
-    This function uses biharmonic spline interpolation. The input is assumed to represent ordered data representing a curve
+This function uses biharmonic spline interpolation. The input is assumed to 
+represent ordered data representing a curve. 
 
-# References
-    David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. 
-    https://doi.org/10.1029/GL014i002p00139 
+Reference: 
+[David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
 """
-function interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:linear)
+
+function interp_biharmonic_spline(x::AbstractRange{T},y::Vector{T},xi; extrapolate_method=:linear,pad_data=:linear) where T<:Real
+    interp_biharmonic_spline(collect(x),y,xi; extrapolate_method=extrapolate_method,pad_data=pad_data)
+end
+
+function interp_biharmonic_spline(x::Vector{T},y::Vector{T},xi; extrapolate_method=:linear,pad_data=:linear) where T<:Real
 
     # Pad data if needed
-    xx = collect(x)
-    yy = collect(y)
+    xx = deepcopy(x)
+    yy = deepcopy(y)
     if pad_data==:linear
         # Linearly extended ends are added 
         dx1 = x[1]-x[2]
@@ -145,6 +197,16 @@ function interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:l
     return yi
 end
 
+"""
+    interp_biharmonic(x,y,xi)
+
+This function uses biharmonic interpolation. The input `x` should define a 
+vector consisting of m points which are n-dimensional, and the input `y` should
+be a vector consisting of m scalar data values. 
+
+Reference: 
+[David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
+"""
 function interp_biharmonic(x,y,xi)
     # Distances from all points in X to all points in X
     Dxx = dist(x,x)
@@ -162,6 +224,15 @@ function interp_biharmonic(x,y,xi)
     return G * W
 end
 
+"""
+    nbezier(P,n)
+
+This function returns `n` points for an m-th order Bézier spline, based on the 
+m control points contained in the input vector `P`. Although this function was 
+developed for point vectors with elements of the type 
+`GeometryBasics.Point{3, Float64}`, other points types are permitted. The 
+output points are returned as a vector with elements of the type `eltype(P)`.
+"""
 function nbezier(P,n)
     t = range(0,1,n) # t range
     N = length(P) # Number of control points 
@@ -170,7 +241,7 @@ function nbezier(P,n)
     f = factorial.(nn) 
     s = factorial(N-1)./( f.*reverse(f) ); # Sigma
 
-    V =  [GeometryBasics.Point{3, Float64}(0.0,0.0,0.0) for _ ∈ 1:n]
+    V =  [eltype(P)(undef,3) for _ ∈ 1:n]
     for i ∈ 1:n
         b = s.* ((1.0-t[i]).^nnr) .* (t[i].^nn)
         for j = 1:1:N
@@ -505,7 +576,7 @@ end
 """
     sub2ind(siz,A)
 
-    Converts the subscript indices in `A`, for a matrix/array with size `siz`, to the equivalent linear indices.  
+Converts the subscript indices in `A`, for a matrix/array with size `siz`, to the equivalent linear indices.  
 """
 function sub2ind(siz,A)
     
@@ -641,8 +712,6 @@ function octahedron(r=1.0)
     
     return GeometryBasics.Mesh(V,F)
 end
-
-
 
 # Function to create the surface geometry data for a dodecahedron
 function dodecahedron(r=1.0)
@@ -1380,12 +1449,12 @@ end
 
 # Description
 
-    This function implements Weighted Laplacian mesh smoothing. At each 
-    iteration, this method replaces each point by the weighted sum of the 
-    Laplacian mean for the point and the point itself. The weighting is 
-    controlled by the parameter λ which is in the range (0,1). If λ=0 no 
-    smoothing occurs. If λ=0 pure Laplacian mean based smoothing occurs. For 
-    intermediate values a linear blending between the two occurs.  
+This function implements Weighted Laplacian mesh smoothing. At each 
+iteration, this method replaces each point by the weighted sum of the 
+Laplacian mean for the point and the point itself. The weighting is 
+controlled by the parameter λ which is in the range (0,1). If λ=0 no 
+smoothing occurs. If λ=0 pure Laplacian mean based smoothing occurs. For 
+intermediate values a linear blending between the two occurs.  
 """
 function smoothmesh_laplacian(F,V,con_V2V=missing; n=1, λ=0.5)
 
@@ -1414,14 +1483,14 @@ end
 
 # Description 
 
-    This function implements HC (Humphrey's Classes) smoothing. This method uses
-    Laplacian like smoothing but aims to compensate for the shrinkage/swelling 
-    seen with pure Laplacian smoothing. 
+This function implements HC (Humphrey's Classes) smoothing. This method uses
+Laplacian like smoothing but aims to compensate for the shrinkage/swelling 
+seen with pure Laplacian smoothing. 
 
-# References 
+# Reference 
 
-    Vollmer et al. Improved Laplacian Smoothing of Noisy Surface Meshes, 1999
-    https://doi.org/10.1111/1467-8659.00334
+Vollmer et al. Improved Laplacian Smoothing of Noisy Surface Meshes, 1999
+https://doi.org/10.1111/1467-8659.00334
 
 """
 function smoothmesh_hc(F,V, con_V2V=missing; n=1, α=0.1, β=0.5, tolDist=missing)
@@ -1569,11 +1638,12 @@ Loft a surface mesh between two input curves
 # Description 
 
 The `loftlinear` function spans a surface from input curve `V1` to curve `V2`. 
-The surface is formed by "lerping" curves form V1 to V2 in `num_loft` 
+The surface is formed by "lerping" curves from `V1` to `V2` in `num_loft` 
 steps, and forming mesh faces between each curve. If `close_loop==true`
-then it is assumed the curves and surface should be closed over. The user 
-can request different face types for the output. The default is 
-`face_type=:tri` which will form isoceles triangles (or equilateral 
+then it is assumed the curves (and therefore the output surface mesh should be 
+closed over, i.e. that a connection should be made between each curve end and 
+start point. The user can request different face types for the output. The 
+default is `face_type=:tri` which will form isoceles triangles (or equilateral 
 triangles if the spacing is even) for a planar curve. The other `face_type`
 options supported are `:quad` (quadrilateral), and `:tri_slash`. For the 
 latter, triangles are formed by slashing the quads.  
@@ -2074,7 +2144,7 @@ end
 """
     ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
 
-    Implementation of the Möller-Trumbore triangle-ray intersection algorithm. 
+Implementation of the Möller-Trumbore triangle-ray intersection algorithm. 
 
 # References 
 

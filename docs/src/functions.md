@@ -1,5 +1,40 @@
 # Functions
 
+## comododir
+```@docs
+Comodo.comododir
+```
+
+## slidercontrol
+```@docs
+Comodo.slidercontrol
+```
+
+## elements2indices
+```@docs
+Comodo.elements2indices
+```
+
+## gridpoints
+```@docs
+Comodo.gridpoints
+```
+
+## interp_biharmonic_spline
+```@docs
+Comodo.interp_biharmonic_spline
+```
+
+## interp_biharmonic
+```@docs
+Comodo.interp_biharmonic
+```
+
+## nbezier
+```@docs
+Comodo.nbezier
+```
+
 ## loflinear
 ```@docs
 Comodo.loftlinear
