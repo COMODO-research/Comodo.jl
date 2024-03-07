@@ -38,5 +38,8 @@ export slidercontrol
 # Export types/structs
 export ConnectivitySet
 
+# Export imported packages
+export GeometryBasics
+
 end # module
 
