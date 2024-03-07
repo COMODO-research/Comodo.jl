@@ -1,77 +1,76 @@
 # Functions
 
-## comododir
+## `comododir`
 ```@docs
 Comodo.comododir
 ```
 
-## slidercontrol
+## `slidercontrol`
 ```@docs
 Comodo.slidercontrol
 ```
 
-## elements2indices
+## `elements2indices`
 ```@docs
 Comodo.elements2indices
 ```
 
-## gridpoints
+## `gridpoints`
 ```@docs
 Comodo.gridpoints
 ```
 
-## interp_biharmonic_spline
+## `interp_biharmonic_spline`
 ```@docs
 Comodo.interp_biharmonic_spline
 ```
 
-## interp_biharmonic
+## `interp_biharmonic`
 ```@docs
 Comodo.interp_biharmonic
 ```
 
-## nbezier
+## `nbezier`
 ```@docs
 Comodo.nbezier
 ```
 
-## loflinear
+## `loflinear`
 ```@docs
 Comodo.loftlinear
 ```
 
-
-## ray_triangle_intersect
+## `ray_triangle_intersect`
 ```@docs
 Comodo.ray_triangle_intersect
 ```
 
-## mesh_curvature_polynomial
+## `mesh_curvature_polynomial`
 ```@docs 
 Comodo.mesh_curvature_polynomial
 ```
 
-## smoothmesh_hc
+## `smoothmesh_hc`
 ```@docs 
 Comodo.smoothmesh_hc
 ```
 
-## smoothmesh_laplacian
+## `smoothmesh_laplacian`
 ```@docs
 Comodo.smoothmesh_laplacian
 ```
 
-## platonicsolid
+## `platonicsolid`
 ```@docs 
 Comodo.platonicsolid
 ```
 
-## sub2ind
+## `sub2ind`
 ```@docs
 Comodo.sub2ind
 ```
 
-## ind2sub
+## `ind2sub`
 ```@docs
 Comodo.ind2sub
 ```
