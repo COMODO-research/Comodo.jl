@@ -63,9 +63,8 @@ end
     This function uses biharmonic spline interpolation. The input is assumed to represent ordered data representing a curve
 
 # References
-    David T. Sandwell, Biharmonic spline interpolation of 
-    GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2,
-    139-142, 1987.  
+    David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. 
+    https://doi.org/10.1029/GL014i002p00139 
 """
 function interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:linear)
 
@@ -1565,22 +1564,19 @@ end
 """
     loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
 
-    Apply loftlinear for given vectors 
+Loft a surface mesh between two input curves
 
 # Description 
 
-    The `loftlinear` function spans a surface from input curve `V1` to curve 
-    `V2`. The surface is formed by "lerping" curves form V1 to V2 in `num_loft` 
-    steps, and forming mesh faces between each curve. If `close_loop==true`
-    then it is assumed the curves and surface should be closed over. The user 
-    can request different face types for the output. The default is 
-    `face_type=:tri` which will form isoceles triangles (or equilateral 
-    triangles if the spacing is even) for a planar curve. The other `face_type`
-    options supported are `:quad` (quadrilateral), and `:tri_slash`. For the 
-    latter, triangles are formed by slashing the quads.  
-    The point order here causes normal directions to conform to a surface if 
-    the input curves were derived from a surface (in 2D this means "clockwise 
-    curves" would result in an outward normal surface.
+The `loftlinear` function spans a surface from input curve `V1` to curve `V2`. 
+The surface is formed by "lerping" curves form V1 to V2 in `num_loft` 
+steps, and forming mesh faces between each curve. If `close_loop==true`
+then it is assumed the curves and surface should be closed over. The user 
+can request different face types for the output. The default is 
+`face_type=:tri` which will form isoceles triangles (or equilateral 
+triangles if the spacing is even) for a planar curve. The other `face_type`
+options supported are `:quad` (quadrilateral), and `:tri_slash`. For the 
+latter, triangles are formed by slashing the quads.  
 
 # Arguments:
 - `V1::Vector`: n-vector 
