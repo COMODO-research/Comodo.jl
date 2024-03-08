@@ -718,3 +718,24 @@ end
     @test r4 == [1, 1, 3, 3, 1]
 
 end 
+
+
+@testset "unique_dict_count" begin 
+
+    result1, result2 = Comodo.unique_dict_count([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
+
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [3, 4, 2, 1, 1]
+
+end
+
+
+@testset "unique_dict_inverse" begin 
+
+    result1, result2 = Comodo.unique_dict_inverse([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
+
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
+
+end 
+
