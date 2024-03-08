@@ -2,11 +2,12 @@
 # > julia coverage.jl 
 # in terminal
 
-import Coverage 
 import Pkg 
 
 Pkg.activate("../")
 Pkg.resolve()
+
+import Coverage 
 
 Pkg.test(coverage = true)
 
@@ -17,4 +18,4 @@ ratio = tested / total
 Coverage.clean_folder("../")
 
 
-@info "Coverate: $ratio"
+@info "Coverage: $ratio"
