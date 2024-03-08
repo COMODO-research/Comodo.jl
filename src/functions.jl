@@ -38,7 +38,7 @@ end
 
 # Description 
 
-This function simply returns the string for the Comodo path. This is helpful for instance to load items from the `assets`` folder. 
+This function simply returns the string for the Comodo path. This is helpful for instance to load items, such as meshes, from the `assets`` folder. 
 """
 function comododir()
     joinpath(@__DIR__, "..")
@@ -97,7 +97,7 @@ This function obtains the unique set of indices for the vertices (nodes)
 used by the the simplices defined by `F`. The vector `F` may contain any type of 
 simplices. For instance the elements in `F` may be of the type 
 `GeometryBasics.TriangleFace` or `GeometryBasics.QuadFace` (or any other) for 
-surface mesh data. However volumetric elements of any type are permitted. In
+surface mesh data. However, volumetric elements of any type are permitted. In
 essence this function simply returns `unique(reduce(vcat,F))`.
 Hence any suitable vector containing vectors of numbers permitted by 
 `reduce(vcat,F)` is supported. 
@@ -121,12 +121,16 @@ function gridpoints(x::Union{Vector{T}, AbstractRange{T}}, y=x, z=x) where T<:Re
 end  
 
 """
-    interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:linear)
+    interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union{Vector{T}, AbstractRange{T}},xi::Union{Vector{T}, AbstractRange{T}}; extrapolate_method=:linear,pad_data=:linear) where T<:Real
 
 # Description
 
-This function uses biharmonic spline interpolation. The input is assumed to 
-represent ordered data representing a curve. 
+This function uses biharmonic spline interpolation, which features radial basis 
+functions. The input is assumed to represent ordered data, i.e. consequtive 
+unique points on a curve. The curve x-, and y-coordinates are provided through 
+the input parameters `x` and `y` respectively. The third input `xi` defines the 
+sites at which to interpolate. Each of in the input parameters can be either a 
+vector or a range. 
 
 # References
 [David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
@@ -1042,7 +1046,7 @@ function unique_simplices(F,V=missing)
     end
 
     virtualFaceIndices = sub2ind(n.*ones(Int64,length(F[1])),sort.(F))    
-    ~, ind1, ind2 = unique_dict(virtualFaceIndices) 
+    _, ind1, ind2 = unique_dict(virtualFaceIndices) 
 
     return F[ind1], ind1, ind2
 end
@@ -1495,27 +1499,30 @@ end
 
 # Description
 
-This function implements Weighted Laplacian mesh smoothing. At each 
-iteration, this method replaces each point by the weighted sum of the 
-Laplacian mean for the point and the point itself. The weighting is 
-controlled by the parameter λ which is in the range (0,1). If λ=0 no 
-smoothing occurs. If λ=0 pure Laplacian mean based smoothing occurs. For 
+This function implements weighted Laplacian mesh smoothing. At each 
+iteration, this method replaces each point by an updated coordinate based on the 
+mean coordinates of that point's Laplacian umbrella. The update features a lerp
+like weighting between the previous iterations coordinates and the mean 
+coordinates. The code features `Vs[q] = (1.0-λ).*Vs[q] .+ λ*mean(V[con_V2V[q]])`
+As can be seen, the weighting is controlled by the input parameter `λ` which is
+in the range (0,1). If `λ=0` then no smoothing occurs. If `λ=1` pure Laplacian mean based smoothing occurs. For 
 intermediate values a linear blending between the two occurs.  
 """
 function smoothmesh_laplacian(F,V,con_V2V=missing; n=1, λ=0.5)
+    if λ>1.0 || λ<0.0
+        error("λ should be in the range 0-1")
+    end
 
-    if λ!=1
+    if λ>0.0
         # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if missing
         if ismissing(con_V2V)
-            E = meshedges(F)
-            E_uni,_,_ = unique_simplices(E)
+            E_uni = meshedges(F;unique_only=true)
             con_V2V = con_vertex_vertex(E_uni)
-        end
+        end        
         for _ = 1:1:n
             Vs = deepcopy(V)
-            for q ∈ eachindex(V)
-                # Linear blend between original and pure Laplacian
-                Vs[q] = (1.0-λ).*Vs[q] .+ λ*mean(V[con_V2V[q]])
+            for q ∈ eachindex(V)                
+                Vs[q] = (1.0-λ).*Vs[q] .+ λ*mean(V[con_V2V[q]]) # Linear blend between original and pure Laplacian
             end
             V = Vs
         end
@@ -1530,14 +1537,11 @@ end
 # Description 
 
 This function implements HC (Humphrey's Classes) smoothing. This method uses
-Laplacian like smoothing but aims to compensate for the shrinkage/swelling 
-seen with pure Laplacian smoothing. 
+Laplacian like smoothing but aims to compensate for shrinkage/swelling by also 
+"pushing back" towards the original coordinates. 
 
 # Reference 
-
 [Vollmer et al. Improved Laplacian Smoothing of Noisy Surface Meshes, 1999. doi: 10.1111/1467-8659.00334](https://doi.org/10.1111/1467-8659.00334)
-
-
 """
 function smoothmesh_hc(F,V, con_V2V=missing; n=1, α=0.1, β=0.5, tolDist=missing)
 
@@ -1936,13 +1940,13 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
                     indP = f[wrapindex(findfirst(lf) .+ (0:2),3)]
                     
                     e1 = sort(indP[[1,2]])
-                    if ~haskey(D,e1)
+                    if !haskey(D,e1)
                         push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[2]],d[indP[1]],n))
                         D[e1] = length(Vn)
                     end
                     
                     e2 = sort(indP[[1,3]])
-                    if ~haskey(D,e2)
+                    if !haskey(D,e2)
                         push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[3]],d[indP[1]],n))
                         D[e2] = length(Vn)
                     end
@@ -1955,16 +1959,16 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
                     end
 
                 else # 1-above, 2 below
-                    indP = f[wrapindex(findfirst(.~lf) .+ (0:2),3)]
+                    indP = f[wrapindex(findfirst(.!lf) .+ (0:2),3)]
 
                     e1 = sort(indP[[1,2]])
-                    if ~haskey(D,e1)
+                    if !haskey(D,e1)
                         push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[2]],d[indP[1]],n))
                         D[e1] = length(Vn)
                     end                    
 
                     e2 = sort(indP[[1,3]])
-                    if ~haskey(D,e2)
+                    if !haskey(D,e2)
                         push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[3]],d[indP[1]],n))
                         D[e2] = length(Vn)
                     end
@@ -2092,7 +2096,7 @@ function meshgroup(F; con_type = :v)
         while length(seen)<length(F)
             np = length(seen)
             con_f2f = con_F2F[i]
-            if ~isempty(con_f2f)
+            if !isempty(con_f2f)
                 ind_F = reduce(vcat,con_f2f)
                 i = Vector{Int64}()
                 for ii ∈  ind_F
@@ -2164,7 +2168,7 @@ function distmarch(F,V,indStart; d=missing, dd=missing, dist_tol=1e-3,con_V2V=mi
                 end
             end            
         end
-        if ~any(isinf.(d)) # Start checking once all are no longer Inf
+        if !any(isinf.(d)) # Start checking once all are no longer Inf
             if c # If we were here before
                 if abs(sum(d)-ds)<dist_tol                                        
                     break                    
@@ -2193,15 +2197,41 @@ end
 
 
 """
+    ray_triangle_intersect(F::Vector{TriangleFace{Int64}},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
     ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
 
 # Description 
-This function can compute triangle-ray or triangle-line intersections. The 
-function implements the "Möller-Trumbore triangle-ray intersection algorithm". 
+This function can compute triangle-ray or triangle-line intersections through 
+the use of the "Möller-Trumbore triangle-ray intersection algorithm". The 
+required inputs are as follows: 
+
+`F` an single face or a vector of faces, e.g. `Vector{TriangleFace{Int64}}`
+`V` The triangle vertices as a vector of points, i.e. `Vector{GeometryBasics.Point{3, Float64}}`
+`ray_vector` The ray vector which can be `Vector{GeometryBasics.Point{3, Float64}}` or `Vec3{Float64}`
+
+The following optional input parameters can be provided: 
+`rayType = :ray` (default) or `:line`. This defines wether the vector is treated as a ray (extends indefinately) or as a line (finite length)
+`triSide = 1` (default) or `0` or `-1`. 
+When `triSide=1` only the inward intersections are considered, e.g. when the ray or line enters the shape (ray/line is pointing against face normal)
+When `triSide=-1` only the outward intersections are considered, e.g. when the ray or line exits the shape (ray/line is pointing allong face normal)
+When `triSide=0` both inward and outward intersections are considered.
+`tolEps = eps(Float64)` (default) 
 
 # References 
 [Möller, Tomas; Trumbore, Ben (1997). "Fast, Minimum Storage Ray-Triangle Intersection". Journal of Graphics Tools. 2: 21-28. doi: 10.1080/10867651.1997.10487468.](https://doi.org/10.1080/10867651.1997.10487468)
 """
+function ray_triangle_intersect(F::Vector{TriangleFace{Int64}},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
+    P = Vector{GeometryBasics.Point{3, Float64}}()
+    indIntersect = Vector{Int64}()
+    for qf ∈ eachindex(F)
+        p = ray_triangle_intersect(F[qf],V,ray_origin,ray_vector; rayType = rayType, triSide = triSide, tolEps = tolEps)        
+        if !any(isnan.(p))
+            push!(P,p)
+            push!(indIntersect,qf)
+        end
+    end
+    return P,indIntersect
+end
 function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
 
     # Edge vectors
@@ -2239,55 +2269,46 @@ function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; 
     return p 
 end
 
-function ray_triangle_intersect(F::Vector{TriangleFace{Int64}},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
-    P = Vector{GeometryBasics.Point{3, Float64}}()
-    indIntersect = Vector{Int64}()
-    for qf ∈ eachindex(F)
-        p = ray_triangle_intersect(F[qf],V,ray_origin,ray_vector; rayType = rayType, triSide = triSide, tolEps = tolEps)        
-        if ~any(isnan.(p))
-            push!(P,p)
-            push!(indIntersect,qf)
-        end
-    end
-    return P,indIntersect
-end
-
-
 """
-    mesh_curvature_polynomial(F,V)
+    mesh_curvature_polynomial(F::Vector{TriangleFace{Int64}},V::Vector{Point3{Float64}})
+    mesh_curvature_polynomial(M::GeometryBasics.Mesh)
 
 # Description
-Thisi function computes the per vertex curvature for the input mesh defined by 
-the face `F` and the vertices `V`. A local polynomial is fitted (x+y+x^2+xy+y^2) to each points
-"Laplacian umbrella" (point neighbourhood), and the curvature of this fitted
-form is  
+This function computes the mesh curvature at each vertex for the input mesh 
+defined by the face `F` and the vertices `V`. A local polynomial is fitted to 
+each point's "Laplacian umbrella" (point neighbourhood), and the curvature of 
+this fitted form is derived. Instead of the mesh faces and vertices one may 
+instead specify the `GeometryBasics.Mesh` `M` as the input. 
 
-Implemented with the aid of [this helpful document](https://github.com/alecjacobson/geometry-processing-curvature/blob/master/README.md)
+The reference below provides more detail on the algorithm. In addition, this 
+implementation was created with the help of [this helpful document](https://github.com/alecjacobson/geometry-processing-curvature/blob/master/README.md), 
+which features a nice overview of the theory/steps involved in this algorithm. 
 
 # References 
 [F. Cazals and M. Pouget, "Estimating differential quantities using polynomial fitting of osculating jets", Computer Aided Geometric Design, vol. 22, no. 2, pp. 121-146, Feb. 2005, doi: 10.1016/j.cagd.2004.09.004](https://doi.org/10.1016/j.cagd.2004.09.004)
 """
-function mesh_curvature_polynomial(F,V)
-    
-    E = meshedges(F)
-    E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)  
+function mesh_curvature_polynomial(F::Vector{TriangleFace{Int64}},V::Vector{Point3{Float64}})
+    # Get the unique mesh edges
+    E_uni = meshedges(F;unique_only=true) 
 
+    # Get the vertex-to-vertex connectivity, i.e. the "Laplacian umbrellas"
     con_V2V = con_vertex_vertex(E_uni,V)
 
+    
+    N = vertexnormal(F,V) # The vertex normal directions
+    nz = Vec{3,Float64}(0.0,0.0,1.0) # A z-axis vector
 
-    N = vertexnormal(F,V)
-    nz = Vec{3,Float64}(0.0,0.0,1.0)
-
-    K1 = Vector{Float64}(undef,length(V))
-    K2 = Vector{Float64}(undef,length(V))
-    U1 = Vector{Vec3{Float64}}(undef,length(V))
-    U2 = Vector{Vec3{Float64}}(undef,length(V))
+    K1 = Vector{Float64}(undef,length(V)) # Allocate first principal curvature
+    K2 = Vector{Float64}(undef,length(V)) # Allocate second principal curvature
+    U1 = Vector{Vec3{Float64}}(undef,length(V)) # Allocate first principal curvature vector
+    U2 = Vector{Vec3{Float64}}(undef,length(V)) # Allocate second principal curvature vector
     for q ∈ eachindex(V)
-        n = N[q]
-        Q = rotation_between(n,nz)
-        ind = con_V2V[q]        
-        vr = [Q*(v-V[q]) for v in V[ind]]
+        n = N[q] # The current vertex normal
+        Q = rotation_between(n,nz) # The rotation between the current normal and the z-axis
+        ind = con_V2V[q] # The indices for the current Laplacian umbrella       
+        vr = [Q*(v-V[q]) for v in V[ind]] # Rotate point set to a 2D problem
 
+        # Set up polynomial fit
         T = Matrix{Float64}(undef,(length(ind),5))
         w = Matrix{Float64}(undef,(length(ind),1))
         for i = 1:1:length(ind)
@@ -2305,16 +2326,17 @@ function mesh_curvature_polynomial(F,V)
         g = (2.0*a[5]) / d
 
         S = -[e f; f g] * inv([E F; F G])
-        d,u = eigen(S) # Eigen decomposition to get first/second eigenvalue and vectors
+        k,u = eigen(S) # Eigen decomposition to get first/second eigenvalue and vectors
         
-        K1[q] = d[2]
-        K2[q] = d[1]
+        # Store derived quantities
+        K1[q] = k[2]
+        K2[q] = k[1]
         U1[q] = Q'*Vec3{Float64}(u[1,2],u[2,2],0.0)
         U2[q] = Q'*Vec3{Float64}(u[1,1],u[2,1],0.0)    
     end
 
-    H = 0.5 * (K1.+K2)
-    G = K1.*K2
+    H = 0.5 * (K1.+K2) # Mean curvature
+    G = K1.*K2 # Gaussian curvature
 
     return K1,K2,U1,U2,H,G
 end

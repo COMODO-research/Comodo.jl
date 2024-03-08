@@ -20,7 +20,7 @@ Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inver
 C = count_edge_face(F,Eu,indReverse)
 
 ## Visualization
-fig = Figure(size=(1200,1200))
+fig = Figure(size=(1200,800))
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary curve Visualization")
 
 hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)

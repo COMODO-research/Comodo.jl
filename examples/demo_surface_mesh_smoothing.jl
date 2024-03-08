@@ -2,37 +2,36 @@ using Comodo, GLMakie, GeometryBasics, FileIO, Statistics, Random
 
 Random.seed!(1) # Set seed so demo performs the same each time
 
-# Loading a mesh
-fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
-M = load(fileName_mesh)
-F = faces(M)
-V = coordinates(M)
-F = togeometrybasics_faces(F) 
-V = togeometrybasics_points(V) 
-F,V,ind1,ind2 = mergevertices(F,V; roundVertices=true)
+testCase = 1 
+if testCase == 1 # Triangle mesh bunny
+    # Loading a mesh
+    fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
+    M = load(fileName_mesh)
+    F = faces(M)
+    V = coordinates(M)
+    F = togeometrybasics_faces(F) 
+    V = togeometrybasics_points(V) 
+    F,V,ind1,ind2 = mergevertices(F,V; roundVertices=true)
+elseif testCase == 2 # Quad mesh sphere
+    F,V = quadsphere(4,100)
+end
 
 V0 = deepcopy(V)
 
-M0 = GeometryBasics.Mesh(V0,F)
 V = map(x-> x.+ (5.0 .* randn(eltype(V))),V)
-M = GeometryBasics.Mesh(V,F)
 
-E = meshedges(F)
-E_uni,_,_ = unique_simplices(E)
+E_uni = meshedges(F;unique_only=true)
 con_V2V = con_vertex_vertex(E_uni)
 
 # Set smoothing parameters
+tol = 1e-3
+nMax = 100 # Maximum number of iterations
 
-# Laplacian smoothing parameters
-λ = 0.5
+λ = 0.5 # Laplacian smoothing parameter
 
 # HC parameters
 α = 0.1
 β = 0.5
-tol = 1e-3
-
-nMax = 100 # Maximum number of iterations
-
 
 ## VISUALISATION
 
@@ -47,10 +46,10 @@ cLim = maximum(Ds_LAP).*(0.0,1.0)
 fig = Figure(size=(900,900))
 
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Original")
-hp1=poly!(ax1,M0,strokewidth=strokeWidth1,color=:white, shading = FastShading)
+hp1=poly!(ax1,GeometryBasics.Mesh(V0,F),strokewidth=strokeWidth1,color=:white, shading = FastShading)
 
 ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Noisy")
-hp2=poly!(ax2,M,strokewidth=strokeWidth1,color=:white, shading = FastShading)
+hp2=poly!(ax2,GeometryBasics.Mesh(V,F),strokewidth=strokeWidth1,color=:white, shading = FastShading)
 
 ax3 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z")
 hp3 = poly!(ax3,GeometryBasics.Mesh(Vs_LAP,F),strokewidth=strokeWidth1,color=Ds_LAP, shading = FastShading,colormap=Makie.Reverse(:Spectral),colorrange=cLim)
