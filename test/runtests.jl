@@ -1,4 +1,4 @@
-using Test, Comodo, GeometryBasics
+using Test, Comodo, Comodo.GeometryBasics
 
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
@@ -250,6 +250,24 @@ Ci = interp_biharmonic([[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10], [[0.0, 0.
         result = dist(v1, v2)
         @test result == [0.0 0.0 5.0; 0.0 0.0 5.0; 0.0 0.0 5.0]
     end
+
+    @testset "vectors to vector" begin 
+        eps = 0.001
+        v1 = [[1, 2, 3], [0, 0, 0]]
+        v2 = [0, 0, 0]
+        result = dist(v1, v2)
+        @test result isa Matrix
+        @test isapprox(result, [3.7416573867739413; 0.0;;], atol = eps)
+    end 
+
+    @testset "vector to vectors" begin 
+        eps = 0.001
+        v1 = [[1, 2, 3], [0, 0, 0]]
+        v2 = [0, 0, 0]
+        result = dist(v2, v1)
+        @test result isa Matrix
+        @test isapprox(result, [3.7416573867739413 0.0], atol = eps)
+    end 
 
     @testset "vector of points to vector of points" begin
         V1 = Vector{GeometryBasics.Point{3,Float64}}(undef, 4)
@@ -629,3 +647,95 @@ end
     @test isapprox(S.spline.basis.M.left[2], Float64[1.2080446399615536 0.0; 0.7919553600384465 0.5123829689520382; 0.0 1.4876170310479617], atol=eps)
 
 end
+
+
+@testset "nbezier" begin 
+
+    eps = 0.001
+    
+    P = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
+    P[1 ] = GeometryBasics.Point{3, Float64}( 0.0, 0.0, 0.0)
+    P[2 ] = GeometryBasics.Point{3, Float64}( 1.0, 0.0, 0.0)
+    P[3 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 0.0)
+    P[4 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 1.0)
+
+    n = 25 # Number of points
+
+    V = nbezier(P,n) # Get Bezier fit points
+
+    expected = Point3{Float64}[[0.0, 0.0, 0.0], [0.11986400462962965, 0.005063657407407407, 7.233796296296296e-5], [0.22974537037037032, 0.019675925925925923, 0.0005787037037037037], [0.330078125, 0.04296875, 0.001953125], [0.4212962962962963, 0.07407407407407407, 0.004629629629629629], [0.503833912037037, 0.11212384259259262, 0.009042245370370372], [0.578125, 0.15625, 0.015625], [0.6446035879629629, 0.20558449074074078, 0.024811921296296304], [0.7037037037037037, 0.25925925925925924, 0.037037037037037035], [0.755859375, 0.31640625, 0.052734375], [0.8015046296296295, 0.3761574074074074, 0.07233796296296298], [0.8410734953703705, 0.43764467592592593, 0.09628182870370369], [0.875, 0.5, 0.125], [0.9037181712962963, 0.562355324074074, 0.1589265046296296], [0.9276620370370372, 0.6238425925925928, 0.19849537037037043], [0.947265625, 0.68359375, 0.244140625], [0.9629629629629629, 0.7407407407407407, 0.2962962962962963], [0.9751880787037037, 0.7944155092592593, 0.3553964120370371], [0.984375, 0.84375, 0.421875], [0.9909577546296297, 0.8878761574074074, 0.4961660879629629], [0.9953703703703705, 0.925925925925926, 0.5787037037037038], [0.998046875, 0.95703125, 0.669921875], [0.9994212962962963, 0.9803240740740741, 0.7702546296296295], [0.9999276620370372, 0.9949363425925927, 0.8801359953703706], [1.0, 1.0, 1.0]]
+    
+    @test typeof(V) == Vector{Point3{Float64}}
+    
+    @test isapprox(V, expected, atol = eps)
+
+end 
+
+@testset "mindist" begin 
+    
+    eps = 0.01
+
+    V1 = [[1, 2, 3], [0, 0, 0]]
+    V2 = [[4, 5, 6], [0, 0, 0]]
+
+    result = mindist(V1, V2)
+
+    @test result isa Vector{Float64}
+
+    @test isapprox(result, [3.7416573867739413, 0.0], atol = eps)
+
+end 
+
+
+@testset "unique_dict_index" begin 
+
+    result1, result2 = Comodo.unique_dict_index([1, 2, 3, 3, 3, 4, 4, 4, 5])
+
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [1, 2, 3, 6, 9]
+
+end 
+
+
+@testset "unique_dict_index_count" begin 
+
+    result1, result2, result3 = Comodo.unique_dict_index_count([1, 2, 3, 3, 3, 4, 4, 4, 5])
+
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [1, 2, 3, 6, 9]
+    @test result3 == [1, 1, 3, 3, 1]
+
+end 
+
+
+@testset "unique_dict_index_inverse_count" begin 
+
+    r1, r2, r3, r4 = Comodo.unique_dict_index_inverse_count([1, 2, 3, 3, 3, 4, 4, 4, 5])
+
+    @test r1 == [1, 2, 3, 4, 5]
+    @test r2 == [1, 2, 3, 6, 9]
+    @test r3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    @test r4 == [1, 1, 3, 3, 1]
+
+end 
+
+
+@testset "unique_dict_count" begin 
+
+    result1, result2 = Comodo.unique_dict_count([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
+
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [3, 4, 2, 1, 1]
+
+end
+
+
+@testset "unique_dict_inverse" begin 
+
+    result1, result2 = Comodo.unique_dict_inverse([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
+
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
+
+end 
+

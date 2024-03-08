@@ -134,13 +134,13 @@ represent ordered data representing a curve.
 function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union{Vector{T}, AbstractRange{T}},xi::Union{Vector{T}, AbstractRange{T}}; extrapolate_method=:linear,pad_data=:linear) where T<:Real
 
     # Pad data if needed
-    if isa(x,AbstractRange{eltype(x)})
+    if isa(x,AbstractRange{T})
         xx = collect(x)
     else
         xx = deepcopy(x)
     end
 
-    if isa(y,AbstractRange{eltype(y)})
+    if isa(y,AbstractRange{T})
         yy = collect(y)
     else
         yy = deepcopy(y)
@@ -179,7 +179,7 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
     elseif  pad_data==:none
         # No padding
     else
-        error(""" Invalid pad_data method provided, valued options are: linear, constant, and none """)
+        error("Invalid pad_data method provided, valued options are :linear, :constant, and :none")
     end
 
     # Change behaviour depending on extrapolation method
@@ -214,11 +214,12 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
         # Allow extrapolation as per the biharmonic function
         yi = interp_biharmonic(xx,yy,xi) 
     else
-        error(""" Invalid extrapolate_method method provided, valued options are: linear, constant, and biharmonic """)
+        error("Invalid extrapolate_method method provided, valued options are :linear, :constant, and :biharmonic")
     end
 
     return yi
 end
+
 
 """
     interp_biharmonic(x,y,xi)
@@ -300,12 +301,13 @@ end
 
 function lerp_(x,y,xi)
     j = findfirst(x.>xi)
-    if j==1 # Deal with extrapolation at the start
-        i=1
-        j=2
-    elseif isnothing(j) # Deal with extrapolation at the end
+    
+    if isnothing(j) # Deal with extrapolation at the end
         j = length(x)
         i = j-1 
+    elseif isone(j) # Deal with extrapolation at the start
+        i=1
+        j=2
     else
         i = j-1
     end
@@ -369,10 +371,10 @@ function mindist(V1,V2; getIndex=false, skipSelf = false )
     end
 end
 
-function unique_dict_index(X; sort_entries=false)
+function unique_dict_index(X::AbstractVector{T}; sort_entries=false) where T<:Real
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
-    T = eltype(X)
+    # T = eltype(X)
     d = Dict{T,Nothing}() # Use dict to keep track of used values
     xUni = Vector{T}()
     indUnique = Vector{Int64}() 
@@ -419,10 +421,10 @@ function unique_dict_index_inverse(X; sort_entries=false)
     return xUni, indUnique, indInverse
 end
 
-function unique_dict_index_count(X; sort_entries=false)
+function unique_dict_index_count(X::AbstractVector{T}; sort_entries=false) where T<:Real
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
-    T = eltype(X)
+    # T = eltype(X)
     d = Dict{T,Int64}() # Use dict to keep track of used values
     xUni = Vector{T}()
     indUnique = Vector{Int64}() 
@@ -448,10 +450,10 @@ function unique_dict_index_count(X; sort_entries=false)
     return xUni, indUnique, c
 end
 
-function unique_dict_index_inverse_count(X; sort_entries=false)
+function unique_dict_index_inverse_count(X::AbstractVector{T}; sort_entries=false) where T <: Real
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
-    T = eltype(X)
+    # T = eltype(X)
     d = Dict{T,Int64}() # Use dict to keep track of used values
     xUni = Vector{T}()
     indUnique = Vector{Int64}() 
@@ -480,10 +482,10 @@ function unique_dict_index_inverse_count(X; sort_entries=false)
     return xUni, indUnique, indInverse,c
 end
 
-function unique_dict_count(X; sort_entries=false)
+function unique_dict_count(X::AbstractVector{T}; sort_entries=false) where T <: Real 
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
-    T = eltype(X)
+    # T = eltype(X)
     d = Dict{T,Int64}() # Use dict to keep track of used values
     xUni = Vector{T}()
     c = Vector{Int64}()
@@ -506,10 +508,10 @@ function unique_dict_count(X; sort_entries=false)
     return xUni, c
 end
 
-function unique_dict_inverse(X; sort_entries=false)
+function unique_dict_inverse(X::AbstractVector{T}; sort_entries=false) where T <: Real 
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
-    T = eltype(X)
+    # T = eltype(X)
     d = Dict{T,Int64}() # Use dict to keep track of used values
     xUni = Vector{T}()
     indInverse = Vector{Int64}(undef,length(X)) 
@@ -579,7 +581,7 @@ function ind2sub(siz,ind)
     m = prod(siz)
     
     if any(ind.>m) || any(ind.<1)
-        error("Encountered index value of out of valid range 1:"*string(m))
+        error("Encountered index value of out of valid range 1:$m")
     end
 
     if length(ind)>1
@@ -597,7 +599,7 @@ function ind2sub_(ind,numDim,k)
     a = Vector{Int64}(undef,numDim) # Initialise a
 
     for q ∈ numDim:-1:1   # For all dimensions     
-        if q==1 # First 1st dimension
+        if isone(q) # First 1st dimension
             a[1] = rem(ind-1,k[1]) + 1        
         else       
             p = rem(ind-1,k[q-1]) + 1 # "previous"
@@ -870,20 +872,20 @@ end
 
 function togeometrybasics_faces(FM::Matrix{Int64})
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)
-    if size(FM,2)==3 # Triangles
-        F = Vector{TriangleFace{Int64}}(undef,size(FM,1))
-        for q ∈ 1:1:size(FM,1)            
+    n, m = size(FM)
+    if m == 3 # Triangles
+        F = Vector{TriangleFace{Int64}}(undef, n)
+        for q ∈ 1:1:n            
             F[q] = TriangleFace{Int64}(FM[q,:])
         end
-    elseif size(FM,2)==4 # Quads
-        F = Vector{QuadFace{Int64}}(undef,size(FM,1))
-        for q ∈ 1:1:size(FM,1)            
+    elseif m == 4 # Quads
+        F = Vector{QuadFace{Int64}}(undef, n)
+        for q ∈ 1:1:n            
             F[q] = QuadFace{Int64}(FM[q,:])
         end
     else # Other mesh type
-        m=size(FM,2)
-        F = Vector{m,NgonFace{Int64}}(undef,size(FM,1))        
-        for q ∈ 1:1:size(FM,1)            
+        F = Vector{m,NgonFace{Int64}}(undef, n)        
+        for q ∈ 1:1:n            
             F[q] = NgonFace{m,Int64}(FM[q,:])
         end
     end
@@ -892,26 +894,29 @@ end
 
 function togeometrybasics_points(VM)
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef,length(VM))
-    for q ∈ 1:1:size(VM,1)
+    n = length(VM)
+    V=Vector{GeometryBasics.Point{3, Float64}}(undef, n)
+    for q ∈ 1:1:n
         V[q] = GeometryBasics.Point{3, Float64}(VM[q])
     end
     return V
 end
 
 function togeometrybasics_points(VM::Matrix{Float64})
+    n = length(VM)
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef,size(VM,1))
-    for q ∈ 1:1:size(VM,1)
+    V=Vector{GeometryBasics.Point{3, Float64}}(undef, n)
+    for q ∈ 1:1:n
         V[q] = GeometryBasics.Point{3, Float64}(VM[q,:])
     end
     return V
 end
 
 function togeometrybasics_points(VM::Vector{Vector{Int64}})
+    n = length(VM)
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef,length(VM))
-    for q ∈ 1:1:size(VM,1)
+    V=Vector{GeometryBasics.Point{3, Float64}}(undef, n)
+    for q ∈ 1:1:n
         V[q] = GeometryBasics.Point{3, Float64}(VM[q])
     end
     return V
@@ -996,7 +1001,7 @@ r::Float64, defining circumsphere radius
 
 """
 function platonicsolid(n::Integer,r=1.0)
-    if n==1
+    if isone(n)
         M = tetrahedron(r)
     elseif n==2
         M = cube(r)
@@ -1010,8 +1015,8 @@ function platonicsolid(n::Integer,r=1.0)
     return M
 end
 
-function unique_dict(X)    
-    d = OrderedDict{eltype(X),Int64}() # Use dict to keep track of used values    
+function unique_dict(X::AbstractVector{T}) where T <: Real    
+    d = OrderedDict{T ,Int64}() # Use dict to keep track of used values    
     indUnique = Vector{Int64}()
     indReverse = Vector{Int64}(undef,length(X))
     # c = Vector{Int64}()
@@ -1044,9 +1049,9 @@ end
 
 function subtri(F,V,n; method = :linear)
     
-    if n==0
+    if iszero(n)
         return F,V
-    elseif n==1
+    elseif isone(n)
         E = meshedges(F)
         Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
         
@@ -1107,7 +1112,7 @@ function subtri(F,V,n; method = :linear)
             # Create complete point set
             Vn = [Vv;Vm] # Updated orignals and new "mid-edge-ish" points
         else
-            error("""Incorrect metod. Use: "linear" or "loop" """)
+            error("Incorrect metod. Use :linear or :loop")
         end
 
         return Fn,Vn    
@@ -1121,9 +1126,9 @@ function subtri(F,V,n; method = :linear)
 end
 
 function subquad(F,V,n; method=:linear)
-    if n==0
+    if iszero(n)
         return F,V
-    elseif n==1
+    elseif isone(n)
 
         # Get edges
         E = meshedges(F) # Non-unique edges
@@ -1264,7 +1269,7 @@ function hexbox(boxDim,boxEl)
     end
 
     F_uni,indUni,c_uni = gunique(F,return_index=true, return_inverse=false,return_counts=true,sort_entries=true)
-    Lb = c_uni.==1
+    Lb = isone.(c_uni)
     Fb = F_uni[Lb]
     CF_type_uni = CF_type[indUni]
     CFb_type = CF_type_uni[Lb]
@@ -1696,7 +1701,6 @@ latter, triangles are formed by slashing the quads.
 """
 function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
 
-
     num_loop = length(V1)
     T = eltype(V1)
     # Linearly blending points from first to last
@@ -1815,7 +1819,7 @@ function normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=mis
     elseif type_flag == :vertex
         N = vertexnormal(F,V)          
     else
-        error(""" Incorrect type_flag, use :face or :vertex """)
+        error("Incorrect type_flag, use :face or :vertex")
     end 
     
     hp = dirplot(ax,V,N; color=color,linewidth=linewidth,scaleval=scaleval,style=:from)
@@ -1824,13 +1828,19 @@ function normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=mis
     return hp 
 end
 
-function wrapindex(i::UnitRange{Int64},n)
-    return 1 .+ mod.(i .+ (n-1),n)
-end
+# function wrapindex(i::UnitRange{Int64},n)
+#     return 1 .+ mod.(i .+ (n-1),n)
+# end
+# 
+# function wrapindex(i::Vector{Int64},n)
+#     return 1 .+ mod.(i .+ (n-1),n)
+# end
 
-function wrapindex(i::Vector{Int64},n)
+# Both Vector{Int64} and UnitRange{Int64} are subtypes of 
+# AbstractVector{Int64}
+function wrapindex(i::AbstractVector{Int64}, n)
     return 1 .+ mod.(i .+ (n-1),n)
-end
+end 
 
 function wrapindex(i::Int64,n)
     return 1+mod(i+(n-1),n)
@@ -1854,7 +1864,7 @@ function edgeangles(F,V)
     return A
 end
 
-function quad2tri(F,V; convert_method = :angle)
+function quad2tri(F,V; convert_method = :angle)::Vector{TriangleFace{Int64}}
     # Local functions for slash based conversion   
     forw_slash(f) = [[f[1],f[2],f[3]],[f[3],f[4],f[1]]] # Forward slash 
     back_slash(f) = [[f[1],f[2],f[4]],[f[2],f[3],f[4]]] # Back slash
@@ -1880,7 +1890,7 @@ function quad2tri(F,V; convert_method = :angle)
                 ft = fb
             end    
         else
-            error("""Incorrect conver_method set, use forward, backward, or angle """)
+            error("Incorrect conver_method set, use :forward, :backward, or :angle")
         end
         push!(Ft,ft[1])
         push!(Ft,ft[2])
@@ -1888,7 +1898,7 @@ function quad2tri(F,V; convert_method = :angle)
     return Ft
 end
 
-function remove_unused_vertices(F,V)
+function remove_unused_vertices(F,V)::Tuple
     T = eltype(F)
     indUsed = elements2indices(F)
     Vc = V[indUsed] # Remove unused points    
@@ -1922,7 +1932,7 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
                 end                 
             else # Some below -> cut
                 nBelow = sum(lf) # Number of nodes below
-                if nBelow==1 # 2-above, 1 below 
+                if isone(nBelow) # 2-above, 1 below 
                     indP = f[wrapindex(findfirst(lf) .+ (0:2),3)]
                     
                     e1 = sort(indP[[1,2]])
@@ -1976,7 +1986,7 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
     return remove_unused_vertices(Fn,Vn)
 end
 
-function count_edge_face(F,E_uni=missing,indReverse=missing)
+function count_edge_face(F,E_uni=missing,indReverse=missing)::Vector{Int64}
     if ismissing(E_uni) || ismissing(indReverse)
         E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
@@ -1996,7 +2006,7 @@ function boundaryedges(F)
     E = meshedges(F)
     Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
     count_E2F = count_edge_face(F,Eu,indReverse)
-    return Eu[count_E2F.==1]
+    return Eu[isone.(count_E2F)]
 end
 
 function edges2curve(Eb)
@@ -2021,7 +2031,7 @@ function edges2curve(Eb)
     return ind
 end
 
-function pointspacingmean(V)
+function pointspacingmean(V)::Float64
     # Equivalent to:  mean(norm.(diff(V,dims=1)))
     p = 0.0
     n = length(V)
@@ -2038,11 +2048,11 @@ function extrudecurve(V1,d; s=1, n=Point{3, Float64}(0.0,0.0,1.0),num_steps=miss
             num_steps = num_steps + Int64(iseven(num_steps)) # Force uneven
         end
     end
-    if s==1 # Allong n from V1
+    if isone(s) # Allong n from V1
         p = d.*n
-    elseif s==-1 # Against n from V1
+    elseif isone(-s) # Against n from V1
         p = -d.*n
-    elseif s==0 # Extrude both ways from V1
+    elseif iszero(s) # Extrude both ways from V1
         p = d.*n
         V1 = [(eltype(V1))(v.-p./2) for v ∈ V1] #Shift V1 in negative direction
     end
@@ -2068,7 +2078,7 @@ function meshgroup(F; con_type = :v)
         # FACE-FACE connectivity
         con_F2F = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
     else 
-        error(""" Wrong `con_type`, use :v or :e """)
+        error("Wrong `con_type`, use :v or :e")
     end
 
     if all(isempty.(con_F2F)) # Completely disconnected face set (e.g. raw STL import)
@@ -2100,7 +2110,7 @@ function meshgroup(F; con_type = :v)
             end
             if np == length(seen) # Group full
                 c += 1 # Increment group counter
-                i = findfirst(C.==0)
+                i = findfirst(iszero.(C))
             end
         end
     end
