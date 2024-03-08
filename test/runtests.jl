@@ -1,5 +1,27 @@
 using Test, Comodo, Comodo.GeometryBasics
 
+@testset "ind2sub" verbose = true begin
+    ind = [1,2,3,4,8,12,30]
+
+    @testset "1D i.e. Vector" begin
+        A = rand(30)
+        IJK_A = ind2sub(size(A),ind)
+        @test all([A[ind[i]] == A[IJK_A[i][1]] for i ∈ eachindex(ind)])
+    end
+
+    @testset "2D i.e. 2D Matrix" begin
+        B = rand(5,6) 
+        IJK_B = ind2sub(size(B),ind)
+        @test all([B[ind[i]] == B[IJK_B[i][1],IJK_B[i][2]] for i ∈ eachindex(ind)])
+    end
+
+    @testset "3D i.e. 3D matrix" begin
+        C = rand(3,5,2)
+        IJK_C = ind2sub(size(C),ind)
+        @test all([C[ind[i]] == C[IJK_C[i][1],IJK_C[i][2],IJK_C[i][3]] for i ∈ eachindex(ind)])
+    end
+end
+
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
         F = Vector{TriangleFace{Int64}}(undef, 3)
