@@ -1,4 +1,4 @@
-using Test, Comodo, GeometryBasics
+using Test, Comodo, Comodo.GeometryBasics
 
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
