@@ -578,30 +578,28 @@ end
 Converts the linear indices in `ind`, for a matrix/array with size `siz`, to the 
 equivalent subscript indices.  
 """
-function ind2sub(siz,ind)
-    
-    numDim = length(siz)
-    k = cumprod([siz[i] for i ∈ eachindex(siz)],dims=1)
-    m = prod(siz)
-    
-    if any(ind.>m) || any(ind.<1)
-        error("Encountered index value of out of valid range 1:$m")
+function ind2sub(siz::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},ind::Union{Tuple{Vararg{Int64, M}}, Vector{Int64}}) where N where M
+    if !isempty(ind) # Not empty so subscript indices will be derived
+        numDim = length(siz) # Number of dimensions from length of size
+        k = cumprod(siz) # Cumulative product of size
+        m = prod(siz) # Number of elements   
+        if any(ind.>m) || any(ind.<1)
+            error("Encountered index value of out of valid range 1:$m")
+        end
+        if length(ind)>1 # Multiple indices so loop over them
+            A = [ind2sub_(ind_i,numDim,k) for ind_i ∈ ind]
+        else # Just one so 
+            A = ind2sub_(ind,numDim,k)      
+        end
+    else # Empty so return an empty vector
+        A = Vector{Int64}[]
     end
-
-    if length(ind)>1
-        A = [ind2sub_(ind_i,numDim,k) for ind_i ∈ ind]
-    else
-        A = ind2sub_(ind,numDim,k)      
-    end
-
     return A
 end
 
 # ind2sub helper function to parse just a single linear index and produce a single subscript index set 
-function ind2sub_(ind,numDim,k)
-
+function ind2sub_(ind::Integer,numDim::Int64,k::Union{Int64,Vector{Int64},Tuple{Vararg{Int64, N}}}) where N    
     a = Vector{Int64}(undef,numDim) # Initialise a
-
     for q ∈ numDim:-1:1   # For all dimensions     
         if isone(q) # First 1st dimension
             a[1] = rem(ind-1,k[1]) + 1        
@@ -610,11 +608,9 @@ function ind2sub_(ind,numDim,k)
             a[q] = (ind - p)./k[q-1] + 1 # Current        
             ind = p # Set indices as "previous"          
         end            
-    end
-    
+    end    
     return a
 end
-
 
 """
     sub2ind(siz,A)

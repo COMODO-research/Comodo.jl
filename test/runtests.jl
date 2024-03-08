@@ -20,6 +20,37 @@ using Test, Comodo, Comodo.GeometryBasics
         IJK_C = ind2sub(size(C),ind)
         @test all([C[ind[i]] == C[IJK_C[i][1],IJK_C[i][2],IJK_C[i][3]] for i ∈ eachindex(ind)])
     end
+
+    @testset "Vector specifying size" begin
+        C = rand(3,5,2)
+        IJK_C = ind2sub(collect(size(C)),ind)
+        @test all([C[ind[i]] == C[IJK_C[i][1],IJK_C[i][2],IJK_C[i][3]] for i ∈ eachindex(ind)])
+    end
+
+    @testset "Tuple specifying indices" begin
+        C = rand(3,5,2)
+        ind_tuple = Tuple(ind[i] for i ∈ eachindex(ind))
+        IJK_C = ind2sub(collect(size(C)),ind_tuple)
+        @test all([C[ind_tuple[i]] == C[IJK_C[i][1],IJK_C[i][2],IJK_C[i][3]] for i ∈ eachindex(ind_tuple)])
+    end
+end
+
+@testset "ind2sub_" verbose = true begin
+    ind = 6
+    @testset "1D i.e. Vector" begin
+        A = rand(30)        
+        @test Comodo.ind2sub_(6,length(size(A)),cumprod(size(A))) == [6]
+    end
+
+    @testset "2D i.e. 2D Matrix" begin
+        B = rand(5,6)         
+        @test Comodo.ind2sub_(6,length(size(B)),cumprod(size(B))) == [1,2]
+    end
+
+    @testset "3D i.e. 3D matrix" begin
+        C = rand(3,5,2)        
+        @test Comodo.ind2sub_(6,length(size(C)),cumprod(size(C))) == [3,2,1]
+    end
 end
 
 @testset "elements2indices" verbose = true begin
