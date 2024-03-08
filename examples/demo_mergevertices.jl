@@ -2,8 +2,6 @@ using Comodo
 using GLMakie
 using GeometryBasics
 using FileIO
-using Statistics
-
 
 # Demonstration of the mergevertices function
 

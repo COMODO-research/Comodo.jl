@@ -1,6 +1,5 @@
 using Comodo
 using GLMakie
-using Statistics
 using GeometryBasics
 using FileIO
 

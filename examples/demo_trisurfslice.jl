@@ -1,11 +1,9 @@
 using Comodo
 using GLMakie
 using GeometryBasics
+using FileIO
 using Statistics
 using Rotations
-using LinearAlgebra
-using FileIO
-using SparseArrays
 
 # Example geometry
 testCase = 1

@@ -271,7 +271,7 @@ function nbezier(P::Vector{T},n::Integer) where T<:Union{AbstractPoint{3},Vector
     end
     t = range(0,1,n) # t range
     N = length(P) # Number of control points 
-    nn = 0:1:N-1
+    nn = 0:N-1
     nnr = N-1:-1:0
     f = factorial.(nn) 
     s = factorial(N-1)./( f.*reverse(f) ); # Sigma
@@ -284,7 +284,7 @@ function nbezier(P::Vector{T},n::Integer) where T<:Union{AbstractPoint{3},Vector
     
     for i ∈ 1:n
         b = s.* ((1.0-t[i]).^nnr) .* (t[i].^nn)
-        for j = 1:1:N
+        for j = 1:N
             V[i] += P[j].*b[j]
         end
     end 
@@ -628,7 +628,7 @@ function sub2ind(siz,A)
     ind = Vector{Int64}(undef,length(A))
     for i ∈ eachindex(A)        
         ind[i] = round(Int64,A[i][1]);
-        for q=2:1:numDim
+        for q=2:numDim
             ind[i] += (A[i][q].-1).*k[q-1]
         end        
     end
@@ -642,7 +642,7 @@ function sub2ind(siz,A::Vector{Int64})
     k = cumprod([siz[i] for i ∈ eachindex(siz)],dims=1)
     
     ind = A[1];
-    for q=2:1:numDim
+    for q=2:numDim
         ind += (A[q].-1).*k[q-1]
     end        
 
@@ -656,7 +656,7 @@ function meshedges(S; unique_only=false)
     m = length(s1) #Number of nodes per simplex
     
     E = GeometryBasics.LineFace{Int}[]    
-    for j1 ∈ 1:1:m # Loop over each node/point for the current simplex           
+    for j1 ∈ 1:m # Loop over each node/point for the current simplex           
         if j1<m
             j2 = j1+1
         else
@@ -875,17 +875,17 @@ function togeometrybasics_faces(FM::Matrix{Int64})
     n, m = size(FM)
     if m == 3 # Triangles
         F = Vector{TriangleFace{Int64}}(undef, n)
-        for q ∈ 1:1:n            
+        for q ∈ 1:n            
             F[q] = TriangleFace{Int64}(FM[q,:])
         end
     elseif m == 4 # Quads
         F = Vector{QuadFace{Int64}}(undef, n)
-        for q ∈ 1:1:n            
+        for q ∈ 1:n            
             F[q] = QuadFace{Int64}(FM[q,:])
         end
     else # Other mesh type
         F = Vector{m,NgonFace{Int64}}(undef, n)        
-        for q ∈ 1:1:n            
+        for q ∈ 1:n            
             F[q] = NgonFace{m,Int64}(FM[q,:])
         end
     end
@@ -896,7 +896,7 @@ function togeometrybasics_points(VM)
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
     n = length(VM)
     V=Vector{GeometryBasics.Point{3, Float64}}(undef, n)
-    for q ∈ 1:1:n
+    for q ∈ 1:n
         V[q] = GeometryBasics.Point{3, Float64}(VM[q])
     end
     return V
@@ -906,7 +906,7 @@ function togeometrybasics_points(VM::Matrix{Float64})
     n = length(VM)
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
     V=Vector{GeometryBasics.Point{3, Float64}}(undef, n)
-    for q ∈ 1:1:n
+    for q ∈ 1:n
         V[q] = GeometryBasics.Point{3, Float64}(VM[q,:])
     end
     return V
@@ -916,7 +916,7 @@ function togeometrybasics_points(VM::Vector{Vector{Int64}})
     n = length(VM)
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
     V=Vector{GeometryBasics.Point{3, Float64}}(undef, n)
-    for q ∈ 1:1:n
+    for q ∈ 1:n
         V[q] = GeometryBasics.Point{3, Float64}(VM[q])
     end
     return V
@@ -934,7 +934,7 @@ function edgecrossproduct(F,V)
     n =  length(F[1]) # Number of nodes per face    
     for q ∈ eachindex(F) # Loop over all faces
         c  = cross(V[F[q][n]],V[F[q][1]]) # Initialise as cross product of last and first vertex position vector
-        for qe ∈ 1:1:n-1 # Loop from first to end-1            
+        for qe ∈ 1:n-1 # Loop from first to end-1            
             c  += cross(V[F[q][qe]],V[F[q][qe+1]]) # Add next edge contribution          
         end
         C[q] = c./2 # Length = face area, direction is along normal vector
@@ -1034,8 +1034,8 @@ function unique_dict(X::AbstractVector{T}) where T <: Real
     return collect(keys(d)), indUnique, indReverse #, c
 end
 
-function unique_simplices(F,V=missing)
-    if ismissing(V)
+function unique_simplices(F,V=nothing)
+    if isnothing(V)
         n = maximum(reduce(vcat,F)) 
     else
         n = length(V)
@@ -1118,7 +1118,7 @@ function subtri(F,V,n; method = :linear)
         return Fn,Vn    
 
     elseif n>1
-        for _ =1:1:n
+        for _ =1:n
             F,V = subtri(F,V,1; method=method)
         end
         return F,V
@@ -1174,13 +1174,13 @@ function subquad(F,V,n; method=:linear)
         ne = length(Eu)
         for q ∈ eachindex(F)
             i = 1 + (q-1)*4
-            for ii = 0:1:3
+            for ii = 0:3
                 Fn[i+ii] = QuadFace{Int64}([F[q][ii+1], con_F2E[q][ii+1]+nv, q+nv+ne, con_F2E[q][1+mod(3+ii,4)]+nv])                
             end            
         end
         return Fn,Vn
     elseif n>1
-        for _ =1:1:n
+        for _ =1:n
             F,V = subquad(F,V,1;method=method)
         end
 
@@ -1277,22 +1277,22 @@ function hexbox(boxDim,boxEl)
     return E,V,F,Fb,CFb_type
 end
 
-function con_face_edge(F,E_uni=missing,indReverse=missing)
-    if ismissing(E_uni) | ismissing(indReverse)
+function con_face_edge(F,E_uni=nothing,indReverse=nothing)
+    if isnothing(E_uni) | isnothing(indReverse)
         E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
     end
     return [Vector{Int64}(a) for a ∈ eachrow(reshape(indReverse,length(F),length(F[1])))] # [indReverse[[1,2,3].+ (i-1)*3] for i ∈ eachindex(F)]
 end
 
-function con_edge_face(F,E_uni=missing,indReverse=missing)
-    if ismissing(E_uni) || ismissing(indReverse)
+function con_edge_face(F,E_uni=nothing,indReverse=nothing)
+    if isnothing(E_uni) || isnothing(indReverse)
         E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
     end
     con_F2E = con_face_edge(F,E_uni,indReverse)
     
-    con_E2F = [Vector{Int64}() for _ ∈ 1:1:length(E_uni)]
+    con_E2F = [Vector{Int64}() for _ ∈ 1:length(E_uni)]
     for i_f ∈ eachindex(F)
         for i ∈ con_F2E[i_f]
             push!(con_E2F[i],i_f)
@@ -1301,18 +1301,18 @@ function con_edge_face(F,E_uni=missing,indReverse=missing)
     return con_E2F
 end
 
-function con_face_face(F,E_uni=missing,indReverse=missing,con_E2F=missing,con_F2E=missing)
-    if ismissing(E_uni)| ismissing(indReverse)
+function con_face_face(F,E_uni=nothing,indReverse=nothing,con_E2F=nothing,con_F2E=nothing)
+    if isnothing(E_uni)| isnothing(indReverse)
         E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
     end    
-    if ismissing(con_E2F) 
+    if isnothing(con_E2F) 
         con_E2F = con_edge_face(F,E_uni)
     end
-    if ismissing(con_F2E)
+    if isnothing(con_F2E)
         con_F2E = con_face_edge(F,E_uni,indReverse)                 
     end
-    con_F2F = [Vector{Int64}() for _ ∈ 1:1:length(F)]
+    con_F2F = [Vector{Int64}() for _ ∈ 1:length(F)]
     for i_f ∈ eachindex(F)
         for i ∈ reduce(vcat,con_E2F[con_F2E[i_f]])    
             if i!=i_f     
@@ -1323,11 +1323,11 @@ function con_face_face(F,E_uni=missing,indReverse=missing,con_E2F=missing,con_F2
     return con_F2F
 end
 
-function con_face_face_v(F,V=missing,con_V2F=missing)
-    if ismissing(con_V2F) 
+function con_face_face_v(F,V=nothing,con_V2F=nothing)
+    if isnothing(con_V2F) 
         con_V2F = con_vertex_face(F,V)  # VERTEX-FACE connectivity
     end
-    con_F2F = [Vector{Int64}() for _ ∈ 1:1:length(F)]
+    con_F2F = [Vector{Int64}() for _ ∈ 1:length(F)]
     for i_f ∈ eachindex(F)
         for i ∈ reduce(vcat,con_V2F[F[i_f]])    
             if i!=i_f     
@@ -1338,13 +1338,13 @@ function con_face_face_v(F,V=missing,con_V2F=missing)
     return con_F2F
 end
 
-function con_vertex_simplex(F,V=missing)
-    if ismissing(V)
+function con_vertex_simplex(F,V=nothing)
+    if isnothing(V)
         n = maximum(reduce(vcat,F))
     else
         n = length(V)
     end
-    con_V2F = [Vector{Int64}() for _ ∈ 1:1:n]
+    con_V2F = [Vector{Int64}() for _ ∈ 1:n]
     for i_f ∈ eachindex(F)
         for i ∈ F[i_f]
             push!(con_V2F[i],i_f)
@@ -1353,19 +1353,19 @@ function con_vertex_simplex(F,V=missing)
     return con_V2F
 end
 
-function con_vertex_face(F,V=missing)
+function con_vertex_face(F,V=nothing)
     return con_vertex_simplex(F,V)
 end
 
-function con_vertex_edge(E,V=missing)
+function con_vertex_edge(E,V=nothing)
     return con_vertex_simplex(E,V)
 end
 
-function con_edge_edge(E_uni,con_V2E=missing)
-    if ismissing(con_V2E)
+function con_edge_edge(E_uni,con_V2E=nothing)
+    if isnothing(con_V2E)
         con_V2E = con_vertex_edge(E_uni) 
     end    
-    con_E2E = [Vector{Int64}() for _ ∈ 1:1:length(E_uni)]
+    con_E2E = [Vector{Int64}() for _ ∈ 1:length(E_uni)]
     for i_e ∈ eachindex(E_uni)
         for i ∈ reduce(vcat,con_V2E[E_uni[i_e]])    
             if i!=i_e     
@@ -1376,19 +1376,19 @@ function con_edge_edge(E_uni,con_V2E=missing)
     return con_E2E
 end
 
-function con_vertex_vertex_f(F,V=missing,con_V2F=missing)
-    if ismissing(V)
+function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
+    if isnothing(V)
         n = maximum(reduce(vcat,E))
     else 
         n = length(V)
     end
     
-    if ismissing(con_V2F)
+    if isnothing(con_V2F)
         con_V2F = con_vertex_face(F,V)
     end
 
-    con_V2V = [Vector{Int64}() for _ ∈ 1:1:n]
-    for i_v ∈ 1:1:n
+    con_V2V = [Vector{Int64}() for _ ∈ 1:n]
+    for i_v ∈ 1:n
         for i ∈ unique(reduce(vcat,F[con_V2F[i_v]]))
             if i_v!=i
                 push!(con_V2V[i_v],i)
@@ -1399,18 +1399,18 @@ function con_vertex_vertex_f(F,V=missing,con_V2F=missing)
     return con_V2V
 end
 
-function con_vertex_vertex(E,V=missing,con_V2E=missing)
-    if ismissing(V)
+function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
+    if isnothing(V)
         n = maximum(reduce(vcat,E))
     else 
         n = length(V)
     end
-    if ismissing(con_V2E)
+    if isnothing(con_V2E)
         con_V2E = con_vertex_edge(E,V)
     end
 
-    con_V2V = [Vector{Int64}() for _ ∈ 1:1:n]
-    for i_v ∈ 1:1:n
+    con_V2V = [Vector{Int64}() for _ ∈ 1:n]
+    for i_v ∈ 1:n
         for i ∈ reduce(vcat,E[con_V2E[i_v]])
             if i_v!=i
                 push!(con_V2V[i_v],i)
@@ -1457,11 +1457,11 @@ function meshconnectivity(F,V) #conType = ["ev","ef","ef","fv","fe","ff","ve","v
     return ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) 
 end 
 
-function mergevertices(F,V; roundVertices = true, numDigitsMerge=missing)
+function mergevertices(F,V; roundVertices = true, numDigitsMerge=nothing)
 
     m = length(V)
     if roundVertices
-        if ismissing(numDigitsMerge)
+        if isnothing(numDigitsMerge)
             E = meshedges(F)
             d = [sqrt( sum((V[e[1]] .- V[e[2]]).^2) ) for e ∈ E]
             pointSpacing = mean(d)
@@ -1491,7 +1491,7 @@ end
 
 """
 
-    smoothmesh_laplacian(F,V,con_V2V=missing; n=1, λ=0.5)
+    smoothmesh_laplacian(F,V,con_V2V=nothing; n=1, λ=0.5)
 
 # Description
 
@@ -1504,18 +1504,18 @@ As can be seen, the weighting is controlled by the input parameter `λ` which is
 in the range (0,1). If `λ=0` then no smoothing occurs. If `λ=1` pure Laplacian mean based smoothing occurs. For 
 intermediate values a linear blending between the two occurs.  
 """
-function smoothmesh_laplacian(F,V,con_V2V=missing; n=1, λ=0.5)
+function smoothmesh_laplacian(F,V,con_V2V=nothing; n=1, λ=0.5)
     if λ>1.0 || λ<0.0
         error("λ should be in the range 0-1")
     end
 
     if λ>0.0
-        # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if missing
-        if ismissing(con_V2V)
+        # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if nothing
+        if isnothing(con_V2V)
             E_uni = meshedges(F;unique_only=true)
             con_V2V = con_vertex_vertex(E_uni)
         end        
-        for _ = 1:1:n
+        for _ = 1:n
             Vs = deepcopy(V)
             for q ∈ eachindex(V)                
                 Vs[q] = (1.0-λ).*Vs[q] .+ λ*mean(V[con_V2V[q]]) # Linear blend between original and pure Laplacian
@@ -1528,7 +1528,7 @@ end
 
 
 """
-    smoothmesh_hc(F,V, con_V2V=missing; n=1, α=0.1, β=0.5, tolDist=missing)
+    smoothmesh_hc(F,V, con_V2V=nothing; n=1, α=0.1, β=0.5, tolDist=nothing)
 
 # Description 
 
@@ -1539,10 +1539,10 @@ Laplacian like smoothing but aims to compensate for shrinkage/swelling by also
 # Reference 
 [Vollmer et al. Improved Laplacian Smoothing of Noisy Surface Meshes, 1999. doi: 10.1111/1467-8659.00334](https://doi.org/10.1111/1467-8659.00334)
 """
-function smoothmesh_hc(F,V, con_V2V=missing; n=1, α=0.1, β=0.5, tolDist=missing)
+function smoothmesh_hc(F,V, con_V2V=nothing; n=1, α=0.1, β=0.5, tolDist=nothing)
 
-    # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if missing
-    if ismissing(con_V2V)
+    # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if nothing
+    if isnothing(con_V2V)
         E = meshedges(F)
         E_uni,_,_ = unique_simplices(E)
         con_V2V = con_vertex_vertex(E_uni)
@@ -1565,7 +1565,7 @@ function smoothmesh_hc(F,V, con_V2V=missing; n=1, α=0.1, β=0.5, tolDist=missin
             P[i] = P[i] .- (β.*B[i] .+ (1-β).* mean(B[con_V2V[i]]))
         end   
         c+=1 
-        if !ismissing(tolDist) # Include tolerance based termination
+        if !isnothing(tolDist) # Include tolerance based termination
             d = 0.0
             for i ∈ eachindex(V)
                 d+=sqrt(sum((P[i].-Q[i]).^2)) # Sum of distances
@@ -1591,8 +1591,8 @@ function quadplate(plateDim,plateElem)
     F = Vector{QuadFace{Int64}}()
     ij2ind(i,j) = i + ((j-1)*num_x) # function to convert subscript to linear indices
 
-    for i = 1:1:plateElem[1]
-        for j = 1:1:plateElem[2]        
+    for i = 1:plateElem[1]
+        for j = 1:plateElem[2]        
             push!(F,QuadFace{Int64}([ij2ind(i,j),ij2ind(i+1,j),ij2ind(i+1,j+1),ij2ind(i,j+1)]))
         end
     end
@@ -1604,7 +1604,7 @@ function quadsphere(n,r)
     F = faces(M)
     V = coordinates(M)
     if n > 0
-        for q ∈ 1:1:n
+        for q ∈ 1:n
             F,V = subquad(F,V,1)
             V = r .* (V ./ norm.(V))
         end
@@ -1612,13 +1612,13 @@ function quadsphere(n,r)
     return F,V
 end
 
-function simplex2vertexdata(F,DF,V=missing; con_V2F=missing, weighting=:none)
+function simplex2vertexdata(F,DF,V=nothing; con_V2F=nothing, weighting=:none)
     
-    if ismissing(con_V2F)
+    if isnothing(con_V2F)
         con_V2F = con_vertex_face(F,V)
     end
     if weighting==:area
-        if ismissing(V)
+        if isnothing(V)
            error("Vertices need to be provided for area based weighting.") 
         else
             A = facearea(F,V)
@@ -1714,8 +1714,8 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
     if face_type == :tri
         V0 = deepcopy(V)
         for qq ∈ 2:2:num_steps-1
-            i = (1:1:num_loop) .+ (qq-1) *num_loop
-            for q ∈ 1:1:num_loop    
+            i = (1:num_loop) .+ (qq-1) *num_loop
+            for q ∈ 1:num_loop    
                 if q == num_loop       
                     V[i[q]] = 0.5 .* (V0[i[q]]+V0[i[1]]) 
                 else
@@ -1730,22 +1730,22 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
     # Build faces
     if face_type == :quad    
         F = Vector{QuadFace{Int64}}()
-        for i = 1:1:num_loop-1
-            for j = 1:1:num_steps-1    
+        for i = 1:num_loop-1
+            for j = 1:num_steps-1    
                 push!(F,QuadFace{Int64}([ij2ind(i,j+1),ij2ind(i+1,j+1),ij2ind(i+1,j),ij2ind(i,j)  ]))
             end
         end
 
         # Add faces to close over shape if requested
         if close_loop
-            for q ∈ 1:1:num_steps-1                
+            for q ∈ 1:num_steps-1                
                 push!(F,QuadFace{Int64}([ ij2ind(num_loop,q+1), ij2ind(1,q+1), ij2ind(1,q), ij2ind(num_loop,q) ])) 
             end
         end
     elseif face_type == :tri_slash 
         F = Vector{TriangleFace{Int64}}()
-        for i = 1:1:num_loop-1
-            for j = 1:1:num_steps-1    
+        for i = 1:num_loop-1
+            for j = 1:num_steps-1    
                 push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i+1,j), ij2ind(i,j)     ])) # 1 2 3
                 push!(F,TriangleFace{Int64}([ ij2ind(i,j),     ij2ind(i,j+1), ij2ind(i+1,j+1) ])) # 3 4 1
             end
@@ -1753,15 +1753,15 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
 
         # Add faces to close over shape if requested
         if close_loop
-            for q ∈ 1:1:num_steps-1
+            for q ∈ 1:num_steps-1
                 push!(F,TriangleFace{Int64}([ ij2ind(1,q+1),      ij2ind(1,q),          ij2ind(num_loop,q)  ])) # 1 2 3
                 push!(F,TriangleFace{Int64}([ ij2ind(num_loop,q), ij2ind(num_loop,q+1), ij2ind(1,q+1)       ])) # 3 4 1
             end
         end
     elseif face_type == :tri 
         F = Vector{TriangleFace{Int64}}()
-        for i = 1:1:num_loop-1
-            for j = 1:1:num_steps-1    
+        for i = 1:num_loop-1
+            for j = 1:num_steps-1    
                 if iseven(j) # Normal slash
                     push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i+1,j),  ij2ind(i,j)     ])) # 1 2 3
                     push!(F,TriangleFace{Int64}([ ij2ind(i,j),     ij2ind(i,j+1),  ij2ind(i+1,j+1) ])) # 3 4 1
@@ -1774,7 +1774,7 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
 
         # Add faces to close over shape if requested
         if close_loop
-            for q ∈ 1:1:num_steps-1
+            for q ∈ 1:num_steps-1
                 if iseven(q) 
                     push!(F,TriangleFace{Int64}([ ij2ind(num_loop,q), ij2ind(num_loop,q+1), ij2ind(1,q+1)      ])) 
                     push!(F,TriangleFace{Int64}([ ij2ind(1,q+1),      ij2ind(1,q),          ij2ind(num_loop,q) ])) 
@@ -1791,7 +1791,7 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
 end 
 
 function dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:from)
-    E = [GeometryBasics.LineFace{Int}(i,i+length(V)) for i ∈ 1:1:length(V)]
+    E = [GeometryBasics.LineFace{Int}(i,i+length(V)) for i ∈ 1:length(V)]
     if style==:from
         P = vcat(V,V.+(scaleval.*U))
     elseif style==:to
@@ -1806,11 +1806,11 @@ function dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:from)
     return hp
 end
 
-function normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=missing)
+function normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
     F = faces(M)
     V = coordinates(M)
     E = meshedges(F)
-    if ismissing(scaleval)
+    if isnothing(scaleval)
         scaleval = mean([norm(V[e[1]]-V[e[2]])/2.0 for e ∈ E])
     end
     if type_flag == :face        
@@ -1852,7 +1852,7 @@ function edgeangles(F,V)
     A = Vector{GeometryBasics.Vec{m, Float64}}()
     for f ∈ F
         a = Vector{Float64}(undef,m)
-        for i ∈ 1:1:m                        
+        for i ∈ 1:m                        
             ip1 = wrapindex(i+1,m)            
             ip2 = wrapindex(i+2,m)
             n1 = normalizevector(V[f[ip1]]-V[f[i]])
@@ -1903,7 +1903,7 @@ function remove_unused_vertices(F,V)::Tuple
     indUsed = elements2indices(F)
     Vc = V[indUsed] # Remove unused points    
     indFix = zeros(length(V))
-    indFix[indUsed].=1:1:length(indUsed)
+    indFix[indUsed].=1:length(indUsed)
     Fc = [(T)(indFix[f]) for f ∈ F] # Fix indices in F 
     return Fc, Vc, indFix
 end
@@ -1986,8 +1986,8 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
     return remove_unused_vertices(Fn,Vn)
 end
 
-function count_edge_face(F,E_uni=missing,indReverse=missing)::Vector{Int64}
-    if ismissing(E_uni) || ismissing(indReverse)
+function count_edge_face(F,E_uni=nothing,indReverse=nothing)::Vector{Int64}
+    if isnothing(E_uni) || isnothing(indReverse)
         E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
     end
@@ -2035,14 +2035,14 @@ function pointspacingmean(V)::Float64
     # Equivalent to:  mean(norm.(diff(V,dims=1)))
     p = 0.0
     n = length(V)
-    for i ∈ 1:1:n-1
+    for i ∈ 1:n-1
         p += norm(V[i].-V[i+1])/(n-1)
     end
     return p
 end
 
-function extrudecurve(V1,d; s=1, n=Point{3, Float64}(0.0,0.0,1.0),num_steps=missing,close_loop=false,face_type=:quad)
-    if ismissing(num_steps)
+function extrudecurve(V1,d; s=1, n=Point{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad)
+    if isnothing(num_steps)
         num_steps = ceil(Int64,d/pointspacingmean(V1))
         if face_type==:tri
             num_steps = num_steps + Int64(iseven(num_steps)) # Force uneven
@@ -2082,7 +2082,7 @@ function meshgroup(F; con_type = :v)
     end
 
     if all(isempty.(con_F2F)) # Completely disconnected face set (e.g. raw STL import)
-        C = collect(1:1:length(F))
+        C = collect(1:length(F))
     else
         C = fill(0,length(F))
         i = 1
@@ -2117,15 +2117,15 @@ function meshgroup(F; con_type = :v)
     return C
 end
 
-function distmarch(F,V,indStart; d=missing, dd=missing, dist_tol=1e-3,con_V2V=missing,l=missing)
+function distmarch(F,V,indStart; d=nothing, dd=nothing, dist_tol=1e-3,con_V2V=nothing,l=nothing)
 
     # Get vertex-vertex connectivity
-    if ismissing(con_V2V)
+    if isnothing(con_V2V)
         con_V2V = con_vertex_vertex_f(F,V) 
     end
 
     # Compute "Laplacian umbrella" distances
-    if ismissing(dd)
+    if isnothing(dd)
         dd = Dict{Vector{Int64},Float64}()  
         for i ∈ eachindex(V)
             for ii ∈ con_V2V[i]
@@ -2138,17 +2138,17 @@ function distmarch(F,V,indStart; d=missing, dd=missing, dist_tol=1e-3,con_V2V=mi
     end
 
     # Get/allocate distance vector
-    if ismissing(d)
+    if isnothing(d)
         d = fill(Inf,length(V))
     end
 
-    if ismissing(l)
+    if isnothing(l)
         l = fill(0,length(V))
     end
 
     # Set start distances to zero 
     d[indStart] .= 0.0
-    l[indStart] .= 1:1:length(indStart)
+    l[indStart] .= 1:length(indStart)
     
     c = false
     ds = -1.0 # Set negative initially 
@@ -2183,7 +2183,7 @@ end
 #     d,dd,l = distmarch(F,V,ind; dist_tol=dist_tol,con_V2V=con_V2V)
 
 #     if numPoints>1
-#         @showprogress 1 "<distseedpoints>: Seeding points..." for q ∈ 2:1:numPoints            
+#         @showprogress 1 "<distseedpoints>: Seeding points..." for q ∈ 2:numPoints            
 #             push!(ind,findmax(d)[2])
 #             d,dd,l = distmarch(F,V,ind; dist_tol=dist_tol, dd=dd,d=d,con_V2V=con_V2V,l=l)        
 #         end
@@ -2307,7 +2307,7 @@ function mesh_curvature_polynomial(F::Vector{TriangleFace{Int64}},V::Vector{Poin
         # Set up polynomial fit
         T = Matrix{Float64}(undef,(length(ind),5))
         w = Matrix{Float64}(undef,(length(ind),1))
-        for i = 1:1:length(ind)
+        for i = 1:length(ind)
             T[i,:] = [vr[i][1],vr[i][2],vr[i][1]^2,vr[i][1]*vr[i][2],vr[i][2]^2]
             w[i] = vr[i][3]
         end     

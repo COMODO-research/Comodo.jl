@@ -2,9 +2,6 @@ using Comodo
 using GLMakie
 using GeometryBasics
 using FileIO
-using LinearAlgebra
-using Statistics
-using Rotations
 
 # Example geometry
 testCase = 6
@@ -48,7 +45,6 @@ elseif testCase==6
     # Obtain mesh faces and vertices
     F = togeometrybasics_faces(faces(M))
     V = togeometrybasics_points(coordinates(M))
-
 end
     
 M = GeometryBasics.Mesh(V,F)
