@@ -598,7 +598,7 @@ function ind2sub(siz::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},ind::Union{T
 end
 
 # ind2sub helper function to parse just a single linear index and produce a single subscript index set 
-function ind2sub_(ind::Integer,numDim::Int64,k::Union{Int64,Vector{Int64},Tuple{Vararg{Int64, N}}}) where N    
+function ind2sub_(ind::Integer,numDim::Int64,k::Union{Int64,Vector{Int64},Tuple{Vararg{Int64, N}}}) where N
     a = Vector{Int64}(undef,numDim) # Initialise a
     for q ∈ numDim:-1:1   # For all dimensions     
         if isone(q) # First 1st dimension
@@ -620,32 +620,41 @@ end
 Converts the subscript indices in `A`, for a matrix/array with size `siz`, to 
 the equivalent linear indices.  
 """
-function sub2ind(siz,A)
-    
+function sub2ind(siz::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},A::Vector{Vector{Int64}})  where N    
     numDim = length(siz)
-    k = cumprod([siz[i] for i ∈ eachindex(siz)],dims=1)
-
-    ind = Vector{Int64}(undef,length(A))
-    for i ∈ eachindex(A)        
-        ind[i] = round(Int64,A[i][1]);
-        for q=2:numDim
-            ind[i] += (A[i][q].-1).*k[q-1]
-        end        
+    if numDim==1
+        ind = [A[q][1] for q ∈ eachindex(A)]
+    else
+        k = cumprod([siz[i] for i ∈ eachindex(siz)],dims=1)
+        ind = Vector{Int64}(undef,length(A))
+        for i ∈ eachindex(A)        
+            a = A[i]
+            if length(a)==numDim
+                if any(a.>siz) || any(a.<1)
+                    error("BoundsError: Indices in A[$i] exceed bounds implied by size provided")
+                end    
+            else                
+                error("Incorrect number of indices in  A[$i], size implies number of indices should be $numDim")
+            end            
+            ind[i] = sub2ind_(a,numDim,k)
+        end
     end
-
     return ind
 end
 
-function sub2ind(siz,A::Vector{Int64})
-    
-    numDim = length(siz)
-    k = cumprod([siz[i] for i ∈ eachindex(siz)],dims=1)
-    
-    ind = A[1];
-    for q=2:numDim
-        ind += (A[q].-1).*k[q-1]
-    end        
+function sub2ind(siz::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},A::Vector{Int64})  where N    
+    return sub2ind(siz,[A])
+end
 
+function sub2ind_(a::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},numDim::Int64,k::Union{Int64,Vector{Int64},Tuple{Vararg{Int64, N}}})  where N
+    if numDim==1 
+        ind = a[1]
+    else        
+        ind = a[1]
+        for i=2:numDim
+            ind += (a[i].-1).*k[i-1]
+        end 
+    end
     return ind
 end
 

@@ -53,6 +53,36 @@ end
     end
 end
 
+@testset "sub2ind" verbose = true begin
+    ind = [1,2,3,4,8,12,30]
+    A = rand(30)
+    IJK_A = [[1],[2],[3],[4],[8],[12],[30]]
+    B = rand(5,6) 
+    IJK_B = [[1, 1], [2, 1], [3, 1], [4, 1], [3, 2], [2, 3], [5, 6]]
+    C = rand(3,5,2)
+    IJK_C = [[1, 1, 1], [2, 1, 1], [3, 1, 1], [1, 2, 1], [2, 3, 1], [3, 4, 1], [3, 5, 2]]
+
+    @testset "1D i.e. Vector" begin        
+        @test sub2ind(size(A),IJK_A)==ind
+    end
+
+    @testset "2D i.e. 2D Matrix" begin    
+        @test sub2ind(size(B),IJK_B)==ind
+    end
+
+    @testset "3D i.e. 3D matrix" begin        
+        @test sub2ind(size(C),IJK_C)==ind
+    end
+
+    @testset "Vector specifying indices 1D" begin        
+        @test [sub2ind(size(A),[i])[1] for i ∈ ind]==ind # IJK = ind for 1D case
+    end
+
+    @testset "Vector specifying size" begin        
+        @test sub2ind(collect(size(C)),IJK_C)==ind
+    end
+end
+
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
         F = Vector{TriangleFace{Int64}}(undef, 3)
