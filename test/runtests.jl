@@ -83,6 +83,24 @@ end
     end
 end
 
+@testset "sub2ind_" verbose = true begin
+
+    @testset "1D i.e. Vector" begin
+        A = rand(30)        
+        @test Comodo.sub2ind_([6],length(size(A)),cumprod(size(A))) == 6
+    end
+
+    @testset "2D i.e. 2D Matrix" begin
+        B = rand(5,6)         
+        @test Comodo.sub2ind_([1,2],length(size(B)),cumprod(size(B))) == 6
+    end
+
+    @testset "3D i.e. 3D matrix" begin
+        C = rand(3,5,2)        
+        @test Comodo.sub2ind_([3,2,1],length(size(C)),cumprod(size(C))) == 6
+    end
+end
+
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
         F = Vector{TriangleFace{Int64}}(undef, 3)
