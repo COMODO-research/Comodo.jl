@@ -2,7 +2,7 @@
 assets/temp
 
 # Ignore vscode settings folder
-/.vscode
+*.vscode
 
 # Ignore .backup files
 *.backup

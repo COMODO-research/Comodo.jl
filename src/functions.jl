@@ -920,7 +920,7 @@ end
 
 function togeometrybasics_points(VM::Matrix{Float64})
     n = length(VM)
-    # Loop over vertex matrix and convert to GeometryBasics vector of Points
+    # Loop over vertices and convert to GeometryBasics vector of Points
     V=Vector{GeometryBasics.Point{3, Float64}}(undef, n)
     for q ∈ 1:n
         V[q] = GeometryBasics.Point{3, Float64}(VM[q,:])
@@ -930,8 +930,8 @@ end
 
 function togeometrybasics_points(VM::Vector{Vector{Int64}})
     n = length(VM)
-    # Loop over vertex matrix and convert to GeometryBasics vector of Points
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef, n)
+    # Loop over vertices and convert to GeometryBasics vector of Points
+    V = Vector{GeometryBasics.Point{3, Float64}}(undef, n)
     for q ∈ 1:n
         V[q] = GeometryBasics.Point{3, Float64}(VM[q])
     end
@@ -939,8 +939,8 @@ function togeometrybasics_points(VM::Vector{Vector{Int64}})
 end
 
 function togeometrybasics_mesh(VM,FM)
-    V=togeometrybasics_points(VM)
-    F=togeometrybasics_faces(FM)
+    V = togeometrybasics_points(VM)
+    F = togeometrybasics_faces(FM)
     return GeometryBasics.Mesh(V,F)
 end
 

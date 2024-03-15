@@ -1,4 +1,4 @@
-using Test, Comodo, Comodo.GeometryBasics
+using Test, FileIO, Comodo, Comodo.GeometryBasics
 
 @testset "ind2sub" verbose = true begin
     ind = [1,2,3,4,8,12,30]
@@ -102,18 +102,22 @@ end
 end
 
 @testset "togeometrybasics_faces" verbose = true begin
-    # Triangles
+    # Triangles matrix and vector
     Ftm = [1 2 3; 4 5 6]
     Ftv = [[1,2,3],[4,5,6]]
     
-    # Quads
+    # Quads matrix and vector
     Fqm = [1 2 3 4; 5 6 7 8]
     Fqv = [[1,2,3,4],[5,6,7,8]]
 
-    # Ngons (pentagons)
+    # Ngons (pentagons) matrix and vector
     Fnm = [1 2 3 4 5; 6 7 8 9 10]
     Fnv = [[1,2,3,4,5],[6,7,8,9,10]]
 
+    # Imported triangular mesh 
+    fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
+    M = load(fileName_mesh)   
+    
     @testset "Matrix input" begin        
         Ftm_G = togeometrybasics_faces([Ftm[1,:]])
         @testset "1 TriangleFace" begin        
@@ -155,6 +159,11 @@ end
         Fnv_G = togeometrybasics_faces(Fnv)
         @testset "NgonFace" begin        
             @test isa(Fnv_G,Vector{GeometryBasics.NgonFace{5,Int64}})
+        end        
+
+        F = togeometrybasics_faces(faces(M)) 
+        @testset "Vector{NgonFace{3, OffsetInteger{-1, UInt32}}}" begin        
+            @test isa(F,Vector{GeometryBasics.TriangleFace{Int64}})
         end        
     end
 end
