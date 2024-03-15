@@ -101,6 +101,64 @@ end
     end
 end
 
+@testset "togeometrybasics_faces" verbose = true begin
+    # Triangles
+    Ftm = [1 2 3; 4 5 6]
+    Ftv = [[1,2,3],[4,5,6]]
+    
+    # Quads
+    Fqm = [1 2 3 4; 5 6 7 8]
+    Fqv = [[1,2,3,4],[5,6,7,8]]
+
+    # Ngons (pentagons)
+    Fnm = [1 2 3 4 5; 6 7 8 9 10]
+    Fnv = [[1,2,3,4,5],[6,7,8,9,10]]
+
+    @testset "Matrix input" begin        
+        Ftm_G = togeometrybasics_faces([Ftm[1,:]])
+        @testset "1 TriangleFace" begin        
+            @test isa(Ftm_G,Vector{GeometryBasics.TriangleFace{Int64}})
+        end
+
+        Ftm_G = togeometrybasics_faces(Ftm)
+        @testset "TriangleFace" begin        
+            @test isa(Ftm_G,Vector{GeometryBasics.TriangleFace{Int64}})
+        end
+
+        Fqm_G = togeometrybasics_faces(Fqm)
+        @testset "QuadFace" begin        
+            @test isa(Fqm_G,Vector{GeometryBasics.QuadFace{Int64}})
+        end
+
+        Fnm_G = togeometrybasics_faces(Fnm)
+        @testset "NgonFace" begin        
+            @test isa(Fnm_G,Vector{GeometryBasics.NgonFace{5,Int64}})
+        end        
+    end
+
+    @testset "vector input" begin        
+        Ftv_G = togeometrybasics_faces([Ftv[1]])        
+        @testset "1 TriangleFace" begin        
+            @test isa(Ftv_G,Vector{GeometryBasics.TriangleFace{Int64}})
+        end
+
+        Ftv_G = togeometrybasics_faces(Ftv)
+        @testset "TriangleFace" begin        
+            @test isa(Ftv_G,Vector{GeometryBasics.TriangleFace{Int64}})
+        end
+
+        Fqv_G = togeometrybasics_faces(Fqv)
+        @testset "QuadFace" begin        
+            @test isa(Fqv_G,Vector{GeometryBasics.QuadFace{Int64}})
+        end
+
+        Fnv_G = togeometrybasics_faces(Fnv)
+        @testset "NgonFace" begin        
+            @test isa(Fnv_G,Vector{GeometryBasics.NgonFace{5,Int64}})
+        end        
+    end
+end
+
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
         F = Vector{TriangleFace{Int64}}(undef, 3)
@@ -598,8 +656,8 @@ end
     r = 2 * sqrt(3) / 2
     M = cube(r)
 
-    F = togeometrybasics_faces(faces(M))
-    V = togeometrybasics_points(coordinates(M))
+    F = faces(M)
+    V = coordinates(M)
     F, V, _ = mergevertices(F, V)
 
     @test V isa Vector{Point3{Float64}}
@@ -617,8 +675,8 @@ end
     r = 2 * sqrt(3) / 2
     M = cube(r)
 
-    F = togeometrybasics_faces(faces(M))
-    V = togeometrybasics_points(coordinates(M))
+    F = faces(M)
+    V = coordinates(M)
     F, V, _ = mergevertices(F, V)
 
     Fn, Vn = seperate_vertices(F, V)

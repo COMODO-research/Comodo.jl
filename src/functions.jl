@@ -62,28 +62,35 @@ sliders position will "wrap" back to the start when advancing beyond the end
 position, and vice versa. 
 """
 function slidercontrol(hSlider::Slider,ax::Union{Axis3, Figure})    
+    sliderRange = hSlider.range[] # Get slider range
+    rangeLength = length(sliderRange) # Number of possible steps 
+    sliderIndex = hSlider.selected_index[] # Current slider index
     on(events(ax).keyboardbutton) do event
-        if event.action == Keyboard.press || event.action == Keyboard.repeat # Pressed or held for instance
-            if event.key == Keyboard.up                                  
-                sliderValue = hSlider.value.val              
-                if sliderValue ==hSlider.range.val[end]                
-                    set_close_to!(hSlider, hSlider.range.val[1])
-                else                
-                    set_close_to!(hSlider, hSlider.value.val+1)
+        if event.action == Keyboard.press || event.action == Keyboard.repeat # Pressed or held for instance            
+            if event.key == Keyboard.up                                                  
+                if sliderIndex == rangeLength
+                    sliderIndex = 1                    
+                else               
+                    sliderIndex += 1                     
                 end            
-            elseif event.key == Keyboard.down
-                sliderValue = hSlider.value.val            
-                if sliderValue ==hSlider.range.val[1]
-                    set_close_to!(hSlider, hSlider.range.val[end])
+            elseif event.key == Keyboard.down                
+                if sliderIndex == 1
+                    sliderIndex = rangeLength
                 else                
-                    set_close_to!(hSlider, hSlider.value.val-1)
+                    sliderIndex -= 1                    
                 end                        
-            end
-            if event.key == Keyboard.right                                              
-                set_close_to!(hSlider, hSlider.value.val+1)            
+            end            
+            if event.key == Keyboard.right                        
+                if sliderIndex < rangeLength                       
+                    sliderIndex += 1                     
+                end            
             elseif event.key == Keyboard.left            
-                set_close_to!(hSlider, hSlider.value.val-1)
+                if sliderIndex > 1                       
+                    sliderIndex -= 1                     
+                end            
             end
+            println(sliderIndex)
+            set_close_to!(hSlider, sliderRange[sliderIndex])
         end
     end    
 end
@@ -865,7 +872,7 @@ function tetrahedron(r=1.0)
     return GeometryBasics.Mesh(V,F)
 end
 
-function togeometrybasics_faces(FM)
+function togeometrybasics_faces(FM::Union{Vector{Vector{Int64}},Vector{NgonFace{N, OffsetInteger{-1, UInt32}}}}) where N
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)
     n = length(FM)
     m = length(FM[1])
@@ -874,7 +881,7 @@ function togeometrybasics_faces(FM)
     elseif m ==4 # Quads
         F = [QuadFace{Int64}(FM[q]) for q ∈ eachindex(FM)]        
     else # Other mesh type        
-        F = [NgonFace{Int64}(FM[q]) for q ∈ eachindex(FM)]        
+        F = [NgonFace{m,Int64}(FM[q]) for q ∈ eachindex(FM)]        
     end
     return F
 end
@@ -893,7 +900,7 @@ function togeometrybasics_faces(FM::Matrix{Int64})
             F[q] = QuadFace{Int64}(FM[q,:])
         end
     else # Other mesh type
-        F = Vector{m,NgonFace{Int64}}(undef, n)        
+        F = Vector{NgonFace{m,Int64}}(undef, n)        
         for q ∈ 1:n            
             F[q] = NgonFace{m,Int64}(FM[q,:])
         end
@@ -1908,12 +1915,17 @@ function quad2tri(F,V; convert_method = :angle)::Vector{TriangleFace{Int64}}
 end
 
 function remove_unused_vertices(F,V)::Tuple
-    T = eltype(F)
-    indUsed = elements2indices(F)
-    Vc = V[indUsed] # Remove unused points    
-    indFix = zeros(length(V))
-    indFix[indUsed].=1:length(indUsed)
-    Fc = [(T)(indFix[f]) for f ∈ F] # Fix indices in F 
+    if isempty(F) # If the face set is empty, return all emtpy outputs
+        Fc = F
+        Vc = Vector{eltype(V)}(undef,0)
+        indFix = Vector{Int64}(undef,0)
+    else # Faces not empty to check which indices are used and shorten V if needed        
+        indUsed = elements2indices(F) # Indices used
+        Vc = V[indUsed] # Remove unused points    
+        indFix = zeros(length(V))
+        indFix[indUsed] .= 1:length(indUsed)
+        Fc = [(eltype(F))(indFix[f]) for f ∈ F] # Fix indices in F         
+    end
     return Fc, Vc, indFix
 end
 
