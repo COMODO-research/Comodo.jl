@@ -62,7 +62,7 @@ elseif testCase==4
 elseif testCase==5 # Unmerged STL, each triangle is seperate group
     # Loading a mesh
     using FileIO
-    fileName_mesh = joinpath(gibbondir(),"assets","stl","stanford_bunny_low.stl")
+    fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
@@ -71,7 +71,7 @@ elseif testCase==5 # Unmerged STL, each triangle is seperate group
 elseif testCase==6 # Merged STL for single object
     # Loading a mesh
     using FileIO
-    fileName_mesh = joinpath(gibbondir(),"assets","stl","stanford_bunny_low.stl")
+    fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
@@ -81,7 +81,7 @@ elseif testCase==6 # Merged STL for single object
 elseif testCase==7 # Merged STL for single object
     # Loading a mesh
     using FileIO
-    fileName_mesh = joinpath(gibbondir(),"assets","stl","david.stl")
+    fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices

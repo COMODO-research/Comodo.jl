@@ -6,12 +6,12 @@ using Statistics
 using Rotations
 
 # Example geometry
-testCase = 1
+testCase = 3
 if testCase == 1
     F,V = geosphere(2,1.0)
 elseif testCase == 2
     # Loading a mesh
-    fileName_mesh = joinpath(gibbondir(),"assets","stl","stanford_bunny_low.stl")
+    fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
@@ -23,7 +23,7 @@ elseif testCase == 2
     # F,V=subtri(F,V,1)
 elseif testCase == 3
     # Loading a mesh
-    fileName_mesh = joinpath(gibbondir(),"assets","stl","david.stl")
+    fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
@@ -34,7 +34,6 @@ elseif testCase == 3
     F,V,ind1,ind2 = mergevertices(F,V)
 end
 
-# function trisurfslice(F,V; p=(0,0,0))
 # Input parameters
 p = mean(V,dims=1)[1]; # Point on cutting plane
 n = normalizevector(Vec{3, Float64}(0.0,1.0,1.0))# Cutting plane normal
@@ -55,13 +54,17 @@ MG = GeometryBasics.Mesh(VG1,FG1)
 fig = Figure(size=(800,800))
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A sliced mesh")
 
-stepRange = range(-s/2,s/2,50)
+stepRange = range(-s,s,50)
 hSlider = Slider(fig[2, 1], range = stepRange, startvalue = 0,linewidth=30)
 
 Mn = lift(hSlider.value) do stepIndex       
     pp = [p[1],p[2],p[3]+stepIndex]
-    Fn,Vn = trisurfslice(F,V,n,pp; output_type=:below)        
-    return GeometryBasics.Mesh(Vn,Fn)
+    Fn,Vn = trisurfslice(F,V,n,pp; output_type=:below)            
+    if isempty(Fn)
+        return GeometryBasics.Mesh(V,F)
+    else
+        return GeometryBasics.Mesh(Vn,Fn)
+    end
 end
 
 MG = lift(hSlider.value) do stepIndex   
