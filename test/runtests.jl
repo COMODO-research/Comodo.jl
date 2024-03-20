@@ -168,6 +168,36 @@ end
     end
 end
 
+
+@testset "togeometrybasics_points" verbose = true begin
+
+    @testset "Matrix input" begin        
+        V = togeometrybasics_points(rand(10,3))
+        @test isa(V,Vector{GeometryBasics.Point3{Float64}})
+    end
+
+    @testset "Vector Float64" begin
+        Vv = [rand(3) for _ in 1:5]       
+        V = togeometrybasics_points(Vv)
+        @test isa(V,Vector{GeometryBasics.Point3{Float64}})
+    end
+
+    @testset "Vector Vec3" begin
+        Vv = Vector{Vec3{Float64}}(undef,5)       
+        V = togeometrybasics_points(Vv)
+        @test isa(V,Vector{GeometryBasics.Point3{Float64}})
+    end
+
+    @testset "Imported mesh points" begin
+        # Imported triangular mesh 
+        fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
+        M = load(fileName_mesh) 
+        Vv = coordinates(M)       
+        V = togeometrybasics_points(Vv)
+        @test isa(V,Vector{GeometryBasics.Point3{Float64}})
+    end
+   
+end
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
         F = Vector{TriangleFace{Int64}}(undef, 3)

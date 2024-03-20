@@ -919,7 +919,7 @@ function togeometrybasics_points(VM)
 end
 
 function togeometrybasics_points(VM::Matrix{Float64})
-    n = length(VM)
+    n = size(VM,1)
     # Loop over vertices and convert to GeometryBasics vector of Points
     V=Vector{GeometryBasics.Point{3, Float64}}(undef, n)
     for q ∈ 1:n
@@ -928,7 +928,7 @@ function togeometrybasics_points(VM::Matrix{Float64})
     return V
 end
 
-function togeometrybasics_points(VM::Vector{Vector{Int64}})
+function togeometrybasics_points(VM::Union{Vector{Vector{T}},Vector{Vec3{T}}}) where T <: Real
     n = length(VM)
     # Loop over vertices and convert to GeometryBasics vector of Points
     V = Vector{GeometryBasics.Point{3, Float64}}(undef, n)
