@@ -196,8 +196,61 @@ end
         V = togeometrybasics_points(Vv)
         @test isa(V,Vector{GeometryBasics.Point3{Float64}})
     end
-   
 end
+
+@testset "togeometrybasics_mesh" verbose = true begin
+
+    @testset "Matrix input" begin  
+        @testset "triangles" begin      
+            n = 10 
+            m = 3
+            k = 5
+            M = togeometrybasics_mesh(rand(n,3),rand(1:n,k,m))
+            @test isa(M,GeometryBasics.Mesh)
+            @test length(coordinates(M))==n
+            @test length(faces(M))==k
+            @test length(faces(M)[1])==m
+        end
+        @testset "quads" begin      
+            n = 12 
+            m = 4
+            k = 6
+            M = togeometrybasics_mesh(rand(n,3),rand(1:n,k,m))
+            @test isa(M,GeometryBasics.Mesh)
+            @test length(coordinates(M))==n
+            @test length(faces(M))==k
+            @test length(faces(M)[1])==m
+        end
+    end
+
+    @testset "Vector input" begin  
+        @testset "triangles" begin      
+            n = 10 
+            m = 3
+            k = 5
+            V = Vector{Vec3{Float64}}(undef,n)
+            F = [rand(1:n,m) for i=1:k]
+            M = togeometrybasics_mesh(V,F)
+            @test isa(M,GeometryBasics.Mesh)
+            @test length(coordinates(M))==n
+            @test length(faces(M))==k
+            @test length(faces(M)[1])==m
+        end
+        @testset "quads" begin      
+            n = 12 
+            m = 4
+            k = 6
+            V = Vector{Vec3{Float64}}(undef,n)
+            F = [rand(1:n,m) for i=1:k]
+            M = togeometrybasics_mesh(V,F)
+            @test isa(M,GeometryBasics.Mesh)
+            @test length(coordinates(M))==n
+            @test length(faces(M))==k
+            @test length(faces(M)[1])==m
+        end
+    end
+end
+
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
         F = Vector{TriangleFace{Int64}}(undef, 3)
