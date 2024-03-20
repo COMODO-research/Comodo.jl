@@ -826,7 +826,7 @@ function cube(r=1.0)
     # Create vertices       
     s = r/sqrt(3.0)
 
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef,8)
+    V = Vector{GeometryBasics.Point{3, Float64}}(undef,8)
     V[1 ] = GeometryBasics.Point{3, Float64}( -s, -s, -s)
     V[2 ] = GeometryBasics.Point{3, Float64}( -s,  s, -s)
     V[3 ] = GeometryBasics.Point{3, Float64}(  s,  s, -s)
@@ -943,7 +943,6 @@ function togeometrybasics_mesh(VM,FM)
     F = togeometrybasics_faces(FM)
     return GeometryBasics.Mesh(V,F)
 end
-
 
 function edgecrossproduct(F,V)    
     C = Vector{GeometryBasics.Vec{3, Float64}}(undef,length(F)) # Allocate array cross-product vectors
