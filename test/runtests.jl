@@ -439,6 +439,43 @@ end
     end
 end
 
+@testset "edgelengths" begin
+    @testset "GeometryBasics faces, vertices" begin
+        F = [QuadFace{Int64}(1, 2, 3, 4)]
+        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
+        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
+        
+        @test d = edgelengths(F,V) == [1.0, 1.0, 1.0, 1.0] # Unit square
+        @test d = edgelengths(F,V*pi) == pi.*[1.0, 1.0, 1.0, 1.0] # Scaled square
+    end
+
+    @testset "F::Vector{Vector{Int64}}, V::Vector{Vec3}" begin
+        F = [[1,2,3,4]]
+        V = Vector{Vec3{Float64}}(undef,4)
+        V[1] = Vec3(0.0, 0.0, 0.0)
+        V[2] = Vec3(1.0, 0.0, 0.0)
+        V[3] = Vec3(1.0, 1.0, 0.0)
+        V[4] = Vec3(0.0, 1.0, 0.0)
+        
+        @test d = edgelengths(F,V) == [1.0, 1.0, 1.0, 1.0]    
+    end
+
+    @testset "GeometryBasics LineFace edges" begin
+        F = [QuadFace{Int64}(1, 2, 3, 4)]
+        E = meshedges(F)
+        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
+        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
+        
+        @test d = edgelengths(E,V) == [1.0, 1.0, 1.0, 1.0]        
+    end
+end
+
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
         F = Vector{TriangleFace{Int64}}(undef, 3)

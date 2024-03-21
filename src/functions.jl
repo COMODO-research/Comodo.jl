@@ -665,7 +665,12 @@ function sub2ind_(a::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},numDim::Int64
     return ind
 end
 
-# Function to obtain the edges of a face based mesh
+"""
+meshedges(S; unique_only=false)
+This function returns the edges `E` for the input "simplices" (e.g. faces)
+defined by `S`. The input `S` can either represent a vector of faces or a 
+GeometryBasics mesh.  
+"""
 function meshedges(S; unique_only=false)
     # Get number of nodes per simplex, use first for now (better to get this from some property)
     s1 = S[1] # First simplex
@@ -944,6 +949,7 @@ function togeometrybasics_mesh(VM,FM)
     return GeometryBasics.Mesh(V,F)
 end
 
+
 function edgecrossproduct(F,V)    
     C = Vector{GeometryBasics.Vec{3, Float64}}(undef,length(F)) # Allocate array cross-product vectors
     n =  length(F[1]) # Number of nodes per face    
@@ -961,17 +967,26 @@ function edgecrossproduct(M::GeometryBasics.Mesh)
     return edgecrossproduct(faces(M),coordinates(M))
 end
 
-function facenormal(M::GeometryBasics.Mesh) 
-    return facenormal(faces(M),coordinates(M))
-end
 
-# Computes mesh face normals
+"""
+    facenormal(F,V; weighting=:area)
+This function computes the per face normal directions for the input mesh defined 
+either by the faces `F` and vertices `V` or by the GeometryBasics mesh `M`. 
+"""
 function facenormal(F,V)
     C = edgecrossproduct(F,V)
     return C./norm.(C)
 end
 
-# Computes mesh face areas
+function facenormal(M::GeometryBasics.Mesh) 
+    return facenormal(faces(M),coordinates(M))
+end
+
+"""
+    facearea(F,V)
+This function computes the per face area for the input mesh defined either by 
+the faces `F` and vertices `V` or by the GeometryBasics mesh `M`. 
+"""
 function facearea(F,V)        
     return norm.(edgecrossproduct(F,V))
 end
@@ -980,16 +995,44 @@ function facearea(M::GeometryBasics.Mesh)
     return facearea(faces(M),coordinates(M))
 end
 
-function vertexnormal(M::GeometryBasics.Mesh; weighting=:area)     
-    return normalizevector(vertexnormal(faces(M),coordinates(M); weighting=weighting))
-end
 
+"""
+    vertexnormal(F,V; weighting=:area)
+This function computes the per vertex surface normal directions for the input 
+mesh defined either by the faces `F` and vertices `V` or by the GeometryBasics
+mesh `M`. The optional parameter `weighting` sets how the face normal directions 
+are averaged onto the vertices. If `weighting=:none` a plain average for the 
+surrounding faces is used. If instead `weighting=:area` (default), then the
+average is weighted based on the face areas. 
+"""
 function vertexnormal(F,V; weighting=:area)     
     return normalizevector(simplex2vertexdata(F,facenormal(F,V),V; weighting=weighting))
 end
 
-function edgelengths(F,V)    
-    return [norm(V[e[1]]-V[e[2]]) for e ∈ meshedges(F; unique_only=true)]
+function vertexnormal(M::GeometryBasics.Mesh; weighting=:area)     
+    return normalizevector(vertexnormal(faces(M),coordinates(M); weighting=weighting))
+end
+
+
+"""
+    edgelengths(E::GeometryBasics.LineFace,V)
+    edgelengths(F,V)
+    edgelengths(M::GeometryBasics.Mesh)            
+This function computes the lengths of the edges defined by edge vector `E` (e.g
+as obtained from `meshedges(F,V)`, where `F` is a face vector, and `V` is a 
+vector of vertices. 
+Alternatively the input mesh can be a GeometryBasics mesh `M`.
+"""
+function edgelengths(E::Vector{GeometryBasics.LineFace{Int64}},V::Union{Vector{T},Vector{Vec3{Float64}}}) where T<:AbstractPoint{3, Float64}    
+    return [norm(V[e[1]]-V[e[2]]) for e ∈ E]
+end
+
+function edgelengths(F::Union{Vector{T},Vector{Vector{Int64}}},V::Union{Vector{TT},Vector{Vec3{Float64}}}) where T<:GeometryBasics.AbstractNgonFace{N, Int64} where N where TT<:AbstractPoint{3, Float64}   
+    return edgelengths(meshedges(F; unique_only=true),V)
+end
+
+function edgelengths(M::GeometryBasics.Mesh)        
+    return edgelengths(faces(M),coordinates(M))    
 end
 
 
