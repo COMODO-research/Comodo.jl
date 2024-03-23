@@ -476,6 +476,25 @@ end
     end
 end
 
+@testset "hexbox" verbose = true begin
+    @testset "Single hex box" begin
+        E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[1,1,1])
+        @test E == [[1, 2, 4, 3, 5, 6, 8, 7]] 
+        @test V == Point3{Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
+        @test F == QuadFace{Int64}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [3, 1, 5, 7]]
+        @test Fb == QuadFace{Int64}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [3, 1, 5, 7]]
+        @test CFb_type == [1, 2, 3, 4, 5, 6]
+    end
+    @testset "2x2x2 hex box" begin
+        E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[2,2,2])
+        @test length(E) == 8
+        @test length(V) == 27
+        @test length(F) == 48
+        @test length(Fb) == 24
+        @test CFb_type == [1, 3, 6, 1, 3, 5, 1, 4, 6, 1, 4, 5, 2, 3, 6, 2, 3, 5, 2, 4, 6, 2, 4, 5]
+    end
+end
+
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
         F = Vector{TriangleFace{Int64}}(undef, 3)

@@ -382,7 +382,7 @@ function mindist(V1,V2; getIndex=false, skipSelf = false )
     end
 end
 
-function unique_dict_index(X::AbstractVector{T}; sort_entries=false) where T<:Real
+function unique_dict_index(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
     # T = eltype(X)
@@ -404,10 +404,10 @@ function unique_dict_index(X::AbstractVector{T}; sort_entries=false) where T<:Re
     return xUni, indUnique
 end
 
-function unique_dict_index_inverse(X; sort_entries=false)
+function unique_dict_index_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
-    T = eltype(X)
+    # T = eltype(X)
     d = Dict{T,Int64}() # Use dict to keep track of used values
     xUni = Vector{T}()
     indUnique = Vector{Int64}() 
@@ -432,9 +432,10 @@ function unique_dict_index_inverse(X; sort_entries=false)
     return xUni, indUnique, indInverse
 end
 
-function unique_dict_index_count(X::AbstractVector{T}; sort_entries=false) where T<:Real
+function unique_dict_index_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
+    
     # T = eltype(X)
     d = Dict{T,Int64}() # Use dict to keep track of used values
     xUni = Vector{T}()
@@ -461,7 +462,7 @@ function unique_dict_index_count(X::AbstractVector{T}; sort_entries=false) where
     return xUni, indUnique, c
 end
 
-function unique_dict_index_inverse_count(X::AbstractVector{T}; sort_entries=false) where T <: Real
+function unique_dict_index_inverse_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
     # T = eltype(X)
@@ -493,7 +494,7 @@ function unique_dict_index_inverse_count(X::AbstractVector{T}; sort_entries=fals
     return xUni, indUnique, indInverse,c
 end
 
-function unique_dict_count(X::AbstractVector{T}; sort_entries=false) where T <: Real 
+function unique_dict_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
     # T = eltype(X)
@@ -519,7 +520,7 @@ function unique_dict_count(X::AbstractVector{T}; sort_entries=false) where T <: 
     return xUni, c
 end
 
-function unique_dict_inverse(X::AbstractVector{T}; sort_entries=false) where T <: Real 
+function unique_dict_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any 
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
     # T = eltype(X)
@@ -585,7 +586,7 @@ end
 Converts the linear indices in `ind`, for a matrix/array with size `siz`, to the 
 equivalent subscript indices.  
 """
-function ind2sub(siz::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},ind::Union{Tuple{Vararg{Int64, M}}, Vector{Int64}}) where N where M
+function ind2sub(siz::Union{Tuple{Vararg{Int64, N}}, Array{Int64, N}},ind::Union{Int64,Tuple{Vararg{Int64, M}}, Array{Int64, M}}) where N where M
     if !isempty(ind) # Not empty so subscript indices will be derived
         numDim = length(siz) # Number of dimensions from length of size
         k = cumprod(siz) # Cumulative product of size
@@ -593,9 +594,9 @@ function ind2sub(siz::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},ind::Union{T
         if any(ind.>m) || any(ind.<1)
             error("Encountered index value of out of valid range 1:$m")
         end
-        if length(ind)>1 # Multiple indices so loop over them
+        if isa(ind,Union{Array,Tuple}) # Potentially multiple indices so loop over them
             A = [ind2sub_(ind_i,numDim,k) for ind_i ∈ ind]
-        else # Just one so 
+        else # This should be a single integer
             A = ind2sub_(ind,numDim,k)      
         end
     else # Empty so return an empty vector
@@ -605,7 +606,7 @@ function ind2sub(siz::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},ind::Union{T
 end
 
 # ind2sub helper function to parse just a single linear index and produce a single subscript index set 
-function ind2sub_(ind::Integer,numDim::Int64,k::Union{Int64,Vector{Int64},Tuple{Vararg{Int64, N}}}) where N
+function ind2sub_(ind::Int64,numDim::Int64,k::Union{Int64,Array{Int64, N},Tuple{Vararg{Int64, N}}}) where N
     a = Vector{Int64}(undef,numDim) # Initialise a
     for q ∈ numDim:-1:1   # For all dimensions     
         if isone(q) # First 1st dimension
@@ -627,12 +628,12 @@ end
 Converts the subscript indices in `A`, for a matrix/array with size `siz`, to 
 the equivalent linear indices.  
 """
-function sub2ind(siz::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},A::Vector{Vector{Int64}})  where N    
+function sub2ind(siz::Union{Tuple{Vararg{Int64, N}}, Array{Int64, N}},A::Vector{Vector{Int64}})  where N    
     numDim = length(siz)
     if numDim==1
         ind = [A[q][1] for q ∈ eachindex(A)]
     else
-        k = cumprod([siz[i] for i ∈ eachindex(siz)],dims=1)
+        k = cumprod([siz[i] for i ∈ eachindex(siz)],dims=1)        
         ind = Vector{Int64}(undef,length(A))
         for i ∈ eachindex(A)        
             a = A[i]
@@ -644,13 +645,13 @@ function sub2ind(siz::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},A::Vector{Ve
                 error("Incorrect number of indices in  A[$i], size implies number of indices should be $numDim")
             end            
             ind[i] = sub2ind_(a,numDim,k)
-        end
+        end                    
     end
     return ind
 end
 
 function sub2ind(siz::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},A::Vector{Int64})  where N    
-    return sub2ind(siz,[A])
+    return sub2ind(siz,[A])[1]
 end
 
 function sub2ind_(a::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},numDim::Int64,k::Union{Int64,Vector{Int64},Tuple{Vararg{Int64, N}}})  where N
@@ -1262,7 +1263,7 @@ function geosphere(n,r)
     return F,V
 end
 
-function hexbox(boxDim,boxEl)    
+function hexbox(boxDim::Vector{T},boxEl::Vector{Int64}) where T <: Real
     boxNod = boxEl.+1 # Number of nodes in each direction
     numElements = prod(boxEl) # Total number of elements
     numNodes = prod(boxNod) # Total number of nodes
