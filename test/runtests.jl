@@ -487,7 +487,9 @@ end
     end
     @testset "2x2x2 hex box" begin
         E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[2,2,2])
+        @test E[1] == [1, 2, 5, 4, 10, 11, 14, 13]
         @test length(E) == 8
+        @test V[5] == [0.5, 0.5, 0.0]
         @test length(V) == 27
         @test length(F) == 48
         @test length(Fb) == 24
