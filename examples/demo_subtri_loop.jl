@@ -19,7 +19,7 @@ titleString = lift(hSlider.value) do stepIndex
 end
 
 Mn = lift(hSlider.value) do stepIndex
-    Fn,Vn = subtri(F,V,stepIndex; method=:loop) 
+    Fn,Vn = subtri(F,V,stepIndex; method=:Loop) 
     return GeometryBasics.Mesh(Vn,Fn)
 end
 

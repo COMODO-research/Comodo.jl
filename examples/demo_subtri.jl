@@ -4,14 +4,14 @@ using GeometryBasics
 
 #=
 This demo shows the use of `subtri` to refine triangulated meshes. Each 
-original input triangle spawns 4 triangles for the regined mesh (one central 
+original input triangle spawns 4 triangles for the refined mesh (one central 
 one, and 3 at each corner). The following refinement methods are implemented: 
     
     method=:linear : This is the default method, and refines the triangles in 
     a simple linear manor through splitting. Each input edge simply obtains a 
     new mid-edge node. 
     
-    method=:loop : This method features Loop-subdivision. Rather than linearly 
+    method=:Loop : This method features Loop-subdivision. Rather than linearly 
     splitting edges and maintaining the original coordinates, as for the linear 
     method, this method computes the new points in a special weighted sense 
     such that the surface effectively approaches a "quartic box spline". Hence 
@@ -31,9 +31,9 @@ Fn1,Vn1=subtri(F,V,1) # Split once, default is same as: Fn1,Vn1=subtri(F,V,1; me
 Fn2,Vn2=subtri(F,V,2) # Split twice
 Fn3,Vn3=subtri(F,V,3) # Split 3 times
 
-Fn4,Vn4=subtri(F,V,1; method=:loop) # Split once 
-Fn5,Vn5=subtri(F,V,2; method=:loop) # Split twice
-Fn6,Vn6=subtri(F,V,3; method=:loop) # Split 3 times
+Fn4,Vn4=subtri(F,V,1; method=:Loop) # Split once 
+Fn5,Vn5=subtri(F,V,2; method=:Loop) # Split twice
+Fn6,Vn6=subtri(F,V,3; method=:Loop) # Split 3 times
 
 ## Visualization
 fig = Figure(size=(1600,800))

@@ -349,7 +349,6 @@ end
     end
 end
 
-
 @testset "mindist" begin     
     eps_level = 0.001
     V1 = [[1, 2, 3], [0, 0, 0]]
@@ -658,6 +657,7 @@ end
     @test isapprox(V[1], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps_level)
 
 end
+
 
 @testset "togeometrybasics_faces" verbose = true begin
     # Triangles matrix and vector
@@ -1035,39 +1035,6 @@ end
 end
 
 
-@testset "geosphere(3,1.0)" begin
-    F, V = geosphere(3, 1.0)
-
-    @test F isa Vector{TriangleFace{Int64}}
-    @test length(F) == 1280
-
-    @test V isa Vector{Point3{Float64}}
-    @test length(V) == 642
-end
-
-
-@testset "hexbox" verbose = true begin
-    @testset "Single hex box" begin
-        E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[1,1,1])
-        @test E == [[1, 2, 4, 3, 5, 6, 8, 7]] 
-        @test V == Point3{Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
-        @test F == QuadFace{Int64}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [3, 1, 5, 7]]
-        @test Fb == QuadFace{Int64}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [3, 1, 5, 7]]
-        @test CFb_type == [1, 2, 3, 4, 5, 6]
-    end
-    @testset "2x2x2 hex box" begin
-        E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[2,2,2])
-        @test E[1] == [1, 2, 5, 4, 10, 11, 14, 13]
-        @test length(E) == 8
-        @test V[5] == [0.5, 0.5, 0.0]
-        @test length(V) == 27
-        @test length(F) == 48
-        @test length(Fb) == 24
-        @test CFb_type == [1, 3, 6, 1, 3, 5, 1, 4, 6, 1, 4, 5, 2, 3, 6, 2, 3, 5, 2, 4, 6, 2, 4, 5]
-    end
-end
-
-
 @testset "simplexcenter" begin
 
     eps_level = 0.001
@@ -1164,44 +1131,103 @@ end
 end
 
 
-
-@testset "subtri" begin
-    r = 1
-    n = 3
+@testset "subtri" verbose = true begin
     eps_level = 0.001
-
-    M = platonicsolid(4, r)
+    M = platonicsolid(4, 1.0)
     V = coordinates(M)
     F = faces(M)
+    n = 3
+    @testset "linear" begin
+        Fn, Vn = subtri(F, V, n; method=:linear)
 
-    Fn, Vn = subtri(F, V, n)
+        @test Fn isa Vector{TriangleFace{Int64}}
+        @test length(Fn) == 1280
+        @test Fn[1] == TriangleFace(163, 323, 243)
+        @test Vn isa Vector{Point3{Float64}}
+        @test length(Vn) == 642
+        @test isapprox(Vn[1], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps_level)
+    end
 
-    @test Fn isa Vector{TriangleFace{Int64}}
-    @test length(Fn) == 1280
-    @test Fn[1] == TriangleFace(163, 323, 243)
+    @testset "Loop" begin
+        Fn, Vn = subtri(F, V, n; method=:Loop)
 
-    @test Vn isa Vector{Point3{Float64}}
-    @test length(Vn) == 642
-    @test isapprox(Vn[1], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps_level)
+        @test Fn isa Vector{TriangleFace{Int64}}
+        @test length(Fn) == 1280
+        @test Fn[1] == TriangleFace(163, 323, 243)
+        @test Vn isa Vector{Point3{Float64}}
+        @test length(Vn) == 642
+        @test isapprox(Vn[1], [0.0, -0.37343167032888536, -0.6042251350677821], atol=eps_level)
+    end
+
 end
 
-@testset "dist(Vn, V)" begin
-    r = 1
+
+@testset "subquad" verbose = true begin
+    eps_level = 0.001
+    M = cube(1.0)
+    F = faces(M)
+    V = coordinates(M)    
     n = 3
+    @testset "linear" begin
+        Fn, Vn = subquad(F, V, n; method=:linear)
+
+        @test Fn isa Vector{QuadFace{Int64}}
+        @test length(Fn) == 384
+        @test Fn[1] == QuadFace(1, 99, 291, 187)
+        @test Vn isa Vector{Point3{Float64}}
+        @test length(Vn) == 386
+        @test isapprox(Vn[1], [-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], atol=eps_level)
+    end
+
+    @testset "Catmull_Clark" begin
+        Fn, Vn = subquad(F, V, n; method=:Catmull_Clark)
+
+        @test Fn isa Vector{QuadFace{Int64}}
+        @test length(Fn) == 384
+        @test Fn[1] == QuadFace(1, 99, 291, 187)
+        @test Vn isa Vector{Point3{Float64}}
+        @test length(Vn) == 386
+        @test isapprox(Vn[1], [-0.2895661072324513, -0.2895661072324513, -0.2895661072324513], atol=eps_level)
+    end
+
+end
+
+@testset "geosphere" begin
+    r = 1.0
+    n = 3
+    F, V = geosphere(n, r)
     eps_level = 0.001
 
-    M = platonicsolid(4, r)
-    V = coordinates(M)
-    F = faces(M)
-
-    _, Vn = subtri(F, V, n)
-
-    DD = dist(Vn, V)
-
-    @test DD isa Matrix{Float64}
-    @test size(DD) == (642, 12)
-    @test isapprox(DD[1, :], [0.0, 1.70130161670408, 2.0, 1.0514622242382672, 1.0514622242382672, 1.70130161670408, 1.70130161670408, 1.0514622242382672, 1.0514622242382672, 1.0514622242382672, 1.70130161670408, 1.70130161670408], atol=eps_level)
+    @test F isa Vector{TriangleFace{Int64}}
+    @test length(F) == 1280
+    @test F[1] == [163,323,243]
+    @test V isa Vector{Point3{Float64}}
+    @test length(V) == 642
+    @test isapprox(V[1], [0.0, -0.5257311121191336 , -0.85065080835204], atol=eps_level)
 end
+
+
+@testset "hexbox" verbose = true begin
+    @testset "Single hex box" begin
+        E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[1,1,1])
+        @test E == [[1, 2, 4, 3, 5, 6, 8, 7]] 
+        @test V == Point3{Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
+        @test F == QuadFace{Int64}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [3, 1, 5, 7]]
+        @test Fb == QuadFace{Int64}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [3, 1, 5, 7]]
+        @test CFb_type == [1, 2, 3, 4, 5, 6]
+    end
+    @testset "2x2x2 hex box" begin
+        E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[2,2,2])
+        @test E[1] == [1, 2, 5, 4, 10, 11, 14, 13]
+        @test length(E) == 8
+        @test V[5] == [0.5, 0.5, 0.0]
+        @test length(V) == 27
+        @test length(F) == 48
+        @test length(Fb) == 24
+        @test CFb_type == [1, 3, 6, 1, 3, 5, 1, 4, 6, 1, 4, 5, 2, 3, 6, 2, 3, 5, 2, 4, 6, 2, 4, 5]
+    end
+end
+
 
 @testset "quadsphere" begin
     r = 1.0
@@ -1211,7 +1237,6 @@ end
     @test V isa Vector{Point3{Float64}}
     @test length(V) == 386
     @test isapprox(V[1], [-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], atol=eps_level)
-
     @test F isa Vector{QuadFace{Int64}}
     @test length(F) == 384
     @test F[1] == [1, 99, 291, 187]

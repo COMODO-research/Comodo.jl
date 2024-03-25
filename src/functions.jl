@@ -1120,6 +1120,34 @@ function edgelengths(M::GeometryBasics.Mesh)
     return edgelengths(faces(M),coordinates(M))    
 end
 
+
+"""
+    subtri(F,V,n; method = :linear)
+    subtri(F,V,n; method = :Loop)
+
+# Description
+
+The`subtri` function refines triangulated meshes iteratively. For each iteration
+each original input triangle is split into 4 triangles to form the refined mesh 
+(one central one, and 3 at each corner). The following refinement methods are 
+implemented: 
+    
+`method=:linear` : This is the default method, and refines the triangles in a 
+simple linear manor through splitting. Each input edge simply obtains a new 
+mid-edge node. 
+    
+`method=:Loop` : This method features Loop-subdivision. Rather than linearly 
+splitting edges and maintaining the original coordinates, as for the linear 
+method, this method computes the new points in a special weighted sense such 
+that the surface effectively approaches a "quartic box spline". Hence this 
+method both refines and smoothes the geometry through spline approximation. 
+
+# References
+[Charles Loop, Smooth Subdivision Surfaces Based on Triangles M.S. Mathematics Thesis, University of Utah. 1987.](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/thesis-10.pdf)
+[Jos Stam, Charles Loop, Quad/Triangle Subdivision, doi: 10.1111/1467-8659.t01-2-00647](https://doi.org/10.1111/1467-8659.t01-2-00647)
+
+
+"""
 function subtri(F,V,n; method = :linear)
     
     if iszero(n)
@@ -1147,7 +1175,7 @@ function subtri(F,V,n; method = :linear)
         if method == :linear # Simple linear splitting
             # Create complete point set
             Vn = [V; simplexcenter(Eu,V)]  # Old and new mid-edge points          
-        elseif method == :loop #Loop subdivision 
+        elseif method == :Loop #Loop subdivision 
     
             # New mid-edge like vertices
             Vm = Vector{GeometryBasics.Point{3, Float64}}(undef,length(Eu)) 
