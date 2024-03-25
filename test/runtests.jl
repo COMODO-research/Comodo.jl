@@ -432,15 +432,23 @@ end
     @test r1 == [1, 2, 3, 4, 5]
 end 
 
-# @testset "unique_simplices" verbose = true begin
+@testset "unique_simplices" verbose = true begin
 
-#     @testset "Single triangle" begin
-#         F = [TriangleFace{Int64}(1, 2, 3)]       
-#         F_uni, ind1, ind2 = unique_simplices(F)
-#         @test E == LineFace{Int64}[[1, 2], [2, 3], [3, 1]]
-#     end
+    @testset "Single triangle" begin
+        F = [TriangleFace{Int64}(1, 2, 3)]       
+        F_uni, ind1, ind2 = unique_simplices(F)
+        @test F_uni == F
+    end
 
-# end
+    @testset "Set of two triangles" begin
+        F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(1, 2, 3)]       
+        F_uni, ind1, ind2 = unique_simplices(F)
+        @test F_uni == [F[1]]
+        @test F_uni == F[ind1]
+        @test F_uni[ind2] == F
+    end
+
+end
 
 
 @testset "ind2sub" verbose = true begin

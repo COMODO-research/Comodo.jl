@@ -616,12 +616,15 @@ function unique_simplices(F,V=nothing)
     else
         n = length(V)
     end
-
     virtualFaceIndices = sub2ind(n.*ones(Int64,length(F[1])),sort.(F))    
     _, ind1, ind2 = unique_dict(virtualFaceIndices) 
 
+    # Fn, ind1, ind2 = gunique(F; return_unique=true, return_index=true, return_inverse=true, return_counts=false, sort_entries=true)
+    # return Fn, ind1, ind2
+
     return F[ind1], ind1, ind2
 end
+
 
 """
     ind2sub(siz,ind)
@@ -672,7 +675,7 @@ end
 Converts the subscript indices in `A`, for a matrix/array with size `siz`, to 
 the equivalent linear indices.  
 """
-function sub2ind(siz::Union{Tuple{Vararg{Int64, N}}, Array{Int64, N}},A::Vector{Vector{Int64}})  where N    
+function sub2ind(siz::Union{Tuple{Vararg{Int64, N}}, Array{Int64, N}},A::Union{Vector{Vector{Int64}}, Array{NgonFace{M, Int64}, 1}}) where N where M
     numDim = length(siz)
     if numDim==1
         ind = [A[q][1] for q ∈ eachindex(A)]
@@ -698,7 +701,7 @@ function sub2ind(siz::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},A::Vector{In
     return sub2ind(siz,[A])[1]
 end
 
-function sub2ind_(a::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},numDim::Int64,k::Union{Int64,Vector{Int64},Tuple{Vararg{Int64, N}}})  where N
+function sub2ind_(a::Union{Tuple{Vararg{Int64, N}}, Vector{Int64},NgonFace{M, Int64}},numDim::Int64,k::Union{Int64,Vector{Int64},Tuple{Vararg{Int64, N}}})  where N where M
     if numDim==1 
         ind = a[1]
     else        
@@ -1614,7 +1617,8 @@ function smoothmesh_hc(F,V, con_V2V=nothing; n=1, α=0.1, β=0.5, tolDist=nothin
     # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if nothing
     if isnothing(con_V2V)
         E = meshedges(F)
-        E_uni,_,_ = unique_simplices(E)
+        E_uni,_ = gunique(E; return_unique=true, return_index=true, return_inverse=false, sort_entries=true)    
+        # E_uni,_,_ = unique_simplices(E)
         con_V2V = con_vertex_vertex(E_uni)
     end
     P = deepcopy(V) # Copy original input points
