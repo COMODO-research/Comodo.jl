@@ -298,19 +298,33 @@ function nbezier(P::Vector{T},n::Integer) where T<:Union{AbstractPoint{3},Vector
     return V
 end
 
-function lerp(x,y,xi)    
-    if length(xi)>1
-        yi=zeros(eltype(xi),length(xi))
+
+"""
+    lerp(x::Union{T,Vector{T}, AbstractRange{T}},y,xi::Union{T,Vector{T}, AbstractRange{T}}) where T <: Real
+
+# Description 
+
+This linearly interpolates (lerps) the input data specified by the sites `x` and 
+data `y` at the specified sites `xi`. 
+"""
+function lerp(x::Union{T,Vector{T}, AbstractRange{T}},y,xi::Union{T,Vector{T}, AbstractRange{T}}) where T <: Real
+    # Check if the lengths of x and y are the same
+    if length(x)!=length(y)
+        error("The number of sites in x should match the number of data entries in y")
+    end
+
+    if length(xi)==1 # Single site provided
+        yi = lerp_(x,y,xi)
+    else # Loop over all data sites
+        yi = Vector{eltype(y)}(undef,length(xi))
         for q ∈ eachindex(xi)
             yi[q] = lerp_(x,y,xi[q])
         end
-    else
-        yi = lerp_(x,y,xi)
     end 
     return yi
 end
 
-function lerp_(x,y,xi)
+function lerp_(x::Union{T,Vector{T}, AbstractRange{T}},y,xi::T) where T <: Real
     j = findfirst(x.>xi)
     
     if isnothing(j) # Deal with extrapolation at the end
@@ -321,9 +335,8 @@ function lerp_(x,y,xi)
         j=2
     else
         i = j-1
-    end
-    
-    w = abs(x[j]-x[i])
+    end    
+    w = abs(x[j]-x[i]) 
     t = (xi-x[i])/w
     yi = (1.0-t)*y[i] + t*y[j]
     return yi

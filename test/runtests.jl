@@ -740,6 +740,7 @@ end
 Ci = interp_biharmonic([[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10], [[0.0, 0.0, x] for x in range(-1, 1, 3)])
 
 @testset "dist" verbose = true begin
+    eps_level = 0.001
 
     @testset "vector to vector" begin
         v1 = Float64[0, 0, 0]
@@ -748,22 +749,20 @@ Ci = interp_biharmonic([[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10], [[0.0, 0.
         @test result == [0.0 0.0 5.0; 0.0 0.0 5.0; 0.0 0.0 5.0]
     end
 
-    @testset "vectors to vector" begin 
-        eps = 0.001
+    @testset "vectors to vector" begin         
         v1 = [[1, 2, 3], [0, 0, 0]]
         v2 = [0, 0, 0]
         result = dist(v1, v2)
         @test result isa Matrix
-        @test isapprox(result, [3.7416573867739413; 0.0;;], atol = eps)
+        @test isapprox(result, [3.7416573867739413; 0.0;;], atol = eps_level)
     end 
 
-    @testset "vector to vectors" begin 
-        eps = 0.001
+    @testset "vector to vectors" begin     
         v1 = [[1, 2, 3], [0, 0, 0]]
         v2 = [0, 0, 0]
         result = dist(v2, v1)
         @test result isa Matrix
-        @test isapprox(result, [3.7416573867739413 0.0], atol = eps)
+        @test isapprox(result, [3.7416573867739413 0.0], atol = eps_level)
     end 
 
     @testset "vector of points to vector of points" begin
@@ -802,14 +801,14 @@ end
 
 @testset "simplexcenter" begin
 
-    eps = 0.001
+    eps_level = 0.001
 
     F, V = geosphere(3, 1.0)
     VC = simplexcenter(F, V)
 
     @test typeof(VC) == Vector{Point3{Float64}}
     @test length(VC) == 1280
-    @test isapprox(VC[1], [-0.35520626817942325, 0.0, -0.9299420831107401], atol=eps)
+    @test isapprox(VC[1], [-0.35520626817942325, 0.0, -0.9299420831107401], atol=eps_level)
 
 end
 
@@ -879,18 +878,18 @@ end
 
 @testset "platonicsolid" begin
 
-    eps = 0.001
+    eps_level = 0.001
     M = platonicsolid(4, 1.0) # icosahedron
     @test M isa Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
     @test length(M) == 20
-    @test isapprox(M[1][1], [-0.85065080835204, 0.0, -0.5257311121191336], atol=eps)
+    @test isapprox(M[1][1], [-0.85065080835204, 0.0, -0.5257311121191336], atol=eps_level)
 
 end
 
 @testset "subtri" begin
     r = 1
     n = 3
-    eps = 0.001
+    eps_level = 0.001
 
     M = platonicsolid(4, r)
     V = coordinates(M)
@@ -904,13 +903,13 @@ end
 
     @test Vn isa Vector{Point3{Float64}}
     @test length(Vn) == 642
-    @test isapprox(Vn[1], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps)
+    @test isapprox(Vn[1], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps_level)
 end
 
 @testset "dist(Vn, V)" begin
     r = 1
     n = 3
-    eps = 0.001
+    eps_level = 0.001
 
     M = platonicsolid(4, r)
     V = coordinates(M)
@@ -922,17 +921,17 @@ end
 
     @test DD isa Matrix{Float64}
     @test size(DD) == (642, 12)
-    @test isapprox(DD[1, :], [0.0, 1.70130161670408, 2.0, 1.0514622242382672, 1.0514622242382672, 1.70130161670408, 1.70130161670408, 1.0514622242382672, 1.0514622242382672, 1.0514622242382672, 1.70130161670408, 1.70130161670408], atol=eps)
+    @test isapprox(DD[1, :], [0.0, 1.70130161670408, 2.0, 1.0514622242382672, 1.0514622242382672, 1.70130161670408, 1.70130161670408, 1.0514622242382672, 1.0514622242382672, 1.0514622242382672, 1.70130161670408, 1.70130161670408], atol=eps_level)
 end
 
 @testset "quadsphere" begin
     r = 1.0
     F, V = quadsphere(3, r)
-    eps = 0.001
+    eps_level = 0.001
 
     @test V isa Vector{Point3{Float64}}
     @test length(V) == 386
-    @test isapprox(V[1], [-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], atol=eps)
+    @test isapprox(V[1], [-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], atol=eps_level)
 
     @test F isa Vector{QuadFace{Int64}}
     @test length(F) == 384
@@ -940,13 +939,13 @@ end
 end
 
 @testset "simplexcenter" begin
-    eps = 0.001
+    eps_level = 0.001
     F, V = geosphere(2, 1.0)
     VC = simplexcenter(F, V)
 
     @test V isa Vector{Point3{Float64}}
     @test length(V) == 162
-    @test isapprox(V[1], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps)
+    @test isapprox(V[1], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps_level)
 
     @test F isa Vector{TriangleFace{Int64}}
     @test length(F) == 320
@@ -961,7 +960,7 @@ end
 end
 
 @testset "extrude curve" begin
-    eps = 0.001
+    eps_level = 0.001
     r = 1
     nc = 16
     d = 3.0
@@ -970,7 +969,7 @@ end
 
     @test V isa Vector{Point3{Float64}}
     @test length(V) == 128
-    @test isapprox(V[1], [1.0, 0.0, 0.0], atol=eps)
+    @test isapprox(V[1], [1.0, 0.0, 0.0], atol=eps_level)
 
     @test F isa Vector{QuadFace{Int64}}
     @test length(F) == 112
@@ -990,7 +989,7 @@ end
 end
 
 @testset "mergevertices" begin
-    eps = 0.001
+    eps_level = 0.001
     r = 2 * sqrt(3) / 2
     M = cube(r)
 
@@ -1000,7 +999,7 @@ end
 
     @test V isa Vector{Point3{Float64}}
     @test length(V) == 8
-    @test isapprox(V[1], [-1.0, -1.0, -1.0], atol=eps)
+    @test isapprox(V[1], [-1.0, -1.0, -1.0], atol=eps_level)
 
     @test F isa Vector{QuadFace{Int64}}
     @test length(F) == 6
@@ -1009,7 +1008,7 @@ end
 
 @testset "seperate vertices" begin
 
-    eps = 0.001
+    eps_level = 0.001
     r = 2 * sqrt(3) / 2
     M = cube(r)
 
@@ -1021,7 +1020,7 @@ end
 
     @test Vn isa Vector{Point3{Float64}}
     @test length(Vn) == 24
-    @test isapprox(Vn[1], [-1.0, -1.0, -1.0], atol=eps)
+    @test isapprox(Vn[1], [-1.0, -1.0, -1.0], atol=eps_level)
 
     @test Fn isa Vector{QuadFace{Int64}}
     @test length(Fn) == 6
@@ -1030,33 +1029,33 @@ end
 
 @testset "icosahedron" begin
 
-    eps = 0.001
+    eps_level = 0.001
     M = icosahedron()
 
     @test M isa Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
     @test length(M) == 20
-    @test isapprox(M[1][1], [-0.85065080835204, 0.0, -0.5257311121191336], atol=eps)
-    @test isapprox(M[1][2], [0.0, 0.5257311121191336, -0.85065080835204], atol=eps)
-    @test isapprox(M[1][3], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps)
+    @test isapprox(M[1][1], [-0.85065080835204, 0.0, -0.5257311121191336], atol=eps_level)
+    @test isapprox(M[1][2], [0.0, 0.5257311121191336, -0.85065080835204], atol=eps_level)
+    @test isapprox(M[1][3], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps_level)
 
 end
 
 @testset "dodecahedron" begin
 
-    eps = 0.001
+    eps_level = 0.001
     M = dodecahedron()
 
 
     @test M isa Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,5,Point3{Float64}},SimpleFaceView{3,Float64,5,Int64,Point3{Float64},NgonFace{5,Int64}}}
     @test length(M) == 12
-    @test isapprox(M[1][1], [0.0, 0.9341723589627159, 0.35682208977309], atol=eps)
-    @test isapprox(M[1][2], [-0.5773502691896258, 0.5773502691896258, 0.5773502691896258], atol=eps)
-    @test isapprox(M[1][3], [-0.35682208977309, 0.0, 0.9341723589627159], atol=eps)
+    @test isapprox(M[1][1], [0.0, 0.9341723589627159, 0.35682208977309], atol=eps_level)
+    @test isapprox(M[1][2], [-0.5773502691896258, 0.5773502691896258, 0.5773502691896258], atol=eps_level)
+    @test isapprox(M[1][3], [-0.35682208977309, 0.0, 0.9341723589627159], atol=eps_level)
 end
 
 
 @testset "interp_biharmonic_spline" begin
-    eps = 0.001
+    eps_level = 0.001
     x = range(0, 9, 9) # Interval definition
     y = 5.0 * cos.(x .^ 2 ./ 9.0)
     n = 50
@@ -1073,13 +1072,13 @@ end
     ]
     @test yi isa Vector{Float64}
     @test length(yi) == 50
-    @test isapprox(yi, expected, atol=eps)
+    @test isapprox(yi, expected, atol=eps_level)
 end
 
 
 @testset "evenly_sample" begin
 
-    eps = 0.001
+    eps_level = 0.001
 
     t = range(0, 2.0 * pi, 20)
     V = [GeometryBasics.Point{3,Float64}(tt, 3.0 * sin(tt), 0.0) for tt ∈ t]
@@ -1089,7 +1088,7 @@ end
 
     expected_Vi = Point3{Float64}[[0.0, 0.0, 0.0], [0.5078857273534546, 1.4623904932511307, 0.0], [1.2220360109178459, 2.8294055970804317, 0.0], [2.3306917216175593, 2.1742492209148088, 0.0], [2.8949991860586746, 0.7329115395627461, 0.0], [3.3881861211209148, -0.7329115395627541, 0.0], [3.952493585562025, -2.174249220914806, 0.0], [5.061149296261742, -2.8294055970804295, 0.0], [5.775299579826132, -1.4623904932511285, 0.0], [6.283185307179586, -7.347880794884119e-16, 0.0]]
 
-    @test isapprox(expected_Vi, Vi, atol=eps)
+    @test isapprox(expected_Vi, Vi, atol=eps_level)
 
     @test isapprox(S.x, Float64[0.0,
             0.07387312457178799,
@@ -1111,7 +1110,7 @@ end
             0.8593950390208875,
             0.9261268754282117,
             1.0
-        ], atol=eps)
+        ], atol=eps_level)
 
     @test isapprox(S.spline.basis.B.t, Float64[0.0,
             0.0,
@@ -1139,38 +1138,54 @@ end
             1.0,
             1.0,
             1.0
-        ], atol=eps)
+        ], atol=eps_level)
 
-    @test isapprox(S.spline.basis.M.left[2], Float64[1.2080446399615536 0.0; 0.7919553600384465 0.5123829689520382; 0.0 1.4876170310479617], atol=eps)
+    @test isapprox(S.spline.basis.M.left[2], Float64[1.2080446399615536 0.0; 0.7919553600384465 0.5123829689520382; 0.0 1.4876170310479617], atol=eps_level)
 
 end
 
 
 @testset "nbezier" begin 
-
-    eps = 0.001
-    
+    eps_level = 0.001    
     P = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
     P[1 ] = GeometryBasics.Point{3, Float64}( 0.0, 0.0, 0.0)
     P[2 ] = GeometryBasics.Point{3, Float64}( 1.0, 0.0, 0.0)
     P[3 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 0.0)
     P[4 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 1.0)
-
     n = 25 # Number of points
-
     V = nbezier(P,n) # Get Bezier fit points
-
-    expected = Point3{Float64}[[0.0, 0.0, 0.0], [0.11986400462962965, 0.005063657407407407, 7.233796296296296e-5], [0.22974537037037032, 0.019675925925925923, 0.0005787037037037037], [0.330078125, 0.04296875, 0.001953125], [0.4212962962962963, 0.07407407407407407, 0.004629629629629629], [0.503833912037037, 0.11212384259259262, 0.009042245370370372], [0.578125, 0.15625, 0.015625], [0.6446035879629629, 0.20558449074074078, 0.024811921296296304], [0.7037037037037037, 0.25925925925925924, 0.037037037037037035], [0.755859375, 0.31640625, 0.052734375], [0.8015046296296295, 0.3761574074074074, 0.07233796296296298], [0.8410734953703705, 0.43764467592592593, 0.09628182870370369], [0.875, 0.5, 0.125], [0.9037181712962963, 0.562355324074074, 0.1589265046296296], [0.9276620370370372, 0.6238425925925928, 0.19849537037037043], [0.947265625, 0.68359375, 0.244140625], [0.9629629629629629, 0.7407407407407407, 0.2962962962962963], [0.9751880787037037, 0.7944155092592593, 0.3553964120370371], [0.984375, 0.84375, 0.421875], [0.9909577546296297, 0.8878761574074074, 0.4961660879629629], [0.9953703703703705, 0.925925925925926, 0.5787037037037038], [0.998046875, 0.95703125, 0.669921875], [0.9994212962962963, 0.9803240740740741, 0.7702546296296295], [0.9999276620370372, 0.9949363425925927, 0.8801359953703706], [1.0, 1.0, 1.0]]
-    
-    @test typeof(V) == Vector{Point3{Float64}}
-    
-    @test isapprox(V, expected, atol = eps)
-
+    expected = Point3{Float64}[[0.0, 0.0, 0.0], [0.11986400462962965, 0.005063657407407407, 7.233796296296296e-5], [0.22974537037037032, 0.019675925925925923, 0.0005787037037037037], [0.330078125, 0.04296875, 0.001953125], [0.4212962962962963, 0.07407407407407407, 0.004629629629629629], [0.503833912037037, 0.11212384259259262, 0.009042245370370372], [0.578125, 0.15625, 0.015625], [0.6446035879629629, 0.20558449074074078, 0.024811921296296304], [0.7037037037037037, 0.25925925925925924, 0.037037037037037035], [0.755859375, 0.31640625, 0.052734375], [0.8015046296296295, 0.3761574074074074, 0.07233796296296298], [0.8410734953703705, 0.43764467592592593, 0.09628182870370369], [0.875, 0.5, 0.125], [0.9037181712962963, 0.562355324074074, 0.1589265046296296], [0.9276620370370372, 0.6238425925925928, 0.19849537037037043], [0.947265625, 0.68359375, 0.244140625], [0.9629629629629629, 0.7407407407407407, 0.2962962962962963], [0.9751880787037037, 0.7944155092592593, 0.3553964120370371], [0.984375, 0.84375, 0.421875], [0.9909577546296297, 0.8878761574074074, 0.4961660879629629], [0.9953703703703705, 0.925925925925926, 0.5787037037037038], [0.998046875, 0.95703125, 0.669921875], [0.9994212962962963, 0.9803240740740741, 0.7702546296296295], [0.9999276620370372, 0.9949363425925927, 0.8801359953703706], [1.0, 1.0, 1.0]]    
+    @test typeof(V) == Vector{Point3{Float64}}    
+    @test isapprox(V, expected, atol = eps_level)
 end 
+
+
+@testset "lerp" begin 
+
+    @testset "1D" begin         
+        @test lerp([0.0,1.0],[0.0,10.0],0.5) == 5.0 # Single value interpolation site
+        @test lerp([0.0,1.0],[0.0,10.0],range(0.0,1.0,3)) == [0.0,5.0,10.0] # Range of sites
+        @test lerp([0.0,1.0],[0.0,10.0],range(0.0,1.0,3)) == [0.0,5.0,10.0] # Range of sites    
+        @test lerp([0.0,1.0],[0.0,10.0],[0.0,0.5,1.0]) == [0.0,5.0,10.0] # Vector of sites
+        @test lerp(range(0.0,1.0,3),range(0.0,10.0,3),range(0.0,1.0,3)) == [0.0,5.0,10.0] # ranged sites, data, and values
+    end
+
+    @testset "3D points" begin 
+        eps_level = 0.001
+        np = 10
+        t = range(0.0,2.0*π,np) # Parameterisation metric
+        V = [GeometryBasics.Point{3, Float64}(cos(t[i]),sin(t[i]),t[i]/(2.0*π)) for i ∈ eachindex(t)] # ND data, here 3D points
+        np_i = np*3 
+        ti = range(minimum(t)-0.5,maximum(t)+0.5,np_i)
+
+        @test isapprox(lerp(t,V,ti),Point3{Float64}[[1.167558325036443, -0.46036271447926463, -0.07957747154594766], [1.0833956815191297, -0.22912775185383769, -0.03960661143933059], [0.9992330380018164, 0.0021072107715893167, 0.0003642486672864905], [0.9150703944845031, 0.23334217339701627, 0.04033510877390357], [0.8309077509671899, 0.46457713602244327, 0.08030596888052065], [0.7171768097594708, 0.6710013509613107, 0.12027682898713773], [0.504069515472875, 0.7940389046839496, 0.1602476890937548], [0.29096222118627935, 0.9170764584065885, 0.2002185492003719], [0.06471611212984507, 0.9656000907937172, 0.24018940930698895], [-0.17762056150557648, 0.9228695968166506, 0.28016026941360606], [-0.419957235140998, 0.8801391028395841, 0.32013112952022316], [-0.6059298257654833, 0.7397831533655452, 0.36010198962684026], [-0.7641038558835915, 0.5512786847171849, 0.40007284973345736], [-0.9222778860016999, 0.3627742160688245, 0.4400437098400744], [-0.9396926207859084, 0.12303755372263896, 0.48001456994669145], [-0.9396926207859084, -0.12303755372263873, 0.5199854300533086], [-0.9222778860017001, -0.36277421606882426, 0.5599562901599257], [-0.7641038558835918, -0.5512786847171848, 0.5999271502665426], [-0.6059298257654835, -0.7397831533655452, 0.6398980103731597], [-0.41995723514099864, -0.880139102839584, 0.6798688704797768], [-0.17762056150557712, -0.9228695968166505, 0.7198397305863939], [0.06471611212984442, -0.9656000907937171, 0.759810590693011], [0.29096222118627946, -0.9170764584065884, 0.7997814507996283], [0.5040695154728753, -0.7940389046839496, 0.8397523109062452], [0.7171768097594708, -0.6710013509613109, 0.8797231710128623], [0.8309077509671898, -0.46457713602244327, 0.9196940311194793], [0.9150703944845031, -0.23334217339701638, 0.9596648912260964], [0.9992330380018164, -0.0021072107715894555, 0.9996357513327135], [1.0833956815191297, 0.22912775185383755, 1.0396066114393308], [1.167558325036443, 0.46036271447926436, 1.0795774715459476]],atol=eps_level)
+    end
+
+end
 
 @testset "mindist" begin 
     
-    eps = 0.01
+    eps_level = 0.01
 
     V1 = [[1, 2, 3], [0, 0, 0]]
     V2 = [[4, 5, 6], [0, 0, 0]]
@@ -1179,7 +1194,7 @@ end
 
     @test result isa Vector{Float64}
 
-    @test isapprox(result, [3.7416573867739413, 0.0], atol = eps)
+    @test isapprox(result, [3.7416573867739413, 0.0], atol = eps_level)
 
 end 
 
