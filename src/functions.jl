@@ -560,6 +560,24 @@ function unique_dict_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) wh
     return xUni, indInverse
 end 
 
+function unique_dict(X::AbstractVector{T}) where T <: Real    
+    d = OrderedDict{T ,Int64}() # Use dict to keep track of used values    
+    indUnique = Vector{Int64}()
+    indReverse = Vector{Int64}(undef,length(X))
+    # c = Vector{Int64}()
+    j=0
+    for i ∈ eachindex(X)        
+        if !haskey(d, X[i])                                          
+            j+=1
+            d[X[i]] = j # reverse index in dict            
+            push!(indUnique, i)                     
+            indReverse[i] = j 
+        else
+            indReverse[i] = d[X[i]]            
+        end        
+    end
+    return collect(keys(d)), indUnique, indReverse #, c
+end
 
 function gunique(X; return_unique=true, return_index=false, return_inverse=false, return_counts=false, sort_entries=false)
     # Use required unique function 
@@ -591,6 +609,19 @@ function gunique(X; return_unique=true, return_index=false, return_inverse=false
     end
 end
 
+
+function unique_simplices(F,V=nothing)
+    if isnothing(V)
+        n = maximum(reduce(vcat,F)) 
+    else
+        n = length(V)
+    end
+
+    virtualFaceIndices = sub2ind(n.*ones(Int64,length(F[1])),sort.(F))    
+    _, ind1, ind2 = unique_dict(virtualFaceIndices) 
+
+    return F[ind1], ind1, ind2
+end
 
 """
     ind2sub(siz,ind)
@@ -891,6 +922,43 @@ function tetrahedron(r=1.0)
     return GeometryBasics.Mesh(V,F)
 end
 
+"""
+    platonicsolid(n,r=1.0)
+
+# Description
+
+Creates a GeometryBasics mesh description for a platonic solid of choice. The 
+input `n` defines the choice.
+1. tetrahedron
+2. cube
+3. octahedron
+4. icosahedron
+5. dodecahedron
+
+The final input parameter `r` defines the radius of the platonic solid (the 
+radius of the circumsphere to the vertices).
+
+# Arguments
+
+n::Integer, defining platonic solid type
+r::Float64, defining circumsphere radius
+
+"""
+function platonicsolid(n::Integer,r=1.0)
+    if isone(n)
+        M = tetrahedron(r)
+    elseif n==2
+        M = cube(r)
+    elseif n==3
+        M = octahedron(r)
+    elseif n==4 
+        M = icosahedron(r)
+    elseif n==5
+        M = dodecahedron(r)
+    end
+    return M
+end
+
 function togeometrybasics_faces(FM::Union{Vector{Vector{Int64}},Vector{NgonFace{N, OffsetInteger{-1, UInt32}}}}) where N
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)
     n = length(FM)
@@ -1047,76 +1115,6 @@ end
 
 function edgelengths(M::GeometryBasics.Mesh)        
     return edgelengths(faces(M),coordinates(M))    
-end
-
-
-"""
-    platonicsolid(n,r=1.0)
-
-# Description
-
-Creates a GeometryBasics mesh description for a platonic solid of choice. The 
-input `n` defines the choice.
-1. tetrahedron
-2. cube
-3. octahedron
-4. icosahedron
-5. dodecahedron
-
-The final input parameter `r` defines the radius of the platonic solid (the 
-radius of the circumsphere to the vertices).
-
-# Arguments
-
-n::Integer, defining platonic solid type
-r::Float64, defining circumsphere radius
-
-"""
-function platonicsolid(n::Integer,r=1.0)
-    if isone(n)
-        M = tetrahedron(r)
-    elseif n==2
-        M = cube(r)
-    elseif n==3
-        M = octahedron(r)
-    elseif n==4 
-        M = icosahedron(r)
-    elseif n==5
-        M = dodecahedron(r)
-    end
-    return M
-end
-
-function unique_dict(X::AbstractVector{T}) where T <: Real    
-    d = OrderedDict{T ,Int64}() # Use dict to keep track of used values    
-    indUnique = Vector{Int64}()
-    indReverse = Vector{Int64}(undef,length(X))
-    # c = Vector{Int64}()
-    j=0
-    for i ∈ eachindex(X)        
-        if !haskey(d, X[i])                                          
-            j+=1
-            d[X[i]] = j # reverse index in dict            
-            push!(indUnique, i)                     
-            indReverse[i] = j 
-        else
-            indReverse[i] = d[X[i]]            
-        end        
-    end
-    return collect(keys(d)), indUnique, indReverse #, c
-end
-
-function unique_simplices(F,V=nothing)
-    if isnothing(V)
-        n = maximum(reduce(vcat,F)) 
-    else
-        n = length(V)
-    end
-
-    virtualFaceIndices = sub2ind(n.*ones(Int64,length(F[1])),sort.(F))    
-    _, ind1, ind2 = unique_dict(virtualFaceIndices) 
-
-    return F[ind1], ind1, ind2
 end
 
 function subtri(F,V,n; method = :linear)
@@ -1900,16 +1898,6 @@ function normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=not
     return hp 
 end
 
-# function wrapindex(i::UnitRange{Int64},n)
-#     return 1 .+ mod.(i .+ (n-1),n)
-# end
-# 
-# function wrapindex(i::Vector{Int64},n)
-#     return 1 .+ mod.(i .+ (n-1),n)
-# end
-
-# Both Vector{Int64} and UnitRange{Int64} are subtypes of 
-# AbstractVector{Int64}
 function wrapindex(i::AbstractVector{Int64}, n)
     return 1 .+ mod.(i .+ (n-1),n)
 end 
@@ -2418,7 +2406,7 @@ function mesh_curvature_polynomial(M::GeometryBasics.Mesh)
         return mesh_curvature_polynomial(faces(M),coordinates(V))
 end
 
-function seperate_vertices(F,V)
+function separate_vertices(F,V)
     Vn = Vector{eltype(V)}()
     Fn = deepcopy(F)
     c = 0 
@@ -2432,10 +2420,10 @@ function seperate_vertices(F,V)
     return Fn,Vn
 end
 
-function seperate_vertices(M::GeometryBasics.Mesh)
+function separate_vertices(M::GeometryBasics.Mesh)
     F = faces(M)
     V = coordinates(M)
-    Fn,Vn = seperate_vertices(F,V)    
+    Fn,Vn = separate_vertices(F,V)    
     return GeometryBasics.Mesh(Vn,Fn)
 end
 

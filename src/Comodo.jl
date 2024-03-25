@@ -22,7 +22,7 @@ export subtri, subquad, geosphere, quad2tri
 export icosahedron, tetrahedron, cube, dodecahedron, octahedron, platonicsolid
 export togeometrybasics_faces, togeometrybasics_points, togeometrybasics_mesh
 export quadplate, quadsphere, smoothmesh_laplacian, smoothmesh_hc
-export mergevertices, seperate_vertices, remove_unused_vertices
+export mergevertices, separate_vertices, remove_unused_vertices
 export edgecrossproduct, facearea, facenormal, vertexnormal, normalizevector, dirplot, normalplot
 export con_edge_face, con_edge_edge, con_face_edge, con_face_face, con_face_face_v, con_vertex_edge, con_vertex_vertex_f
 export con_vertex_face, con_vertex_vertex, con_vertex_simplex, meshconnectivity

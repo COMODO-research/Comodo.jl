@@ -100,7 +100,7 @@ numGroups = maximum(C)
 
 c = cgrad(:Spectral,numGroups,categorical = true)
 
-Fn,Vn = seperate_vertices(F,V)
+Fn,Vn = separate_vertices(F,V)
 Cn = simplex2vertexdata(Fn,C,Vn)
 
 # Visualization

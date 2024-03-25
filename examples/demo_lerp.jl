@@ -3,7 +3,7 @@ using GLMakie
 using GeometryBasics
 
 #=
-This demo shows the use of `lerp` for data interpolation. 
+This demo shows the use of `lerp` for linear data interpolation. 
 =#
 
 

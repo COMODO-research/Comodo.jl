@@ -21,7 +21,7 @@ C = count_edge_face(F,Eu,indReverse)
 
 ## Visualization
 
-Eun,Vn = seperate_vertices(Eu,V)
+Eun,Vn = separate_vertices(Eu,V)
 Cn = simplex2vertexdata(Eun,C,Vn)
 
 fig = Figure(size=(1200,1200))

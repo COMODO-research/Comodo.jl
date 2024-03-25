@@ -60,7 +60,7 @@ M = GeometryBasics.Mesh(V,F)
 A = facearea(F,V)
 println("Total mesh area: " *string(sum(A)))
 
-Fn,Vn = seperate_vertices(F,V)
+Fn,Vn = separate_vertices(F,V)
 
 ## Visualization
 

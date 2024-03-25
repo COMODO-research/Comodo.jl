@@ -1,5 +1,448 @@
 using Test, FileIO, Comodo, Comodo.GeometryBasics
 
+# ConnectivitySet
+
+@testset "comododir" begin
+    f = comododir()
+    @test any(contains.(readdir(f),"src"))
+    @test any(contains.(readdir(f),"assets"))
+    @test any(contains.(readdir(f),"test"))
+end
+
+# slidercontrol
+
+@testset "elements2indices" verbose = true begin
+    @testset "Tri. faces" begin
+        F = Vector{TriangleFace{Int64}}(undef, 3)
+        F[1] = TriangleFace{Int64}(9, 4, 1)
+        F[2] = TriangleFace{Int64}(1, 5, 9)
+        F[3] = TriangleFace{Int64}(1, 8, 5)
+        result = elements2indices(F)
+        @test sort(result) == [1, 4, 5, 8, 9]
+    end
+
+    @testset "Quad. faces" begin
+        F = Vector{QuadFace{Int64}}(undef, 6)
+        F[1] = QuadFace{Int64}(1, 2, 3, 4)
+        F[2] = QuadFace{Int64}(8, 7, 6, 5)
+        F[3] = QuadFace{Int64}(5, 6, 2, 1)
+        F[4] = QuadFace{Int64}(6, 7, 3, 2)
+        F[5] = QuadFace{Int64}(7, 8, 4, 3)
+        F[6] = QuadFace{Int64}(8, 5, 1, 4)
+        result = elements2indices(F)
+        @test sort(result) == [1, 2, 3, 4, 5, 6, 7, 8]
+    end
+end
+
+@testset "gridpoints" verbose = true begin
+
+    @testset "with 1 vector" begin
+        a = Float64[1, 2, 3]
+
+        expected = Point3{Float64}[
+            [1.0, 1.0, 1.0],
+            [1.0, 1.0, 2.0],
+            [1.0, 1.0, 3.0],
+            [1.0, 2.0, 1.0],
+            [1.0, 2.0, 2.0],
+            [1.0, 2.0, 3.0],
+            [1.0, 3.0, 1.0],
+            [1.0, 3.0, 2.0],
+            [1.0, 3.0, 3.0],
+            [2.0, 1.0, 1.0],
+            [2.0, 1.0, 2.0],
+            [2.0, 1.0, 3.0],
+            [2.0, 2.0, 1.0],
+            [2.0, 2.0, 2.0],
+            [2.0, 2.0, 3.0],
+            [2.0, 3.0, 1.0],
+            [2.0, 3.0, 2.0],
+            [2.0, 3.0, 3.0],
+            [3.0, 1.0, 1.0],
+            [3.0, 1.0, 2.0],
+            [3.0, 1.0, 3.0],
+            [3.0, 2.0, 1.0],
+            [3.0, 2.0, 2.0],
+            [3.0, 2.0, 3.0],
+            [3.0, 3.0, 1.0],
+            [3.0, 3.0, 2.0],
+            [3.0, 3.0, 3.0],
+        ]
+
+        result = gridpoints(a)
+
+        @test result == expected
+    end
+
+    @testset "with 2 vectors" begin
+        a = Float64[1, 2, 3]
+        b = Float64[2, 3, 5]
+
+        expected = GeometryBasics.Point3{Float64}[
+            [1.0, 2.0, 1.0],
+            [1.0, 2.0, 2.0],
+            [1.0, 2.0, 3.0],
+            [1.0, 3.0, 1.0],
+            [1.0, 3.0, 2.0],
+            [1.0, 3.0, 3.0],
+            [1.0, 5.0, 1.0],
+            [1.0, 5.0, 2.0],
+            [1.0, 5.0, 3.0],
+            [2.0, 2.0, 1.0],
+            [2.0, 2.0, 2.0],
+            [2.0, 2.0, 3.0],
+            [2.0, 3.0, 1.0],
+            [2.0, 3.0, 2.0],
+            [2.0, 3.0, 3.0],
+            [2.0, 5.0, 1.0],
+            [2.0, 5.0, 2.0],
+            [2.0, 5.0, 3.0],
+            [3.0, 2.0, 1.0],
+            [3.0, 2.0, 2.0],
+            [3.0, 2.0, 3.0],
+            [3.0, 3.0, 1.0],
+            [3.0, 3.0, 2.0],
+            [3.0, 3.0, 3.0],
+            [3.0, 5.0, 1.0],
+            [3.0, 5.0, 2.0],
+            [3.0, 5.0, 3.0],
+        ]
+
+        result = gridpoints(a, b)
+
+        @test result == expected
+    end
+
+    @testset "with 3 vectors" begin
+        a = Float64[1, 2, 3]
+        b = Float64[2, 3, 5]
+        c = Float64[5, 6, 4]
+
+        expected = GeometryBasics.Point3{Float64}[
+            [1.0, 2.0, 5.0],
+            [1.0, 2.0, 6.0],
+            [1.0, 2.0, 4.0],
+            [1.0, 3.0, 5.0],
+            [1.0, 3.0, 6.0],
+            [1.0, 3.0, 4.0],
+            [1.0, 5.0, 5.0],
+            [1.0, 5.0, 6.0],
+            [1.0, 5.0, 4.0],
+            [2.0, 2.0, 5.0],
+            [2.0, 2.0, 6.0],
+            [2.0, 2.0, 4.0],
+            [2.0, 3.0, 5.0],
+            [2.0, 3.0, 6.0],
+            [2.0, 3.0, 4.0],
+            [2.0, 5.0, 5.0],
+            [2.0, 5.0, 6.0],
+            [2.0, 5.0, 4.0],
+            [3.0, 2.0, 5.0],
+            [3.0, 2.0, 6.0],
+            [3.0, 2.0, 4.0],
+            [3.0, 3.0, 5.0],
+            [3.0, 3.0, 6.0],
+            [3.0, 3.0, 4.0],
+            [3.0, 5.0, 5.0],
+            [3.0, 5.0, 6.0],
+            [3.0, 5.0, 4.0],
+        ]
+
+        result = gridpoints(a, b, c)
+
+        @test result == expected
+    end
+
+    @testset "Equality of several results" begin
+        a = Float64[1, 2, 3]
+
+        result1 = gridpoints(a)
+        result2 = gridpoints(a, a)
+        result3 = gridpoints(a, a, a)
+
+        @test allequal([result1, result2, result3])
+    end
+end
+
+@testset "interp_biharmonic_spline" verbose = true begin
+
+    @testset "linear / linear" begin
+        x = Float64[0.0, 1.0, 2.0, 3.0]
+        y = Float64[0.0, 1.0, 0.0, 1.0]
+        xi = range(-0.5, 3.5, 9)
+        result = interp_biharmonic_spline(x, y, xi; extrapolate_method=:linear, pad_data=:linear)
+        true_result = [-0.5, -2.220446049250313e-16, 0.650942317501349,
+            0.9999999999999994, 0.501564606542732,
+            -2.983724378680108e-16, 0.3537866863312682,
+            0.9999999999999997, 1.5]
+
+        eps_level = 0.001
+
+        @test isapprox(result, true_result, atol=eps_level)
+    end
+
+    @testset "linear / constant" begin
+        x = Float64[0.0, 1.0, 2.0, 3.0]
+        y = Float64[0.0, 1.0, 0.0, 1.0]
+        xi = range(-0.5, 3.5, 9)
+        result = interp_biharmonic_spline(x, y, xi; extrapolate_method=:linear, pad_data=:constant)
+        true_result = [0.0, -1.7763568394002505e-15, 0.5861167655113347,
+            0.9999999999999998, 0.5015646065427324,
+            -2.42861286636753e-16, 0.41861223832128147,
+            0.9999999999999993, 1.0]
+        eps_level = 0.001
+        @test isapprox(result, true_result, atol=eps_level)
+    end
+
+    @testset "linear / none" begin
+        x = Float64[0.0, 1.0, 2.0, 3.0]
+        y = Float64[0.0, 1.0, 0.0, 1.0]
+        xi = range(-0.5, 3.5, 9)
+        result = interp_biharmonic_spline(x, y, xi; extrapolate_method=:linear, pad_data=:none)
+        true_result = [-0.5, -1.1102230246251565e-16, 0.9548390432176067,
+            0.9999999999999999, 0.5061519335211898,
+            -1.1102230246251565e-16, 0.18162885699253484, 1.0, 1.5]
+        eps_level = 0.001
+        @test isapprox(result, true_result, atol=eps_level)
+    end
+
+    @testset "constant / none" begin
+        x = Float64[0.0, 1.0, 2.0, 3.0]
+        y = Float64[0.0, 1.0, 0.0, 1.0]
+        xi = range(-0.5, 3.5, 9)
+        result = interp_biharmonic_spline(x, y, xi; extrapolate_method=:constant, pad_data=:none)
+        true_result = [0.0, -1.1102230246251565e-16, 0.9548390432176067,
+            0.9999999999999999, 0.5061519335211898,
+            -1.1102230246251565e-16, 0.18162885699253484, 1.0, 1.0]
+        eps_level = 0.001
+        @test isapprox(result, true_result, atol=eps_level)
+    end
+
+    @testset "biharmonic / none" begin
+        x = Float64[0.0, 1.0, 2.0, 3.0]
+        y = Float64[0.0, 1.0, 0.0, 1.0]
+        xi = range(-0.5, 3.5, 9)
+        result = interp_biharmonic_spline(x, y, xi; extrapolate_method=:biharmonic, pad_data=:none)
+        true_result = [-2.3709643220609977, -1.1102230246251565e-16,
+            0.9548390432176067, 0.9999999999999999,
+            0.5061519335211898, -1.1102230246251565e-16,
+            0.1816288569925348, 1.0, 2.801059658186898]
+        eps_level = 0.001
+        @test isapprox(result, true_result, atol=eps_level)
+    end
+
+end
+
+@testset "interp_biharmonic" verbose = true begin
+    @testset "3D points 1D data, vectors" begin
+        result = interp_biharmonic([[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10], [[0.0, 0.0, x] for x in range(-1, 1, 5)])
+        true_result = [-10.0, -7.449961786934791, 0.0, 7.449961786934791, 10.0]
+        eps_level = maximum(eps.(true_result))
+        @test isapprox(result, true_result, atol=eps_level)
+    end
+
+    @testset "3D points 1D data, geometry basics point vectors" begin
+        result = interp_biharmonic(GeometryBasics.Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10],
+            [GeometryBasics.Point3{Float64}(0.0, 0.0, x) for x in range(-1, 1, 5)])
+        true_result = [-10.0, -7.449961786934791, 0.0, 7.449961786934791, 10.0]
+        eps_level = maximum(eps.(true_result))
+        @test isapprox(result, true_result, atol=eps_level)
+    end
+
+end
+
+
+@testset "nbezier" begin 
+    eps_level = 0.001    
+    P = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
+    P[1 ] = GeometryBasics.Point{3, Float64}( 0.0, 0.0, 0.0)
+    P[2 ] = GeometryBasics.Point{3, Float64}( 1.0, 0.0, 0.0)
+    P[3 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 0.0)
+    P[4 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 1.0)
+    n = 25 # Number of points
+    V = nbezier(P,n) # Get Bezier fit points
+    expected = Point3{Float64}[[0.0, 0.0, 0.0], [0.11986400462962965, 0.005063657407407407, 7.233796296296296e-5], [0.22974537037037032, 0.019675925925925923, 0.0005787037037037037], [0.330078125, 0.04296875, 0.001953125], [0.4212962962962963, 0.07407407407407407, 0.004629629629629629], [0.503833912037037, 0.11212384259259262, 0.009042245370370372], [0.578125, 0.15625, 0.015625], [0.6446035879629629, 0.20558449074074078, 0.024811921296296304], [0.7037037037037037, 0.25925925925925924, 0.037037037037037035], [0.755859375, 0.31640625, 0.052734375], [0.8015046296296295, 0.3761574074074074, 0.07233796296296298], [0.8410734953703705, 0.43764467592592593, 0.09628182870370369], [0.875, 0.5, 0.125], [0.9037181712962963, 0.562355324074074, 0.1589265046296296], [0.9276620370370372, 0.6238425925925928, 0.19849537037037043], [0.947265625, 0.68359375, 0.244140625], [0.9629629629629629, 0.7407407407407407, 0.2962962962962963], [0.9751880787037037, 0.7944155092592593, 0.3553964120370371], [0.984375, 0.84375, 0.421875], [0.9909577546296297, 0.8878761574074074, 0.4961660879629629], [0.9953703703703705, 0.925925925925926, 0.5787037037037038], [0.998046875, 0.95703125, 0.669921875], [0.9994212962962963, 0.9803240740740741, 0.7702546296296295], [0.9999276620370372, 0.9949363425925927, 0.8801359953703706], [1.0, 1.0, 1.0]]    
+    @test typeof(V) == Vector{Point3{Float64}}    
+    @test isapprox(V, expected, atol = eps_level)
+end 
+
+
+@testset "lerp" verbose = true begin 
+
+    @testset "1D" begin         
+        @test lerp([0.0,1.0],[0.0,10.0],0.5) == 5.0 # Single value interpolation site
+        @test lerp([0.0,1.0],[0.0,10.0],range(0.0,1.0,3)) == [0.0,5.0,10.0] # Range of sites
+        @test lerp([0.0,1.0],[0.0,10.0],range(0.0,1.0,3)) == [0.0,5.0,10.0] # Range of sites    
+        @test lerp([0.0,1.0],[0.0,10.0],[0.0,0.5,1.0]) == [0.0,5.0,10.0] # Vector of sites
+        @test lerp(range(0.0,1.0,3),range(0.0,10.0,3),range(0.0,1.0,3)) == [0.0,5.0,10.0] # ranged sites, data, and values
+    end
+
+    @testset "3D points" begin 
+        eps_level = 0.001
+        np = 10
+        t = range(0.0,2.0*π,np) # Parameterisation metric
+        V = [GeometryBasics.Point{3, Float64}(cos(t[i]),sin(t[i]),t[i]/(2.0*π)) for i ∈ eachindex(t)] # ND data, here 3D points
+        np_i = np*3 
+        ti = range(minimum(t)-0.5,maximum(t)+0.5,np_i)
+
+        @test isapprox(lerp(t,V,ti),Point3{Float64}[[1.167558325036443, -0.46036271447926463, -0.07957747154594766], [1.0833956815191297, -0.22912775185383769, -0.03960661143933059], [0.9992330380018164, 0.0021072107715893167, 0.0003642486672864905], [0.9150703944845031, 0.23334217339701627, 0.04033510877390357], [0.8309077509671899, 0.46457713602244327, 0.08030596888052065], [0.7171768097594708, 0.6710013509613107, 0.12027682898713773], [0.504069515472875, 0.7940389046839496, 0.1602476890937548], [0.29096222118627935, 0.9170764584065885, 0.2002185492003719], [0.06471611212984507, 0.9656000907937172, 0.24018940930698895], [-0.17762056150557648, 0.9228695968166506, 0.28016026941360606], [-0.419957235140998, 0.8801391028395841, 0.32013112952022316], [-0.6059298257654833, 0.7397831533655452, 0.36010198962684026], [-0.7641038558835915, 0.5512786847171849, 0.40007284973345736], [-0.9222778860016999, 0.3627742160688245, 0.4400437098400744], [-0.9396926207859084, 0.12303755372263896, 0.48001456994669145], [-0.9396926207859084, -0.12303755372263873, 0.5199854300533086], [-0.9222778860017001, -0.36277421606882426, 0.5599562901599257], [-0.7641038558835918, -0.5512786847171848, 0.5999271502665426], [-0.6059298257654835, -0.7397831533655452, 0.6398980103731597], [-0.41995723514099864, -0.880139102839584, 0.6798688704797768], [-0.17762056150557712, -0.9228695968166505, 0.7198397305863939], [0.06471611212984442, -0.9656000907937171, 0.759810590693011], [0.29096222118627946, -0.9170764584065884, 0.7997814507996283], [0.5040695154728753, -0.7940389046839496, 0.8397523109062452], [0.7171768097594708, -0.6710013509613109, 0.8797231710128623], [0.8309077509671898, -0.46457713602244327, 0.9196940311194793], [0.9150703944845031, -0.23334217339701638, 0.9596648912260964], [0.9992330380018164, -0.0021072107715894555, 0.9996357513327135], [1.0833956815191297, 0.22912775185383755, 1.0396066114393308], [1.167558325036443, 0.46036271447926436, 1.0795774715459476]],atol=eps_level)
+    end
+
+    @testset "ND" begin
+        @test lerp([0.0,1.0],[[0.0,10.0,20.0,30.0],[10.0,20.0,30.0,40.0]],0.5) == [5.0,15.0,25.0,35.0] # Single value interpolation site
+        @test lerp([0.0,1.0],[[0.0,10.0,20.0,30.0],[10.0,20.0,30.0,40.0]],[0.0,0.5,1.0]) == [[0.0,10.0,20.0,30.0],[5.0,15.0,25.0,35.0],[10.0,20.0,30.0,40.0]] # Single value interpolation site
+    end
+
+end
+
+@testset "lerp_" begin 
+    @test Comodo.lerp_([0.0,1.0],[0.0,10.0],0.5) == 5.0 # Vector input
+    @test Comodo.lerp_(range(0.0,1.0,3),range(0.0,10.0,3),0.5) == 5.0 # range input
+end
+
+
+@testset "dist" verbose = true begin
+    eps_level = 0.001
+
+    @testset "vector to vector" begin
+        v1 = Float64[0, 0, 0]
+        v2 = Float64[0, 0, 5]
+        result = dist(v1, v2)
+        @test result == [0.0 0.0 5.0; 0.0 0.0 5.0; 0.0 0.0 5.0]
+    end
+
+    @testset "vectors to vector" begin         
+        v1 = [[1, 2, 3], [0, 0, 0]]
+        v2 = [0, 0, 0]
+        result = dist(v1, v2)
+        @test result isa Matrix
+        @test isapprox(result, [3.7416573867739413; 0.0;;], atol = eps_level)
+    end 
+
+    @testset "vector to vectors" begin     
+        v1 = [[1, 2, 3], [0, 0, 0]]
+        v2 = [0, 0, 0]
+        result = dist(v2, v1)
+        @test result isa Matrix
+        @test isapprox(result, [3.7416573867739413 0.0], atol = eps_level)
+    end 
+
+    @testset "vector of points to vector of points" begin
+        V1 = Vector{GeometryBasics.Point{3,Float64}}(undef, 4)
+        V1[1] = GeometryBasics.Point{3,Float64}(1.0, 0.0, 0.0)
+        V1[2] = GeometryBasics.Point{3,Float64}(0.0, 1.0, 0.0)
+        V1[3] = GeometryBasics.Point{3,Float64}(0.0, 0.0, 1.0)
+        V1[4] = GeometryBasics.Point{3,Float64}(1.0, 1.0, 1.0)
+
+        V2 = Vector{GeometryBasics.Point{3,Float64}}(undef, 3)
+        V2[1] = GeometryBasics.Point{3,Float64}(π, 0.0, 0.0)
+        V2[2] = GeometryBasics.Point{3,Float64}(0.0, π, 0.0)
+        V2[3] = GeometryBasics.Point{3,Float64}(0.0, 0.0, π)
+
+        result = dist(V1, V2)
+        eps_level = maximum(eps.(result))
+
+        @test isapprox(result, [2.141592653589793 3.296908309475615 3.296908309475615;
+                3.296908309475615 2.141592653589793 3.296908309475615;
+                3.296908309475615 3.296908309475615 2.141592653589793;
+                2.5664019743426345 2.5664019743426345 2.5664019743426345], atol=eps_level)
+    end
+end
+
+
+@testset "mindist" begin     
+    eps_level = 0.001
+    V1 = [[1, 2, 3], [0, 0, 0]]
+    V2 = [[4, 5, 6], [0, 0, 0]]
+    result = mindist(V1, V2)
+    @test result isa Vector{Float64}
+    @test isapprox(result, [3.7416573867739413, 0.0], atol = eps_level)
+end 
+
+
+@testset "unique_dict_index" begin 
+    result1, result2 = Comodo.unique_dict_index([1, 2, 3, 3, 3, 4, 4, 4, 5])
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [1, 2, 3, 6, 9]
+end 
+
+@testset "unique_dict_index_inverse" begin 
+    result1, result2, result3 = Comodo.unique_dict_index_inverse([1, 2, 3, 3, 3, 4, 4, 4, 5])
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [1, 2, 3, 6, 9]
+    @test result3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
+end 
+
+@testset "unique_dict_index_count" begin 
+    result1, result2, result3 = Comodo.unique_dict_index_count([1, 2, 3, 3, 3, 4, 4, 4, 5])
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [1, 2, 3, 6, 9]
+    @test result3 == [1, 1, 3, 3, 1]
+end 
+
+
+@testset "unique_dict_index_inverse_count" begin 
+    r1, r2, r3, r4 = Comodo.unique_dict_index_inverse_count([1, 2, 3, 3, 3, 4, 4, 4, 5])
+    @test r1 == [1, 2, 3, 4, 5]
+    @test r2 == [1, 2, 3, 6, 9]
+    @test r3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    @test r4 == [1, 1, 3, 3, 1]
+end 
+
+
+@testset "unique_dict_count" begin 
+    result1, result2 = Comodo.unique_dict_count([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [3, 4, 2, 1, 1]
+end
+
+
+@testset "unique_dict_inverse" begin 
+    result1, result2 = Comodo.unique_dict_inverse([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
+end 
+
+@testset "unique_dict" begin 
+    result1, result2, result3 = unique_dict([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [1, 4, 8, 10, 11]
+    @test result3 == [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
+end 
+
+
+@testset "gunique" begin 
+    
+    r1, r2, r3, r4 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index=true, return_inverse=true, return_counts=true, sort_entries=false)
+    @test r1 == [1, 2, 3, 4, 5]
+    @test r2 == [1, 2, 3, 6, 9]
+    @test r3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    @test r4 == [1, 1, 3, 3, 1]
+
+    r1, r2, r3 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index=true, return_inverse=true, return_counts=false, sort_entries=false)
+    @test r1 == [1, 2, 3, 4, 5]
+    @test r2 == [1, 2, 3, 6, 9]
+    @test r3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
+
+    r1, r2 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index=true, return_inverse=false, return_counts=false, sort_entries=false)
+    @test r1 == [1, 2, 3, 4, 5]
+    @test r2 == [1, 2, 3, 6, 9]
+
+    r1 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index=false, return_inverse=false, return_counts=false, sort_entries=false)
+    @test r1 == [1, 2, 3, 4, 5]
+end 
+
+# @testset "unique_simplices" verbose = true begin
+
+#     @testset "Single triangle" begin
+#         F = [TriangleFace{Int64}(1, 2, 3)]       
+#         F_uni, ind1, ind2 = unique_simplices(F)
+#         @test E == LineFace{Int64}[[1, 2], [2, 3], [3, 1]]
+#     end
+
+# end
+
+
 @testset "ind2sub" verbose = true begin
     ind = [1,2,3,4,8,12,30]
 
@@ -53,6 +496,7 @@ end
     end
 end
 
+
 @testset "sub2ind" verbose = true begin
     ind = [1,2,3,4,8,12,30]
     A = rand(30)
@@ -99,6 +543,112 @@ end
         C = rand(3,5,2)        
         @test Comodo.sub2ind_([3,2,1],length(size(C)),cumprod(size(C))) == 6
     end
+end
+
+@testset "meshedges" verbose = true begin
+
+    @testset "Single triangle" begin
+        F = [TriangleFace{Int64}(1, 2, 3)]       
+        E = meshedges(F)
+        @test E == LineFace{Int64}[[1, 2], [2, 3], [3, 1]]
+    end
+
+    @testset "Single quad" begin
+        F = [QuadFace{Int64}(1, 2, 3, 4)]       
+        E = meshedges(F)
+        @test E == LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 1]]
+    end
+
+    @testset "Triangles" begin
+        F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(1, 4, 3)]
+        E = meshedges(F)
+        @test E == LineFace{Int64}[[1, 2], [1, 4], [2, 3], [4, 3], [3, 1], [3, 1]]
+    end
+
+    @testset "Quads" begin
+        F = [QuadFace{Int64}(1, 2, 3, 4),QuadFace{Int64}(6, 5, 4, 3)]
+        E = meshedges(F)
+        @test E == LineFace{Int64}[[1, 2], [6, 5], [2, 3], [5, 4], [3, 4], [4, 3], [4, 1], [3, 6]]
+    end
+end
+
+@testset "icosahedron" begin
+    eps_level = 0.001
+    r = 1.0
+    ϕ = Base.MathConstants.golden # (1.0+sqrt(5.0))/2.0, Golden ratio
+    s = r/sqrt(ϕ + 2.0)
+    t = ϕ*s
+    M = icosahedron(r)
+    F = faces(M)
+    V = coordinates(M)
+    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
+    @test length(F) == 20
+    @test isapprox(V[1], [0.0, -s, -t], atol=eps_level)
+end
+
+@testset "octahedron" begin
+    eps_level = 0.001
+    r = 1.0
+    s = r/sqrt(2.0)
+    M = octahedron(1.0) 
+    F = faces(M)
+    V = coordinates(M)
+    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
+    @test length(F) == 8
+    @test isapprox(V[1], [-s,  -s, 0.0], atol=eps_level)
+end
+
+@testset "dodecahedron" begin
+    eps_level = 0.001
+    r = 1.0
+    ϕ = Base.MathConstants.golden # (1.0+sqrt(5.0))/2.0, Golden ratio
+    s = r/sqrt(3.0)
+    t = ϕ*s    
+    w = (ϕ-1.0)*s
+    M = dodecahedron(r)
+    F = faces(M)
+    V = coordinates(M)
+    @test M isa GeometryBasics.Mesh{3, Float64, GeometryBasics.Ngon{3, Float64, 5, Point3{Float64}}, SimpleFaceView{3, Float64, 5, Int64, Point3{Float64}, NgonFace{5, Int64}}}
+    @test length(F) == 12
+    @test isapprox(V[1], [s,s,s], atol=eps_level)
+end
+
+@testset "cube" begin
+    eps_level = 0.001
+    r = 1.0
+    s = r/sqrt(3.0)
+    M = cube(1.0) 
+    F = faces(M)
+    V = coordinates(M)
+    @test M isa GeometryBasics.Mesh{3, Float64, GeometryBasics.Ngon{3, Float64, 4, Point3{Float64}}, SimpleFaceView{3, Float64, 4, Int64, Point3{Float64}, QuadFace{Int64}}}
+    @test length(F) == 6
+    @test isapprox(V[1], [-s,  -s, -s], atol=eps_level)
+end
+
+@testset "tetrahedron" begin
+    eps_level = 0.001
+    r = 1.0
+    a = r*sqrt(2.0)/sqrt(3.0)
+    b = -r*sqrt(2.0)/3.0
+    c = -r/3.0    
+    M = tetrahedron(1.0) 
+    F = faces(M)
+    V = coordinates(M)
+    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
+    @test length(F) == 4
+    @test isapprox(V[1], [-a,  b, c], atol=eps_level)
+end
+
+@testset "platonicsolid" begin
+
+    eps_level = 0.001
+    M = platonicsolid(4, 1.0) # icosahedron
+    F = faces(M)
+    V = coordinates(M)
+    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
+    @test length(F) == 20
+    @test isapprox(V[1], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps_level)
+
 end
 
 @testset "togeometrybasics_faces" verbose = true begin
@@ -476,6 +1026,18 @@ end
     end
 end
 
+
+@testset "geosphere(3,1.0)" begin
+    F, V = geosphere(3, 1.0)
+
+    @test F isa Vector{TriangleFace{Int64}}
+    @test length(F) == 1280
+
+    @test V isa Vector{Point3{Float64}}
+    @test length(V) == 642
+end
+
+
 @testset "hexbox" verbose = true begin
     @testset "Single hex box" begin
         E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[1,1,1])
@@ -497,307 +1059,6 @@ end
     end
 end
 
-@testset "elements2indices" verbose = true begin
-    @testset "Tri. faces" begin
-        F = Vector{TriangleFace{Int64}}(undef, 3)
-        F[1] = TriangleFace{Int64}(9, 4, 1)
-        F[2] = TriangleFace{Int64}(1, 5, 9)
-        F[3] = TriangleFace{Int64}(1, 8, 5)
-        result = elements2indices(F)
-        @test sort(result) == [1, 4, 5, 8, 9]
-    end
-
-    @testset "Quad. faces" begin
-        F = Vector{QuadFace{Int64}}(undef, 6)
-        F[1] = QuadFace{Int64}(1, 2, 3, 4)
-        F[2] = QuadFace{Int64}(8, 7, 6, 5)
-        F[3] = QuadFace{Int64}(5, 6, 2, 1)
-        F[4] = QuadFace{Int64}(6, 7, 3, 2)
-        F[5] = QuadFace{Int64}(7, 8, 4, 3)
-        F[6] = QuadFace{Int64}(8, 5, 1, 4)
-        result = elements2indices(F)
-        @test sort(result) == [1, 2, 3, 4, 5, 6, 7, 8]
-    end
-end
-
-@testset "gridpoints" verbose = true begin
-
-    @testset "with 1 vector" begin
-        a = Float64[1, 2, 3]
-
-        expected = Point3{Float64}[
-            [1.0, 1.0, 1.0],
-            [1.0, 1.0, 2.0],
-            [1.0, 1.0, 3.0],
-            [1.0, 2.0, 1.0],
-            [1.0, 2.0, 2.0],
-            [1.0, 2.0, 3.0],
-            [1.0, 3.0, 1.0],
-            [1.0, 3.0, 2.0],
-            [1.0, 3.0, 3.0],
-            [2.0, 1.0, 1.0],
-            [2.0, 1.0, 2.0],
-            [2.0, 1.0, 3.0],
-            [2.0, 2.0, 1.0],
-            [2.0, 2.0, 2.0],
-            [2.0, 2.0, 3.0],
-            [2.0, 3.0, 1.0],
-            [2.0, 3.0, 2.0],
-            [2.0, 3.0, 3.0],
-            [3.0, 1.0, 1.0],
-            [3.0, 1.0, 2.0],
-            [3.0, 1.0, 3.0],
-            [3.0, 2.0, 1.0],
-            [3.0, 2.0, 2.0],
-            [3.0, 2.0, 3.0],
-            [3.0, 3.0, 1.0],
-            [3.0, 3.0, 2.0],
-            [3.0, 3.0, 3.0],
-        ]
-
-        result = gridpoints(a)
-
-        @test result == expected
-    end
-
-    @testset "with 2 vectors" begin
-        a = Float64[1, 2, 3]
-        b = Float64[2, 3, 5]
-
-        expected = GeometryBasics.Point3{Float64}[
-            [1.0, 2.0, 1.0],
-            [1.0, 2.0, 2.0],
-            [1.0, 2.0, 3.0],
-            [1.0, 3.0, 1.0],
-            [1.0, 3.0, 2.0],
-            [1.0, 3.0, 3.0],
-            [1.0, 5.0, 1.0],
-            [1.0, 5.0, 2.0],
-            [1.0, 5.0, 3.0],
-            [2.0, 2.0, 1.0],
-            [2.0, 2.0, 2.0],
-            [2.0, 2.0, 3.0],
-            [2.0, 3.0, 1.0],
-            [2.0, 3.0, 2.0],
-            [2.0, 3.0, 3.0],
-            [2.0, 5.0, 1.0],
-            [2.0, 5.0, 2.0],
-            [2.0, 5.0, 3.0],
-            [3.0, 2.0, 1.0],
-            [3.0, 2.0, 2.0],
-            [3.0, 2.0, 3.0],
-            [3.0, 3.0, 1.0],
-            [3.0, 3.0, 2.0],
-            [3.0, 3.0, 3.0],
-            [3.0, 5.0, 1.0],
-            [3.0, 5.0, 2.0],
-            [3.0, 5.0, 3.0],
-        ]
-
-        result = gridpoints(a, b)
-
-        @test result == expected
-    end
-
-    @testset "with 3 vectors" begin
-        a = Float64[1, 2, 3]
-        b = Float64[2, 3, 5]
-        c = Float64[5, 6, 4]
-
-        expected = GeometryBasics.Point3{Float64}[
-            [1.0, 2.0, 5.0],
-            [1.0, 2.0, 6.0],
-            [1.0, 2.0, 4.0],
-            [1.0, 3.0, 5.0],
-            [1.0, 3.0, 6.0],
-            [1.0, 3.0, 4.0],
-            [1.0, 5.0, 5.0],
-            [1.0, 5.0, 6.0],
-            [1.0, 5.0, 4.0],
-            [2.0, 2.0, 5.0],
-            [2.0, 2.0, 6.0],
-            [2.0, 2.0, 4.0],
-            [2.0, 3.0, 5.0],
-            [2.0, 3.0, 6.0],
-            [2.0, 3.0, 4.0],
-            [2.0, 5.0, 5.0],
-            [2.0, 5.0, 6.0],
-            [2.0, 5.0, 4.0],
-            [3.0, 2.0, 5.0],
-            [3.0, 2.0, 6.0],
-            [3.0, 2.0, 4.0],
-            [3.0, 3.0, 5.0],
-            [3.0, 3.0, 6.0],
-            [3.0, 3.0, 4.0],
-            [3.0, 5.0, 5.0],
-            [3.0, 5.0, 6.0],
-            [3.0, 5.0, 4.0],
-        ]
-
-        result = gridpoints(a, b, c)
-
-        @test result == expected
-    end
-
-    @testset "Equality of several results" begin
-        a = Float64[1, 2, 3]
-
-        result1 = gridpoints(a)
-        result2 = gridpoints(a, a)
-        result3 = gridpoints(a, a, a)
-
-        @test allequal([result1, result2, result3])
-    end
-end
-
-@testset "interp_biharmonic_spline" verbose = true begin
-
-    @testset "linear / linear" begin
-        x = Float64[0.0, 1.0, 2.0, 3.0]
-        y = Float64[0.0, 1.0, 0.0, 1.0]
-        xi = range(-0.5, 3.5, 9)
-        result = interp_biharmonic_spline(x, y, xi; extrapolate_method=:linear, pad_data=:linear)
-        true_result = [-0.5, -2.220446049250313e-16, 0.650942317501349,
-            0.9999999999999994, 0.501564606542732,
-            -2.983724378680108e-16, 0.3537866863312682,
-            0.9999999999999997, 1.5]
-
-        eps_level = 0.001
-
-        @test isapprox(result, true_result, atol=eps_level)
-    end
-
-    @testset "linear / constant" begin
-        x = Float64[0.0, 1.0, 2.0, 3.0]
-        y = Float64[0.0, 1.0, 0.0, 1.0]
-        xi = range(-0.5, 3.5, 9)
-        result = interp_biharmonic_spline(x, y, xi; extrapolate_method=:linear, pad_data=:constant)
-        true_result = [0.0, -1.7763568394002505e-15, 0.5861167655113347,
-            0.9999999999999998, 0.5015646065427324,
-            -2.42861286636753e-16, 0.41861223832128147,
-            0.9999999999999993, 1.0]
-        eps_level = 0.001
-        @test isapprox(result, true_result, atol=eps_level)
-    end
-
-    @testset "linear / none" begin
-        x = Float64[0.0, 1.0, 2.0, 3.0]
-        y = Float64[0.0, 1.0, 0.0, 1.0]
-        xi = range(-0.5, 3.5, 9)
-        result = interp_biharmonic_spline(x, y, xi; extrapolate_method=:linear, pad_data=:none)
-        true_result = [-0.5, -1.1102230246251565e-16, 0.9548390432176067,
-            0.9999999999999999, 0.5061519335211898,
-            -1.1102230246251565e-16, 0.18162885699253484, 1.0, 1.5]
-        eps_level = 0.001
-        @test isapprox(result, true_result, atol=eps_level)
-    end
-
-    @testset "constant / none" begin
-        x = Float64[0.0, 1.0, 2.0, 3.0]
-        y = Float64[0.0, 1.0, 0.0, 1.0]
-        xi = range(-0.5, 3.5, 9)
-        result = interp_biharmonic_spline(x, y, xi; extrapolate_method=:constant, pad_data=:none)
-        true_result = [0.0, -1.1102230246251565e-16, 0.9548390432176067,
-            0.9999999999999999, 0.5061519335211898,
-            -1.1102230246251565e-16, 0.18162885699253484, 1.0, 1.0]
-        eps_level = 0.001
-        @test isapprox(result, true_result, atol=eps_level)
-    end
-
-    @testset "biharmonic / none" begin
-        x = Float64[0.0, 1.0, 2.0, 3.0]
-        y = Float64[0.0, 1.0, 0.0, 1.0]
-        xi = range(-0.5, 3.5, 9)
-        result = interp_biharmonic_spline(x, y, xi; extrapolate_method=:biharmonic, pad_data=:none)
-        true_result = [-2.3709643220609977, -1.1102230246251565e-16,
-            0.9548390432176067, 0.9999999999999999,
-            0.5061519335211898, -1.1102230246251565e-16,
-            0.1816288569925348, 1.0, 2.801059658186898]
-        eps_level = 0.001
-        @test isapprox(result, true_result, atol=eps_level)
-    end
-
-end
-
-@testset "interp_biharmonic" verbose = true begin
-    @testset "3D points 1D data, vectors" begin
-        result = interp_biharmonic([[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10], [[0.0, 0.0, x] for x in range(-1, 1, 5)])
-        true_result = [-10.0, -7.449961786934791, 0.0, 7.449961786934791, 10.0]
-        eps_level = maximum(eps.(true_result))
-        @test isapprox(result, true_result, atol=eps_level)
-    end
-
-    @testset "3D points 1D data, geometry basics point vectors" begin
-        result = interp_biharmonic(GeometryBasics.Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10],
-            [GeometryBasics.Point3{Float64}(0.0, 0.0, x) for x in range(-1, 1, 5)])
-        true_result = [-10.0, -7.449961786934791, 0.0, 7.449961786934791, 10.0]
-        eps_level = maximum(eps.(true_result))
-        @test isapprox(result, true_result, atol=eps_level)
-    end
-
-end
-
-Ci = interp_biharmonic([[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10], [[0.0, 0.0, x] for x in range(-1, 1, 3)])
-
-@testset "dist" verbose = true begin
-    eps_level = 0.001
-
-    @testset "vector to vector" begin
-        v1 = Float64[0, 0, 0]
-        v2 = Float64[0, 0, 5]
-        result = dist(v1, v2)
-        @test result == [0.0 0.0 5.0; 0.0 0.0 5.0; 0.0 0.0 5.0]
-    end
-
-    @testset "vectors to vector" begin         
-        v1 = [[1, 2, 3], [0, 0, 0]]
-        v2 = [0, 0, 0]
-        result = dist(v1, v2)
-        @test result isa Matrix
-        @test isapprox(result, [3.7416573867739413; 0.0;;], atol = eps_level)
-    end 
-
-    @testset "vector to vectors" begin     
-        v1 = [[1, 2, 3], [0, 0, 0]]
-        v2 = [0, 0, 0]
-        result = dist(v2, v1)
-        @test result isa Matrix
-        @test isapprox(result, [3.7416573867739413 0.0], atol = eps_level)
-    end 
-
-    @testset "vector of points to vector of points" begin
-        V1 = Vector{GeometryBasics.Point{3,Float64}}(undef, 4)
-        V1[1] = GeometryBasics.Point{3,Float64}(1.0, 0.0, 0.0)
-        V1[2] = GeometryBasics.Point{3,Float64}(0.0, 1.0, 0.0)
-        V1[3] = GeometryBasics.Point{3,Float64}(0.0, 0.0, 1.0)
-        V1[4] = GeometryBasics.Point{3,Float64}(1.0, 1.0, 1.0)
-
-        V2 = Vector{GeometryBasics.Point{3,Float64}}(undef, 3)
-        V2[1] = GeometryBasics.Point{3,Float64}(π, 0.0, 0.0)
-        V2[2] = GeometryBasics.Point{3,Float64}(0.0, π, 0.0)
-        V2[3] = GeometryBasics.Point{3,Float64}(0.0, 0.0, π)
-
-        result = dist(V1, V2)
-        eps_level = maximum(eps.(result))
-
-        @test isapprox(result, [2.141592653589793 3.296908309475615 3.296908309475615;
-                3.296908309475615 2.141592653589793 3.296908309475615;
-                3.296908309475615 3.296908309475615 2.141592653589793;
-                2.5664019743426345 2.5664019743426345 2.5664019743426345], atol=eps_level)
-    end
-end
-
-
-
-@testset "geosphere(3,1.0)" begin
-    F, V = geosphere(3, 1.0)
-
-    @test F isa Vector{TriangleFace{Int64}}
-    @test length(F) == 1280
-
-    @test V isa Vector{Point3{Float64}}
-    @test length(V) == 642
-end
 
 @testset "simplexcenter" begin
 
@@ -810,6 +1071,24 @@ end
     @test length(VC) == 1280
     @test isapprox(VC[1], [-0.35520626817942325, 0.0, -0.9299420831107401], atol=eps_level)
 
+end
+
+@testset "mergevertices" begin
+    eps_level = 0.001
+    r = 2 * sqrt(3) / 2
+    M = cube(r)
+
+    F = faces(M)
+    V = coordinates(M)
+    F, V, _ = mergevertices(F, V)
+
+    @test V isa Vector{Point3{Float64}}
+    @test length(V) == 8
+    @test isapprox(V[1], [-1.0, -1.0, -1.0], atol=eps_level)
+
+    @test F isa Vector{QuadFace{Int64}}
+    @test length(F) == 6
+    @test F[1] == [1, 2, 3, 4]
 end
 
 
@@ -853,7 +1132,7 @@ end
 end
 
 
-@testset "circlepoints" begin
+@testset "circlepoints" verbose = true begin
 
     @testset "with value" begin
         V1 = circlepoints(1.0, 40)
@@ -876,15 +1155,7 @@ end
 
 end
 
-@testset "platonicsolid" begin
 
-    eps_level = 0.001
-    M = platonicsolid(4, 1.0) # icosahedron
-    @test M isa Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
-    @test length(M) == 20
-    @test isapprox(M[1][1], [-0.85065080835204, 0.0, -0.5257311121191336], atol=eps_level)
-
-end
 
 @testset "subtri" begin
     r = 1
@@ -976,37 +1247,9 @@ end
     @test F[1] == [17, 18, 2, 1]
 end
 
-@testset "cube" begin
-    r = 2 * sqrt(3) / 2
-    M = cube(r)
 
-    @test M isa Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,4,Point3{Float64}},SimpleFaceView{3,Float64,4,Int64,Point3{Float64},QuadFace{Int64}}}
-    @test length(M) == 6
-    @test M[1][1] == [-1.0, -1.0, -1.0]
-    @test M[1][2] == [-1.0, 1.0, -1.0]
-    @test M[1][3] == [1.0, 1.0, -1.0]
-    @test M[1][4] == [1.0, -1.0, -1.0]
-end
 
-@testset "mergevertices" begin
-    eps_level = 0.001
-    r = 2 * sqrt(3) / 2
-    M = cube(r)
-
-    F = faces(M)
-    V = coordinates(M)
-    F, V, _ = mergevertices(F, V)
-
-    @test V isa Vector{Point3{Float64}}
-    @test length(V) == 8
-    @test isapprox(V[1], [-1.0, -1.0, -1.0], atol=eps_level)
-
-    @test F isa Vector{QuadFace{Int64}}
-    @test length(F) == 6
-    @test F[1] == [1, 2, 3, 4]
-end
-
-@testset "seperate vertices" begin
+@testset "separate vertices" begin
 
     eps_level = 0.001
     r = 2 * sqrt(3) / 2
@@ -1016,7 +1259,7 @@ end
     V = coordinates(M)
     F, V, _ = mergevertices(F, V)
 
-    Fn, Vn = seperate_vertices(F, V)
+    Fn, Vn = separate_vertices(F, V)
 
     @test Vn isa Vector{Point3{Float64}}
     @test length(Vn) == 24
@@ -1027,53 +1270,7 @@ end
     @test Fn[1] == [1, 2, 3, 4]
 end
 
-@testset "icosahedron" begin
 
-    eps_level = 0.001
-    M = icosahedron()
-
-    @test M isa Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
-    @test length(M) == 20
-    @test isapprox(M[1][1], [-0.85065080835204, 0.0, -0.5257311121191336], atol=eps_level)
-    @test isapprox(M[1][2], [0.0, 0.5257311121191336, -0.85065080835204], atol=eps_level)
-    @test isapprox(M[1][3], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps_level)
-
-end
-
-@testset "dodecahedron" begin
-
-    eps_level = 0.001
-    M = dodecahedron()
-
-
-    @test M isa Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,5,Point3{Float64}},SimpleFaceView{3,Float64,5,Int64,Point3{Float64},NgonFace{5,Int64}}}
-    @test length(M) == 12
-    @test isapprox(M[1][1], [0.0, 0.9341723589627159, 0.35682208977309], atol=eps_level)
-    @test isapprox(M[1][2], [-0.5773502691896258, 0.5773502691896258, 0.5773502691896258], atol=eps_level)
-    @test isapprox(M[1][3], [-0.35682208977309, 0.0, 0.9341723589627159], atol=eps_level)
-end
-
-
-@testset "interp_biharmonic_spline" begin
-    eps_level = 0.001
-    x = range(0, 9, 9) # Interval definition
-    y = 5.0 * cos.(x .^ 2 ./ 9.0)
-    n = 50
-    xi = range(-0.5, 9.5, n) # Interval definition
-
-    yi = interp_biharmonic_spline(x, y, xi; extrapolate_method=:linear, pad_data=:linear)
-
-    expected = Float64[
-        5.021936470288651, 5.012982808946344, 5.004029147604038, 5.003883984828356, 5.013423891770618, 5.016926459732009, 5.008877412957425, 4.986252200086639, 4.949095584901485, 4.900712801046797, 4.827338182066324, 4.718702733147323,
-        4.565299270988856, 4.355206727041269, 4.0643384202727155, 3.690302768049275, 3.2486120048531575, 2.741142656288753, 2.162741179324234, 1.4930428723452422, 0.6894521660239601, -0.17909936207112054, -1.066850736215498, -1.9394165202437383,
-        -2.7620787973653123, -3.4863618240707703, -4.084745304595619, -4.548097090450917, -4.844487814719076, -4.919816101979883, -4.660991193954443, -3.8522496267669797, -2.7401507061437558, -1.4800073431767586, -0.17052435774788544,
-        1.0996489364430322, 2.2142992537631168, 3.1162872228104126, 3.812960510488512, 4.267335427319159, 4.415016001115535, 4.129059686282873, 3.1623787726296135, 1.7686560575217602, 0.11532807455604117, -1.6929812437232494, -3.556979551860928,
-        -5.26268898629401, -6.833883823784279, -8.405078661274548,
-    ]
-    @test yi isa Vector{Float64}
-    @test length(yi) == 50
-    @test isapprox(yi, expected, atol=eps_level)
-end
 
 
 @testset "evenly_sample" begin
@@ -1143,111 +1340,3 @@ end
     @test isapprox(S.spline.basis.M.left[2], Float64[1.2080446399615536 0.0; 0.7919553600384465 0.5123829689520382; 0.0 1.4876170310479617], atol=eps_level)
 
 end
-
-
-@testset "nbezier" begin 
-    eps_level = 0.001    
-    P = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-    P[1 ] = GeometryBasics.Point{3, Float64}( 0.0, 0.0, 0.0)
-    P[2 ] = GeometryBasics.Point{3, Float64}( 1.0, 0.0, 0.0)
-    P[3 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 0.0)
-    P[4 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 1.0)
-    n = 25 # Number of points
-    V = nbezier(P,n) # Get Bezier fit points
-    expected = Point3{Float64}[[0.0, 0.0, 0.0], [0.11986400462962965, 0.005063657407407407, 7.233796296296296e-5], [0.22974537037037032, 0.019675925925925923, 0.0005787037037037037], [0.330078125, 0.04296875, 0.001953125], [0.4212962962962963, 0.07407407407407407, 0.004629629629629629], [0.503833912037037, 0.11212384259259262, 0.009042245370370372], [0.578125, 0.15625, 0.015625], [0.6446035879629629, 0.20558449074074078, 0.024811921296296304], [0.7037037037037037, 0.25925925925925924, 0.037037037037037035], [0.755859375, 0.31640625, 0.052734375], [0.8015046296296295, 0.3761574074074074, 0.07233796296296298], [0.8410734953703705, 0.43764467592592593, 0.09628182870370369], [0.875, 0.5, 0.125], [0.9037181712962963, 0.562355324074074, 0.1589265046296296], [0.9276620370370372, 0.6238425925925928, 0.19849537037037043], [0.947265625, 0.68359375, 0.244140625], [0.9629629629629629, 0.7407407407407407, 0.2962962962962963], [0.9751880787037037, 0.7944155092592593, 0.3553964120370371], [0.984375, 0.84375, 0.421875], [0.9909577546296297, 0.8878761574074074, 0.4961660879629629], [0.9953703703703705, 0.925925925925926, 0.5787037037037038], [0.998046875, 0.95703125, 0.669921875], [0.9994212962962963, 0.9803240740740741, 0.7702546296296295], [0.9999276620370372, 0.9949363425925927, 0.8801359953703706], [1.0, 1.0, 1.0]]    
-    @test typeof(V) == Vector{Point3{Float64}}    
-    @test isapprox(V, expected, atol = eps_level)
-end 
-
-
-@testset "lerp" begin 
-
-    @testset "1D" begin         
-        @test lerp([0.0,1.0],[0.0,10.0],0.5) == 5.0 # Single value interpolation site
-        @test lerp([0.0,1.0],[0.0,10.0],range(0.0,1.0,3)) == [0.0,5.0,10.0] # Range of sites
-        @test lerp([0.0,1.0],[0.0,10.0],range(0.0,1.0,3)) == [0.0,5.0,10.0] # Range of sites    
-        @test lerp([0.0,1.0],[0.0,10.0],[0.0,0.5,1.0]) == [0.0,5.0,10.0] # Vector of sites
-        @test lerp(range(0.0,1.0,3),range(0.0,10.0,3),range(0.0,1.0,3)) == [0.0,5.0,10.0] # ranged sites, data, and values
-    end
-
-    @testset "3D points" begin 
-        eps_level = 0.001
-        np = 10
-        t = range(0.0,2.0*π,np) # Parameterisation metric
-        V = [GeometryBasics.Point{3, Float64}(cos(t[i]),sin(t[i]),t[i]/(2.0*π)) for i ∈ eachindex(t)] # ND data, here 3D points
-        np_i = np*3 
-        ti = range(minimum(t)-0.5,maximum(t)+0.5,np_i)
-
-        @test isapprox(lerp(t,V,ti),Point3{Float64}[[1.167558325036443, -0.46036271447926463, -0.07957747154594766], [1.0833956815191297, -0.22912775185383769, -0.03960661143933059], [0.9992330380018164, 0.0021072107715893167, 0.0003642486672864905], [0.9150703944845031, 0.23334217339701627, 0.04033510877390357], [0.8309077509671899, 0.46457713602244327, 0.08030596888052065], [0.7171768097594708, 0.6710013509613107, 0.12027682898713773], [0.504069515472875, 0.7940389046839496, 0.1602476890937548], [0.29096222118627935, 0.9170764584065885, 0.2002185492003719], [0.06471611212984507, 0.9656000907937172, 0.24018940930698895], [-0.17762056150557648, 0.9228695968166506, 0.28016026941360606], [-0.419957235140998, 0.8801391028395841, 0.32013112952022316], [-0.6059298257654833, 0.7397831533655452, 0.36010198962684026], [-0.7641038558835915, 0.5512786847171849, 0.40007284973345736], [-0.9222778860016999, 0.3627742160688245, 0.4400437098400744], [-0.9396926207859084, 0.12303755372263896, 0.48001456994669145], [-0.9396926207859084, -0.12303755372263873, 0.5199854300533086], [-0.9222778860017001, -0.36277421606882426, 0.5599562901599257], [-0.7641038558835918, -0.5512786847171848, 0.5999271502665426], [-0.6059298257654835, -0.7397831533655452, 0.6398980103731597], [-0.41995723514099864, -0.880139102839584, 0.6798688704797768], [-0.17762056150557712, -0.9228695968166505, 0.7198397305863939], [0.06471611212984442, -0.9656000907937171, 0.759810590693011], [0.29096222118627946, -0.9170764584065884, 0.7997814507996283], [0.5040695154728753, -0.7940389046839496, 0.8397523109062452], [0.7171768097594708, -0.6710013509613109, 0.8797231710128623], [0.8309077509671898, -0.46457713602244327, 0.9196940311194793], [0.9150703944845031, -0.23334217339701638, 0.9596648912260964], [0.9992330380018164, -0.0021072107715894555, 0.9996357513327135], [1.0833956815191297, 0.22912775185383755, 1.0396066114393308], [1.167558325036443, 0.46036271447926436, 1.0795774715459476]],atol=eps_level)
-    end
-
-end
-
-@testset "mindist" begin 
-    
-    eps_level = 0.01
-
-    V1 = [[1, 2, 3], [0, 0, 0]]
-    V2 = [[4, 5, 6], [0, 0, 0]]
-
-    result = mindist(V1, V2)
-
-    @test result isa Vector{Float64}
-
-    @test isapprox(result, [3.7416573867739413, 0.0], atol = eps_level)
-
-end 
-
-
-@testset "unique_dict_index" begin 
-
-    result1, result2 = Comodo.unique_dict_index([1, 2, 3, 3, 3, 4, 4, 4, 5])
-
-    @test result1 == [1, 2, 3, 4, 5]
-    @test result2 == [1, 2, 3, 6, 9]
-
-end 
-
-
-@testset "unique_dict_index_count" begin 
-
-    result1, result2, result3 = Comodo.unique_dict_index_count([1, 2, 3, 3, 3, 4, 4, 4, 5])
-
-    @test result1 == [1, 2, 3, 4, 5]
-    @test result2 == [1, 2, 3, 6, 9]
-    @test result3 == [1, 1, 3, 3, 1]
-
-end 
-
-
-@testset "unique_dict_index_inverse_count" begin 
-
-    r1, r2, r3, r4 = Comodo.unique_dict_index_inverse_count([1, 2, 3, 3, 3, 4, 4, 4, 5])
-
-    @test r1 == [1, 2, 3, 4, 5]
-    @test r2 == [1, 2, 3, 6, 9]
-    @test r3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
-    @test r4 == [1, 1, 3, 3, 1]
-
-end 
-
-
-@testset "unique_dict_count" begin 
-
-    result1, result2 = Comodo.unique_dict_count([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
-
-    @test result1 == [1, 2, 3, 4, 5]
-    @test result2 == [3, 4, 2, 1, 1]
-
-end
-
-
-@testset "unique_dict_inverse" begin 
-
-    result1, result2 = Comodo.unique_dict_inverse([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
-
-    @test result1 == [1, 2, 3, 4, 5]
-    @test result2 == [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
-
-end 
-
