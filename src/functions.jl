@@ -1522,7 +1522,7 @@ function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
     return con_V2V
 end
 
-function meshconnectivity(F,V) #conType = ["ev","ef","ef","fv","fe","ff","ve","vf","vv"]
+function meshconnectivity(F,V)
 
     # EDGE-VERTEX connectivity
     E = meshedges(F)
@@ -1602,14 +1602,14 @@ mean coordinates of that point's Laplacian umbrella. The update features a lerp
 like weighting between the previous iterations coordinates and the mean 
 coordinates. The code features `Vs[q] = (1.0-λ).*Vs[q] .+ λ*mean(V[con_V2V[q]])`
 As can be seen, the weighting is controlled by the input parameter `λ` which is
-in the range (0,1). If `λ=0` then no smoothing occurs. If `λ=1` pure Laplacian mean based smoothing occurs. For 
-intermediate values a linear blending between the two occurs.  
+in the range (0,1). If `λ=0` then no smoothing occurs. If `λ=1` then pure 
+Laplacian mean based smoothing occurs. For intermediate values a linear blending
+between the two occurs.  
 """
-function smoothmesh_laplacian(F,V,con_V2V=nothing; n=1, λ=0.5)
+function smoothmesh_laplacian(F,V,n=1, λ=0.5; con_V2V=nothing, constrained_points=nothing)
     if λ>1.0 || λ<0.0
         error("λ should be in the range 0-1")
     end
-
     if λ>0.0
         # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if nothing
         if isnothing(con_V2V)
@@ -1620,6 +1620,9 @@ function smoothmesh_laplacian(F,V,con_V2V=nothing; n=1, λ=0.5)
             Vs = deepcopy(V)
             for q ∈ eachindex(V)                
                 Vs[q] = (1.0-λ).*Vs[q] .+ λ*mean(V[con_V2V[q]]) # Linear blend between original and pure Laplacian
+            end
+            if !isnothing(constrained_points)
+                Vs[constrained_points] = V[constrained_points] # Put back constrained points
             end
             V = Vs
         end
@@ -1640,7 +1643,7 @@ Laplacian like smoothing but aims to compensate for shrinkage/swelling by also
 # Reference 
 [Vollmer et al. Improved Laplacian Smoothing of Noisy Surface Meshes, 1999. doi: 10.1111/1467-8659.00334](https://doi.org/10.1111/1467-8659.00334)
 """
-function smoothmesh_hc(F,V, con_V2V=nothing; n=1, α=0.1, β=0.5, tolDist=nothing)
+function smoothmesh_hc(F,V, n=1, α=0.1, β=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing)
 
     # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if nothing
     if isnothing(con_V2V)
@@ -1658,13 +1661,13 @@ function smoothmesh_hc(F,V, con_V2V=nothing; n=1, α=0.1, β=0.5, tolDist=nothin
             P[i] = mean(Q[con_V2V[i]]) # Laplacian 
             # Compute different vector between P and a point between original 
             # point and Q (which is P before laplacian)
-            B[i] = P[i] .- (α.*V[i] .+ (1-α).*Q[i])
+            B[i] = P[i] .- (α.*V[i] .+ (1.0-α).*Q[i])
         end
         d = 0.0        
         for i ∈ eachindex(V)      
             # Push points back based on blending between pure difference vector
             # B and the Laplacian mean of these      
-            P[i] = P[i] .- (β.*B[i] .+ (1-β).* mean(B[con_V2V[i]]))
+            P[i] = P[i] .- (β.*B[i] .+ (1.0-β).* mean(B[con_V2V[i]]))
         end   
         c+=1 
         if !isnothing(tolDist) # Include tolerance based termination
@@ -1675,6 +1678,9 @@ function smoothmesh_hc(F,V, con_V2V=nothing; n=1, α=0.1, β=0.5, tolDist=nothin
             if d<tolDist # Sum of distance smaller than tolerance?
                 break
             end            
+        end
+        if !isnothing(constrained_points)
+            P[constrained_points] = V[constrained_points] # Put back constrained points
         end
     end
     return P

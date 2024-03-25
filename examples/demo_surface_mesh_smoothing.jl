@@ -20,9 +20,6 @@ V0 = deepcopy(V)
 
 V = map(x-> x.+ (5.0 .* randn(eltype(V))),V)
 
-E_uni = meshedges(F;unique_only=true)
-con_V2V = con_vertex_vertex(E_uni)
-
 # Set smoothing parameters
 tol = 1e-3
 nMax = 100 # Maximum number of iterations
@@ -33,12 +30,20 @@ nMax = 100 # Maximum number of iterations
 α = 0.1
 β = 0.5
 
+testMode = 1
+if testMode == 2
+    z = [v[3] for v in V]
+    constrained_points = findall(z.<0)
+else
+    constrained_points = nothing
+end
+
 ## VISUALISATION
 
 strokeWidth1 = 1
 
-Vs_HC = smoothmesh_hc(F,V,con_V2V; n=nMax,α=α,β=β,tolDist=tol)
-Vs_LAP = smoothmesh_laplacian(F,V,con_V2V; n=nMax,λ=λ)
+Vs_HC = smoothmesh_hc(F,V,nMax,α,β; tolDist=tol, constrained_points = constrained_points)
+Vs_LAP = smoothmesh_laplacian(F,V,nMax,λ; constrained_points = constrained_points)
 Ds = [sqrt(sum((Vs_HC[i]-V0[i]).^2)) for i ∈ eachindex(V)]
 Ds_LAP = [sqrt(sum((Vs_LAP[i]-V0[i]).^2)) for i ∈ eachindex(V)]
 cLim = maximum(Ds_LAP).*(0.0,1.0)
@@ -66,14 +71,14 @@ slidercontrol(hSlider,fig)
 
 on(hSlider.value) do stepIndex
     # Update first plot
-    Vs_LAP = smoothmesh_laplacian(F,V,con_V2V; n=stepIndex,λ=λ)
+    Vs_LAP = smoothmesh_laplacian(F,V,stepIndex,λ; constrained_points = constrained_points)
     Ds_LAP = [sqrt(sum((Vs_LAP[i]-V0[i]).^2)) for i ∈ eachindex(V)]
     ax3.title= "Laplacian smoothed n = " * string(stepIndex) * " times"
     hp3.color = Ds_LAP
     hp3[1] = GeometryBasics.Mesh(Vs_LAP,F)
 
     # Update second plot
-    Vs_HC = smoothmesh_hc(F,V,con_V2V; n=stepIndex,α=α,β=β,tolDist=tol)
+    Vs_HC = smoothmesh_hc(F,V,stepIndex,α,β; con_V2V= con_V2V, tolDist=tol, constrained_points = constrained_points)
     Ds_HC = [sqrt(sum((Vs_HC[i]-V0[i]).^2)) for i ∈ eachindex(V)]
     ax4.title= "HC smoothed n = " * string(stepIndex) * " times"
     hp4.color = Ds_HC

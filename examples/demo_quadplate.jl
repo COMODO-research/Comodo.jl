@@ -2,8 +2,8 @@ using Comodo
 using GLMakie
 using GeometryBasics
 
-plateDim = (20,20)
-plateElem = (10,10)
+plateDim = [20,20]
+plateElem = [10,10]
 
 F,V = quadplate(plateDim,plateElem)
 

@@ -1048,23 +1048,7 @@ end
 
 end
 
-@testset "mergevertices" begin
-    eps_level = 0.001
-    r = 2 * sqrt(3) / 2
-    M = cube(r)
 
-    F = faces(M)
-    V = coordinates(M)
-    F, V, _ = mergevertices(F, V)
-
-    @test V isa Vector{Point3{Float64}}
-    @test length(V) == 8
-    @test isapprox(V[1], [-1.0, -1.0, -1.0], atol=eps_level)
-
-    @test F isa Vector{QuadFace{Int64}}
-    @test length(F) == 6
-    @test F[1] == [1, 2, 3, 4]
-end
 
 
 @testset "remove_unused_vertices" begin
@@ -1226,6 +1210,75 @@ end
         @test length(Fb) == 24
         @test CFb_type == [1, 3, 6, 1, 3, 5, 1, 4, 6, 1, 4, 5, 2, 3, 6, 2, 3, 5, 2, 4, 6, 2, 4, 5]
     end
+end
+
+@testset "mergevertices" begin
+    eps_level = 0.001
+    r = 2 * sqrt(3) / 2    
+    M = cube(r)
+    F = faces(M)
+    V = coordinates(M)
+    Fs,Vs = separate_vertices(F,V)
+    Fm, Vm, indReverse = mergevertices(Fs, Vs)
+
+    @test V isa Vector{Point3{Float64}}
+    @test length(Vm) == length(V)
+    @test isapprox(Vm[1], [-1.0, -1.0, -1.0], atol=eps_level)
+    @test [indReverse[f] for f ∈ Fm] == Fs # Reverse mapping 
+    @test Fm isa Vector{QuadFace{Int64}} # Face type unaltered 
+    @test length(Fm) == length(F) # Length is correct
+    @test Fm[1] == [1, 2, 3, 4]
+end
+
+
+@testset "smoothmesh_laplacian" begin
+    eps_level = 0.001
+    M = tetrahedron(1.0)
+    F = faces(M)
+    V = coordinates(M)
+    F,V = subtri(F,V,3)
+
+    λ = 0.5 # Laplacian smoothing parameter
+    n = 10 # Number of iterations 
+    Vs = smoothmesh_laplacian(F,V,n,λ; constrained_points = [5])
+   
+    @test Vs[5] == V[5]
+    @test length(V) == length(Vs)
+    @test isapprox(Vs[1:12:end],Point3{Float64}[[-0.5267934833030736, -0.3045704088157244, -0.21536380142235773], [0.18035752833432903, 0.10412811672612346, 0.294521655293559], [0.08303921331720784, 0.4644517405905486, -0.21506879101783555], [0.27578186198836685, 0.061145348885743724, 0.14725778543071683], [0.42141942792006937, -0.14533559613655794, -0.028420418214732533], [0.14563756593170252, 0.013984084814994118, 0.4219980296556624], [0.060704371251411274, 0.5216603792732742, -0.14726169138940381], [0.09542433365403777, 0.33344751143983137, 0.11891253326014106], [0.35882107530557467, -0.013681340938917872, -0.21539751418386643], [0.09542433365403777, 0.22326098199503258, 0.27473981759179783], [0.022334842065796563, 0.5696027951808408, -0.21506313462934012]],atol=eps_level)
+end
+
+
+@testset "smoothmesh_hc" begin
+    eps_level = 0.001
+    M = tetrahedron(1.0)
+    F = faces(M)
+    V = coordinates(M)
+    F,V = subtri(F,V,3)
+
+    n=10
+    α=0.1
+    β=0.5
+    Vs = smoothmesh_hc(F,V,n,α,β; constrained_points = [5])
+   
+    @test Vs[5] == V[5]
+    @test length(V) == length(Vs)
+    @test isapprox(Vs[1:12:end],Point3{Float64}[[-0.717172128187643, -0.4136411138967243, -0.29248843661393087], [0.2172725677452308, 0.12542984177391073, 0.354795754721541], [0.14131349634859056, 0.5833163373526694, -0.2928129682724839], [0.3244337573708121, 0.06012744101331828, 0.1773748669098122], [0.5320437804652989, -0.18001157172411225, -0.007876437657606965], [0.2076100230944868, 0.007251571709351666, 0.5218871813767098], [0.09749864497483732, 0.6706350785643729, -0.1774072797262262], [0.10716118962558129, 0.42533928994594383, 0.16951517881969574], [0.4657472537194027, 0.021884259910259368, -0.2924568169614577], [0.10716118962558129, 0.30160020659192405, 0.3445086686945654], [0.04381485137375324, 0.7522177199770612, -0.29279262066755407]],atol=eps_level)
+end
+
+
+@testset "quadplate" begin
+    eps_level = 0.001
+
+    plateDim = [5,5]
+    plateElem = [4,3]
+    F,V = quadplate(plateDim,plateElem)
+
+    @test V isa Vector{Point3{Float64}}
+    @test length(V) == prod(plateElem.+1)
+    @test isapprox(V, Point3{Float64}[[-2.5, -2.5, 0.0], [-1.25, -2.5, 0.0], [0.0, -2.5, 0.0], [1.25, -2.5, 0.0], [2.5, -2.5, 0.0], [-2.5, -0.8333333333333334, 0.0], [-1.25, -0.8333333333333334, 0.0], [0.0, -0.8333333333333334, 0.0], [1.25, -0.8333333333333334, 0.0], [2.5, -0.8333333333333334, 0.0], [-2.5, 0.8333333333333334, 0.0], [-1.25, 0.8333333333333334, 0.0], [0.0, 0.8333333333333334, 0.0], [1.25, 0.8333333333333334, 0.0], [2.5, 0.8333333333333334, 0.0], [-2.5, 2.5, 0.0], [-1.25, 2.5, 0.0], [0.0, 2.5, 0.0], [1.25, 2.5, 0.0], [2.5, 2.5, 0.0]], atol=eps_level)
+    @test F isa Vector{QuadFace{Int64}}
+    @test length(F) == prod(plateElem)
+    @test F[1] == [1, 2, 7, 6]
 end
 
 
