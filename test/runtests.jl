@@ -1035,22 +1035,6 @@ end
 end
 
 
-@testset "simplexcenter" begin
-
-    eps_level = 0.001
-
-    F, V = geosphere(3, 1.0)
-    VC = simplexcenter(F, V)
-
-    @test typeof(VC) == Vector{Point3{Float64}}
-    @test length(VC) == 1280
-    @test isapprox(VC[1], [-0.35520626817942325, 0.0, -0.9299420831107401], atol=eps_level)
-
-end
-
-
-
-
 @testset "remove_unused_vertices" begin
     F, V = geosphere(3, 1.0)
     VC = simplexcenter(F, V)
@@ -1091,28 +1075,6 @@ end
 end
 
 
-@testset "circlepoints" verbose = true begin
-
-    @testset "with value" begin
-        V1 = circlepoints(1.0, 40)
-
-        @test V1 isa Vector{Point3{Float64}}
-        @test length(V1) == 40
-        @test V1[1] == [1.0, 0.0, 0.0]
-    end
-
-    @testset "with function" begin
-        r = 1.0
-        n = 40
-        rFun(t) = r + 0.5 .* sin(3 * t)
-        V2 = circlepoints(rFun, n)
-
-        @test V2 isa Vector{Point3{Float64}}
-        @test length(V2) == 40
-        @test V2[1] == [1.0, 0.0, 0.0]
-    end
-
-end
 
 
 @testset "subtri" verbose = true begin
@@ -1461,6 +1423,15 @@ end
         # Quads
         DV = [i.*[1.0,2.0,π] for i ∈ eachindex(Vq)] # Vector data for each vertex
         DF = vertex2simplexdata(Fq,DV)
+        @testset "simplexcenter" begin
+            eps_level = 0.001
+            F, V = geosphere(2, 1.0)
+            VC = simplexcenter(F, V)
+        
+            @test VC isa typeof(V)
+            @test length(VC) == length(F)
+            @test isapprox(VC[1:30:end], Point3{Float64}[[-0.3504874080794224, 0.0, -0.9175879469807824], [0.9252211181650858, 0.17425248968910703, -0.2898716471939399], [-0.17425248968910703, -0.2898716471939399, -0.9252211181650858], [0.870241439674047, 0.4295322227262335, -0.15715894749713352], [-0.0876218520198556, 0.14524212567637496, -0.9709982913596904], [0.9709982913596904, 0.0876218520198556, 0.14524212567637496], [-0.5759258522984322, -0.1565463433383235, -0.7844827600958122], [0.7844827600958122, 0.5759258522984322, -0.1565463433383235], [-0.4295322227262335, -0.15715894749713352, -0.870241439674047], [0.8917525488507145, 0.08663063766925146, -0.41096206852816675], [-0.08663063766925146, -0.41096206852816675, -0.8917525488507145]], atol=eps_level)
+        end
         @test isapprox(DF,[[12.75, 25.5, 40.05530633326987], [11.5, 23.0, 36.12831551628262], [14.25, 28.5, 44.76769531365455], [16.0, 32.0, 50.26548245743669], [13.25, 26.5, 41.62610266006476], [12.75, 25.5, 40.05530633326986], [12.75, 25.5, 40.055306333269854], [12.75, 25.5, 40.05530633326986], [14.25, 28.5, 44.76769531365455], [13.75, 27.5, 43.19689898685965], [12.25, 24.5, 38.48451000647496], [12.75, 25.5, 40.05530633326986], [14.25, 28.5, 44.767695313654556], [14.75, 29.5, 46.33849164044945], [14.25, 28.5, 44.767695313654556], [13.75, 27.5, 43.19689898685965], [14.5, 29.0, 45.553093477052], [15.0, 30.0, 47.1238898038469], [16.25, 32.5, 51.050880620834135], [15.75, 31.5, 49.48008429403924], [16.0, 32.0, 50.26548245743669], [15.5, 31.0, 48.69468613064179], [16.25, 32.5, 51.05088062083414], [16.75, 33.5, 52.62167694762904]], atol=eps_level)
 
         # Triangles
@@ -1499,18 +1470,27 @@ end
 end
 
 
-@testset "simplexcenter" begin
+@testset "simplexcenter" verbose = true  begin
     eps_level = 0.001
-    F, V = geosphere(2, 1.0)
-    VC = simplexcenter(F, V)
 
-    @test V isa Vector{Point3{Float64}}
-    @test length(V) == 162
-    @test isapprox(V[1], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps_level)
+    @testset "Triangles" begin
+        F, V = geosphere(2, 1.0)
+        VC = simplexcenter(F, V)
+        ind = round.(Int64,range(1,length(VC),5))
 
-    @test F isa Vector{TriangleFace{Int64}}
-    @test length(F) == 320
-    @test F[1] == TriangleFace(43, 83, 63)
+        @test VC isa typeof(V)
+        @test length(VC) == length(F)
+        @test isapprox(VC[ind], Point3{Float64}[[-0.3504874080794224, 0.0, -0.9175879469807824], [-0.4295322227262335, 0.15715894749713352, -0.870241439674047], [-0.7866254783422401, 0.3950724390612581, -0.4435636037400384], [-0.6300791350039167, 0.29832147806366355, -0.6968609080759566], [-0.805121911181463, 0.14017131621592582, -0.5511333847440926]], atol=eps_level)
+    end
+
+    @testset "Quadrilaterals" begin
+        F, V = quadsphere(2, 1.0)
+        VC = simplexcenter(F, V)
+        ind = round.(Int64,range(1,length(VC),5))
+        @test VC isa typeof(V)
+        @test length(VC) == length(F)
+        @test isapprox(VC[ind], Point3{Float64}[[-0.4802860138667546, -0.4802860138667546, -0.6949720954766154], [-0.4802860138667546, 0.4802860138667546, 0.6949720954766154], [-0.7899092719339054, -0.16747661189958585, -0.5326696383253359], [0.7899092719339054, -0.16747661189958585, 0.5326696383253359], [0.16747661189958585, -0.7899092719339054, -0.5326696383253359]], atol=eps_level)
+    end
 end
 
 @testset "normalizevector" begin
@@ -1518,6 +1498,31 @@ end
 
     @test n isa Vec3{Float64}
     @test n == [0.0, 0.0, 1.0]
+end
+
+
+
+@testset "circlepoints" verbose = true begin
+
+    @testset "with value" begin
+        V1 = circlepoints(1.0, 40)
+
+        @test V1 isa Vector{Point3{Float64}}
+        @test length(V1) == 40
+        @test V1[1] == [1.0, 0.0, 0.0]
+    end
+
+    @testset "with function" begin
+        r = 1.0
+        n = 40
+        rFun(t) = r + 0.5 .* sin(3 * t)
+        V2 = circlepoints(rFun, n)
+
+        @test V2 isa Vector{Point3{Float64}}
+        @test length(V2) == 40
+        @test V2[1] == [1.0, 0.0, 0.0]
+    end
+
 end
 
 @testset "extrude curve" begin
