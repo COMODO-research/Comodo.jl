@@ -1493,39 +1493,213 @@ end
     end
 end
 
-@testset "normalizevector" begin
-    n = normalizevector(Vec{3,Float64}(0.0, 0.0, 1.0))
+@testset "normalizevector"  verbose = true begin
+    eps_level = 0.001
 
-    @test n isa Vec3{Float64}
-    @test n == [0.0, 0.0, 1.0]
+    @testset "Single vector" begin
+        v = Vec{3,Float64}(0.0, 0.0, pi)
+        n = normalizevector(v)
+        @test n isa typeof(v)
+        @test n == [0.0, 0.0, 1.0]
+
+        v = [1.0, 1.0, 0.0]
+        n = normalizevector(v)
+        @test n isa typeof(v)
+        @test isapprox(n,√2/2*[1.0, 1.0, 0.0], atol=eps_level)
+
+        v = Point{3, Float64}( 1.0,  1.0,  1.0)
+        n = normalizevector(v)
+        @test n isa typeof(v)
+        @test isapprox(n,√3/3*[1.0, 1.0, 1.0], atol=eps_level)
+    end
+
+    @testset "Vector set" begin
+        M = cube(1.0)
+        F = faces(M)
+        V = coordinates(M)
+        N = facenormal(F,V)
+        U = [n./(1.0.+rand(1)) for n ∈ N]
+        NN = normalizevector(U)
+
+        @test eltype(NN) == eltype(U)
+        @test isapprox(NN,N, atol=eps_level)
+    end
+
 end
 
 
 
 @testset "circlepoints" verbose = true begin
+    eps_level = 0.001
 
     @testset "with value" begin
-        V1 = circlepoints(1.0, 40)
-
-        @test V1 isa Vector{Point3{Float64}}
-        @test length(V1) == 40
-        @test V1[1] == [1.0, 0.0, 0.0]
+        r = 2.0
+        n = 40
+        V = circlepoints(2.0, n)
+        ind = round.(Int64,range(1,length(V),5))
+        d = [sqrt(sum(v.^2)) for v in V]
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == n
+        @test isapprox(d,fill(r,n),atol=eps_level)
+        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], [1.2246467991473532e-16, 2.0, 0.0], [-1.9753766811902753, 0.31286893008046196, 0.0], [-0.31286893008046207, -1.9753766811902753, 0.0], [1.9753766811902753, -0.31286893008046224, 0.0]], atol=eps_level)
     end
 
     @testset "with function" begin
         r = 1.0
         n = 40
         rFun(t) = r + 0.5 .* sin(3 * t)
-        V2 = circlepoints(rFun, n)
+        V = circlepoints(rFun, n)
+        ind = round.(Int64,range(1,length(V),5))
 
-        @test V2 isa Vector{Point3{Float64}}
-        @test length(V2) == 40
-        @test V2[1] == [1.0, 0.0, 0.0]
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == n
+        @test isapprox(V[ind],Point3{Float64}[[1.0, 0.0, 0.0], [3.061616997868383e-17, 0.5, 0.0], [-1.2118889022619925, 0.1919443455202825, 0.0], [-0.22612652951961248, -1.4277067182626626, 0.0], [0.7634877789282826, -0.12092458456017953, 0.0]], atol=eps_level)
     end
 
 end
 
-@testset "extrude curve" begin
+
+@testset "loftlinear" verbose = true begin
+    eps_level = 0.001
+
+    r = 1.0
+    nc = 5
+    n = Vec{3,Float64}(pi, pi, pi) # Offset vector
+    V1 = circlepoints(r, nc; dir=:cw)
+    V2 = [v.+n for v in V1]
+    num_steps = 3
+
+    @testset "quad" begin
+        F,V = loftlinear(V1,V2;num_steps=num_steps,close_loop=true,face_type=:quad)
+        ind = round.(Int64,range(1,length(V),5))
+
+        @test F isa Vector{QuadFace{Int64}}
+        @test length(F) == nc*(num_steps-1)
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test isapprox(V[ind], Point3{Float64}[[1.0, 0.0, 0.0], [-0.8090169943749475, 0.587785252292473, 0.0], [0.7617793324199491, 0.9830110745024232, 1.5707963267948966], [3.4506096479647406, 2.1905361372946395, 3.141592653589793], [3.4506096479647406, 4.092649169884947, 3.141592653589793]], atol=eps_level)
+    end
+
+    @testset "tri" begin
+        F,V = loftlinear(V1,V2;num_steps=num_steps,close_loop=true,face_type=:tri)
+        ind = round.(Int64,range(1,length(V),5))
+
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == (nc*(num_steps-1))*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test isapprox(V[ind], Point3{Float64}[[1.0, 0.0, 0.0], [-0.8090169943749475, 0.587785252292473, 0.0], [0.7617793324199491, 1.5707963267948963, 1.5707963267948966], [3.4506096479647406, 2.1905361372946395, 3.141592653589793], [3.4506096479647406, 4.092649169884947, 3.141592653589793]], atol=eps_level)
+    end
+
+    @testset "tri_slash" begin
+        F,V = loftlinear(V1,V2;num_steps=num_steps,close_loop=true,face_type=:tri_slash)
+        ind = round.(Int64,range(1,length(V),5))
+
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == (nc*(num_steps-1))*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test isapprox(V[ind], Point3{Float64}[[1.0, 0.0, 0.0], [-0.8090169943749475, 0.587785252292473, 0.0], [0.7617793324199491, 0.9830110745024232, 1.5707963267948966], [3.4506096479647406, 2.1905361372946395, 3.141592653589793], [3.4506096479647406, 4.092649169884947, 3.141592653589793]], atol=eps_level)
+    end
+end
+
+
+# @testset "dirplot" begin
+#     M = cube(1.0)
+#     F = faces(M)
+#     V = coordinates(M)
+#     N = vertexnormal(F,V)
+#
+#     fig = Figure(size=(800,800))
+#     ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Direction data plot")
+#     hp = poly!(ax,M, strokewidth=3,color=:white, shading = FastShading)
+#     hp1 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:from)
+#     hp2 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:to)
+#     hp3 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:through)
+#     fig
+#
+# end
+
+
+# @testset "normalplot" begin
+#     M = cube(1.0)
+#     F = faces(M)
+#     V = coordinates(M)
+#
+#     fig = Figure(size=(800,800))
+#     ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Direction data plot")
+#     hp = poly!(ax,M, strokewidth=3,color=:white, shading = FastShading)
+#     hp1 =  normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
+#     fig
+#
+# end
+
+@testset "wrapindex" verbose = true begin
+    eps_level = 0.001
+
+    @testset "single value" begin
+        n = 5
+        m = 2
+        @test wrapindex(1,n) == 1
+        @test wrapindex(2,n) == 2
+        @test wrapindex(n,n) == n
+        @test wrapindex(n+m,n) == m      
+    end
+
+    @testset "Vector" begin
+        n = 5
+        a = 2
+        b = 2*n
+        m = [1,2,n,n+a,n+b]
+        @test wrapindex(m,n) == [1,2,n,a,n]  
+    end
+
+    @testset "Unit range" begin
+        n = 5
+        a = 2
+        b = 2*n
+        m = 1:(2*n)+2
+        r = wrapindex(m,n)
+        @test r == [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2]  
+    end
+
+    @testset "Step range" begin
+        n = 5
+        a = 2
+        b = 2*n
+        m = 1:2:(2*n)+2
+        r = wrapindex(m,n)
+        @test r == [1, 3, 5, 2, 4, 1] 
+    end
+end
+
+
+@testset "edgeangles" begin
+    eps_level = 0.001
+    # Regular cube
+    M = cube(1.0)
+    F = faces(M)
+    V = coordinates(M)
+
+    # Build deformation gradient tensor to induce shear with known angles
+    f = zeros(3,3)
+    for i=1:3
+        f[i,i]=1.0
+    end
+    a = pi/4 # "45 degree shear"  
+    f[1,2] = tan(a) 
+
+    # Sheared cube coordinates
+    V2 = togeometrybasics_points([f*v for v ∈ V]) 
+
+    A = edgeangles(F,V) # Angles for regular cube
+    A2 = edgeangles(F,V2) # Angles for sheared cube
+    @test all([all(a.==pi/2) for a in A]) # All right angles in undeformed cube
+    @test isapprox(sort(unique(reduce(vcat,A2))),[pi/4, pi/2, pi/2+pi/4],atol=eps_level)
+
+end
+
+@testset "extrudecurve" begin
     eps_level = 0.001
     r = 1
     nc = 16

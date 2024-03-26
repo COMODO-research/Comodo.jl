@@ -1936,7 +1936,7 @@ function normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=not
     return hp 
 end
 
-function wrapindex(i::AbstractVector{Int64}, n)
+function wrapindex(i::Union{Array{Int64,1},UnitRange{Int64},StepRange{Int64, Int64}}, n)
     return 1 .+ mod.(i .+ (n-1),n)
 end 
 
@@ -1945,7 +1945,6 @@ function wrapindex(i::Int64,n)
 end
 
 function edgeangles(F,V)
-    # TO DO: Fix vector type for variable `a` below
     m = length(F[1])
     A = Vector{GeometryBasics.Vec{m, Float64}}()
     for f ∈ F
