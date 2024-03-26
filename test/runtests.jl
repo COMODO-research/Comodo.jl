@@ -553,7 +553,6 @@ end
 end
 
 @testset "meshedges" verbose = true begin
-
     @testset "Single triangle" begin
         F = [TriangleFace{Int64}(1, 2, 3)]       
         E = meshedges(F)
@@ -1035,32 +1034,6 @@ end
 end
 
 
-@testset "remove_unused_vertices" begin
-    F, V = geosphere(3, 1.0)
-    VC = simplexcenter(F, V)
-    F = [F[i] for i in findall(map(v -> v[3] > 0, VC))] # Remove some faces
-    F, V = remove_unused_vertices(F, V)
-
-    @test F isa Vector{TriangleFace{Int64}}
-    @test length(F) == 624
-
-    @test V isa Vector{Point3{Float64}}
-    @test length(V) == 337
-end
-
-
-@testset "boundaryedges" begin
-    F, V = geosphere(3, 1.0)
-    VC = simplexcenter(F, V)
-    F = [F[i] for i in findall(map(v -> v[3] > 0, VC))] # Remove some faces
-    F, V = remove_unused_vertices(F, V)
-    Eb = boundaryedges(F)
-
-    @test typeof(Eb) == Vector{LineFace{Int64}}
-    @test length(Eb) == 48
-    @test Eb[1] == [272, 205]
-end
-
 @testset "edges2curve" begin
     F, V = geosphere(3, 1.0)
     VC = simplexcenter(F, V)
@@ -1073,8 +1046,6 @@ end
     @test ind ==
           [272, 205, 329, 168, 309, 184, 270, 145, 306, 220, 334, 223, 305, 138, 320, 204, 292, 232, 336, 234, 311, 203, 269, 115, 303, 194, 321, 133, 312, 207, 271, 164, 308, 209, 330, 231, 307, 154, 327, 206, 301, 240, 335, 229, 310, 196, 304, 208, 272]
 end
-
-
 
 
 @testset "subtri" verbose = true begin
@@ -1699,6 +1670,111 @@ end
 
 end
 
+
+@testset "quad2tri" begin
+    M = cube(1.0)
+    F = faces(M)
+    V = coordinates(M)
+    ind = round.(Int64,range(1,length(F)*2,5))
+ 
+    Ft = quad2tri(F,V; convert_method = :forward)
+    @test Ft[ind] == TriangleFace{Int64}[TriangleFace(1, 2, 3), TriangleFace(6, 5, 8), TriangleFace(2, 1, 5), TriangleFace(7, 8, 4), TriangleFace(1, 4, 8)]
+    @test Ft isa Vector{TriangleFace{Int64}}
+    @test Vt isa Vector{Point3{Float64}}
+
+    Ft = quad2tri(F,V; convert_method = :backward)
+    @test Ft[ind] == TriangleFace{Int64}[TriangleFace(1, 2, 4), TriangleFace(7, 6, 5), TriangleFace(6, 2, 1), TriangleFace(7, 8, 3), TriangleFace(5, 1, 4)]
+    
+    Ft = quad2tri(F,V; convert_method = :angle)
+    @test Ft[ind] == TriangleFace{Int64}[TriangleFace(1, 2, 4), TriangleFace(7, 6, 5), TriangleFace(6, 2, 1), TriangleFace(7, 8, 3), TriangleFace(5, 1, 4)]
+
+end
+
+
+@testset "remove_unused_vertices" begin
+    F, V = geosphere(2, 1.0)
+    VC = simplexcenter(F, V)
+    F = [F[i] for i in findall(map(v -> v[3] > 0, VC))] # Remove some faces
+    Fn, Vn = remove_unused_vertices(F, V)
+
+    @test Fn isa Vector{TriangleFace{Int64}}
+    @test Vn isa Vector{Point3{Float64}}
+    @test length(F) == length(Fn)
+    @test length(Vn) ==  maximum(reduce(vcat,Fn))
+end
+
+
+# @testset "trisurfslice" begin
+#     F,V = geosphere(2,1.0)
+
+# end
+
+@testset "count_edge_face" verbose = true begin
+
+    @testset "Single triangle" begin
+        F = [TriangleFace{Int64}(1, 2, 3)]       
+        E = meshedges(F)
+        Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        count_E2F = count_edge_face(F,Eu,indReverse)
+        @test count_E2F == [1,1,1]
+    end
+
+    @testset "Single quad" begin
+        F = [QuadFace{Int64}(1, 2, 3, 4)]       
+        E = meshedges(F)
+        Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        count_E2F = count_edge_face(F,Eu,indReverse)
+        @test count_E2F == [1,1,1,1]
+    end
+
+    @testset "Triangles" begin
+        F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(1, 4, 3)]
+        E = meshedges(F)
+        Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        count_E2F = count_edge_face(F,Eu,indReverse)
+        @test count_E2F == [1,1,1,1,2]
+    end
+
+    @testset "Quads" begin
+        F = [QuadFace{Int64}(1, 2, 3, 4),QuadFace{Int64}(6, 5, 4, 3)]
+        E = meshedges(F)
+        Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        count_E2F = count_edge_face(F,Eu,indReverse)
+        @test count_E2F == [1,1,1,1,2,1,1] 
+    end
+
+end
+
+
+@testset "boundaryedges" verbose = true begin
+
+    @testset "Single triangle" begin
+        F = [TriangleFace{Int64}(1, 2, 3)]       
+        Eb = boundaryedges(F)
+        @test Eb == LineFace{Int64}[[1, 2], [2, 3], [3, 1]]
+    end
+
+    @testset "Single quad" begin
+        F = [QuadFace{Int64}(1, 2, 3, 4)]       
+        Eb = boundaryedges(F)
+        @test Eb == LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 1]]
+    end
+
+    @testset "Triangles" begin
+        F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(1, 4, 3)]
+        Eb = boundaryedges(F)
+        @test Eb == LineFace{Int64}[[1, 2], [1, 4], [2, 3], [4, 3]]
+    end
+
+    @testset "Quads" begin
+        F = [QuadFace{Int64}(1, 2, 3, 4),QuadFace{Int64}(6, 5, 4, 3)]
+        Eb = boundaryedges(F)
+        @test Eb == LineFace{Int64}[[1, 2], [6, 5], [2, 3], [5, 4], [4, 1], [3, 6]]
+    end
+
+end
+
+
 @testset "extrudecurve" begin
     eps_level = 0.001
     r = 1
@@ -1738,8 +1814,6 @@ end
     @test length(Fn) == 6
     @test Fn[1] == [1, 2, 3, 4]
 end
-
-
 
 
 @testset "evenly_sample" begin
