@@ -1034,20 +1034,6 @@ end
 end
 
 
-@testset "edges2curve" begin
-    F, V = geosphere(3, 1.0)
-    VC = simplexcenter(F, V)
-    F = [F[i] for i in findall(map(v -> v[3] > 0, VC))] # Remove some faces
-    F, V = remove_unused_vertices(F, V)
-    Eb = boundaryedges(F)
-    ind = edges2curve(Eb)
-
-    @test length(ind) == 49
-    @test ind ==
-          [272, 205, 329, 168, 309, 184, 270, 145, 306, 220, 334, 223, 305, 138, 320, 204, 292, 232, 336, 234, 311, 203, 269, 115, 303, 194, 321, 133, 312, 207, 271, 164, 308, 209, 330, 231, 307, 154, 327, 206, 301, 240, 335, 229, 310, 196, 304, 208, 272]
-end
-
-
 @testset "subtri" verbose = true begin
     eps_level = 0.001
     M = platonicsolid(4, 1.0)
@@ -1680,7 +1666,6 @@ end
     Ft = quad2tri(F,V; convert_method = :forward)
     @test Ft[ind] == TriangleFace{Int64}[TriangleFace(1, 2, 3), TriangleFace(6, 5, 8), TriangleFace(2, 1, 5), TriangleFace(7, 8, 4), TriangleFace(1, 4, 8)]
     @test Ft isa Vector{TriangleFace{Int64}}
-    @test Vt isa Vector{Point3{Float64}}
 
     Ft = quad2tri(F,V; convert_method = :backward)
     @test Ft[ind] == TriangleFace{Int64}[TriangleFace(1, 2, 4), TriangleFace(7, 6, 5), TriangleFace(6, 2, 1), TriangleFace(7, 8, 3), TriangleFace(5, 1, 4)]
@@ -1772,6 +1757,20 @@ end
         @test Eb == LineFace{Int64}[[1, 2], [6, 5], [2, 3], [5, 4], [4, 1], [3, 6]]
     end
 
+end
+
+
+@testset "edges2curve" begin
+    F, V = geosphere(3, 1.0)
+    VC = simplexcenter(F, V)
+    F = [F[i] for i in findall(map(v -> v[3] > 0, VC))] # Remove some faces
+    F, V = remove_unused_vertices(F, V)
+    Eb = boundaryedges(F)
+    ind = edges2curve(Eb)
+
+    @test length(ind) == 49
+    @test ind ==
+          [272, 205, 329, 168, 309, 184, 270, 145, 306, 220, 334, 223, 305, 138, 320, 204, 292, 232, 336, 234, 311, 203, 269, 115, 303, 194, 321, 133, 312, 207, 271, 164, 308, 209, 330, 231, 307, 154, 327, 206, 301, 240, 335, 229, 310, 196, 304, 208, 272]
 end
 
 
