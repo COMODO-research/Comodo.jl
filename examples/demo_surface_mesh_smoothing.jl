@@ -30,10 +30,11 @@ nMax = 100 # Maximum number of iterations
 α = 0.1
 β = 0.5
 
-testMode = 1
+# Use constrained nodes for the bottom half
+testMode = 2
 if testMode == 2
     z = [v[3] for v in V]
-    constrained_points = findall(z.<0)
+    constrained_points = findall(z.<mean(z))
 else
     constrained_points = nothing
 end
@@ -78,7 +79,7 @@ on(hSlider.value) do stepIndex
     hp3[1] = GeometryBasics.Mesh(Vs_LAP,F)
 
     # Update second plot
-    Vs_HC = smoothmesh_hc(F,V,stepIndex,α,β; con_V2V= con_V2V, tolDist=tol, constrained_points = constrained_points)
+    Vs_HC = smoothmesh_hc(F,V,stepIndex,α,β; tolDist=tol, constrained_points = constrained_points)
     Ds_HC = [sqrt(sum((Vs_HC[i]-V0[i]).^2)) for i ∈ eachindex(V)]
     ax4.title= "HC smoothed n = " * string(stepIndex) * " times"
     hp4.color = Ds_HC
