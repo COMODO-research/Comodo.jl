@@ -1761,16 +1761,41 @@ end
 
 
 @testset "edges2curve" begin
-    F, V = geosphere(3, 1.0)
-    VC = simplexcenter(F, V)
-    F = [F[i] for i in findall(map(v -> v[3] > 0, VC))] # Remove some faces
-    F, V = remove_unused_vertices(F, V)
-    Eb = boundaryedges(F)
-    ind = edges2curve(Eb)
 
-    @test length(ind) == 49
-    @test ind ==
-          [272, 205, 329, 168, 309, 184, 270, 145, 306, 220, 334, 223, 305, 138, 320, 204, 292, 232, 336, 234, 311, 203, 269, 115, 303, 194, 321, 133, 312, 207, 271, 164, 308, 209, 330, 231, 307, 154, 327, 206, 301, 240, 335, 229, 310, 196, 304, 208, 272]
+    # Open curve
+    E = LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 5]]
+    ind = edges2curve(E)
+    @test ind == [1,2,3,4,5]
+
+    # Closed curve
+    E = LineFace{Int64}[[1, 2], [2, 3], [3, 1]]
+    ind = edges2curve(E)
+    @test ind == [1,2,3,1]
+
+end
+
+
+@testset "pointspacingmean" verbose = true begin
+    eps_level = 0.001
+    @testset "Curve" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.75,0.0,0.0],[1.75,0.0,0.0]]
+        r = pointspacingmean(V)
+        @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_tol)
+    end
+
+    @testset "Edges" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.75,0.0,0.0],[1.75,0.0,0.0]]
+        E = LineFace{Int64}[[1,2],[2,3],[3,4]]
+        r = pointspacingmean(E,V)
+        @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_tol)
+    end
+
+    @testset "Faces" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.25,0.5,0.0],[0,0.5,0.0],[0.0,0.0,0.0]]
+        F = QuadFace{Int64}[[1,2,3,4]]
+        r = pointspacingmean(F,V)
+        @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_tol)
+    end
 end
 
 

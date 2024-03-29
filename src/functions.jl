@@ -2126,22 +2126,49 @@ function edges2curve(Eb)
         e_ind = con_E2E[i] # Indices for connected edges
         if Eb[e_ind[1]][1]==ind[end] #Check if 1st point of 1st edge equals end
             i = e_ind[1]
-        elseif Eb[e_ind[2]][1]==ind[end] #Check if 1st point of 2nd edge equals end
+        elseif length(e_ind)>1 && Eb[e_ind[2]][1]==ind[end] #Check if 1st point of 2nd edge equals end
             i = e_ind[2]
         end
     end
     return ind
 end
 
-function pointspacingmean(V)::Float64
+"""
+    pointspacingmean(V::Vector{Point3{Float64}})
+    pointspacingmean(F::Array{NgonFace{N, Int64}, 1},V::Vector{Point3{Float64}}) where N
+
+The `pointspacingmean` function computes the mean spacing between points. The 
+input can be just the coordinate set `V`, a vector of GeometryBasics.Point3 
+points, or also a set of edges `E` or faces `F`. If only `V` is provided it is 
+assumed that `V` represents an ordered set of "adjacent" points, e.g. as for a 
+curve. If a vector of edges `E` or a vector of faces `F is also provided, then 
+the average edge length is computed. If instead a set of faces `F` is provided 
+then edges are first computed after which the mean edge spacing is return. 
+"""
+function pointspacingmean(V::Vector{Point3{Float64}})
     # Equivalent to:  mean(norm.(diff(V,dims=1)))
     p = 0.0
     n = length(V)
     for i ∈ 1:n-1
-        p += norm(V[i].-V[i+1])/(n-1)
+        p += norm(V[i]-V[i+1])/(n-1)
     end
     return p
 end
+
+function pointspacingmean(F::Array{NgonFace{N, Int64}, 1},V::Vector{Point3{Float64}}) where N
+    if isa(F,Vector{LineFace{Int64}})
+        E = F
+    else
+        E = meshedges(F; unique_only=true)
+    end
+    p = 0.0
+    n = length(E)
+    for i ∈ 1:n
+        p += norm(V[E[i][1]]-V[E[i][2]])/n
+    end
+    return p
+end
+
 
 function extrudecurve(V1,d; s=1, n=Point{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad)
     if isnothing(num_steps)
@@ -2161,6 +2188,7 @@ function extrudecurve(V1,d; s=1, n=Point{3, Float64}(0.0,0.0,1.0),num_steps=noth
     V2 = [(eltype(V1))(v.+p) for v ∈ V1]  
     return loftlinear(V1,V2;num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 end
+
 
 function meshgroup(F; con_type = :v)
 
