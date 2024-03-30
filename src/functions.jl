@@ -2181,6 +2181,7 @@ function extrudecurve(V1,d; s=1, n=Point{3, Float64}(0.0,0.0,1.0),num_steps=noth
         p = d.*n
     elseif isone(-s) # Against n from V1
         p = -d.*n
+        V1 = reverse(V1)
     elseif iszero(s) # Extrude both ways from V1
         p = d.*n
         V1 = [(eltype(V1))(v.-p./2) for v ∈ V1] #Shift V1 in negative direction

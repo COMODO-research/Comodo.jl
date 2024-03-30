@@ -1,4 +1,4 @@
-using Test, FileIO, Comodo, Comodo.GeometryBasics, Statistics
+using Test, FileIO, Comodo, Comodo.GeometryBasics, Statistics, LinearAlgebra
 
 # ConnectivitySet
 
@@ -1780,42 +1780,128 @@ end
     @testset "Curve" begin
         V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.75,0.0,0.0],[1.75,0.0,0.0]]
         r = pointspacingmean(V)
-        @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_tol)
+        @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_level)
     end
 
     @testset "Edges" begin
         V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.75,0.0,0.0],[1.75,0.0,0.0]]
         E = LineFace{Int64}[[1,2],[2,3],[3,4]]
         r = pointspacingmean(E,V)
-        @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_tol)
+        @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_level)
     end
 
     @testset "Faces" begin
         V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.25,0.5,0.0],[0,0.5,0.0],[0.0,0.0,0.0]]
         F = QuadFace{Int64}[[1,2,3,4]]
         r = pointspacingmean(F,V)
-        @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_tol)
+        @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_level)
     end
 end
 
 
-@testset "extrudecurve" begin
+@testset "extrudecurve" verbose = true begin
     eps_level = 0.001
-    r = 1
+    r = 1.0
     nc = 16
     d = 3.0
     Vc = circlepoints(r, nc; dir=:cw)
-    F, V = extrudecurve(Vc, d; s=1, close_loop=true, face_type=:quad)
+    num_steps = 5
 
-    @test V isa Vector{Point3{Float64}}
-    @test length(V) == 128
-    @test isapprox(V[1], [1.0, 0.0, 0.0], atol=eps_level)
+    @testset "Direction (s) variations" begin
+        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)            
+        @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+       
+        F, V = extrudecurve(Vc, d; s=0, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)            
+        @test isapprox(zMax,d/2,atol = eps_level) && isapprox(zMin,-d/2,atol = eps_level)
 
-    @test F isa Vector{QuadFace{Int64}}
-    @test length(F) == 112
-    @test F[1] == [17, 18, 2, 1]
+        F, V = extrudecurve(Vc, d; s=-1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)            
+        @test isapprox(zMax,0.0,atol = eps_level) && isapprox(zMin,-d,atol = eps_level)
+    end
+    
+    @testset "Direction (n) variations" begin
+        n=[0.0,0.0,1.0] # Upward
+        F, V = extrudecurve(Vc, d; s=1, n=n, num_steps=num_steps, close_loop=true, face_type=:quad)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)            
+        @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+       
+        n=[0.0,0.0,-1.0] # Downward
+        F, V = extrudecurve(Vc, d; s=1, n=n, num_steps=num_steps, close_loop=true, face_type=:quad)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)            
+        @test isapprox(zMax,0.0,atol = eps_level) && isapprox(zMin,-d,atol = eps_level)
+
+        n = normalizevector([1.0,0.0,1.0]) # 45 degree direction upward
+        F, V = extrudecurve(Vc, d; s=1, n=n, num_steps=num_steps, close_loop=true, face_type=:quad)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)            
+        @test isapprox(zMax,sqrt(2.0)*d/2,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+    end
+
+    @testset "face_type=:quad" begin
+        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)
+
+        @test F isa Vector{QuadFace{Int64}}
+        @test length(F) == nc*(num_steps-1)
+
+        ind = round.(Int64,range(1,length(V),5))
+        @test V isa Vector{Point3{Float64}}
+        @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+        @test isapprox(V[ind],Point3{Float64}[[1.0, 0.0, 0.0], [2.83276944882399e-16, -1.0, 0.75], 
+        [-0.9238795325112867, -0.3826834323650899, 1.5], [-0.38268343236509034, 0.9238795325112865, 2.25], 
+        [0.9238795325112865, 0.3826834323650904, 3.0]],atol = eps_level)
+    end
+
+    @testset "face_type=:tri_slash" begin
+        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:tri_slash)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)
+
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == (nc*(num_steps-1))*2
+
+        ind = round.(Int64,range(1,length(V),5))
+        @test V isa Vector{Point3{Float64}}
+        @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+        @test isapprox(V[ind],Point3{Float64}[[1.0, 0.0, 0.0], [2.83276944882399e-16, -1.0, 0.75], 
+        [-0.9238795325112867, -0.3826834323650899, 1.5], [-0.38268343236509034, 0.9238795325112865, 2.25], 
+        [0.9238795325112865, 0.3826834323650904, 3.0]],atol = eps_level)
+    end
+
+    @testset "face_type=:tri" begin
+        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:tri)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)
+
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == (nc*(num_steps-1))*2
+
+        ind = round.(Int64,range(1,length(V),5))
+        @test V isa Vector{Point3{Float64}}
+        @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+        @test isapprox(V[ind],Point3{Float64}[[1.0, 0.0, 0.0], [-0.1913417161825446, -0.9619397662556435, 0.75], 
+        [-0.9238795325112867, -0.3826834323650899, 1.5], [-0.19134171618254525, 0.9619397662556433, 2.25], 
+        [0.9238795325112865, 0.3826834323650904, 3.0]],atol = eps_level)
+    end
+
 end
-
 
 
 @testset "separate vertices" begin
