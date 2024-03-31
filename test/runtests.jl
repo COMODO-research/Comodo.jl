@@ -34,6 +34,7 @@ end
     end
 end
 
+
 @testset "gridpoints" verbose = true begin
 
     @testset "with 1 vector" begin
@@ -1903,6 +1904,37 @@ end
 
 end
 
+@testset "meshgroup" verbose = true begin
+    @testset "Single face" begin
+        # Single triangle
+        F = TriangleFace{Int64}[[1,2,3]]
+        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0]]
+        C = meshgroup(F)
+        @test C == [1]
+
+        # Single quad
+        F = QuadFace{Int64}[[1,2,3,4]]
+        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],[0.0,1.0,0.0]]
+        C = meshgroup(F)
+        @test C == [1]
+    end
+
+    @testset "Two separate faces" begin
+        # Two triangles
+        F = TriangleFace{Int64}[[1,2,3],[4,5,6]]
+        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],
+                            [0.0,0.0,1.0],[1.0,0.0,1.0],[1.0,1.0,1.0]]
+        C = meshgroup(F)
+        @test C == [1,2]
+
+        # Two quads
+        F = QuadFace{Int64}[[1,2,3,4],[5,6,7,8]]
+        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],[0.0,1.0,0.0],
+                            [0.0,0.0,1.0],[1.0,0.0,1.0],[1.0,1.0,1.0],[0.0,1.0,1.0]]
+        C = meshgroup(F)
+        @test C == [1,2]
+    end
+end
 
 @testset "separate vertices" begin
 
