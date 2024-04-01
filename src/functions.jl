@@ -1145,8 +1145,6 @@ method both refines and smoothes the geometry through spline approximation.
 # References
 [Charles Loop, Smooth Subdivision Surfaces Based on Triangles M.S. Mathematics Thesis, University of Utah. 1987.](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/thesis-10.pdf)
 [Jos Stam, Charles Loop, Quad/Triangle Subdivision, doi: 10.1111/1467-8659.t01-2-00647](https://doi.org/10.1111/1467-8659.t01-2-00647)
-
-
 """
 function subtri(F,V,n; method = :linear)
     
@@ -1226,6 +1224,7 @@ function subtri(F,V,n; method = :linear)
     end
 end
 
+
 function subquad(F,V,n; method=:linear)
     if iszero(n)
         return F,V
@@ -1289,6 +1288,7 @@ function subquad(F,V,n; method=:linear)
     end
 end
 
+
 # Create geodesic dome
 function geosphere(n,r)
     M = platonicsolid(4,r)
@@ -1304,6 +1304,7 @@ function geosphere(n,r)
     end
     return F,V
 end
+
 
 function hexbox(boxDim::Vector{T},boxEl::Vector{Int64}) where T <: Real
     boxNod = boxEl.+1 # Number of nodes in each direction
@@ -1378,6 +1379,7 @@ function hexbox(boxDim::Vector{T},boxEl::Vector{Int64}) where T <: Real
     return E,V,F,Fb,CFb_type
 end
 
+
 function con_face_edge(F,E_uni=nothing,indReverse=nothing)
     if isnothing(E_uni) | isnothing(indReverse)
         E = meshedges(F)
@@ -1385,6 +1387,7 @@ function con_face_edge(F,E_uni=nothing,indReverse=nothing)
     end
     return [Vector{Int64}(a) for a ∈ eachrow(reshape(indReverse,length(F),length(F[1])))] # [indReverse[[1,2,3].+ (i-1)*3] for i ∈ eachindex(F)]
 end
+
 
 function con_edge_face(F,E_uni=nothing,indReverse=nothing)
     if isnothing(E_uni) || isnothing(indReverse)
@@ -1401,6 +1404,7 @@ function con_edge_face(F,E_uni=nothing,indReverse=nothing)
     end 
     return con_E2F
 end
+
 
 function con_face_face(F,E_uni=nothing,indReverse=nothing,con_E2F=nothing,con_F2E=nothing)
     if length(F)>1 # More than one face so compute connectivity
@@ -1428,6 +1432,7 @@ function con_face_face(F,E_uni=nothing,indReverse=nothing,con_E2F=nothing,con_F2
     end
 end
 
+
 function con_face_face_v(F,V=nothing,con_V2F=nothing)
     if length(F)>1 # More than one face so compute connectivity
         if isnothing(con_V2F) 
@@ -1447,6 +1452,7 @@ function con_face_face_v(F,V=nothing,con_V2F=nothing)
     end
 end
 
+
 function con_vertex_simplex(F,V=nothing)
     if isnothing(V)
         n = maximum(reduce(vcat,F))
@@ -1462,13 +1468,16 @@ function con_vertex_simplex(F,V=nothing)
     return con_V2F
 end
 
+
 function con_vertex_face(F,V=nothing)
     return con_vertex_simplex(F,V)
 end
 
+
 function con_vertex_edge(E,V=nothing)
     return con_vertex_simplex(E,V)
 end
+
 
 function con_edge_edge(E_uni,con_V2E=nothing)
     if isnothing(con_V2E)
@@ -1484,6 +1493,7 @@ function con_edge_edge(E_uni,con_V2E=nothing)
     end
     return con_E2E
 end
+
 
 function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
     if isnothing(V)
@@ -1509,6 +1519,7 @@ function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
     return con_V2V
 
 end
+
 
 function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
     if isnothing(V)
@@ -2378,6 +2389,7 @@ function ray_triangle_intersect(F::Vector{TriangleFace{Int64}},V,ray_origin,ray_
     end
     return P,indIntersect
 end
+
 function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
 
     # Edge vectors

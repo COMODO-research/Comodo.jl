@@ -2061,7 +2061,75 @@ end
 end
 
 
-@testset "separate vertices" begin
+# @testset "distseedpoints" verbose = true begin
+
+# end
+
+@testset "ray_triangle_intersect" verbose = true begin
+    eps_level = 0.001
+
+    # Single cube
+    r = 2 * sqrt(3) / 2
+    M = cube(r)
+    F = faces(M)
+    V = coordinates(M)
+    F = quad2tri(F,V,convert_method = :forward)
+    @testset "ray" begin 
+        ray_origin = GeometryBasics.Point3{Float64}(0.25,0.0,1.5) # Slight off so we hit one triangle, not two at the edge
+        ray_vector = Vec3{Float64}(0.0,0.0,-1)
+
+        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 1)
+        @test isapprox(P,Point3{Float64}[[0.25, 0.0, 1.0]],atol=eps_level)
+        @test isa(indIntersect,Vector{Int64}) # indIntersect == 3
+
+        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 0)
+        @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0], [0.25, 0.0, 1.0]],atol=eps_level)
+        @test isa(indIntersect,Vector{Int64})
+
+        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = -1)
+        @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0]],atol=eps_level)
+        @test isa(indIntersect,Vector{Int64})
+
+        ray_origin = GeometryBasics.Point3{Float64}(0.0,0.0,1.5) # At centre so hits an edge between two triangles
+        ray_vector = Vec3{Float64}(0.0,0.0,-1)
+        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 0, tolEps = 1e-3)
+        @test isapprox(P,Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, -1.0], 
+                                         [0.0, 0.0,  1.0], [0.0, 0.0,  1.0]],atol=eps_level)
+        @test isa(indIntersect,Vector{Int64})
+    end
+
+    @testset "line type" begin 
+        ray_origin = GeometryBasics.Point3{Float64}(0.25,0.0,1.5) # Slight off so we hit one triangle, not two at the edge
+        ray_vector = Vec3{Float64}(0.0,0.0,-1) # Shorst so only one hit
+
+        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 1)
+        @test isapprox(P,Point3{Float64}[[0.25, 0.0, 1.0]],atol=eps_level)
+        @test isa(indIntersect,Vector{Int64}) # indIntersect == 3
+
+        ray_vector = Vec3{Float64}(0.0,0.0,-3) # Long so two hits potentially
+
+        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 1)
+        @test isapprox(P,Point3{Float64}[[0.25, 0.0, 1.0]],atol=eps_level)
+        @test isa(indIntersect,Vector{Int64}) # indIntersect == 3
+
+        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 0)
+        @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0], [0.25, 0.0, 1.0]],atol=eps_level)
+        @test isa(indIntersect,Vector{Int64})
+
+        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = -1)
+        @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0]],atol=eps_level)
+        @test isa(indIntersect,Vector{Int64})
+
+        ray_origin = GeometryBasics.Point3{Float64}(0.0,0.0,1.5) # At centre so hits an edge between two triangles
+        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 0, tolEps = 1e-3)
+        @test isapprox(P,Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, -1.0], 
+                                         [0.0, 0.0,  1.0], [0.0, 0.0,  1.0]],atol=eps_level)
+        @test isa(indIntersect,Vector{Int64})
+    end
+end
+
+
+@testset "separate_vertices" begin
 
     eps_level = 0.001
     r = 2 * sqrt(3) / 2
