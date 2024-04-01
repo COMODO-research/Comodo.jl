@@ -1904,6 +1904,7 @@ end
 
 end
 
+
 @testset "meshgroup" verbose = true begin
     @testset "Single face" begin
         # Single triangle
@@ -1934,7 +1935,131 @@ end
         C = meshgroup(F)
         @test C == [1,2]
     end
+
+    @testset "Single group" begin
+        # Single tetrahedron
+        M = tetrahedron(1.0)
+        F = faces(M)
+        C = meshgroup(F)
+        @test C == ones(length(F))
+
+        # Single cube
+        M = cube(1.0)
+        F = faces(M)
+        C = meshgroup(F)
+        @test C == ones(length(F))
+    end
+
+    @testset "Two groups" begin
+        # Two tetrahedrons
+        M = tetrahedron(1.0)
+        F = faces(M)
+        V = coordinates(M)
+        n = length(F)
+        F2 = map(f-> f.+length(V),F)
+        V2 = map(v-> Point{3, Float64}(2.0+v[1],v[2],v[3]),V)
+        append!(F,F2)
+        append!(V,V2)
+        C = meshgroup(F)
+        @test C == repeat(1:2,inner=n)
+
+        # Two tetrahedrons
+        M = cube(1.0)
+        F = faces(M)
+        V = coordinates(M)
+        n = length(F)
+        F2 = map(f-> f.+length(V),F)
+        V2 = map(v-> Point{3, Float64}(2.0+v[1],v[2],v[3]),V)
+        append!(F,F2)
+        append!(V,V2)
+        C = meshgroup(F)
+        @test C == repeat(1:2,inner=n)
+    end
 end
+
+
+@testset "distmarch" verbose=true begin
+    eps_level = 0.001
+
+    @testset "Single face" begin
+        # Single triangle
+        F = TriangleFace{Int64}[[1,2,3]]
+        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0]]
+        d,dd,l = distmarch(F,V,[1])
+        @test isapprox(d,[0.0,1.0,sqrt(2)],atol=eps_level)
+
+        # Single triangle, un-used nodes
+        F = TriangleFace{Int64}[[1,2,3]]
+        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],
+                            [1.0,0.0,0.0],[1.0,1.0,0.0]]
+        d,dd,l = distmarch(F,V,[1])
+        r = [0.0,1.0,sqrt(2),NaN,NaN]
+        b = .!isnan.(r)
+        @test isapprox(d[b],r[b],atol=eps_level) # Check reached entries
+        @test all(isnan.(d[.!b])) # Now check NaNs
+
+        # Single quad
+        F = QuadFace{Int64}[[1,2,3,4]]
+        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],[0.0,1.0,0.0]]
+        d,dd,l = distmarch(F,V,[1])
+        @test isapprox(d,[0.0,1.0,sqrt(2),1.0],atol=eps_level)
+    end
+
+    @testset "Multi-face meshes" begin
+        # Bowtie triangle set
+        V = Point3{Float64}[[0.0, 1.0, 0.0], [0.0, -1.0, 0.0], [1.0, 0.0, 0.0], 
+                            [2.0, 1.0, 0.0], [2.0, -1.0, 0.0]]
+        F = TriangleFace{Int64}[TriangleFace(1, 2, 3), TriangleFace(5, 4, 3)]
+        d,dd,l = distmarch(F,V,[1])
+        @test isapprox(d,[0.0,2.0,sqrt(2),2*sqrt(2),2*sqrt(2)],atol=eps_level)
+        
+        # Two disconnected triangles
+        V = Point3{Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], 
+                            [0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [1.0, 1.0, 1.0]]
+        F = TriangleFace{Int64}[TriangleFace(1, 2, 3), TriangleFace(4, 5, 6)]
+        d,dd,l = distmarch(F,V,[1])
+        r = [0.0,1.0,sqrt(2),NaN,NaN,NaN]
+        b = .!isnan.(r)
+        @test isapprox(d[b],r[b],atol=eps_level) # Check reached entries
+        @test all(isnan.(d[.!b])) # Now check NaNs
+
+        # Two disconnected quads
+        V = Point3{Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0,1.0,0.0],
+                            [0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [1.0, 1.0, 1.0], [0.0,1.0,1.0]]
+        F = QuadFace{Int64}[QuadFace(1, 2, 3, 4), QuadFace(5, 6, 7, 8)]
+        d,dd,l = distmarch(F,V,[1])
+        r = [0.0,1.0,sqrt(2),1.0,NaN,NaN,NaN,NaN]
+        b = .!isnan.(r)
+        @test isapprox(d[b],r[b],atol=eps_level) # Check reached entries
+        @test all(isnan.(d[.!b])) # Now check NaNs
+
+        # Single cube
+        r = 2 * sqrt(3) / 2
+        M = cube(r)
+        F = faces(M)
+        V = coordinates(M)
+        d,dd,l = distmarch(F,V,[1])
+        @test isapprox(d,[0.0, 2.0, 2.8284271247461903, 2.0, 2.0,
+                         2.8284271247461903, 4.82842712474619, 2.8284271247461903],atol=eps_level) 
+        
+        # Triangulated sphere, distance should approximate π 
+        r = 1.0
+        F,V = geosphere(4,r)
+        z = [v[3] for v ∈ V]
+        indStart =[findmin(z)[2]]
+        d,dd,l = distmarch(F,V,indStart)
+        @test isapprox(maximum(d),π,atol=0.01)
+
+        # Quadrangulated sphere, distance should approximate π 
+        r = 1.0
+        F,V = quadsphere(4,r)
+        z = [v[3] for v ∈ V]
+        indStart =[findmin(z)[2]]
+        d,dd,l = distmarch(F,V,indStart)
+        @test isapprox(maximum(d),π,atol=0.01)
+    end
+end
+
 
 @testset "separate vertices" begin
 

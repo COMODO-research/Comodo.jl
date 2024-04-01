@@ -1403,40 +1403,48 @@ function con_edge_face(F,E_uni=nothing,indReverse=nothing)
 end
 
 function con_face_face(F,E_uni=nothing,indReverse=nothing,con_E2F=nothing,con_F2E=nothing)
-    if isnothing(E_uni)| isnothing(indReverse)
-        E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
-    end    
-    if isnothing(con_E2F) 
-        con_E2F = con_edge_face(F,E_uni)
-    end
-    if isnothing(con_F2E)
-        con_F2E = con_face_edge(F,E_uni,indReverse)                 
-    end
-    con_F2F = [Vector{Int64}() for _ ∈ 1:length(F)]
-    for i_f ∈ eachindex(F)
-        for i ∈ reduce(vcat,con_E2F[con_F2E[i_f]])    
-            if i!=i_f     
-                push!(con_F2F[i_f],i)
-            end 
+    if length(F)>1 # More than one face so compute connectivity
+        if isnothing(E_uni)| isnothing(indReverse)
+            E = meshedges(F)
+            E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        end    
+        if isnothing(con_E2F) 
+            con_E2F = con_edge_face(F,E_uni)
         end
+        if isnothing(con_F2E)
+            con_F2E = con_face_edge(F,E_uni,indReverse)                 
+        end
+        con_F2F = [Vector{Int64}() for _ ∈ 1:length(F)]
+        for i_f ∈ eachindex(F)
+            for i ∈ reduce(vcat,con_E2F[con_F2E[i_f]])    
+                if i!=i_f     
+                    push!(con_F2F[i_f],i)
+                end 
+            end
+        end
+        return con_F2F
+    else # Just one face, so return empty
+        return [Vector{Int64}() ]
     end
-    return con_F2F
 end
 
 function con_face_face_v(F,V=nothing,con_V2F=nothing)
-    if isnothing(con_V2F) 
-        con_V2F = con_vertex_face(F,V)  # VERTEX-FACE connectivity
-    end
-    con_F2F = [Vector{Int64}() for _ ∈ 1:length(F)]
-    for i_f ∈ eachindex(F)
-        for i ∈ reduce(vcat,con_V2F[F[i_f]])    
-            if i!=i_f     
-                push!(con_F2F[i_f],i)
-            end 
+    if length(F)>1 # More than one face so compute connectivity
+        if isnothing(con_V2F) 
+            con_V2F = con_vertex_face(F,V)  # VERTEX-FACE connectivity
         end
+        con_F2F = [Vector{Int64}() for _ ∈ 1:length(F)]
+        for i_f ∈ eachindex(F)
+            for i ∈ reduce(vcat,con_V2F[F[i_f]])    
+                if i!=i_f     
+                    push!(con_F2F[i_f],i)
+                end 
+            end
+        end
+        return con_F2F
+    else # Just one face, so return empty
+        return [Vector{Int64}() ]
     end
-    return con_F2F
 end
 
 function con_vertex_simplex(F,V=nothing)
@@ -1479,7 +1487,7 @@ end
 
 function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
     if isnothing(V)
-        n = maximum(reduce(vcat,E))
+        n = maximum(reduce(vcat,F))
     else 
         n = length(V)
     end
@@ -1490,14 +1498,16 @@ function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
 
     con_V2V = [Vector{Int64}() for _ ∈ 1:n]
     for i_v ∈ 1:n
-        for i ∈ unique(reduce(vcat,F[con_V2F[i_v]]))
-            if i_v!=i
-                push!(con_V2V[i_v],i)
+        if !isempty(con_V2F[i_v])
+            for i ∈ unique(reduce(vcat,F[con_V2F[i_v]]))
+                if i_v!=i
+                    push!(con_V2V[i_v],i)
+                end
             end
         end
     end
-
     return con_V2V
+
 end
 
 function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
@@ -1512,9 +1522,11 @@ function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
 
     con_V2V = [Vector{Int64}() for _ ∈ 1:n]
     for i_v ∈ 1:n
-        for i ∈ reduce(vcat,E[con_V2E[i_v]])
-            if i_v!=i
-                push!(con_V2V[i_v],i)
+        if !isempty(con_V2E[i_v])
+            for i ∈ reduce(vcat,E[con_V2E[i_v]])
+                if i_v!=i
+                    push!(con_V2V[i_v],i)
+                end
             end
         end
     end
@@ -2278,33 +2290,40 @@ function distmarch(F,V,indStart; d=nothing, dd=nothing, dist_tol=1e-3,con_V2V=no
     end
 
     # Set start distances to zero 
+    is_isolated =  isempty.(con_V2V)
+    d[is_isolated] .= NaN # Set isolated (non-connected) points to NaN
     d[indStart] .= 0.0
     l[indStart] .= 1:length(indStart)
     
-    c = false
-    ds = -1.0 # Set negative initially 
-
-    boolCheck = fill(true,length(V))
+    notGrowing = false
+    dist_sum_previous = -1.0 # Set negative initially 
+    count_inf_previous = length(d)-length(indStart) # number of Inf values currently
     while true                          
         for i ∈ eachindex(V) # For each point            
             for ii ∈ con_V2V[i] # Check umbrella neighbourhood
+                # Get closest point and distance from umbrella
                 minVal,minInd = findmin([d[ii],dd[sort([i,ii])]+d[i]])            
                 if minInd==2
-                    d[ii] = minVal                          
-                    l[ii] = l[i]
+                    d[ii] = minVal # Distance                          
+                    l[ii] = l[i] # Index
                 end
             end            
         end
-        if !any(isinf.(d)) # Start checking once all are no longer Inf
-            if c # If we were here before
-                if abs(sum(d)-ds)<dist_tol                                        
+        bool_inf = isinf.(d) # Booling to check number of points left at Inf
+        count_inf = count(bool_inf)
+        if count_inf == count_inf_previous #!any(isinf.(d)) # Start checking once all are no longer Inf
+            dist_sum = sum(d[.!is_isolated .&& .!bool_inf])
+            if notGrowing # If we were here before
+                if abs(dist_sum-dist_sum_previous)<dist_tol                                        
                     break                    
                 end
             end
-            c = true # Flip to denote we've been here           
-            ds = sum(d) # Now start computing the sum to check convergence
+            notGrowing = true # Flip to denote we've been here           
+            dist_sum_previous = dist_sum # Now start computing the sum to check convergence
         end
+        count_inf_previous = count_inf
     end
+    d[isinf.(d)] .= NaN # Change Inf to NaN
     return d,dd,l
 end
 

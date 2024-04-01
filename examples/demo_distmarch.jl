@@ -6,7 +6,7 @@ using LinearAlgebra
 using ProgressMeter
 
 # Example geometry
-testCase = 7
+testCase = 3
 if testCase == 1
     s=1.0
     V=Vector{GeometryBasics.Point{3, Float64}}(undef,5)
@@ -18,6 +18,7 @@ if testCase == 1
     F[1 ] = TriangleFace{Int64}(1,2,3)
     # F,V=subtri(F,V,2)
 elseif testCase==2
+    # Bowtie mesh
     s=1.0
     V=Vector{GeometryBasics.Point{3, Float64}}(undef,5)
     V[1 ] = GeometryBasics.Point{3, Float64}( 0.0,    s, 0.0)
@@ -28,7 +29,7 @@ elseif testCase==2
 
     F = Vector{TriangleFace{Int64}}(undef,2)
     F[1 ] = TriangleFace{Int64}(1,2,3)
-    F[2 ] = TriangleFace{Int64}(3,4,5)
+    F[2 ] = TriangleFace{Int64}(5,4,3)
     # F,V=subtri(F,V,2)
 elseif testCase==3
     r = 1.0
@@ -63,7 +64,6 @@ elseif testCase==7 # Merged STL for single object
     V = togeometrybasics_points(coordinates(M))
     F,V,_ = mergevertices(F,V)
 end
-
 
 z = [v[3] for v ∈ V]
 
