@@ -2445,7 +2445,7 @@ which features a nice overview of the theory/steps involved in this algorithm.
 # References 
 [F. Cazals and M. Pouget, "Estimating differential quantities using polynomial fitting of osculating jets", Computer Aided Geometric Design, vol. 22, no. 2, pp. 121-146, Feb. 2005, doi: 10.1016/j.cagd.2004.09.004](https://doi.org/10.1016/j.cagd.2004.09.004)
 """
-function mesh_curvature_polynomial(F::Vector{TriangleFace{Int64}},V::Vector{Point3{Float64}})
+function mesh_curvature_polynomial(F::Array{NgonFace{M, Int64}, 1},V::Vector{Point3{Float64}}) where M
     # Get the unique mesh edges
     E_uni = meshedges(F;unique_only=true) 
 

@@ -2129,6 +2129,65 @@ end
 end
 
 
+@testset "mesh_curvature_polynomial" verbose = true begin
+    tol_level = 0.01
+
+    # A sphere has constant curvature. Both K1 and K2 are equivalent. curvature is 1/r 
+    @testset "Triangulated sphere" begin
+        r = 10 
+        k_true = 1.0/r
+        F,V = geosphere(3,r) 
+        K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V)
+        @test isapprox(mean(K1),k_true,atol=tol_level)
+        @test isapprox(mean(K2),k_true,atol=tol_level)
+        @test isapprox(mean(H),k_true,atol=tol_level)
+        @test isapprox(sqrt(abs(mean(G))),k_true,atol=tol_level)
+    end
+
+    @testset "Quadrangulated sphere" begin
+        r = 10
+        k_true = 1.0/r
+        F,V = quadsphere(4,r) 
+        K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V)
+        @test isapprox(mean(K1),k_true,atol=tol_level)
+        @test isapprox(mean(K2),k_true,atol=tol_level)
+        @test isapprox(mean(H),k_true,atol=tol_level)
+        @test isapprox(sqrt(abs(mean(G))),k_true,atol=tol_level)
+    end
+
+    # For this algorithm the cube appears to have homogeneous curvature too that is 1.5/r
+    @testset "Cube" begin
+        r = sqrt(3) 
+        k_true = 1.5*(1.0/r) # Note only for the polynomial method
+        M = cube(r)
+        F = faces(M)
+        V = coordinates(M)
+        K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V)
+        @test isapprox(mean(K1),k_true,atol=tol_level)
+        @test isapprox(mean(K2),k_true,atol=tol_level)
+        @test isapprox(mean(H),k_true,atol=tol_level)
+        @test isapprox(sqrt(abs(mean(G))),k_true,atol=tol_level)
+    end
+
+    # For a cylinder k1=1/r while k2=0, hence H = 1/(2*R)
+    @testset "Cylinder" begin
+        r = 25
+        s = r/10
+        nc = round(Int64,(2*pi*r)/s)
+        d = r*2
+        Vc = circlepoints(r, nc; dir=:cw)
+        num_steps = round(Int64,d/s)
+        num_steps = num_steps + Int64(iseven(num_steps))
+        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
+        K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V)
+        @test isapprox(mean(K1),1.0/r,atol=tol_level)
+        @test isapprox(mean(K2),0.0,atol=tol_level)
+        @test isapprox(mean(H),1.0/(2*r),atol=tol_level)
+        @test isapprox(sqrt(abs(mean(G))),0.0,atol=tol_level)
+    end
+
+end
+
 @testset "separate_vertices" begin
 
     eps_level = 0.001
