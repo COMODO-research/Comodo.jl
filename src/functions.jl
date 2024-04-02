@@ -123,7 +123,7 @@ space. Points are defined as per the input ranges or range vectors. The output
 point vector contains elements of the type `GeometryBasics.Point3`. 
 """
 function gridpoints(x::Union{Vector{T}, AbstractRange{T}}, y=x, z=x) where T<:Real
-    reshape([GeometryBasics.Point{3, T}(x, y, z) for z in z, y in y, x in x], 
+    reshape([GeometryBasics.Point{3, Float64}(x, y, z) for z in z, y in y, x in x], 
                              length(x)*length(y)*length(z))
 end  
 
@@ -342,6 +342,14 @@ function lerp_(x::Union{T,Vector{T}, AbstractRange{T}},y,xi::T) where T <: Real
     return yi
 end
 
+"""
+    dist(V1,V2)
+# Description
+Function compute an nxm distance matrix for the n inputs points in `V1`, and the
+m input points in `V2`. The input points may be multidimensional, in face they
+can be any type supported by the `euclidean` function of `Distances.jl`. 
+See also: https://github.com/JuliaStats/Distances.jl
+"""
 function dist(V1,V2)
     D = Matrix{Float64}(undef,length(V1),length(V2))   
     for i ∈ eachindex(V1)
@@ -368,6 +376,16 @@ function dist(v1::T,V2::Vector{T}) where T <: AbstractVector
     return D
 end
 
+"""
+    mindist(V1,V2; getIndex=false, skipSelf = false )
+Returns the closest point distance for the input points `V1` with respect to the 
+input points `V2`. If the optional parameter `getIndex` is set to `true` (`false` 
+by default) then this function also returns the indices of the nearest points 
+in `V2` for each point in `V1`. For self-distance evaluation, i.e. if the same 
+point set is provided twice, then the optional parameter `skipSelf` can be set 
+t0 `true` (default is `false`) if "self distances" (e.g. the nth point to the 
+nth point) are to be avoided.  
+"""
 function mindist(V1,V2; getIndex=false, skipSelf = false )
     D = Vector{Float64}(undef,length(V1))
     d = Vector{Float64}(undef,length(V2))
@@ -395,6 +413,14 @@ function mindist(V1,V2; getIndex=false, skipSelf = false )
     end
 end
 
+
+"""
+    unique_dict_index(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+Returns the unique entries in `X` as well as the indices for them. 
+The optional parameter `sort_entries` (default is `false`) can be set to `true`
+if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
+be seen as the same as [2,1] for instance.  
+"""
 function unique_dict_index(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
@@ -417,6 +443,15 @@ function unique_dict_index(X::Union{Array{T},Tuple{T}}; sort_entries=false) wher
     return xUni, indUnique
 end
 
+
+"""
+    unique_dict_index_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+Returns the unique entries in `X` as well as the indices for them and the 
+reverse indices to retrieve the original from the unique entries. 
+The optional parameter `sort_entries` (default is `false`) can be set to `true`
+if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
+be seen as the same as [2,1] for instance.  
+"""
 function unique_dict_index_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
@@ -445,6 +480,15 @@ function unique_dict_index_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=fal
     return xUni, indUnique, indInverse
 end
 
+
+"""
+    unique_dict_index_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+Returns the unique entries in `X` as well as the indices for them and the counts 
+in terms of how often they occured. 
+The optional parameter `sort_entries` (default is `false`) can be set to `true`
+if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
+be seen as the same as [2,1] for instance.  
+"""
 function unique_dict_index_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
@@ -475,6 +519,16 @@ function unique_dict_index_count(X::Union{Array{T},Tuple{T}}; sort_entries=false
     return xUni, indUnique, c
 end
 
+
+"""
+    unique_dict_index_inverse_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+Returns the unique entries in `X` as well as the indices for them and the reverse 
+indices to retrieve the original from the unique entries, and also the counts in 
+terms of how often they occured. 
+The optional parameter `sort_entries` (default is `false`) can be set to `true`
+if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
+be seen as the same as [2,1] for instance.  
+"""
 function unique_dict_index_inverse_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
@@ -507,6 +561,15 @@ function unique_dict_index_inverse_count(X::Union{Array{T},Tuple{T}}; sort_entri
     return xUni, indUnique, indInverse,c
 end
 
+
+"""
+unique_dict_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+Returns the unique entries in `X` as well as the counts in terms of how often 
+they occured. 
+The optional parameter `sort_entries` (default is `false`) can be set to `true`
+if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
+be seen as the same as [2,1] for instance.  
+"""
 function unique_dict_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
@@ -533,6 +596,15 @@ function unique_dict_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) wher
     return xUni, c
 end
 
+
+"""
+    unique_dict_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any 
+Returns the unique entries in `X` as well as the reverse indices to retrieve the 
+original from the unique entries. 
+The optional parameter `sort_entries` (default is `false`) can be set to `true`
+if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
+be seen as the same as [2,1] for instance.  
+"""
 function unique_dict_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any 
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
@@ -560,11 +632,15 @@ function unique_dict_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) wh
     return xUni, indInverse
 end 
 
+"""
+unique_dict(X::AbstractVector{T}) where T <: Real    
+Returns the unique entries in `X` as well as the indices for them and the reverse 
+indices to retrieve the original from the unique entries. 
+"""
 function unique_dict(X::AbstractVector{T}) where T <: Real    
     d = OrderedDict{T ,Int64}() # Use dict to keep track of used values    
     indUnique = Vector{Int64}()
     indReverse = Vector{Int64}(undef,length(X))
-    # c = Vector{Int64}()
     j=0
     for i ∈ eachindex(X)        
         if !haskey(d, X[i])                                          
@@ -576,9 +652,20 @@ function unique_dict(X::AbstractVector{T}) where T <: Real
             indReverse[i] = d[X[i]]            
         end        
     end
-    return collect(keys(d)), indUnique, indReverse #, c
+    return collect(keys(d)), indUnique, indReverse
 end
 
+
+"""
+gunique(X; return_unique=true, return_index=false, return_inverse=false, return_counts=false, sort_entries=false)
+Returns the unique entries in `X`. Depending on the optional parameter choices
+the indices for the unique entries, the reverse indices to retrieve the original
+from the unique entries, as well as counts in terms of how often they occured, 
+can be returned. 
+The optional parameter `sort_entries` (default is `false`) can be set to `true`
+if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
+be seen as the same as [2,1] for instance.  
+"""
 function gunique(X; return_unique=true, return_index=false, return_inverse=false, return_counts=false, sort_entries=false)
     # Use required unique function 
     if return_unique==true && return_index==false && return_inverse==false && return_counts==false
@@ -610,6 +697,12 @@ function gunique(X; return_unique=true, return_index=false, return_inverse=false
 end
 
 
+"""
+    unique_simplices(F,V=nothing)
+Returns the unique simplices in F as well as the indices of the unique simplices
+and the reverse indices to retrieve the original faces from the unique faces. 
+Entries in F are sorted such that the node order does not matter. 
+"""
 function unique_simplices(F,V=nothing)
     if isnothing(V)
         n = maximum(reduce(vcat,F)) 
@@ -748,7 +841,13 @@ function meshedges(M::GeometryBasics.Mesh; unique_only=false)
     return meshedges(faces(M); unique_only=unique_only)
 end
 
-# Function to create the surface geometry data for an icosahedron
+
+"""
+    icosahedron(r=1.0)
+
+# Description
+Creates a GeometryBasics.Mesh for an icosahedron with radius `r`
+"""
 function icosahedron(r=1.0)
 
     ϕ = Base.MathConstants.golden # (1.0+sqrt(5.0))/2.0, Golden ratio
@@ -796,7 +895,13 @@ function icosahedron(r=1.0)
     return GeometryBasics.Mesh(V,F)
 end
 
-# Function to create the surface geometry data for a octahedron
+
+"""
+    octahedron(r=1.0)
+    
+# Description
+Creates a GeometryBasics.Mesh for an octahedron with radius `r`
+"""
 function octahedron(r=1.0)
 
     s = r/sqrt(2.0)
@@ -824,7 +929,13 @@ function octahedron(r=1.0)
     return GeometryBasics.Mesh(V,F)
 end
 
-# Function to create the surface geometry data for a dodecahedron
+
+"""
+    dodecahedron(r=1.0)
+    
+# Description
+Creates a GeometryBasics.Mesh for an dodecahedron with radius `r`
+"""
 function dodecahedron(r=1.0)
 
     ϕ = Base.MathConstants.golden # (1.0+sqrt(5.0))/2.0, Golden ratio
@@ -873,7 +984,13 @@ function dodecahedron(r=1.0)
     return GeometryBasics.Mesh(V,F)
 end
 
-# Function to create the surface geometry data for a cube
+
+"""
+    cube(r=1.0)
+    
+# Description
+Creates a GeometryBasics.Mesh for an cube with radius `r`
+"""
 function cube(r=1.0)
 
     # Create vertices       
@@ -901,7 +1018,13 @@ function cube(r=1.0)
     return GeometryBasics.Mesh(V,F)
 end
 
-# Function to create the surface geometry data for a tetrahedron
+
+"""
+    tetrahedron(r=1.0)
+    
+# Description
+Creates a GeometryBasics.Mesh for an tetrahedron with radius `r`
+"""
 function tetrahedron(r=1.0)
 
     # Create vertices    
@@ -924,6 +1047,7 @@ function tetrahedron(r=1.0)
     
     return GeometryBasics.Mesh(V,F)
 end
+
 
 """
     platonicsolid(n,r=1.0)
@@ -1440,7 +1564,7 @@ function con_face_face_v(F,V=nothing,con_V2F=nothing)
         end
         con_F2F = [Vector{Int64}() for _ ∈ 1:length(F)]
         for i_f ∈ eachindex(F)
-            for i ∈ reduce(vcat,con_V2F[F[i_f]])    
+            for i ∈ unique(reduce(vcat,con_V2F[F[i_f]]))    
                 if i!=i_f     
                     push!(con_F2F[i_f],i)
                 end 
@@ -1791,9 +1915,9 @@ end
 
 function circlepoints(r,n; dir=:acw)
     if dir==:acw
-        return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0,2*π-(2*π)/n,n)]
+        return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0.0,2.0*π-(2.0*π)/n,n)]
     elseif dir==:cw
-        return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0,(2*π)/n-2*π,n)]
+        return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0.0,(2.0*π)/n-2.0*π,n)]
     else
         error("Invalid dir specified, use :acw or :cw")
     end
@@ -2500,10 +2624,19 @@ function mesh_curvature_polynomial(F::Array{NgonFace{M, Int64}, 1},V::Vector{Poi
 end
     
 function mesh_curvature_polynomial(M::GeometryBasics.Mesh) 
-        return mesh_curvature_polynomial(faces(M),coordinates(V))
+        return mesh_curvature_polynomial(faces(M),coordinates(M))
 end
 
-function separate_vertices(F,V)
+"""
+    separate_vertices(F,V)
+    separate_vertices(M::GeometryBasics.Mesh)
+
+This function takes the input mesh defined by the faces `F` and vertices `V` and
+separates any shared vertices. It does this by giving each face its own set of 
+unshared vertices. Note that any unused points are not returned in the output 
+point array `Vn`. 
+"""
+function separate_vertices(F::Array{NgonFace{N, Int64}, 1},V::Vector{Point3{Float64}}) where N
     Vn = Vector{eltype(V)}()
     Fn = deepcopy(F)
     c = 0 
@@ -2524,11 +2657,39 @@ function separate_vertices(M::GeometryBasics.Mesh)
     return GeometryBasics.Mesh(Vn,Fn)
 end
 
-function curve_length(V)
-    return pushfirst!(cumsum(norm.(diff(V))),0.0) # Along curve distance from start
+"""
+    curve_length(V::Array{Point{N, Float64}, 1}; close_loop=false) where N
+
+This function computes the stepwise length of the input curve defined by the ND 
+points in `V`. The output is a vector containining the distance for each point, 
+and the total length therefore the last entry. 
+
+If the optional parameter `close_loop` is set to `true` then it is assumed that
+the curve should be seen as closed, i.e. the last entry is for returning to the 
+start point from the last point in `V`. 
+"""
+function curve_length(V::Array{Point{N, Float64}, 1}; close_loop=false) where N
+    if close_loop 
+        return pushfirst!(cumsum(push!(norm.(diff(V)),norm(V[1]-V[end]))),0.0) # Along curve distance from start-to-start
+    else
+        return pushfirst!(cumsum(norm.(diff(V))),0.0) # Along curve distance from start-to-end        
+    end 
 end
 
-function evenly_sample(V, n; rtol = 1e-8, niter = 1)
+
+"""
+evenly_sample(V::Array{Point{N, Float64}, 1}, n::Int64; rtol = 1e-8, niter = 1) where N
+This function aims to evenly resample the input curve defined by the ND points 
+`V` using `n` points. The function returns the resampled points as well as the 
+spline interpolator `S` used. The output points can also be retriebed by using: 
+`S.(range(0.0, 1.0, n))`. 
+Note that the even sampling is defined in terms of the curve length for a 4th 
+order natural B-spline that interpolates the input data. Hence if significant 
+curvature exists for the B-spline between two adjacent data points then the 
+spacing between points in the output may be non-uniform (despite the allong 
+B-spline distance being uniform). 
+"""
+function evenly_sample(V::Array{Point{N, Float64}, 1}, n::Int64; rtol = 1e-8, niter = 1) where N
     m = length(V)
     T = curve_length(V) # Initialise as along curve (multi-linear) distance
     T ./= last(T) # Normalise

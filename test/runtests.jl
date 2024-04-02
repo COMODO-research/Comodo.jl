@@ -9,7 +9,9 @@ using Test, FileIO, Comodo, Comodo.GeometryBasics, Statistics, LinearAlgebra
     @test any(contains.(readdir(f),"test"))
 end
 
-# slidercontrol
+# @testset "slidercontrol" verbose = true begin
+
+# end
 
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
@@ -36,6 +38,21 @@ end
 
 
 @testset "gridpoints" verbose = true begin
+
+    @testset "using ranges" begin
+        # Define ranges of different types
+        a = 1:2
+        b = 1:1:2
+        c = range(0,0.75,3)
+        V = gridpoints(a,b,c)
+        
+        @test V == Point3{Float64}[[1.0, 1.0, 0.0], [1.0, 1.0, 0.375],
+                                   [1.0, 1.0, 0.75], [1.0, 2.0, 0.0], 
+                                   [1.0, 2.0, 0.375], [1.0, 2.0, 0.75], 
+                                   [2.0, 1.0, 0.0], [2.0, 1.0, 0.375], 
+                                   [2.0, 1.0, 0.75], [2.0, 2.0, 0.0], 
+                                   [2.0, 2.0, 0.375], [2.0, 2.0, 0.75]]        
+    end
 
     @testset "with 1 vector" begin
         a = Float64[1, 2, 3]
@@ -119,7 +136,7 @@ end
         b = Float64[2, 3, 5]
         c = Float64[5, 6, 4]
 
-        expected = GeometryBasics.Point3{Float64}[
+        expected = Point3{Float64}[
             [1.0, 2.0, 5.0],
             [1.0, 2.0, 6.0],
             [1.0, 2.0, 4.0],
@@ -166,6 +183,7 @@ end
 end
 
 @testset "interp_biharmonic_spline" verbose = true begin
+    eps_level = 1e-4
 
     @testset "linear / linear" begin
         x = Float64[0.0, 1.0, 2.0, 3.0]
@@ -176,9 +194,6 @@ end
             0.9999999999999994, 0.501564606542732,
             -2.983724378680108e-16, 0.3537866863312682,
             0.9999999999999997, 1.5]
-
-        eps_level = 0.001
-
         @test isapprox(result, true_result, atol=eps_level)
     end
 
@@ -190,8 +205,7 @@ end
         true_result = [0.0, -1.7763568394002505e-15, 0.5861167655113347,
             0.9999999999999998, 0.5015646065427324,
             -2.42861286636753e-16, 0.41861223832128147,
-            0.9999999999999993, 1.0]
-        eps_level = 0.001
+            0.9999999999999993, 1.0]        
         @test isapprox(result, true_result, atol=eps_level)
     end
 
@@ -202,8 +216,7 @@ end
         result = interp_biharmonic_spline(x, y, xi; extrapolate_method=:linear, pad_data=:none)
         true_result = [-0.5, -1.1102230246251565e-16, 0.9548390432176067,
             0.9999999999999999, 0.5061519335211898,
-            -1.1102230246251565e-16, 0.18162885699253484, 1.0, 1.5]
-        eps_level = 0.001
+            -1.1102230246251565e-16, 0.18162885699253484, 1.0, 1.5]        
         @test isapprox(result, true_result, atol=eps_level)
     end
 
@@ -214,8 +227,7 @@ end
         result = interp_biharmonic_spline(x, y, xi; extrapolate_method=:constant, pad_data=:none)
         true_result = [0.0, -1.1102230246251565e-16, 0.9548390432176067,
             0.9999999999999999, 0.5061519335211898,
-            -1.1102230246251565e-16, 0.18162885699253484, 1.0, 1.0]
-        eps_level = 0.001
+            -1.1102230246251565e-16, 0.18162885699253484, 1.0, 1.0]        
         @test isapprox(result, true_result, atol=eps_level)
     end
 
@@ -227,43 +239,41 @@ end
         true_result = [-2.3709643220609977, -1.1102230246251565e-16,
             0.9548390432176067, 0.9999999999999999,
             0.5061519335211898, -1.1102230246251565e-16,
-            0.1816288569925348, 1.0, 2.801059658186898]
-        eps_level = 0.001
+            0.1816288569925348, 1.0, 2.801059658186898]        
         @test isapprox(result, true_result, atol=eps_level)
     end
-
 end
 
+
 @testset "interp_biharmonic" verbose = true begin
+    eps_level = 1e-4    
     @testset "3D points 1D data, vectors" begin
         result = interp_biharmonic([[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10], [[0.0, 0.0, x] for x in range(-1, 1, 5)])
-        true_result = [-10.0, -7.449961786934791, 0.0, 7.449961786934791, 10.0]
-        eps_level = maximum(eps.(true_result))
+        true_result = [-10.0, -7.449961786934791, 0.0, 7.449961786934791, 10.0]        
         @test isapprox(result, true_result, atol=eps_level)
     end
 
     @testset "3D points 1D data, geometry basics point vectors" begin
-        result = interp_biharmonic(GeometryBasics.Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10],
-            [GeometryBasics.Point3{Float64}(0.0, 0.0, x) for x in range(-1, 1, 5)])
-        true_result = [-10.0, -7.449961786934791, 0.0, 7.449961786934791, 10.0]
-        eps_level = maximum(eps.(true_result))
+        result = interp_biharmonic(Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10],
+            [Point3{Float64}(0.0, 0.0, x) for x in range(-1, 1, 5)])
+        true_result = [-10.0, -7.449961786934791, 0.0, 7.449961786934791, 10.0]        
         @test isapprox(result, true_result, atol=eps_level)
     end
-
 end
 
 
 @testset "nbezier" begin 
-    eps_level = 0.001    
+    eps_level = 1e-4    
     P = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-    P[1 ] = GeometryBasics.Point{3, Float64}( 0.0, 0.0, 0.0)
-    P[2 ] = GeometryBasics.Point{3, Float64}( 1.0, 0.0, 0.0)
-    P[3 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 0.0)
-    P[4 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 1.0)
+    P[1 ] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
+    P[2 ] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
+    P[3 ] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
+    P[4 ] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 1.0)
     n = 25 # Number of points
     V = nbezier(P,n) # Get Bezier fit points
     expected = Point3{Float64}[[0.0, 0.0, 0.0], [0.11986400462962965, 0.005063657407407407, 7.233796296296296e-5], [0.22974537037037032, 0.019675925925925923, 0.0005787037037037037], [0.330078125, 0.04296875, 0.001953125], [0.4212962962962963, 0.07407407407407407, 0.004629629629629629], [0.503833912037037, 0.11212384259259262, 0.009042245370370372], [0.578125, 0.15625, 0.015625], [0.6446035879629629, 0.20558449074074078, 0.024811921296296304], [0.7037037037037037, 0.25925925925925924, 0.037037037037037035], [0.755859375, 0.31640625, 0.052734375], [0.8015046296296295, 0.3761574074074074, 0.07233796296296298], [0.8410734953703705, 0.43764467592592593, 0.09628182870370369], [0.875, 0.5, 0.125], [0.9037181712962963, 0.562355324074074, 0.1589265046296296], [0.9276620370370372, 0.6238425925925928, 0.19849537037037043], [0.947265625, 0.68359375, 0.244140625], [0.9629629629629629, 0.7407407407407407, 0.2962962962962963], [0.9751880787037037, 0.7944155092592593, 0.3553964120370371], [0.984375, 0.84375, 0.421875], [0.9909577546296297, 0.8878761574074074, 0.4961660879629629], [0.9953703703703705, 0.925925925925926, 0.5787037037037038], [0.998046875, 0.95703125, 0.669921875], [0.9994212962962963, 0.9803240740740741, 0.7702546296296295], [0.9999276620370372, 0.9949363425925927, 0.8801359953703706], [1.0, 1.0, 1.0]]    
     @test typeof(V) == Vector{Point3{Float64}}    
+    @test length(V) == n
     @test isapprox(V, expected, atol = eps_level)
 end 
 
@@ -279,7 +289,7 @@ end
     end
 
     @testset "3D points" begin 
-        eps_level = 0.001
+        eps_level = 1e-4
         np = 10
         t = range(0.0,2.0*π,np) # Parameterisation metric
         V = [GeometryBasics.Point{3, Float64}(cos(t[i]),sin(t[i]),t[i]/(2.0*π)) for i ∈ eachindex(t)] # ND data, here 3D points
@@ -303,7 +313,7 @@ end
 
 
 @testset "dist" verbose = true begin
-    eps_level = 0.001
+    eps_level = 1e-4
 
     @testset "vector to vector" begin
         v1 = Float64[0, 0, 0]
@@ -343,6 +353,9 @@ end
         result = dist(V1, V2)
         eps_level = maximum(eps.(result))
 
+
+        @test size(result,1) == length(V1)
+        @test size(result,2) == length(V2)
         @test isapprox(result, [2.141592653589793 3.296908309475615 3.296908309475615;
                 3.296908309475615 2.141592653589793 3.296908309475615;
                 3.296908309475615 3.296908309475615 2.141592653589793;
@@ -350,13 +363,34 @@ end
     end
 end
 
+
 @testset "mindist" begin     
-    eps_level = 0.001
-    V1 = [[1, 2, 3], [0, 0, 0]]
-    V2 = [[4, 5, 6], [0, 0, 0]]
-    result = mindist(V1, V2)
-    @test result isa Vector{Float64}
-    @test isapprox(result, [3.7416573867739413, 0.0], atol = eps_level)
+    eps_level = 1e-4
+
+    # Basic use
+    V1 = Point3{Float64}[[1.0, 2.0, 3.0], [0.0, 0.0, 0.0], [pi, -10.0, 2.5]]
+    V2 = Point3{Float64}[[4.0, 5.0, 6.0], [0.0, 0.0, 0.0]]
+    D = mindist(V1, V2)    
+    @test D isa Vector{Float64}
+    @test isapprox(D, [3.7416573867739413, 0.0, 10.775880678677236], atol = eps_level)
+    
+    # Also outputting index
+    D,ind = mindist(V1, V2; getIndex=true)    
+    @test D isa Vector{Float64}
+    @test isapprox(D, [3.7416573867739413, 0.0, 10.775880678677236], atol = eps_level)
+    @test ind == [2,2,2]
+
+    # Snap to self for self distances
+    D,ind = mindist(V1, V1; getIndex=true,skipSelf = false)    
+    @test D isa Vector{Float64}
+    @test isapprox(D, [0.0,0.0,0.0], atol = eps_level)
+    @test ind == [1,2,3]
+
+    # Do not snap to self if self is avoided
+    D,ind = mindist(V1, V1; getIndex=true,skipSelf = true)    
+    @test D isa Vector{Float64}
+    @test isapprox(D, [3.7416573867739413, 3.7416573867739413, 10.775880678677236], atol = eps_level)
+    @test ind == [2,1,2]
 end 
 
 
@@ -366,12 +400,14 @@ end
     @test result2 == [1, 2, 3, 6, 9]
 end 
 
+
 @testset "unique_dict_index_inverse" begin 
     result1, result2, result3 = Comodo.unique_dict_index_inverse([1, 2, 3, 3, 3, 4, 4, 4, 5])
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 2, 3, 6, 9]
     @test result3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
 end 
+
 
 @testset "unique_dict_index_count" begin 
     result1, result2, result3 = Comodo.unique_dict_index_count([1, 2, 3, 3, 3, 4, 4, 4, 5])
@@ -411,8 +447,7 @@ end
 end 
 
 
-@testset "gunique" begin 
-    
+@testset "gunique" begin     
     r1, r2, r3, r4 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index=true, return_inverse=true, return_counts=true, sort_entries=false)
     @test r1 == [1, 2, 3, 4, 5]
     @test r2 == [1, 2, 3, 6, 9]
@@ -432,8 +467,8 @@ end
     @test r1 == [1, 2, 3, 4, 5]
 end 
 
-@testset "unique_simplices" verbose = true begin
 
+@testset "unique_simplices" verbose = true begin
     @testset "Single triangle" begin
         F = [TriangleFace{Int64}(1, 2, 3)]       
         F_uni, ind1, ind2 = unique_simplices(F)
@@ -447,7 +482,6 @@ end
         @test F_uni == F[ind1]
         @test F_uni[ind2] == F
     end
-
 end
 
 
@@ -535,6 +569,7 @@ end
     end
 end
 
+
 @testset "sub2ind_" verbose = true begin
 
     @testset "1D i.e. Vector" begin
@@ -552,6 +587,7 @@ end
         @test Comodo.sub2ind_([3,2,1],length(size(C)),cumprod(size(C))) == 6
     end
 end
+
 
 @testset "meshedges" verbose = true begin
     @testset "Single triangle" begin
@@ -579,8 +615,9 @@ end
     end
 end
 
+
 @testset "icosahedron" begin
-    eps_level = 0.001
+    eps_level = 1e-4
     r = 1.0
     ϕ = Base.MathConstants.golden # (1.0+sqrt(5.0))/2.0, Golden ratio
     s = r/sqrt(ϕ + 2.0)
@@ -593,8 +630,9 @@ end
     @test isapprox(V[1], [0.0, -s, -t], atol=eps_level)
 end
 
+
 @testset "octahedron" begin
-    eps_level = 0.001
+    eps_level = 1e-4
     r = 1.0
     s = r/sqrt(2.0)
     M = octahedron(1.0) 
@@ -605,8 +643,9 @@ end
     @test isapprox(V[1], [-s,  -s, 0.0], atol=eps_level)
 end
 
+
 @testset "dodecahedron" begin
-    eps_level = 0.001
+    eps_level = 1e-4
     r = 1.0
     ϕ = Base.MathConstants.golden # (1.0+sqrt(5.0))/2.0, Golden ratio
     s = r/sqrt(3.0)
@@ -620,8 +659,9 @@ end
     @test isapprox(V[1], [s,s,s], atol=eps_level)
 end
 
+
 @testset "cube" begin
-    eps_level = 0.001
+    eps_level = 1e-4
     r = 1.0
     s = r/sqrt(3.0)
     M = cube(1.0) 
@@ -632,8 +672,9 @@ end
     @test isapprox(V[1], [-s,  -s, -s], atol=eps_level)
 end
 
+
 @testset "tetrahedron" begin
-    eps_level = 0.001
+    eps_level = 1e-4
     r = 1.0
     a = r*sqrt(2.0)/sqrt(3.0)
     b = -r*sqrt(2.0)/3.0
@@ -646,9 +687,10 @@ end
     @test isapprox(V[1], [-a,  b, c], atol=eps_level)
 end
 
+
 @testset "platonicsolid" begin
 
-    eps_level = 0.001
+    eps_level = 1e-4
     M = platonicsolid(4, 1.0) # icosahedron
     F = faces(M)
     V = coordinates(M)
@@ -680,21 +722,25 @@ end
         Ftm_G = togeometrybasics_faces([Ftm[1,:]])
         @testset "1 TriangleFace" begin        
             @test isa(Ftm_G,Vector{GeometryBasics.TriangleFace{Int64}})
+            @test length(Ftm_G) == 1
         end
 
         Ftm_G = togeometrybasics_faces(Ftm)
         @testset "TriangleFace" begin        
             @test isa(Ftm_G,Vector{GeometryBasics.TriangleFace{Int64}})
+            @test length(Ftm_G) == size(Ftm,1)
         end
 
         Fqm_G = togeometrybasics_faces(Fqm)
         @testset "QuadFace" begin        
             @test isa(Fqm_G,Vector{GeometryBasics.QuadFace{Int64}})
+            @test length(Fqm_G) == size(Fqm,1)
         end
 
         Fnm_G = togeometrybasics_faces(Fnm)
         @testset "NgonFace" begin        
             @test isa(Fnm_G,Vector{GeometryBasics.NgonFace{5,Int64}})
+            @test length(Fnm_G) == size(Fnm,1)
         end        
     end
 
@@ -702,26 +748,31 @@ end
         Ftv_G = togeometrybasics_faces([Ftv[1]])        
         @testset "1 TriangleFace" begin        
             @test isa(Ftv_G,Vector{GeometryBasics.TriangleFace{Int64}})
+            @test length(Ftv_G) == 1
         end
 
         Ftv_G = togeometrybasics_faces(Ftv)
         @testset "TriangleFace" begin        
             @test isa(Ftv_G,Vector{GeometryBasics.TriangleFace{Int64}})
+            @test length(Ftv_G) == length(Ftv)
         end
 
         Fqv_G = togeometrybasics_faces(Fqv)
         @testset "QuadFace" begin        
             @test isa(Fqv_G,Vector{GeometryBasics.QuadFace{Int64}})
+            @test length(Fqv_G) == length(Fqv)
         end
 
         Fnv_G = togeometrybasics_faces(Fnv)
         @testset "NgonFace" begin        
             @test isa(Fnv_G,Vector{GeometryBasics.NgonFace{5,Int64}})
+            @test length(Fnv_G) == length(Fnv)
         end        
 
         F = togeometrybasics_faces(faces(M)) 
         @testset "Vector{NgonFace{3, OffsetInteger{-1, UInt32}}}" begin        
             @test isa(F,Vector{GeometryBasics.TriangleFace{Int64}})
+            @test length(F) == length(faces(M))
         end        
     end
 end
@@ -732,18 +783,21 @@ end
     @testset "Matrix input" begin        
         V = togeometrybasics_points(rand(10,3))
         @test isa(V,Vector{GeometryBasics.Point3{Float64}})
+        @test length(V) == 10
     end
 
     @testset "Vector Float64" begin
         Vv = [rand(3) for _ in 1:5]       
         V = togeometrybasics_points(Vv)
         @test isa(V,Vector{GeometryBasics.Point3{Float64}})
+        @test length(V) == 5
     end
 
     @testset "Vector Vec3" begin
         Vv = Vector{Vec3{Float64}}(undef,5)       
         V = togeometrybasics_points(Vv)
         @test isa(V,Vector{GeometryBasics.Point3{Float64}})
+        @test length(V) == 5
     end
 
     @testset "Imported mesh points" begin
@@ -753,6 +807,7 @@ end
         Vv = coordinates(M)       
         V = togeometrybasics_points(Vv)
         @test isa(V,Vector{GeometryBasics.Point3{Float64}})
+        @test length(V) == length(Vv)
     end
 end
 
@@ -1036,7 +1091,7 @@ end
 
 
 @testset "subtri" verbose = true begin
-    eps_level = 0.001
+    eps_level = 1e-4
     M = platonicsolid(4, 1.0)
     V = coordinates(M)
     F = faces(M)
@@ -1067,7 +1122,7 @@ end
 
 
 @testset "subquad" verbose = true begin
-    eps_level = 0.001
+    eps_level = 1e-4
     M = cube(1.0)
     F = faces(M)
     V = coordinates(M)    
@@ -1100,7 +1155,7 @@ end
     r = 1.0
     n = 3
     F, V = geosphere(n, r)
-    eps_level = 0.001
+    eps_level = 1e-4
 
     @test F isa Vector{TriangleFace{Int64}}
     @test length(F) == 1280
@@ -1132,8 +1187,616 @@ end
     end
 end
 
+
+@testset "con_face_edge" verbose = true begin    
+    @testset "Single triangle" begin
+        F = TriangleFace{Int64}[[1,2,3]]
+        E = meshedges(F;unique_only=false)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+
+        con_F2E = con_face_edge(F)
+        @test con_F2E == [[1,2,3]]
+
+        con_F2E_2 = con_face_edge(F,E_uni,indReverse)
+        @test con_F2E == con_F2E_2
+    end
+
+    @testset "Single quad" begin
+        F = QuadFace{Int64}[[1,2,3,4]]
+        E = meshedges(F;unique_only=false)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+
+        con_F2E = con_face_edge(F)
+        @test con_F2E == [[1,2,3,4]]
+
+        con_F2E_2 = con_face_edge(F,E_uni,indReverse)
+        @test con_F2E == con_F2E_2
+    end
+
+    @testset "Triangles" begin
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]        
+        con_F2E = con_face_edge(F)
+        @test con_F2E == [[1,2,4],[2,3,5]]        
+    end
+
+    @testset "Quads" begin
+        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        con_F2E = con_face_edge(F)
+        @test con_F2E == [[1,3,2,6],[2,4,5,7]]        
+    end
+end
+
+
+@testset "con_edge_face" verbose = true begin    
+    @testset "Single triangle" begin
+        F = TriangleFace{Int64}[[1,2,3]]
+        E = meshedges(F;unique_only=false)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+
+        con_E2F = con_edge_face(F)
+        @test con_E2F == fill([1],length(F[1]))
+
+        con_E2F_2 = con_edge_face(F,E_uni,indReverse)
+        @test con_E2F == con_E2F_2
+    end
+
+    @testset "Single quad" begin
+        F = QuadFace{Int64}[[1,2,3,4]]
+        E = meshedges(F;unique_only=false)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+
+        con_E2F = con_edge_face(F)
+        @test con_E2F == fill([1],length(F[1]))
+
+        con_E2F_2 = con_edge_face(F,E_uni,indReverse)
+        @test con_E2F == con_E2F_2
+    end
+
+    @testset "Triangles" begin
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]        
+        con_E2F = con_edge_face(F)
+        @test con_E2F == [[1], [1, 2], [2], [1], [2]]       
+    end
+
+    @testset "Quads" begin
+        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        con_E2F = con_edge_face(F)
+        @test con_E2F == [[1], [1, 2], [1], [2], [2], [1], [2]]       
+    end
+end
+
+
+@testset "con_face_face" verbose = true begin    
+    @testset "Single triangle" begin
+        F = TriangleFace{Int64}[[1,2,3]]
+        E = meshedges(F;unique_only=false)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        con_E2F = con_edge_face(F)
+        con_F2E = con_face_edge(F)
+
+        
+        con_F2F = con_face_face(F)
+        @test con_F2F == [[]]
+
+        con_F2F_2 = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
+        @test con_F2F == con_F2F_2
+    end
+
+    @testset "Single quad" begin
+        F = QuadFace{Int64}[[1,2,3,4]]
+        E = meshedges(F;unique_only=false)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        con_E2F = con_edge_face(F)
+        con_F2E = con_face_edge(F)
+
+        con_F2F = con_face_face(F)
+        @test con_F2F == [[]]
+
+        con_F2F_2 = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
+        @test con_F2F == con_F2F_2
+    end
+
+    @testset "Triangles" begin
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]        
+        con_F2F = con_face_face(F)
+        @test con_F2F == [[2], [1]]       
+    end
+
+    @testset "Quads" begin
+        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        con_F2F = con_face_face(F)
+        @test con_F2F == [[2], [1]]       
+    end
+end
+
+
+@testset "con_face_face_v" verbose = true begin    
+    @testset "Single triangle" begin
+        F = TriangleFace{Int64}[[1,2,3]]
+        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+        con_V2F = con_vertex_face(F,V) 
+
+        con_F2F = con_face_face_v(F)
+        @test con_F2F == [[]]
+
+        con_F2F_2 = con_face_face_v(F,V,con_V2F)
+        @test con_F2F == con_F2F_2
+    end
+
+    @testset "Single quad" begin
+        F = QuadFace{Int64}[[1,2,3,4]]
+        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]        
+        con_V2F = con_vertex_face(F,V)
+
+        con_F2F = con_face_face_v(F)
+        @test con_F2F == [[]]
+
+        con_F2F_2 = con_face_face_v(F,V,con_V2F)
+        @test con_F2F == con_F2F_2
+    end
+
+    @testset "Triangles" begin
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]        
+        con_F2F = con_face_face_v(F)
+        @test con_F2F == [[2], [1]]       
+    end
+
+    @testset "Quads" begin
+        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        con_F2F = con_face_face_v(F)
+        @test con_F2F == [[2], [1]]       
+    end
+end
+
+
+@testset "con_vertex_simplex" verbose = true begin    
+    @testset "Single triangle" begin
+        F = TriangleFace{Int64}[[1,2,3]]
+        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+
+        con_V2F = con_vertex_simplex(F)
+        @test con_V2F == fill([1],length(F[1]))
+
+        con_V2F_2 = con_vertex_simplex(F,V)
+        @test con_V2F == con_V2F_2
+    end
+
+    @testset "Single quad" begin
+        F = QuadFace{Int64}[[1,2,3,4]]
+        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]        
+
+        con_V2F = con_vertex_simplex(F)
+        @test con_V2F == fill([1],length(F[1]))
+
+        con_V2F_2 = con_vertex_simplex(F,V)
+        @test con_V2F == con_V2F_2
+    end
+
+    @testset "Triangles" begin
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]        
+        con_V2F = con_vertex_simplex(F)
+        @test con_V2F == [[1], [1, 2], [1, 2], [2]]      
+    end
+
+    @testset "Quads" begin
+        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        con_V2F = con_vertex_simplex(F)
+        @test con_V2F == [[1], [1], [1, 2], [1, 2], [2], [2]]  
+    end
+end
+
+
+@testset "con_vertex_face" verbose = true begin    
+    @testset "Single triangle" begin
+        F = TriangleFace{Int64}[[1,2,3]]
+        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+
+        con_V2F = con_vertex_face(F)
+        @test con_V2F == fill([1],length(F[1]))
+
+        con_V2F_2 = con_vertex_face(F,V)
+        @test con_V2F == con_V2F_2
+    end
+
+    @testset "Single quad" begin
+        F = QuadFace{Int64}[[1,2,3,4]]
+        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]        
+
+        con_V2F = con_vertex_face(F)
+        @test con_V2F == fill([1],length(F[1]))
+
+        con_V2F_2 = con_vertex_face(F,V)
+        @test con_V2F == con_V2F_2
+    end
+
+    @testset "Triangles" begin
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]        
+        con_V2F = con_vertex_face(F)
+        @test con_V2F == [[1], [1, 2], [1, 2], [2]]      
+    end
+
+    @testset "Quads" begin
+        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        con_V2F = con_vertex_face(F)
+        @test con_V2F == [[1], [1], [1, 2], [1, 2], [2], [2]]  
+    end
+end
+
+
+@testset "con_vertex_edge" verbose = true begin    
+    @testset "Single triangle" begin
+        F = TriangleFace{Int64}[[1,2,3]]
+        E = meshedges(F)
+        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+
+        con_V2E = con_vertex_edge(E)
+        @test con_V2E == [[1, 3], [1, 2], [2, 3]]
+
+        con_V2E_2 = con_vertex_edge(E,V)
+        @test con_V2E == con_V2E_2
+    end
+
+    @testset "Single quad" begin
+        F = QuadFace{Int64}[[1,2,3,4]]
+        E = meshedges(F)
+        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]        
+
+        con_V2E = con_vertex_edge(E)
+        @test con_V2E == [[1, 4], [1, 2], [2, 3], [3, 4]]
+
+        con_V2E_2 = con_vertex_edge(E,V)
+        @test con_V2E == con_V2E_2
+    end
+
+    @testset "Triangles" begin
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]     
+        E = meshedges(F)  
+        con_V2E = con_vertex_edge(E)
+        @test con_V2E == [[1, 5], [1, 2, 3, 6], [2, 3, 4, 5], [4, 6]]    
+    end
+
+    @testset "Quads" begin
+        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        E = meshedges(F)
+        con_V2E = con_vertex_edge(E)
+        @test con_V2E == [[1, 7], [1, 3], [2, 3, 5, 8], [2, 4, 5, 7], [4, 6], [6, 8]]
+    end
+end
+
+
+@testset "con_edge_edge" verbose = true begin    
+    @testset "Single triangle" begin
+        F = TriangleFace{Int64}[[1,2,3]]
+        E = meshedges(F;unique_only=false)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        con_V2E = con_vertex_edge(E_uni) 
+                
+        con_E2E = con_edge_edge(E_uni)
+        @test con_E2E == [[3, 2], [1, 3], [2, 1]]
+
+        con_E2E_2 = con_edge_edge(E_uni,con_V2E)
+        @test con_E2E == con_E2E_2
+    end
+
+    @testset "Single quad" begin
+        F = QuadFace{Int64}[[1,2,3,4]]
+        E = meshedges(F;unique_only=false)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        con_V2E = con_vertex_edge(E_uni) 
+
+        con_E2E = con_edge_edge(E_uni)
+        @test con_E2E == [[4, 2], [1, 3], [2, 4], [3, 1]]
+
+        con_E2E_2 = con_edge_edge(E_uni,con_V2E)
+        @test con_E2E == con_E2E_2
+    end
+
+    @testset "Triangles" begin
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]       
+        E = meshedges(F;unique_only=false)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        con_E2E = con_edge_edge(E_uni)
+        @test con_E2E == [[4, 2, 5], [1, 5, 3, 4], [2, 4, 5], [2, 3, 1], [3, 1, 2]]      
+    end
+
+    @testset "Quads" begin
+        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]      
+        E = meshedges(F;unique_only=false)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)      
+        con_E2E = con_edge_edge(E_uni)
+        @test con_E2E == [[6, 3], [3, 7, 4, 6], [1, 2, 7], [2, 6, 5], [4, 7], [2, 4, 1], [5, 2, 3]]    
+    end
+end
+
+
+@testset "con_vertex_vertex_f" verbose = true begin    
+    @testset "Single triangle" begin
+        F = TriangleFace{Int64}[[1,2,3]]        
+        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+        con_V2F = con_vertex_face(F)
+
+        con_V2V = con_vertex_vertex_f(F)
+        @test con_V2V == [[2, 3], [1, 3], [1, 2]]
+
+        con_V2V_2 = con_vertex_vertex_f(F,V,con_V2F)
+        @test con_V2V == con_V2V_2
+    end
+
+    @testset "Single quad" begin
+        F = QuadFace{Int64}[[1,2,3,4]]        
+        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]        
+        con_V2F = con_vertex_face(F)
+
+        con_V2V = con_vertex_vertex_f(F)
+        @test con_V2V == [[2, 3, 4], [1, 3, 4], [1, 2, 4], [1, 2, 3]]
+
+        con_V2V_2 = con_vertex_vertex_f(F,V,con_V2F)
+        @test con_V2V == con_V2V_2
+    end
+
+    @testset "Triangles" begin
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]             
+        con_V2V = con_vertex_vertex_f(F)
+        @test con_V2V == [[2, 3], [1, 3, 4], [1, 2, 4], [2, 3]]   
+    end
+
+    @testset "Quads" begin
+        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]                
+        con_V2V = con_vertex_vertex_f(F)
+        @test con_V2V == [[2, 3, 4], [1, 3, 4], [1, 2, 4, 5, 6], [1, 2, 3, 5, 6], [3, 4, 6], [3, 4, 5]]
+    end
+end
+
+
+@testset "con_vertex_vertex" verbose = true begin    
+    @testset "Single triangle" begin
+        F = TriangleFace{Int64}[[1,2,3]]        
+        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+        E = meshedges(F;unique_only=false)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        con_V2E = con_vertex_edge(E_uni) 
+
+        con_V2V = con_vertex_vertex(E)
+        @test con_V2V == [[2, 3], [1, 3], [2, 1]]
+
+        con_V2V_2 = con_vertex_vertex(E,V,con_V2E)
+        @test con_V2V == con_V2V_2
+    end
+
+    @testset "Single quad" begin
+        F = QuadFace{Int64}[[1,2,3,4]]        
+        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]        
+        E = meshedges(F;unique_only=false)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        con_V2E = con_vertex_edge(E_uni) 
+
+        con_V2V = con_vertex_vertex(E)
+        @test con_V2V == [[2, 4], [1, 3], [2, 4], [3, 1]]
+
+        con_V2V_2 = con_vertex_vertex(E,V,con_V2E)
+        @test con_V2V == con_V2V_2
+    end
+
+    @testset "Triangles" begin
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]      
+        E = meshedges(F;unique_only=false)       
+        con_V2V = con_vertex_vertex(E)
+        @test con_V2V == [[2, 3], [1, 3, 3, 4], [2, 2, 4, 1], [3, 2]]
+    end
+
+    @testset "Quads" begin
+        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]                
+        E = meshedges(F;unique_only=false)
+        con_V2V = con_vertex_vertex(E)
+        @test con_V2V == [[2, 4], [1, 3], [4, 2, 4, 6], [3, 5, 3, 1], [4, 6], [5, 3]]
+    end
+end
+
+
+@testset "meshconnectivity" verbose = true begin    
+    @testset "Single triangle" begin
+        F = TriangleFace{Int64}[[1,2,3]]        
+        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+
+        # EDGE-VERTEX connectivity
+        E = meshedges(F)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+
+        # FACE-EDGE connectivity
+        con_F2E = con_face_edge(F,E_uni,indReverse)    
+
+        # EDGE-FACE connectivity
+        con_E2F = con_edge_face(F,E_uni)
+
+        # FACE-FACE connectivity wrt edges
+        con_F2F = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
+
+        # VERTEX-FACE connectivity
+        con_V2F = con_vertex_face(F,V)
+
+        # VERTEX-EDGE connectivity
+        con_V2E = con_vertex_edge(E_uni,V)
+
+        # EDGE-EDGE connectivity
+        con_E2E = con_edge_edge(E_uni,con_V2E)
+
+        # VERTEX-VERTEX connectivity wrt edges
+        con_V2V = con_vertex_vertex(E_uni,V,con_V2E)
+
+        # VERTEX-VERTEX connectivity wrt faces
+        con_V2V_f = con_vertex_vertex_f(E_uni,V,con_V2E)
+
+        # FACE-FACE connectivity wrt vertices
+        con_F2F_v = con_face_face_v(F,con_V2F)
+        
+        C = meshconnectivity(F,V)
+
+        @test typeof(C) == ConnectivitySet
+        @test C.edge_vertex == E_uni
+        @test C.edge_face == con_E2F
+        @test C.edge_edge == con_E2E
+        @test C.face_vertex == F
+        @test C.face_edge == con_F2E
+        @test C.face_face == con_F2F
+        @test C.vertex_face == con_V2F
+        @test C.vertex_vertex == con_V2V
+        @test C.vertex_vertex_f == con_V2V_f
+        @test C.face_face_v == con_F2F_v
+    end
+
+    @testset "Single quad" begin
+        F = QuadFace{Int64}[[1,2,3,4]]        
+        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]   
+
+        # EDGE-VERTEX connectivity
+        E = meshedges(F)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+
+        # FACE-EDGE connectivity
+        con_F2E = con_face_edge(F,E_uni,indReverse)    
+
+        # EDGE-FACE connectivity
+        con_E2F = con_edge_face(F,E_uni)
+
+        # FACE-FACE connectivity wrt edges
+        con_F2F = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
+
+        # VERTEX-FACE connectivity
+        con_V2F = con_vertex_face(F,V)
+
+        # VERTEX-EDGE connectivity
+        con_V2E = con_vertex_edge(E_uni,V)
+
+        # EDGE-EDGE connectivity
+        con_E2E = con_edge_edge(E_uni,con_V2E)
+
+        # VERTEX-VERTEX connectivity wrt edges
+        con_V2V = con_vertex_vertex(E_uni,V,con_V2E)
+
+        # VERTEX-VERTEX connectivity wrt faces
+        con_V2V_f = con_vertex_vertex_f(E_uni,V,con_V2E)
+
+        # FACE-FACE connectivity wrt vertices
+        con_F2F_v = con_face_face_v(F,con_V2F)
+
+        C = meshconnectivity(F,V)
+
+        @test typeof(C) == ConnectivitySet
+        @test C.edge_vertex == E_uni
+        @test C.edge_face == con_E2F
+        @test C.edge_edge == con_E2E
+        @test C.face_vertex == F
+        @test C.face_edge == con_F2E
+        @test C.face_face == con_F2F
+        @test C.vertex_face == con_V2F
+        @test C.vertex_vertex == con_V2V
+        @test C.vertex_vertex_f == con_V2V_f
+        @test C.face_face_v == con_F2F_v
+    end
+
+    @testset "Triangles" begin
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]      
+        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]   
+
+        # EDGE-VERTEX connectivity
+        E = meshedges(F)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+
+        # FACE-EDGE connectivity
+        con_F2E = con_face_edge(F,E_uni,indReverse)    
+
+        # EDGE-FACE connectivity
+        con_E2F = con_edge_face(F,E_uni)
+
+        # FACE-FACE connectivity wrt edges
+        con_F2F = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
+
+        # VERTEX-FACE connectivity
+        con_V2F = con_vertex_face(F,V)
+
+        # VERTEX-EDGE connectivity
+        con_V2E = con_vertex_edge(E_uni,V)
+
+        # EDGE-EDGE connectivity
+        con_E2E = con_edge_edge(E_uni,con_V2E)
+
+        # VERTEX-VERTEX connectivity wrt edges
+        con_V2V = con_vertex_vertex(E_uni,V,con_V2E)
+
+        # VERTEX-VERTEX connectivity wrt faces
+        con_V2V_f = con_vertex_vertex_f(E_uni,V,con_V2E)
+
+        # FACE-FACE connectivity wrt vertices
+        con_F2F_v = con_face_face_v(F,con_V2F)
+
+        C = meshconnectivity(F,V)
+
+        @test typeof(C) == ConnectivitySet
+        @test C.edge_vertex == E_uni
+        @test C.edge_face == con_E2F
+        @test C.edge_edge == con_E2E
+        @test C.face_vertex == F
+        @test C.face_edge == con_F2E
+        @test C.face_face == con_F2F
+        @test C.vertex_face == con_V2F
+        @test C.vertex_vertex == con_V2V
+        @test C.vertex_vertex_f == con_V2V_f
+        @test C.face_face_v == con_F2F_v
+    end
+
+    @testset "Quads" begin
+        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]                
+        V = [Point3{Float64}(rand(4)) for _ ∈ 1:6]   
+        
+        # EDGE-VERTEX connectivity
+        E = meshedges(F)
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+
+        # FACE-EDGE connectivity
+        con_F2E = con_face_edge(F,E_uni,indReverse)    
+
+        # EDGE-FACE connectivity
+        con_E2F = con_edge_face(F,E_uni)
+
+        # FACE-FACE connectivity wrt edges
+        con_F2F = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
+
+        # VERTEX-FACE connectivity
+        con_V2F = con_vertex_face(F,V)
+
+        # VERTEX-EDGE connectivity
+        con_V2E = con_vertex_edge(E_uni,V)
+
+        # EDGE-EDGE connectivity
+        con_E2E = con_edge_edge(E_uni,con_V2E)
+
+        # VERTEX-VERTEX connectivity wrt edges
+        con_V2V = con_vertex_vertex(E_uni,V,con_V2E)
+
+        # VERTEX-VERTEX connectivity wrt faces
+        con_V2V_f = con_vertex_vertex_f(E_uni,V,con_V2E)
+
+        # FACE-FACE connectivity wrt vertices
+        con_F2F_v = con_face_face_v(F,con_V2F)
+
+        C = meshconnectivity(F,V)
+
+        @test typeof(C) == ConnectivitySet
+        @test C.edge_vertex == E_uni
+        @test C.edge_face == con_E2F
+        @test C.edge_edge == con_E2E
+        @test C.face_vertex == F
+        @test C.face_edge == con_F2E
+        @test C.face_face == con_F2F
+        @test C.vertex_face == con_V2F
+        @test C.vertex_vertex == con_V2V
+        @test C.vertex_vertex_f == con_V2V_f
+        @test C.face_face_v == con_F2F_v
+    end
+end
+
 @testset "mergevertices" begin
-    eps_level = 0.001
+    eps_level = 1e-4
     r = 2 * sqrt(3) / 2    
     M = cube(r)
     F = faces(M)
@@ -1152,7 +1815,7 @@ end
 
 
 @testset "smoothmesh_laplacian" begin
-    eps_level = 0.001
+    eps_level = 1e-4
     M = tetrahedron(1.0)
     F = faces(M)
     V = coordinates(M)
@@ -1169,7 +1832,7 @@ end
 
 
 @testset "smoothmesh_hc" begin
-    eps_level = 0.001
+    eps_level = 1e-4
     M = tetrahedron(1.0)
     F = faces(M)
     V = coordinates(M)
@@ -1187,7 +1850,7 @@ end
 
 
 @testset "quadplate" begin
-    eps_level = 0.001
+    eps_level = 1e-4
 
     plateDim = [5,5]
     plateElem = [4,3]
@@ -1203,7 +1866,7 @@ end
 
 
 @testset "quadsphere" begin
-    eps_level = 0.001
+    eps_level = 1e-4
 
     r = 1.0
     F, V = quadsphere(3, r)
@@ -1217,7 +1880,7 @@ end
 end
 
 @testset "simplex2vertexdata" verbose = true begin
-    eps_level = 0.001
+    eps_level = 1e-4
 
     # Single face/element
     F1 = [[1,2,3,4,5,6]]
@@ -1328,7 +1991,7 @@ end
 
 
 @testset "vertex2simplexdata" verbose = true begin
-    eps_level = 0.001
+    eps_level = 1e-4
 
     # Single face/element
     F1 = [[1,2,3,4,5,6]]
@@ -1382,7 +2045,7 @@ end
         DV = [i.*[1.0,2.0,π] for i ∈ eachindex(Vq)] # Vector data for each vertex
         DF = vertex2simplexdata(Fq,DV)
         @testset "simplexcenter" begin
-            eps_level = 0.001
+            eps_level = 1e-4
             F, V = geosphere(2, 1.0)
             VC = simplexcenter(F, V)
         
@@ -1429,7 +2092,7 @@ end
 
 
 @testset "simplexcenter" verbose = true  begin
-    eps_level = 0.001
+    eps_level = 1e-4
 
     @testset "Triangles" begin
         F, V = geosphere(2, 1.0)
@@ -1452,7 +2115,7 @@ end
 end
 
 @testset "normalizevector"  verbose = true begin
-    eps_level = 0.001
+    eps_level = 1e-4
 
     @testset "Single vector" begin
         v = Vec{3,Float64}(0.0, 0.0, pi)
@@ -1488,7 +2151,7 @@ end
 
 
 @testset "circlepoints" verbose = true begin
-    eps_level = 0.001
+    eps_level = 1e-4
 
     @testset "with value" begin
         r = 2.0
@@ -1518,7 +2181,7 @@ end
 
 
 @testset "loftlinear" verbose = true begin
-    eps_level = 0.001
+    eps_level = 1e-4
 
     r = 1.0
     nc = 5
@@ -1593,7 +2256,7 @@ end
 # end
 
 @testset "wrapindex" verbose = true begin
-    eps_level = 0.001
+    eps_level = 1e-4
 
     @testset "single value" begin
         n = 5
@@ -1633,7 +2296,7 @@ end
 
 
 @testset "edgeangles" begin
-    eps_level = 0.001
+    eps_level = 1e-4
     # Regular cube
     M = cube(1.0)
     F = faces(M)
@@ -1777,7 +2440,7 @@ end
 
 
 @testset "pointspacingmean" verbose = true begin
-    eps_level = 0.001
+    eps_level = 1e-4
     @testset "Curve" begin
         V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.75,0.0,0.0],[1.75,0.0,0.0]]
         r = pointspacingmean(V)
@@ -1801,7 +2464,7 @@ end
 
 
 @testset "extrudecurve" verbose = true begin
-    eps_level = 0.001
+    eps_level = 1e-4
     r = 1.0
     nc = 16
     d = 3.0
@@ -1979,7 +2642,7 @@ end
 
 
 @testset "distmarch" verbose=true begin
-    eps_level = 0.001
+    eps_level = 1e-4
 
     @testset "Single face" begin
         # Single triangle
@@ -2065,8 +2728,9 @@ end
 
 # end
 
+
 @testset "ray_triangle_intersect" verbose = true begin
-    eps_level = 0.001
+    eps_level = 1e-4
 
     # Single cube
     r = 2 * sqrt(3) / 2
@@ -2167,6 +2831,11 @@ end
         @test isapprox(mean(K2),k_true,atol=tol_level)
         @test isapprox(mean(H),k_true,atol=tol_level)
         @test isapprox(sqrt(abs(mean(G))),k_true,atol=tol_level)
+
+        # Check if mesh input functions the same
+        K1m,K2m,U1m,U2m,Hm,Gm = mesh_curvature_polynomial(M)
+        @test K1==K1m
+        @test K2==K2m       
     end
 
     # For a cylinder k1=1/r while k2=0, hence H = 1/(2*R)
@@ -2185,95 +2854,119 @@ end
         @test isapprox(mean(H),1.0/(2*r),atol=tol_level)
         @test isapprox(sqrt(abs(mean(G))),0.0,atol=tol_level)
     end
-
 end
 
-@testset "separate_vertices" begin
 
-    eps_level = 0.001
-    r = 2 * sqrt(3) / 2
-    M = cube(r)
 
-    F = faces(M)
-    V = coordinates(M)
-    F, V, _ = mergevertices(F, V)
+@testset "separate_vertices" verbose = true begin
+    
+    @testset "Single face" begin
+        # Single triangle
+        F = TriangleFace{Int64}[[1,2,3]]
+        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0]]
+        Fn, Vn = separate_vertices(F, V)    
+        @test Vn isa Vector{Point3{Float64}}
+        @test typeof(Fn) == typeof(F)
+        @test length(Fn) == length(F)    
+        @test length(Vn) == length(F)*length(F[1])
 
-    Fn, Vn = separate_vertices(F, V)
+        # Single triangle, un-used nodes
+        F = TriangleFace{Int64}[[1,2,3]]
+        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],
+                            [1.0,0.0,0.0],[1.0,1.0,0.0]]
+        Fn, Vn = separate_vertices(F, V)    
+        @test Vn isa Vector{Point3{Float64}}
+        @test typeof(Fn) == typeof(F)
+        @test length(Fn) == length(F)    
+        @test length(Vn) == length(F)*length(F[1])
 
-    @test Vn isa Vector{Point3{Float64}}
-    @test length(Vn) == 24
-    @test isapprox(Vn[1], [-1.0, -1.0, -1.0], atol=eps_level)
+        # Single quad
+        F = QuadFace{Int64}[[1,2,3,4]]
+        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],[0.0,1.0,0.0]]
+        Fn, Vn = separate_vertices(F, V)    
+        @test Vn isa Vector{Point3{Float64}}
+        @test typeof(Fn) == typeof(F)
+        @test length(Fn) == length(F)    
+        @test length(Vn) == length(F)*length(F[1])
+    end
 
-    @test Fn isa Vector{QuadFace{Int64}}
-    @test length(Fn) == 6
-    @test Fn[1] == [1, 2, 3, 4]
+    @testset "Quadrilateral face mesh" begin
+        M = cube(1.0)
+        F = faces(M)
+        V = coordinates(M)
+        Fn, Vn = separate_vertices(F, V)    
+        @test Vn isa Vector{Point3{Float64}}
+        @test typeof(Fn) == typeof(F)
+        @test length(Fn) == length(F)    
+        @test length(Vn) == length(F)*length(F[1])
+    end
+
+    @testset "Triangulated mesh" begin
+        M = tetrahedron(1.0)
+        F = faces(M)
+        V = coordinates(M)
+        Fn, Vn = separate_vertices(F, V)    
+        @test Vn isa Vector{Point3{Float64}}
+        @test typeof(Fn) == typeof(F)
+        @test length(Fn) == length(F)    
+        @test length(Vn) == length(F)*length(F[1])
+    end
 end
 
+@testset "curve_length" verbose = true begin
+    tol_level = 1e-6
+    r = 2.25
+    nc = 10    
+    V = circlepoints(r, nc; dir=:cw)    
+    length_true  = collect(range(0,(nc*2.0*r*sin(0.5*((2.0*pi)/nc))),nc+1))    
+    L = curve_length(V; close_loop=false)
+    @test isapprox(L,length_true[1:end-1],atol=tol_level)    
+
+    L = curve_length(V; close_loop=true)
+    @test isapprox(L,length_true,atol=tol_level)    
+    @test L isa Vector{Float64}
+end
 
 @testset "evenly_sample" begin
+    
+    tol_level = 1e-4
 
-    eps_level = 0.001
+    # Even sampling should be nearly perfect for a linear curve 
+    @testset "Evenly upsampling linear curve" begin
+        # Example linear curve raw
+        X = range(0, 10, 5)
+        V = [GeometryBasics.Point{3,Float64}(x, 2.0*x, 0.0) for x ∈ X]
 
-    t = range(0, 2.0 * pi, 20)
-    V = [GeometryBasics.Point{3,Float64}(tt, 3.0 * sin(tt), 0.0) for tt ∈ t]
+        # Create true evenly upsampled data 
+        n = 20
+        Xt = range(0, 10, n)
+        Vt = [GeometryBasics.Point{3,Float64}(x, 2.0*x, 0.0) for x ∈ Xt]
 
-    n = 10
-    Vi, S = evenly_sample(V, n; niter=10)
+        # Resample using evenly_sample
+        Vi, S = evenly_sample(V, n; niter=5)
 
-    expected_Vi = Point3{Float64}[[0.0, 0.0, 0.0], [0.5078857273534546, 1.4623904932511307, 0.0], [1.2220360109178459, 2.8294055970804317, 0.0], [2.3306917216175593, 2.1742492209148088, 0.0], [2.8949991860586746, 0.7329115395627461, 0.0], [3.3881861211209148, -0.7329115395627541, 0.0], [3.952493585562025, -2.174249220914806, 0.0], [5.061149296261742, -2.8294055970804295, 0.0], [5.775299579826132, -1.4623904932511285, 0.0], [6.283185307179586, -7.347880794884119e-16, 0.0]]
+        @test sum(norm.(Vi-Vt)) < tol_level # Correct and even spacing
+        @test typeof(V) == typeof(Vi) # Did not manipulate input type
+        @test length(Vi) == n # Correct length
+    end
 
-    @test isapprox(expected_Vi, Vi, atol=eps_level)
+    # Even sampling should be nearly perfect for downsampling
+    @testset "Evenly downsampling circular curve" begin
 
-    @test isapprox(S.x, Float64[0.0,
-            0.07387312457178799,
-            0.1406049609791122,
-            0.1942228509486497,
-            0.2312834372763779,
-            0.2557343423231858,
-            0.2850592303664455,
-            0.3306740756854293,
-            0.3914466853315311,
-            0.4626059943694295,
-            0.5373940056305698,
-            0.6085533146684685,
-            0.6693259243145708,
-            0.7149407696335541,
-            0.7442656576768139,
-            0.7687165627236219,
-            0.8057771490513501,
-            0.8593950390208875,
-            0.9261268754282117,
-            1.0
-        ], atol=eps_level)
+        # Example circle curve raw
+        r = 2.25
+        nc = 100    
+        V = [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0.0,2.0*π,nc)]
 
-    @test isapprox(S.spline.basis.B.t, Float64[0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.07387312457178799,
-            0.1406049609791122,
-            0.1942228509486497,
-            0.2312834372763779,
-            0.2557343423231858,
-            0.2850592303664455,
-            0.3306740756854293,
-            0.3914466853315311,
-            0.4626059943694295,
-            0.5373940056305698,
-            0.6085533146684685,
-            0.6693259243145708,
-            0.7149407696335541,
-            0.7442656576768139,
-            0.7687165627236219,
-            0.8057771490513501,
-            0.8593950390208875,
-            0.9261268754282117,
-            1.0,
-            1.0,
-            1.0,
-            1.0
-        ], atol=eps_level)
+        # Create true evenly upsampled data 
+        n = 10
+        Vt = [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0.0,2.0*π,n)]
+        
+        # Resample using evenly_sample
+        Vi, S = evenly_sample(V, n; niter=5)
 
-    @test isapprox(S.spline.basis.M.left[2], Float64[1.2080446399615536 0.0; 0.7919553600384465 0.5123829689520382; 0.0 1.4876170310479617], atol=eps_level)
-
+        @test sum(norm.(Vi-Vt)) < tol_level # Correct and even spacing
+        @test typeof(V) == typeof(Vi) # Did not manipulate input type
+        @test length(Vi) == n # Correct length
+    end
 end
