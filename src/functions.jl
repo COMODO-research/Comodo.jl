@@ -189,7 +189,7 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
     elseif  pad_data==:none
         # No padding
     else
-        error("Invalid pad_data method provided, valued options are :linear, :constant, and :none")
+        error("InvalidParameter: Invalid pad_data method provided, valued options are :linear, :constant, and :none")
     end
 
     # Change behaviour depending on extrapolation method
@@ -224,7 +224,7 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
         # Allow extrapolation as per the biharmonic function
         yi = interp_biharmonic(xx,yy,xi) 
     else
-        error("Invalid extrapolate_method method provided, valued options are :linear, :constant, and :biharmonic")
+        error("InvalidParameter: Invalid extrapolate_method method provided, valued options are :linear, :constant, and :biharmonic")
     end
 
     return yi
@@ -309,7 +309,7 @@ data `y` at the specified sites `xi`.
 function lerp(x::Union{T,Vector{T}, AbstractRange{T}},y,xi::Union{T,Vector{T}, AbstractRange{T}}) where T <: Real
     # Check if the lengths of x and y are the same
     if length(x)!=length(y)
-        error("The number of sites in x should match the number of data entries in y")
+        throw(DimensionMismatch("The number of sites in x should match the number of data entries in y"))
     end
 
     if length(xi)==1 # Single site provided
