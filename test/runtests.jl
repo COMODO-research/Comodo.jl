@@ -1,4 +1,4 @@
-using Test, FileIO, Comodo, Comodo.GeometryBasics, Statistics, LinearAlgebra
+using Test, FileIO, Comodo, Comodo.GeometryBasics, Statistics, LinearAlgebra, GLMakie
 
 # ConnectivitySet
 
