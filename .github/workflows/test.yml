@@ -37,7 +37,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.BENCHMARK_KEY }}
           PR_NUMBER: ${{ github.event.number }}
         run: >
-          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --code-coverage=all --project=. -e 'using Pkg; Pkg.activate("."); Pkg.test()'
+          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=. -e 'using Pkg; Pkg.activate("."); Pkg.test(coverage = true)'
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.0.1
         with:
