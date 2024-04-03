@@ -2370,7 +2370,7 @@ end
     Fn_below = Fn[Cn.<0]
     En_below = boundaryedges(Fn_below)
     ind_below = unique(reduce(vcat,En_below))
-    d = [norm(v) for v ∈ Vn[ind]]
+    d = [norm(v) for v ∈ Vn[ind_below]]
     @test isapprox(sum((d.-r).^2),0.0,atol=tol_level) # Should 
 
     p = [0.0,0.0,0.0]; # Point on cutting plane
@@ -2384,7 +2384,7 @@ end
     Fn_below = Fn[Cn.<0]
     En_below = boundaryedges(Fn_below)
     ind_below = unique(reduce(vcat,En_below))
-    d = [norm(v) for v ∈ Vn[ind]]
+    d = [norm(v) for v ∈ Vn[ind_below]]
     @test isapprox(sum((d.-r).^2),0.0,atol=tol_level) # Should 
 
     p = [0.0,0.0,0.0]; # Point on cutting plane
@@ -2398,7 +2398,7 @@ end
     Fn_below = Fn[Cn.<0]
     En_below = boundaryedges(Fn_below)
     ind_below = unique(reduce(vcat,En_below))
-    d = [norm(v) for v ∈ Vn[ind]]
+    d = [norm(v) for v ∈ Vn[ind_below]]
     @test isapprox(sum((d.-r).^2),0.0,atol=tol_level) # Should 
 end
 
