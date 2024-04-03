@@ -9,9 +9,16 @@ using Test, FileIO, Comodo, Comodo.GeometryBasics, Statistics, LinearAlgebra
     @test any(contains.(readdir(f),"test"))
 end
 
-# @testset "slidercontrol" verbose = true begin
+@testset "slidercontrol" verbose = true begin
+    fig = Figure(size=(800,800))
+    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A sliced mesh")
+    hSlider = Slider(fig[2, 1], range = range(-2,2,10), startvalue = 0,linewidth=30)
 
-# end
+    slidercontrol(hSlider,ax1)
+
+    @test 1 == 1
+    # events(ax1).keyboardbutton
+end
 
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
@@ -2225,35 +2232,44 @@ end
 end
 
 
-# @testset "dirplot" begin
-#     M = cube(1.0)
-#     F = faces(M)
-#     V = coordinates(M)
-#     N = vertexnormal(F,V)
-#
-#     fig = Figure(size=(800,800))
-#     ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Direction data plot")
-#     hp = poly!(ax,M, strokewidth=3,color=:white, shading = FastShading)
-#     hp1 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:from)
-#     hp2 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:to)
-#     hp3 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:through)
-#     fig
-#
-# end
+@testset "dirplot" begin
+    M = cube(1.0)
+    F = faces(M)
+    V = coordinates(M)
+    U = vertexnormal(F,V)
+
+    fig = Figure(size=(800,800))
+    ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Direction data plot")
+    hp = poly!(ax,M, strokewidth=3,color=:white, shading = FastShading)
+    hp1 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:from)
+    hp2 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:to)
+    hp3 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:through)
+    
+    Mp = hp1[1].val
+
+    @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+    @test typeof(hp2) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+    @test typeof(hp3) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}        
+    @test length(faces(Mp)) == length(V)
+end
 
 
-# @testset "normalplot" begin
-#     M = cube(1.0)
-#     F = faces(M)
-#     V = coordinates(M)
-#
-#     fig = Figure(size=(800,800))
-#     ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Direction data plot")
-#     hp = poly!(ax,M, strokewidth=3,color=:white, shading = FastShading)
-#     hp1 =  normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
-#     fig
-#
-# end
+@testset "normalplot" begin
+    M = cube(1.0)
+    F = faces(M)
+    V = coordinates(M)
+
+    fig = Figure(size=(800,800))
+    ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Direction data plot")
+    hp = poly!(ax,M, strokewidth=3,color=:white, shading = FastShading)
+    hp1 =  normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
+
+    Mp = hp1[1].val
+
+    @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+    @test length(faces(Mp)) == length(F)
+end
+
 
 @testset "wrapindex" verbose = true begin
     eps_level = 1e-4
