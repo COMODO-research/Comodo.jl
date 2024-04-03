@@ -47,6 +47,8 @@ Mn = GeometryBasics.Mesh(Vn,Fn)
 
 
 ## Visualization
+cmap = :Spectral
+
 s = 1.25*maximum([maximum(map(v-> v[i],V)) - minimum(map(v-> v[i],V)) for i ∈ 1:3])
 
 R = rotation_between(n,[0.0,0.0,1.0])
@@ -64,9 +66,9 @@ hSlider = Slider(fig[2, 1], range = stepRange, startvalue = 0,linewidth=30)
 
 # hp1 = mesh!(ax1,GeometryBasics.Mesh(V,F),color=:white, shading = FastShading, transparency=true)
 hp2 = wireframe!(ax1,MG, linewidth=5, color=:red)
-hp3 = poly!(ax1,Mn, color=CnV, strokewidth=1, strokecolor=:black, shading = FastShading, transparency=false, colorrange = (-2,2),colormap=:Spectral)
+hp3 = poly!(ax1,Mn, color=CnV, strokewidth=1, strokecolor=:black, shading = FastShading, transparency=false, colorrange = (-2.5,2.5),colormap=cmap,levels = [-2.5,-1,1,2.5])
 # hp3 = normalplot(ax1,Mn)
-hp4 = Colorbar(fig[1,2],hp3)
+hp4 = Colorbar(fig[1,2],hp3,ticks=[-2,-1,1,2])
 
 on(hSlider.value) do stepIndex 
     pp = p + stepIndex*n
