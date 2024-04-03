@@ -38,3 +38,7 @@ jobs:
           PR_NUMBER: ${{ github.event.number }}
         run: >
           DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=. -e 'using Pkg; Pkg.activate("."); Pkg.test()'
+      - uses: codecov/codecov-action@v2
+        with:
+          verbose: true
+          files: lcov.info
