@@ -2353,10 +2353,55 @@ end
 end
 
 
-# @testset "trisurfslice" begin
-#     F,V = geosphere(2,1.0)
+@testset "trisurfslice" begin
+    tol_level = 1e-2
 
-# end
+    r = 2.5 # Sphere radius
+    F,V = geosphere(3,r)
+
+    p = [0.0,0.0,0.0]; # Point on cutting plane
+    n = normalizevector(Vec{3, Float64}(0.0,0.0,1.0))# Cutting plane normal
+    snapTolerance = 1e-6
+    output_type = :full
+
+    Fn,Vn,Cn = trisurfslice(F,V,n,p; output_type=output_type)
+
+    # Check if cut defines a circle of expected radius    
+    Fn_below = Fn[Cn.<0]
+    En_below = boundaryedges(Fn_below)
+    ind_below = unique(reduce(vcat,En_below))
+    d = [norm(v) for v ∈ Vn[ind]]
+    @test isapprox(sum((d.-r).^2),0.0,atol=tol_level) # Should 
+
+    p = [0.0,0.0,0.0]; # Point on cutting plane
+    n = normalizevector(Vec{3, Float64}(0.0,1.0,1.0))# Cutting plane normal
+    snapTolerance = 1e-6
+    output_type = :full
+
+    Fn,Vn,Cn = trisurfslice(F,V,n,p; output_type=output_type)
+
+    # Check if cut defines a circle of expected radius    
+    Fn_below = Fn[Cn.<0]
+    En_below = boundaryedges(Fn_below)
+    ind_below = unique(reduce(vcat,En_below))
+    d = [norm(v) for v ∈ Vn[ind]]
+    @test isapprox(sum((d.-r).^2),0.0,atol=tol_level) # Should 
+
+    p = [0.0,0.0,0.0]; # Point on cutting plane
+    n = normalizevector(Vec{3, Float64}(1.0,1.0,1.0))# Cutting plane normal
+    snapTolerance = 1e-6
+    output_type = :full
+
+    Fn,Vn,Cn = trisurfslice(F,V,n,p; output_type=output_type)
+
+    # Check if cut defines a circle of expected radius    
+    Fn_below = Fn[Cn.<0]
+    En_below = boundaryedges(Fn_below)
+    ind_below = unique(reduce(vcat,En_below))
+    d = [norm(v) for v ∈ Vn[ind]]
+    @test isapprox(sum((d.-r).^2),0.0,atol=tol_level) # Should 
+end
+
 
 @testset "count_edge_face" verbose = true begin
 

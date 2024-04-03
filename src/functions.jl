@@ -89,8 +89,7 @@ function slidercontrol(hSlider::Slider,ax::Union{Axis3, Figure})
                     sliderIndex -= 1                     
                 end            
             end
-            println(sliderIndex)
-            set_close_to!(hSlider, sliderRange[sliderIndex])
+            hSlider.selected_index = sliderIndex            
         end
     end    
 end
@@ -2157,7 +2156,7 @@ function remove_unused_vertices(F,V)::Tuple
     return Fc, Vc, indFix
 end
 
-function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance = 0, output_type=:full)
+function trisurfslice(F,V,n = Vec{3, Float64}(0.0,1.0,1.0), p = mean(V,dims=1); snapTolerance = 0, output_type=:full)
 
     intersectFunc(v1,v2,d,n) = v1 .- d/dot(n,v2.-v1) .* (v2.-v1)
     
@@ -2169,6 +2168,7 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
     LV = d.<0
     
     Fn =  Vector{TriangleFace{Int64}}()
+    Cn =  Vector{Int64}()
     Vn = deepcopy(V)
     D = Dict{Vector{Int64},Int64}() # For pointing from edge to intersection point index
     for f ∈ F
@@ -2178,6 +2178,7 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
             if all(lf) # All below
                 if output_type == :full || output_type == :below            
                     push!(Fn,f)
+                    push!(Cn,-2)
                 end                 
             else # Some below -> cut
                 nBelow = sum(lf) # Number of nodes below
@@ -2196,11 +2197,16 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
                         D[e2] = length(Vn)
                     end
 
-                    if output_type == :above || output_type == :full                        
+                    if output_type == :above || output_type == :full       
                         push!(Fn,TriangleFace{Int64}(D[e1],indP[2],indP[3]))
                         push!(Fn,TriangleFace{Int64}(D[e1],indP[3],D[e2]))
-                    elseif output_type == :below || output_type == :full
+                        push!(Cn,1)
+                        push!(Cn,1)
+                    end
+                    
+                    if output_type == :below || output_type == :full
                         push!(Fn,TriangleFace{Int64}(indP[1],D[e1],D[e2]))
+                        push!(Cn,-1)                        
                     end
 
                 else # 1-above, 2 below
@@ -2221,18 +2227,25 @@ function trisurfslice(F,V,n = (0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance =
                     if output_type == :below || output_type == :full                        
                         push!(Fn,TriangleFace{Int64}(D[e1],indP[2],indP[3]))
                         push!(Fn,TriangleFace{Int64}(D[e1],indP[3],D[e2]))
-                    elseif output_type == :above || output_type == :full
+                        push!(Cn,-1)
+                        push!(Cn,-1)
+                    end
+
+                    if output_type == :above || output_type == :full
                         push!(Fn,TriangleFace{Int64}(indP[1],D[e1],D[e2]))
+                        push!(Cn,1)                        
                     end
                 end
             end
         else # Not any below -> all above
             if output_type == :full || output_type == :above            
                 push!(Fn,f)
+                push!(Cn,2)
             end    
         end
     end    
-    return remove_unused_vertices(Fn,Vn)
+    Fn,Vn = remove_unused_vertices(Fn,Vn)
+    return Fn,Vn,Cn
 end
 
 function count_edge_face(F,E_uni=nothing,indReverse=nothing)::Vector{Int64}

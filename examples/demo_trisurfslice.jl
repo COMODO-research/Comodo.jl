@@ -39,7 +39,10 @@ p = mean(V,dims=1)[1]; # Point on cutting plane
 n = normalizevector(Vec{3, Float64}(0.0,1.0,1.0))# Cutting plane normal
 snapTolerance = 1e-6
 
-Fn,Vn = trisurfslice(F,V,n,p; output_type=:below)
+cutType = :full
+Fn,Vn,Cn = trisurfslice(F,V,n,p; output_type=cutType)
+Fn,Vn = separate_vertices(Fn,Vn)
+CnV = simplex2vertexdata(Fn,Cn)
 Mn = GeometryBasics.Mesh(Vn,Fn)
 
 
@@ -50,35 +53,41 @@ R = rotation_between(n,[0.0,0.0,1.0])
 plateDim = (s,s)
 plateElem = (1,1)
 FG1,VG1 = quadplate(plateDim,plateElem)
-MG = GeometryBasics.Mesh(VG1,FG1)
+VGn = [GeometryBasics.Point{3, Float64}(R'*v)+p for v ∈ VG1]
+MG = GeometryBasics.Mesh(VGn,FG1)
+
 fig = Figure(size=(800,800))
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A sliced mesh")
 
 stepRange = range(-s,s,50)
 hSlider = Slider(fig[2, 1], range = stepRange, startvalue = 0,linewidth=30)
 
-Mn = lift(hSlider.value) do stepIndex       
-    pp = [p[1],p[2],p[3]+stepIndex]
-    Fn,Vn = trisurfslice(F,V,n,pp; output_type=:below)            
-    if isempty(Fn)
-        return GeometryBasics.Mesh(V,F)
-    else
-        return GeometryBasics.Mesh(Vn,Fn)
-    end
-end
-
-MG = lift(hSlider.value) do stepIndex   
-    pp = [p[1],p[2],p[3]+stepIndex]
-    
-    VGn = [GeometryBasics.Point{3, Float64}(R'*v) for v ∈ VG1] # Rotate plane
-    VGn = map(v-> v.+pp,VGn) # Offset plate    
-    return GeometryBasics.Mesh(togeometrybasics_points(VGn),FG1)
-end
-
-hp1 = mesh!(ax1,GeometryBasics.Mesh(V,F),color=:white, shading = FastShading, transparency=true)
+# hp1 = mesh!(ax1,GeometryBasics.Mesh(V,F),color=:white, shading = FastShading, transparency=true)
 hp2 = wireframe!(ax1,MG, linewidth=5, color=:red)
-hp3 = poly!(ax1,Mn, strokewidth=2,color=:white, strokecolor=:blue, shading = FastShading, transparency=false)
+hp3 = poly!(ax1,Mn, color=CnV, strokewidth=1, strokecolor=:black, shading = FastShading, transparency=false, colorrange = (-2,2),colormap=:Spectral)
 # hp3 = normalplot(ax1,Mn)
+hp4 = Colorbar(fig[1,2],hp3)
+
+on(hSlider.value) do stepIndex 
+    pp = p + stepIndex*n
+    Fn,Vn,Cn = trisurfslice(F,V,n,pp; output_type=cutType) 
+   
+    if isempty(Fn)
+        Mn = GeometryBasics.Mesh(V,F)
+        CnV = zeros(length(V))
+    else
+        Fn,Vn = separate_vertices(Fn,Vn)
+        CnV = simplex2vertexdata(Fn,Cn)
+        Mn = GeometryBasics.Mesh(Vn,Fn)
+    end
+    
+    VGn = [GeometryBasics.Point{3, Float64}(R'*v)+pp for v ∈ VG1] # Rotate plane    
+    MG = GeometryBasics.Mesh(togeometrybasics_points(VGn),FG1)
+
+    hp2[1] = MG
+    hp3[1] = Mn
+    hp3.color = CnV
+end
 
 slidercontrol(hSlider,ax1)
 fig
