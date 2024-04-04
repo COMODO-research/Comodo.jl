@@ -204,7 +204,7 @@ end
         @test isapprox(result, true_result, atol=eps_level)
     end
 
-    @testset "errors" begin
+    @testset "Errors" begin
         x = range(0,2,12)
         y = range(0,2,12)
         xi = range(0.5,1.5,5)
@@ -312,7 +312,7 @@ end
 @testset "nbezier" verbose = true begin 
     eps_level = 1e-4    
 
-    @testset "errors" begin 
+    @testset "Errors" begin 
         P = Point3{Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 1.0]]
         @test_throws Exception nbezier(P,1)
     end
@@ -359,7 +359,7 @@ end
 
 @testset "lerp" verbose = true begin 
 
-    @testset "errors" begin 
+    @testset "Errors" begin 
         @test_throws DimensionMismatch lerp([0.0,1.0],[0.0,10.0,5.0],0.5)
     end
 
@@ -613,12 +613,22 @@ end
 
 
 @testset "ind2sub" verbose = true begin
+
+    @testset "Errors" begin
+        A = rand(6,8)
+
+        # Test for out of range indices
+        @test_throws BoundsError ind2sub(size(A),-1)
+        @test_throws BoundsError ind2sub(size(A),length(A)+1)
+    end
+
     ind = [1,2,3,4,8,12,30]
 
     @testset "1D i.e. Vector" begin
         A = rand(30)
         IJK_A = ind2sub(size(A),ind)
         @test all([A[ind[i]] == A[IJK_A[i][1]] for i ∈ eachindex(ind)])
+        @test isempty(ind2sub(size(A),Int64[])) # Check if empty is returned
     end
 
     @testset "2D i.e. 2D Matrix" begin
@@ -674,6 +684,20 @@ end
     IJK_B = [[1, 1], [2, 1], [3, 1], [4, 1], [3, 2], [2, 3], [5, 6]]
     C = rand(3,5,2)
     IJK_C = [[1, 1, 1], [2, 1, 1], [3, 1, 1], [1, 2, 1], [2, 3, 1], [3, 4, 1], [3, 5, 2]]
+
+    @testset "Errors" begin
+        @test_throws DomainError sub2ind(size(A),[[-1]])
+        @test_throws DomainError sub2ind(size(A),[-1]) 
+        @test_throws DimensionMismatch sub2ind(size(A),[1,2,3,4]) 
+
+        @test_throws DomainError sub2ind(size(B),[[-1,1]])
+        @test_throws DomainError sub2ind(size(B),[-1,1]) 
+        @test_throws DimensionMismatch sub2ind(size(B),[1,2,3,4]) 
+
+        @test_throws DomainError sub2ind(size(C),[[-1,1,1]])
+        @test_throws DomainError sub2ind(size(C),[-1,1,1]) 
+        @test_throws DimensionMismatch sub2ind(size(C),[1,2,3,4]) 
+    end
 
     @testset "1D i.e. Vector" begin        
         @test sub2ind(size(A),IJK_A)==ind
@@ -739,6 +763,13 @@ end
         F = [QuadFace{Int64}(1, 2, 3, 4),QuadFace{Int64}(6, 5, 4, 3)]
         E = meshedges(F)
         @test E == LineFace{Int64}[[1, 2], [6, 5], [2, 3], [5, 4], [3, 4], [4, 3], [4, 1], [3, 6]]
+    end
+
+    @testset "Mesh" begin
+        M = cube(1.0)
+        E = meshedges(M,unique_only=true)
+        @test E == LineFace{Int64}[[1, 2], [7, 8], [5, 6], [6, 7], [5, 8], [2, 3], 
+        [2, 6], [3, 7], [4, 8], [1, 5], [3, 4], [1, 4]]
     end
 end
 
@@ -816,15 +847,21 @@ end
 
 
 @testset "platonicsolid" begin
-
     eps_level = 1e-4
-    M = platonicsolid(4, 1.0) # icosahedron
-    F = faces(M)
-    V = coordinates(M)
-    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
-    @test length(F) == 20
-    @test isapprox(V[1], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps_level)
 
+    r = 2.5 # Radius
+    lv = [4,8,6,12,20] # Correct vertex numbers
+    lf = [4,6,8,20,12] # Correct vertex numbers
+
+    for q=1:5
+        M = platonicsolid(q, r) # icosahedron
+        F = faces(M)
+        V = coordinates(M)
+        @test isa(M,GeometryBasics.Mesh)
+        @test length(F) == lf[q]
+        @test length(V) == lv[q]
+        @test isapprox(mean(norm.(V)), r, atol=eps_level)
+    end
 end
 
 
@@ -1033,6 +1070,14 @@ end
         C = edgecrossproduct(F,V) 
         @test C == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,-1.0)]
     end
+    @testset "Mesh" begin
+        M = cube(1.0)
+        C = edgecrossproduct(M) 
+        @test C == Vec3{Float64}[[0.0, 0.0, -1.3333333333333337], 
+        [0.0, 0.0, 1.3333333333333337], [-1.3333333333333337, 0.0, 0.0], 
+        [0.0, 1.3333333333333337, 0.0], [1.3333333333333337, 0.0, 0.0], 
+        [0.0, -1.3333333333333337, 0.0]]
+    end
 end
 
 @testset "facenormal" verbose = true begin
@@ -1188,8 +1233,8 @@ end
         V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
         V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
         
-        @test d = edgelengths(F,V) == [1.0, 1.0, 1.0, 1.0] # Unit square
-        @test d = edgelengths(F,V*pi) == pi.*[1.0, 1.0, 1.0, 1.0] # Scaled square
+        @test edgelengths(F,V) == [1.0, 1.0, 1.0, 1.0] # Unit square
+        @test edgelengths(F,V*pi) == pi.*[1.0, 1.0, 1.0, 1.0] # Scaled square
     end
 
     @testset "F::Vector{Vector{Int64}}, V::Vector{Vec3}" begin
@@ -1200,7 +1245,7 @@ end
         V[3] = Vec3(1.0, 1.0, 0.0)
         V[4] = Vec3(0.0, 1.0, 0.0)
         
-        @test d = edgelengths(F,V) == [1.0, 1.0, 1.0, 1.0]    
+        @test edgelengths(F,V) == [1.0, 1.0, 1.0, 1.0]    
     end
 
     @testset "GeometryBasics LineFace edges" begin
@@ -1212,7 +1257,12 @@ end
         V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
         V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
         
-        @test d = edgelengths(E,V) == [1.0, 1.0, 1.0, 1.0]        
+        @test edgelengths(E,V) == [1.0, 1.0, 1.0, 1.0]        
+    end
+
+    @testset "Mesh" begin
+        M = cube(sqrt(3))
+        @test edgelengths(M) == 2.0*ones(12)
     end
 end
 
@@ -1223,6 +1273,12 @@ end
     V = coordinates(M)
     F = faces(M)
     n = 3
+
+    @testset "Errors" begin
+        @test_throws ArgumentError subtri(F, V, n; method=:wrong)
+        @test_throws ArgumentError subtri(F, V, -1)
+    end
+
     @testset "linear" begin
         Fn, Vn = subtri(F, V, n; method=:linear)
 
@@ -1232,6 +1288,10 @@ end
         @test Vn isa Vector{Point3{Float64}}
         @test length(Vn) == 642
         @test isapprox(Vn[1], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps_level)
+
+        Fn, Vn = subtri(F, V, 0)
+        @test Fn == F
+        @test Vn == V
     end
 
     @testset "Loop" begin
@@ -1254,6 +1314,12 @@ end
     F = faces(M)
     V = coordinates(M)    
     n = 3
+
+    @testset "Errors" begin
+        @test_throws ArgumentError subquad(F, V, n; method=:wrong)
+        @test_throws ArgumentError subquad(F, V, -1)
+    end
+
     @testset "linear" begin
         Fn, Vn = subquad(F, V, n; method=:linear)
 
@@ -1263,6 +1329,10 @@ end
         @test Vn isa Vector{Point3{Float64}}
         @test length(Vn) == 386
         @test isapprox(Vn[1], [-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], atol=eps_level)
+        
+        Fn, Vn = subquad(F, V, 0)
+        @test Fn == F
+        @test Vn == V
     end
 
     @testset "Catmull_Clark" begin
@@ -1929,7 +1999,17 @@ end
     F = faces(M)
     V = coordinates(M)
     Fs,Vs = separate_vertices(F,V)
-    Fm, Vm, indReverse = mergevertices(Fs, Vs)
+    Fm, Vm, indReverse = mergevertices(Fs, Vs; roundVertices = true)
+
+    @test V isa Vector{Point3{Float64}}
+    @test length(Vm) == length(V)
+    @test isapprox(Vm[1], [-1.0, -1.0, -1.0], atol=eps_level)
+    @test [indReverse[f] for f ∈ Fm] == Fs # Reverse mapping 
+    @test Fm isa Vector{QuadFace{Int64}} # Face type unaltered 
+    @test length(Fm) == length(F) # Length is correct
+    @test Fm[1] == [1, 2, 3, 4]
+
+    Fm, Vm, indReverse = mergevertices(Fs, Vs; roundVertices = false)
 
     @test V isa Vector{Point3{Float64}}
     @test length(Vm) == length(V)
@@ -1941,38 +2021,141 @@ end
 end
 
 
-@testset "smoothmesh_laplacian" begin
+@testset "smoothmesh_laplacian" verbose = true begin
+
     eps_level = 1e-4
     M = tetrahedron(1.0)
     F = faces(M)
     V = coordinates(M)
     F,V = subtri(F,V,3)
 
-    λ = 0.5 # Laplacian smoothing parameter
-    n = 10 # Number of iterations 
-    Vs = smoothmesh_laplacian(F,V,n,λ; constrained_points = [5])
-   
-    @test Vs[5] == V[5]
-    @test length(V) == length(Vs)
-    @test isapprox(Vs[1:12:end],Point3{Float64}[[-0.5267934833030736, -0.3045704088157244, -0.21536380142235773], [0.18035752833432903, 0.10412811672612346, 0.294521655293559], [0.08303921331720784, 0.4644517405905486, -0.21506879101783555], [0.27578186198836685, 0.061145348885743724, 0.14725778543071683], [0.42141942792006937, -0.14533559613655794, -0.028420418214732533], [0.14563756593170252, 0.013984084814994118, 0.4219980296556624], [0.060704371251411274, 0.5216603792732742, -0.14726169138940381], [0.09542433365403777, 0.33344751143983137, 0.11891253326014106], [0.35882107530557467, -0.013681340938917872, -0.21539751418386643], [0.09542433365403777, 0.22326098199503258, 0.27473981759179783], [0.022334842065796563, 0.5696027951808408, -0.21506313462934012]],atol=eps_level)
+    ind = round.(Int64,range(1,length(V),5))
+
+    @testset "errors" begin
+        λ = -0.5 # Laplacian smoothing parameter
+        n = 10 # Number of iterations 
+        @test_throws ArgumentError smoothmesh_laplacian(F,V,n,λ)
+
+        λ = 0.5 # Laplacian smoothing parameter
+        n = -3 # Number of iterations 
+        @test_throws ArgumentError smoothmesh_laplacian(F,V,n,λ)
+    end
+
+    @testset "n=0" begin
+        λ = 0.5 # Laplacian smoothing parameter
+        n = 0 # Number of iterations 
+        @test V == smoothmesh_laplacian(F,V,n,λ)
+    end
+
+    @testset "Unconstrained smoothing" begin
+        λ = 0.5 # Laplacian smoothing parameter
+        n = 10 # Number of iterations 
+        Vs = smoothmesh_laplacian(F,V,n,λ)
+    
+        @test length(V) == length(Vs)
+        @test isapprox(Vs[ind],Point3{Float64}[[-0.5267934833030736, -0.3041443593923703, -0.21506253898598338],
+         [0.443754269985866, -0.2562016472303856, -0.07946007147312682], 
+         [-0.08493319468029126, 0.11913157297777958, 0.4220011641990833], 
+         [-6.987080667128806e-19, 0.1939578299475715, 0.3708898233176402], 
+         [-0.022334842065796563, -0.012895027078995421, 0.6087149725933829]],
+                                                atol=eps_level)
+    end
+
+    @testset "Constrained smoothing" begin
+        λ = 0.5 # Laplacian smoothing parameter
+        n = 10 # Number of iterations 
+        Vs = smoothmesh_laplacian(F,V,n,λ; constrained_points = [5])
+    
+        @test Vs[5] == V[5]
+        @test length(V) == length(Vs)
+        @test isapprox(Vs[ind],Point3{Float64}[[-0.5267934833030736, -0.3045704088157244, -0.21536380142235773],
+        [0.443754269985866, -0.2568254964220775, -0.07990119946700998], 
+        [-0.08493319468029126, 0.11913135061947012, 0.4220010069680148], 
+        [-6.987080667128806e-19, 0.19395781755288108, 0.3708898145532705], 
+        [-0.022334842065796563, -0.012895869445908863, 0.6087143769500261]], atol=eps_level)
+    end
+
 end
 
 
-@testset "smoothmesh_hc" begin
+@testset "smoothmesh_hc" verbose = true begin
     eps_level = 1e-4
     M = tetrahedron(1.0)
     F = faces(M)
     V = coordinates(M)
     F,V = subtri(F,V,3)
 
-    n=10
-    α=0.1
-    β=0.5
-    Vs = smoothmesh_hc(F,V,n,α,β; constrained_points = [5])
-   
-    @test Vs[5] == V[5]
-    @test length(V) == length(Vs)
-    @test isapprox(Vs[1:12:end],Point3{Float64}[[-0.717172128187643, -0.4136411138967243, -0.29248843661393087], [0.2172725677452308, 0.12542984177391073, 0.354795754721541], [0.14131349634859056, 0.5833163373526694, -0.2928129682724839], [0.3244337573708121, 0.06012744101331828, 0.1773748669098122], [0.5320437804652989, -0.18001157172411225, -0.007876437657606965], [0.2076100230944868, 0.007251571709351666, 0.5218871813767098], [0.09749864497483732, 0.6706350785643729, -0.1774072797262262], [0.10716118962558129, 0.42533928994594383, 0.16951517881969574], [0.4657472537194027, 0.021884259910259368, -0.2924568169614577], [0.10716118962558129, 0.30160020659192405, 0.3445086686945654], [0.04381485137375324, 0.7522177199770612, -0.29279262066755407]],atol=eps_level)
+    ind = round.(Int64,range(1,length(V),5))
+
+    @testset "errors" begin
+        n=10
+        α=-0.1
+        β=0.5
+        @test_throws ArgumentError smoothmesh_hc(F,V,n,α,β)
+
+        n=10
+        α=0.1
+        β=-0.5
+        @test_throws ArgumentError smoothmesh_hc(F,V,n,α,β)
+
+        n=-3
+        α=0.1
+        β=0.5
+        @test_throws ArgumentError smoothmesh_hc(F,V,n,α,β)
+    end
+
+    @testset "n=0" begin
+        n=0
+        α=0.1
+        β=0.5
+        @test V == smoothmesh_hc(F,V,n,α,β)
+    end
+
+    @testset "Unconstrained smoothing" begin
+        n=10
+        α=0.1
+        β=0.5
+        Vs = smoothmesh_hc(F,V,n,α,β)
+    
+        @test length(V) == length(Vs)
+        @test isapprox(Vs[ind],Point3{Float64}[[-0.717172128187643, -0.4140595212644323, -0.2927842953009355], 
+        [0.5758586318390522, -0.3324721361074463, -0.0620203220858017], 
+        [-0.11011137811964947, 0.17615457164191245, 0.521908672591213], 
+        [-8.683563963552147e-19, 0.2903204379104125, 0.4677777851758052], 
+        [-0.04381485137375324, -0.025296516235139878, 0.8068035332217547]],atol=eps_level)
+    end
+
+    @testset "Constrained smoothing" begin
+        n=10
+        α=0.1
+        β=0.5
+        Vs = smoothmesh_hc(F,V,n,α,β; constrained_points = [5])
+    
+        @test Vs[5] == V[5]
+    
+        @test length(V) == length(Vs)
+        @test isapprox(Vs[ind],Point3{Float64}[[-0.717172128187643, -0.4136411138967243, -0.29248843661393087], 
+        [0.5758586318390522, -0.33191585522870704, -0.061626972104200775], 
+        [-0.11011137811964947, 0.17615378734209927, 0.5219081180074967], 
+        [-8.683563963552147e-19, 0.2903235073180716, 0.46777995557477525], 
+        [-0.04381485137375324, -0.025308290081523535, 0.8067952078551363]],atol=eps_level)
+    end
+
+    @testset "Distance threshold termination" begin
+        n=1000
+        α=0.1
+        β=0.5
+        tolDist=1e-2
+        Vs = smoothmesh_hc(F,V,n,α,β;  tolDist=tolDist)
+    
+        @test length(V) == length(Vs)
+        @test isapprox(Vs[ind],Point3{Float64}[[-0.7077940615748582, -0.40864509198106286, -0.28895571563840994], 
+        [0.5726730482498883, -0.3306329385647165, -0.06830402485575475], 
+        [-0.10900177329770618, 0.17092653723203155, 0.5232535614837974], 
+        [-2.4395652898844805e-18, 0.2818887131438471, 0.4682163057073023], 
+        [-0.04159517654997694, -0.024014986378119194, 0.7989425080429475]],atol=eps_level)
+    end
+    
 end
 
 
@@ -2027,6 +2210,11 @@ end
 
     # A hexahedral mesh 
     Eh,Vh,_,_,_ = hexbox([1.0,1.0,1.0],[2,2,2])
+
+    @testset "Errors" begin
+        DF = [1.0] # Face data (here face number)
+        @test_throws ArgumentError simplex2vertexdata(F1,DF,nothing; weighting=:area)
+    end
 
     @testset "Vector Float64 data, weighting=:none" begin
         # Single element
@@ -2280,16 +2468,35 @@ end
 @testset "circlepoints" verbose = true begin
     eps_level = 1e-4
 
+    @testset "Errors" begin
+        r = 2.0
+        n = 40
+        @test_throws ArgumentError circlepoints(2.0, n; dir=:wrong)
+    end
+    
     @testset "with value" begin
         r = 2.0
         n = 40
-        V = circlepoints(2.0, n)
+        V = circlepoints(r, n; dir=:acw)
         ind = round.(Int64,range(1,length(V),5))
         d = [sqrt(sum(v.^2)) for v in V]
         @test V isa Vector{Point3{Float64}}
         @test length(V) == n
         @test isapprox(d,fill(r,n),atol=eps_level)
-        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], [1.2246467991473532e-16, 2.0, 0.0], [-1.9753766811902753, 0.31286893008046196, 0.0], [-0.31286893008046207, -1.9753766811902753, 0.0], [1.9753766811902753, -0.31286893008046224, 0.0]], atol=eps_level)
+        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
+        [1.2246467991473532e-16, 2.0, 0.0], [-1.9753766811902753, 0.31286893008046196, 0.0], 
+        [-0.31286893008046207, -1.9753766811902753, 0.0], 
+        [1.9753766811902753, -0.31286893008046224, 0.0]], atol=eps_level)
+   
+        V = circlepoints(r, n; dir=:cw)
+        ind = round.(Int64,range(1,length(V),5))
+        d = [sqrt(sum(v.^2)) for v in V]
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == n
+        @test isapprox(d,fill(r,n),atol=eps_level)
+        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], [1.2246467991473532e-16, -2.0, 0.0], 
+        [-1.9753766811902753, -0.31286893008046196, 0.0], [-0.31286893008046207, 1.9753766811902753, 0.0], 
+        [1.9753766811902753, 0.31286893008046224, 0.0]], atol=eps_level)
     end
 
     @testset "with function" begin
@@ -2316,6 +2523,10 @@ end
     V1 = circlepoints(r, nc; dir=:cw)
     V2 = [v.+n for v in V1]
     num_steps = 3
+
+    @testset "Errors" begin
+        @test_throws ArgumentError loftlinear(V1,V2;num_steps=num_steps,close_loop=true,face_type=:wrong)
+    end
 
     @testset "quad" begin
         F,V = loftlinear(V1,V2;num_steps=num_steps,close_loop=true,face_type=:quad)
@@ -2352,7 +2563,7 @@ end
 end
 
 
-@testset "dirplot" begin
+@testset "dirplot" verbose = true begin
     M = cube(1.0)
     F = faces(M)
     V = coordinates(M)
@@ -2367,14 +2578,20 @@ end
     
     Mp = hp1[1].val
 
-    @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
-    @test typeof(hp2) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
-    @test typeof(hp3) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}        
-    @test length(faces(Mp)) == length(V)
+    @testset "Errors" begin
+        @test_throws ArgumentError dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:wrong)
+    end
+
+    @testset "Styles" begin
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+        @test typeof(hp2) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+        @test typeof(hp3) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}        
+        @test length(faces(Mp)) == length(V)
+    end
 end
 
 
-@testset "normalplot" begin
+@testset "normalplot" verbose = true begin
     M = cube(1.0)
     F = faces(M)
     V = coordinates(M)
@@ -2382,12 +2599,23 @@ end
     fig = Figure(size=(800,800))
     ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Direction data plot")
     hp = poly!(ax,M, strokewidth=3,color=:white, shading = FastShading)
-    hp1 =  normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
 
-    Mp = hp1[1].val
 
-    @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
-    @test length(faces(Mp)) == length(F)
+    @testset "Errors" begin
+        @test_throws ArgumentError normalplot(ax,M; type_flag=:wrong, color=:black,linewidth=3,scaleval=nothing)
+    end
+
+    @testset "type_flag options" begin
+        hp1 =  normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
+        Mp = hp1[1].val
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+        @test length(faces(Mp)) == length(F)
+
+        hp1 =  normalplot(ax,M; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
+        Mp = hp1[1].val
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+        @test length(faces(Mp)) == length(V)
+    end
 end
 
 
@@ -2461,18 +2689,48 @@ end
     M = cube(1.0)
     F = faces(M)
     V = coordinates(M)
-    ind = round.(Int64,range(1,length(F)*2,5))
- 
-    Ft = quad2tri(F,V; convert_method = :forward)
-    @test Ft[ind] == TriangleFace{Int64}[TriangleFace(1, 2, 3), TriangleFace(6, 5, 8), TriangleFace(2, 1, 5), TriangleFace(7, 8, 4), TriangleFace(1, 4, 8)]
-    @test Ft isa Vector{TriangleFace{Int64}}
 
-    Ft = quad2tri(F,V; convert_method = :backward)
-    @test Ft[ind] == TriangleFace{Int64}[TriangleFace(1, 2, 4), TriangleFace(7, 6, 5), TriangleFace(6, 2, 1), TriangleFace(7, 8, 3), TriangleFace(5, 1, 4)]
-    
-    Ft = quad2tri(F,V; convert_method = :angle)
-    @test Ft[ind] == TriangleFace{Int64}[TriangleFace(1, 2, 4), TriangleFace(7, 6, 5), TriangleFace(6, 2, 1), TriangleFace(7, 8, 3), TriangleFace(5, 1, 4)]
+    # Build deformation gradient tensor to induce shear with known angles
+    f = zeros(3,3)
+    for i=1:3
+        f[i,i]=1.0
+    end
+    a = pi/6 # "45 degree shear"  
+    f[1,2] = tan(a) 
+    V = togeometrybasics_points([f*v for v ∈ V]) # Shear the cube
 
+    # Build deformation gradient tensor to induce shear with known angles
+    f = zeros(3,3)
+    for i=1:3
+        f[i,i]=1.0
+    end
+    a = pi/6 # "45 degree shear"  
+    f[3,1] = tan(a) 
+    V = togeometrybasics_points([f*v for v ∈ V]) # Shear the cube
+
+    @testset "Errors" begin
+        @test_throws ArgumentError quad2tri(F,V; convert_method = :wrong)
+    end
+
+    @testset "convert_method variations" begin
+        Ft = quad2tri(F,V; convert_method = :forward)
+        @test Ft ==TriangleFace{Int64}[TriangleFace(1, 2, 3), TriangleFace(3, 4, 1), 
+        TriangleFace(8, 7, 6), TriangleFace(6, 5, 8), TriangleFace(5, 6, 2), 
+        TriangleFace(2, 1, 5), TriangleFace(6, 7, 3), TriangleFace(3, 2, 6), 
+        TriangleFace(7, 8, 4), TriangleFace(4, 3, 7), TriangleFace(8, 5, 1), TriangleFace(1, 4, 8)]
+        
+        Ft = quad2tri(F,V; convert_method = :backward)
+        @test Ft == TriangleFace{Int64}[TriangleFace(1, 2, 4), TriangleFace(2, 3, 4), 
+        TriangleFace(8, 7, 5), TriangleFace(7, 6, 5), TriangleFace(5, 6, 1), 
+        TriangleFace(6, 2, 1), TriangleFace(6, 7, 2), TriangleFace(7, 3, 2), 
+        TriangleFace(7, 8, 3), TriangleFace(8, 4, 3), TriangleFace(8, 5, 4), TriangleFace(5, 1, 4)]
+
+        Ft = quad2tri(F,V; convert_method = :angle)
+        @test Ft == TriangleFace{Int64}[TriangleFace(1, 2, 4), TriangleFace(2, 3, 4), 
+        TriangleFace(8, 7, 6), TriangleFace(6, 5, 8), TriangleFace(5, 6, 2), 
+        TriangleFace(2, 1, 5), TriangleFace(6, 7, 3), TriangleFace(3, 2, 6), 
+        TriangleFace(7, 8, 3), TriangleFace(8, 4, 3), TriangleFace(8, 5, 4), TriangleFace(5, 1, 4)]
+    end
 end
 
 
@@ -2486,6 +2744,12 @@ end
     @test Vn isa Vector{Point3{Float64}}
     @test length(F) == length(Fn)
     @test length(Vn) ==  maximum(reduce(vcat,Fn))
+    
+    # Check empty results
+    Fn, Vn = remove_unused_vertices(Vector{TriangleFace{Int64}}(), V)
+    @test isempty(Fn)
+    @test isempty(Vn)
+
 end
 
 
@@ -2500,7 +2764,10 @@ end
     snapTolerance = 1e-6
     output_type = :full
 
-    Fn,Vn,Cn = trisurfslice(F,V,n,p; output_type=output_type)
+    Fn,Vn,Cn = trisurfslice(F,V,n,p; output_type=output_type, snapTolerance=snapTolerance)
+
+    # Check error
+    @test_throws ArgumentError trisurfslice(F,V,n,p; output_type=:wrong)
 
     # Check if cut defines a circle of expected radius    
     Fn_below = Fn[Cn.<0]
@@ -2541,12 +2808,18 @@ end
 
 @testset "count_edge_face" verbose = true begin
 
+    
     @testset "Single triangle" begin
         F = [TriangleFace{Int64}(1, 2, 3)]       
         E = meshedges(F)
         Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
         count_E2F = count_edge_face(F,Eu,indReverse)
         @test count_E2F == [1,1,1]
+
+        # Reduced input set 
+        count_E2F = count_edge_face(F)
+        @test count_E2F == [1,1,1]
+
     end
 
     @testset "Single quad" begin
@@ -2646,11 +2919,26 @@ end
 
 @testset "extrudecurve" verbose = true begin
     eps_level = 1e-4
+
     r = 1.0
     nc = 16
     d = 3.0
     Vc = circlepoints(r, nc; dir=:cw)
     num_steps = 5
+
+    @testset "Default behaviours" begin
+        F, V = extrudecurve(Vc, d)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)            
+        @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+
+        F, V = extrudecurve(Vc, d; face_type=:tri)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)            
+        @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+    end
 
     @testset "Direction (s) variations" begin
         F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
@@ -2750,32 +3038,55 @@ end
 
 
 @testset "meshgroup" verbose = true begin
+
+    @testset "Errors" begin
+        F = TriangleFace{Int64}[[1,2,3]]
+        @test_throws ArgumentError meshgroup(F; con_type=:wrong)
+    end
+
     @testset "Single face" begin
         # Single triangle
         F = TriangleFace{Int64}[[1,2,3]]
-        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0]]
         C = meshgroup(F)
         @test C == [1]
 
+        # Single triangle, edge connectivity
+        F = TriangleFace{Int64}[[1,2,3]]
+        C = meshgroup(F; con_type=:e)
+        @test C == [1]
+        
         # Single quad
         F = QuadFace{Int64}[[1,2,3,4]]
-        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],[0.0,1.0,0.0]]
         C = meshgroup(F)
         @test C == [1]
     end
 
     @testset "Two separate faces" begin
-        # Two triangles
+        # Two triangles separate
         F = TriangleFace{Int64}[[1,2,3],[4,5,6]]
-        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],
-                            [0.0,0.0,1.0],[1.0,0.0,1.0],[1.0,1.0,1.0]]
         C = meshgroup(F)
         @test C == [1,2]
 
+         # Two triangles, edge sharing 
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]
+        C = meshgroup(F; con_type=:e)
+        @test C == [1,1]
+        
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]
+        C = meshgroup(F; con_type=:v)
+        @test C == [1,1]
+
+        # Two bow-tie triangles, node sharing 
+        F = TriangleFace{Int64}[[1,2,3],[3,4,5]]
+        C = meshgroup(F; con_type=:e)
+        @test C == [1,2]
+
+        F = TriangleFace{Int64}[[1,2,3],[3,4,5]]
+        C = meshgroup(F; con_type=:v)
+        @test C == [1,1]
+        
         # Two quads
         F = QuadFace{Int64}[[1,2,3,4],[5,6,7,8]]
-        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],[0.0,1.0,0.0],
-                            [0.0,0.0,1.0],[1.0,0.0,1.0],[1.0,1.0,1.0],[0.0,1.0,1.0]]
         C = meshgroup(F)
         @test C == [1,2]
     end
@@ -3092,6 +3403,20 @@ end
         @test length(Fn) == length(F)    
         @test length(Vn) == length(F)*length(F[1])
     end
+
+    @testset "Mesh" begin
+        M = tetrahedron(1.0)
+        F = faces(M)
+        V = coordinates(M)
+        Mn = separate_vertices(M)    
+        Fn = faces(Mn)
+        Vn = coordinates(Mn)
+        @test Vn isa Vector{Point3{Float64}}
+        @test typeof(Fn) == typeof(F)
+        @test length(Fn) == length(F)    
+        @test length(Vn) == length(F)*length(F[1])
+    end
+
 end
 
 @testset "curve_length" verbose = true begin

@@ -731,7 +731,7 @@ function ind2sub(siz::Union{Tuple{Vararg{Int64, N}}, Array{Int64, N}},ind::Union
         k = cumprod(siz) # Cumulative product of size
         m = prod(siz) # Number of elements   
         if any(ind.>m) || any(ind.<1)
-            error("Encountered index value of out of valid range 1:$m")
+            throw(BoundsError("Encountered index value out of valid range 1:$m"))
         end
         if isa(ind,Union{Array,Tuple}) # Potentially multiple indices so loop over them
             A = [ind2sub_(ind_i,numDim,k) for ind_i ∈ ind]
@@ -769,27 +769,31 @@ the equivalent linear indices.
 """
 function sub2ind(siz::Union{Tuple{Vararg{Int64, N}}, Array{Int64, N}},A::Union{Vector{Vector{Int64}}, Array{NgonFace{M, Int64}, 1}}) where N where M
     numDim = length(siz)
-    if numDim==1
-        ind = [A[q][1] for q ∈ eachindex(A)]
-    else
-        k = cumprod([siz[i] for i ∈ eachindex(siz)],dims=1)        
-        ind = Vector{Int64}(undef,length(A))
-        for i ∈ eachindex(A)        
-            a = A[i]
-            if length(a)==numDim
-                if any(a.>siz) || any(a.<1)
-                    error("BoundsError: Indices in A[$i] exceed bounds implied by size provided")
-                end    
-            else                
-                error("Incorrect number of indices in  A[$i], size implies number of indices should be $numDim")
-            end            
-            ind[i] = sub2ind_(a,numDim,k)
-        end                    
-    end
+    k = cumprod([siz[i] for i ∈ eachindex(siz)],dims=1)        
+    ind = Vector{Int64}(undef,length(A))
+    for i ∈ eachindex(A)        
+        a = A[i]
+        if length(a)==numDim
+            if any(a.>siz) || any(a.<1)
+                throw(DomainError(A[i],"Indices in A[$i] exceed bounds implied by size provided"))
+            end    
+        else                
+            throw(DimensionMismatch("Incorrect number of indices in  A[$i], size implies number of indices should be $numDim"))
+        end            
+        ind[i] = sub2ind_(a,numDim,k)
+    end                    
     return ind
 end
 
-function sub2ind(siz::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},A::Vector{Int64})  where N    
+function sub2ind(siz::Union{Tuple{Vararg{Int64, N}}, Vector{Int64}},A::Vector{Int64})  where N  
+    numDim = length(siz)  
+    if length(A)==numDim
+        if any(A.>siz) || any(A.<1)
+            throw(DomainError(A,"Indices in A exceed bounds implied by size provided"))
+        end 
+    else                
+        throw(DimensionMismatch("Incorrect number of indices in  A, size implies number of indices should be $numDim"))
+    end 
     return sub2ind(siz,[A])[1]
 end
 
@@ -1269,7 +1273,7 @@ method both refines and smoothes the geometry through spline approximation.
 [Charles Loop, Smooth Subdivision Surfaces Based on Triangles M.S. Mathematics Thesis, University of Utah. 1987.](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/thesis-10.pdf)
 [Jos Stam, Charles Loop, Quad/Triangle Subdivision, doi: 10.1111/1467-8659.t01-2-00647](https://doi.org/10.1111/1467-8659.t01-2-00647)
 """
-function subtri(F,V,n; method = :linear)
+function subtri(F,V,n::Int64; method = :linear)
     
     if iszero(n)
         return F,V
@@ -1334,7 +1338,7 @@ function subtri(F,V,n; method = :linear)
             # Create complete point set
             Vn = [Vv;Vm] # Updated orignals and new "mid-edge-ish" points
         else
-            error("Incorrect metod. Use :linear or :loop")
+            throw(ArgumentError("Incorrect method :$method. Use :linear or :loop"))
         end
 
         return Fn,Vn    
@@ -1344,11 +1348,13 @@ function subtri(F,V,n; method = :linear)
             F,V = subtri(F,V,1; method=method)
         end
         return F,V
+    else
+        throw(ArgumentError("n should be larger than 0"))
     end
 end
 
 
-function subquad(F,V,n; method=:linear)
+function subquad(F,V,n::Int64; method=:linear)
     if iszero(n)
         return F,V
     elseif isone(n)
@@ -1389,6 +1395,8 @@ function subquad(F,V,n; method=:linear)
             end
 
             Vn = [Vv;Ve;Vf] # Joined point set
+        else
+            throw(ArgumentError("Incorrect method :$method. Use :linear or :Catmull_Clark"))
         end
 
         # Define faces
@@ -1408,6 +1416,8 @@ function subquad(F,V,n; method=:linear)
         end
 
         return F,V
+    else
+        throw(ArgumentError("n should be larger than 0"))
     end
 end
 
@@ -1754,23 +1764,30 @@ between the two occurs.
 """
 function smoothmesh_laplacian(F,V,n=1, λ=0.5; con_V2V=nothing, constrained_points=nothing)
     if λ>1.0 || λ<0.0
-        error("λ should be in the range 0-1")
+        throw(ArgumentError("λ should be in the range 0-1"))
     end
+    
     if λ>0.0
-        # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if nothing
-        if isnothing(con_V2V)
-            E_uni = meshedges(F;unique_only=true)
-            con_V2V = con_vertex_vertex(E_uni)
-        end        
-        for _ = 1:n
-            Vs = deepcopy(V)
-            for q ∈ eachindex(V)                
-                Vs[q] = (1.0-λ).*Vs[q] .+ λ*mean(V[con_V2V[q]]) # Linear blend between original and pure Laplacian
+        if n==0
+            return V
+        elseif n>0
+            # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if nothing
+            if isnothing(con_V2V)
+                E_uni = meshedges(F;unique_only=true)
+                con_V2V = con_vertex_vertex(E_uni)
+            end        
+            for _ = 1:n
+                Vs = deepcopy(V)
+                for q ∈ eachindex(V)                
+                    Vs[q] = (1.0-λ).*Vs[q] .+ λ*mean(V[con_V2V[q]]) # Linear blend between original and pure Laplacian
+                end
+                if !isnothing(constrained_points)
+                    Vs[constrained_points] = V[constrained_points] # Put back constrained points
+                end
+                V = Vs
             end
-            if !isnothing(constrained_points)
-                Vs[constrained_points] = V[constrained_points] # Put back constrained points
-            end
-            V = Vs
+        else #n<0
+            throw(ArgumentError("n should greater or equal to 0"))
         end
     end
     return V
@@ -1791,45 +1808,61 @@ Laplacian like smoothing but aims to compensate for shrinkage/swelling by also
 """
 function smoothmesh_hc(F,V, n=1, α=0.1, β=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing)
 
-    # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if nothing
-    if isnothing(con_V2V)
-        E = meshedges(F)
-        E_uni,_ = gunique(E; return_unique=true, return_index=true, return_inverse=false, sort_entries=true)    
-        # E_uni,_,_ = unique_simplices(E)
-        con_V2V = con_vertex_vertex(E_uni)
+    if α>1.0 || α<0.0
+        throw(ArgumentError("α should be in the range 0-1"))
     end
-    P = deepcopy(V) # Copy original input points
-    B = deepcopy(V) # Initialise B
-    c = 0
-    while c<n       
-        Q = deepcopy(P) # Reset Q as P for this iteration
-        for i ∈ eachindex(V)
-            P[i] = mean(Q[con_V2V[i]]) # Laplacian 
-            # Compute different vector between P and a point between original 
-            # point and Q (which is P before laplacian)
-            B[i] = P[i] .- (α.*V[i] .+ (1.0-α).*Q[i])
+
+    if β>1.0 || β<0.0
+        throw(ArgumentError("β should be in the range 0-1"))
+    end
+
+    if n<0
+        throw(ArgumentError("n should greater or equal to 0"))
+    end
+
+    if n == 0 
+        return V
+    else
+        # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if nothing
+        if isnothing(con_V2V)
+            E = meshedges(F)
+            E_uni,_ = gunique(E; return_unique=true, return_index=true, return_inverse=false, sort_entries=true)    
+            # E_uni,_,_ = unique_simplices(E)
+            con_V2V = con_vertex_vertex(E_uni)
         end
-        d = 0.0        
-        for i ∈ eachindex(V)      
-            # Push points back based on blending between pure difference vector
-            # B and the Laplacian mean of these      
-            P[i] = P[i] .- (β.*B[i] .+ (1.0-β).* mean(B[con_V2V[i]]))
-        end   
-        c+=1 
-        if !isnothing(tolDist) # Include tolerance based termination
-            d = 0.0
+        P = deepcopy(V) # Copy original input points
+        B = deepcopy(V) # Initialise B
+        c = 0
+        while c<n       
+            Q = deepcopy(P) # Reset Q as P for this iteration
             for i ∈ eachindex(V)
-                d+=sqrt(sum((P[i].-Q[i]).^2)) # Sum of distances
+                P[i] = mean(Q[con_V2V[i]]) # Laplacian 
+                # Compute different vector between P and a point between original 
+                # point and Q (which is P before laplacian)
+                B[i] = P[i] .- (α.*V[i] .+ (1.0-α).*Q[i])
             end
-            if d<tolDist # Sum of distance smaller than tolerance?
-                break
-            end            
+            d = 0.0        
+            for i ∈ eachindex(V)      
+                # Push points back based on blending between pure difference vector
+                # B and the Laplacian mean of these      
+                P[i] = P[i] .- (β.*B[i] .+ (1.0-β).* mean(B[con_V2V[i]]))
+            end   
+            c+=1 
+            if !isnothing(tolDist) # Include tolerance based termination
+                d = 0.0
+                for i ∈ eachindex(V)
+                    d+=sqrt(sum((P[i].-Q[i]).^2)) # Sum of distances
+                end
+                if d<tolDist # Sum of distance smaller than tolerance?
+                    break
+                end            
+            end
+            if !isnothing(constrained_points)
+                P[constrained_points] = V[constrained_points] # Put back constrained points
+            end
         end
-        if !isnothing(constrained_points)
-            P[constrained_points] = V[constrained_points] # Put back constrained points
-        end
+        return P
     end
-    return P
 end
 
 function quadplate(plateDim,plateElem)
@@ -1873,7 +1906,7 @@ function simplex2vertexdata(F,DF,V=nothing; con_V2F=nothing, weighting=:none)
     end
     if weighting==:area
         if isnothing(V)
-           error("Vertices need to be provided for area based weighting.") 
+           throw(ArgumentError("Vertices need to be provided for area based weighting."))
         else
             A = facearea(F,V)
         end
@@ -1918,7 +1951,7 @@ function circlepoints(r,n; dir=:acw)
     elseif dir==:cw
         return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0.0,(2.0*π)/n-2.0*π,n)]
     else
-        error("Invalid dir specified, use :acw or :cw")
+        throw(ArgumentError("Invalid dir specified :$dir, use :acw or :cw"))
     end
 end
 
@@ -2039,7 +2072,7 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
             end
         end
     else
-        error("Invalid face_type specified, use :tri, :tri_slash, or :quad")
+        throw(ArgumentError("Invalid face_type specified :$face_type, use :tri, :tri_slash, or :quad"))
     end
     return F, V
 end 
@@ -2054,7 +2087,7 @@ function dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:from)
         UU = (scaleval.*U)/2
         P = vcat(V.-UU,V.+UU)
     else
-        error("Invalid style specified, use :from, :to, or :through")
+        throw(ArgumentError("Invalid style specified :$style, use :from, :to, or :through"))
     end
     hp = wireframe!(ax,GeometryBasics.Mesh(P,E),linewidth=linewidth, transparency=false, color=color)
     return hp
@@ -2073,12 +2106,9 @@ function normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=not
     elseif type_flag == :vertex
         N = vertexnormal(F,V)          
     else
-        error("Incorrect type_flag, use :face or :vertex")
+        throw(ArgumentError("Incorrect type_flag, use :face or :vertex"))
     end 
-    
     hp = dirplot(ax,V,N; color=color,linewidth=linewidth,scaleval=scaleval,style=:from)
-
-    # hp = arrows!(ax,V,N.*d,color=color,quality=6)    
     return hp 
 end
 
@@ -2125,15 +2155,15 @@ function quad2tri(F,V; convert_method = :angle)::Vector{TriangleFace{Int64}}
             af = edgeangles(ff,V)
             ab = edgeangles(fb,V)
             # Compare angles to perfect triangle angle π/3
-            δaf = sum(abs.(reduce(vcat,af) .- (π/3)))
-            δab = sum(abs.(reduce(vcat,ab) .- (π/3)))
+            δaf = maximum(abs.(reduce(vcat,af) .- (π/3)))
+            δab = maximum(abs.(reduce(vcat,ab) .- (π/3)))
             if δaf<δab
                 ft = ff
             else
                 ft = fb
             end    
         else
-            error("Incorrect conver_method set, use :forward, :backward, or :angle")
+            throw(ArgumentError("Incorrect convert_method set $convert_method, use :forward, :backward, or :angle"))
         end
         push!(Ft,ft[1])
         push!(Ft,ft[2])
@@ -2156,16 +2186,19 @@ function remove_unused_vertices(F,V)::Tuple
     return Fc, Vc, indFix
 end
 
-function trisurfslice(F,V,n = Vec{3, Float64}(0.0,1.0,1.0), p = mean(V,dims=1); snapTolerance = 0, output_type=:full)
+function trisurfslice(F,V,n = Vec{3, Float64}(0.0,1.0,1.0), p = mean(V,dims=1); snapTolerance = 0.0, output_type=:full)
 
+    if !in(output_type,(:full,:above,:below))
+        throw(ArgumentError("Invalid output_type :$output_type provided, use :full,:above, or :below"))
+    end
     intersectFunc(v1,v2,d,n) = v1 .- d/dot(n,v2.-v1) .* (v2.-v1)
     
     # Compute dot product with normal of slicing plane
     d = map(v-> dot(n,v.-p),V)
     if snapTolerance != 0.0
-        d[abs.(d).<snapTolerance] .= 0
+        d[abs.(d).<snapTolerance] .= 0.0
     end
-    LV = d.<0
+    LV = d.<0.0
     
     Fn =  Vector{TriangleFace{Int64}}()
     Cn =  Vector{Int64}()
@@ -2369,7 +2402,7 @@ function meshgroup(F; con_type = :v)
         # FACE-FACE connectivity
         con_F2F = con_face_face(F,E_uni,indReverse,con_E2F,con_F2E)
     else 
-        error("Wrong `con_type`, use :v or :e")
+        throw(ArgumentError("Wrong con_type :$con_type used, use :v or :e"))
     end
 
     if all(isempty.(con_F2F)) # Completely disconnected face set (e.g. raw STL import)
