@@ -3117,6 +3117,11 @@ end
     end
 
     @testset "Two groups" begin
+        # Three triangles two joined, one separate
+        F = TriangleFace{Int64}[[1,2,3],[2,3,4],[5,6,7]]
+        C = meshgroup(F)
+        @test C == [1,1,2]
+        
         # Two tetrahedrons
         M = tetrahedron(1.0)
         F = faces(M)
@@ -3141,6 +3146,8 @@ end
         C = meshgroup(F)
         @test C == repeat(1:2,inner=n)
     end
+
+    
 end
 
 
