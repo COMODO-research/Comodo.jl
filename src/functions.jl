@@ -288,9 +288,9 @@ function nbezier(P::Vector{T},n::Integer) where T<:Union{AbstractPoint{3},Vector
         V =  fill(zeros(Float64,3),n)
     end    
     
-    for i ∈ 1:n
+    @inbounds for i ∈ 1:n
         b = s.* ((1.0-t[i]).^nnr) .* (t[i].^nn)
-        for j = 1:N
+        @inbounds for j = 1:N
             V[i] += P[j].*b[j]
         end
     end 
@@ -1108,17 +1108,17 @@ function togeometrybasics_faces(FM::Matrix{Int64})
     n, m = size(FM)
     if m == 3 # Triangles
         F = Vector{TriangleFace{Int64}}(undef, n)
-        for q ∈ 1:n            
+        @inbounds for q ∈ 1:n            
             F[q] = TriangleFace{Int64}(FM[q,:])
         end
     elseif m == 4 # Quads
         F = Vector{QuadFace{Int64}}(undef, n)
-        for q ∈ 1:n            
+        @inbounds for q ∈ 1:n            
             F[q] = QuadFace{Int64}(FM[q,:])
         end
     else # Other mesh type
         F = Vector{NgonFace{m,Int64}}(undef, n)        
-        for q ∈ 1:n            
+        @inbounds for q ∈ 1:n            
             F[q] = NgonFace{m,Int64}(FM[q,:])
         end
     end
@@ -1129,7 +1129,7 @@ function togeometrybasics_points(VM)
     # Loop over vertex matrix and convert to GeometryBasics vector of Points
     n = length(VM)
     V=Vector{GeometryBasics.Point{3, Float64}}(undef, n)
-    for q ∈ 1:n
+    @inbounds for q ∈ 1:n
         V[q] = GeometryBasics.Point{3, Float64}(VM[q])
     end
     return V
@@ -1139,7 +1139,7 @@ function togeometrybasics_points(VM::Matrix{Float64})
     n = size(VM,1)
     # Loop over vertices and convert to GeometryBasics vector of Points
     V=Vector{GeometryBasics.Point{3, Float64}}(undef, n)
-    for q ∈ 1:n
+    @inbounds for q ∈ 1:n
         V[q] = GeometryBasics.Point{3, Float64}(VM[q,:])
     end
     return V
@@ -1149,7 +1149,7 @@ function togeometrybasics_points(VM::Union{Vector{Vector{T}},Vector{Vec3{T}}}) w
     n = length(VM)
     # Loop over vertices and convert to GeometryBasics vector of Points
     V = Vector{GeometryBasics.Point{3, Float64}}(undef, n)
-    for q ∈ 1:n
+    @inbounds for q ∈ 1:n
         V[q] = GeometryBasics.Point{3, Float64}(VM[q])
     end
     return V
@@ -1167,7 +1167,7 @@ function edgecrossproduct(F,V)
     n =  length(F[1]) # Number of nodes per face    
     for q ∈ eachindex(F) # Loop over all faces
         c  = cross(V[F[q][n]],V[F[q][1]]) # Initialise as cross product of last and first vertex position vector
-        for qe ∈ 1:n-1 # Loop from first to end-1            
+        @inbounds for qe ∈ 1:(n-1) # Loop from first to end-1            
             c  += cross(V[F[q][qe]],V[F[q][qe+1]]) # Add next edge contribution          
         end
         C[q] = c./2 # Length = face area, direction is along normal vector
@@ -1457,7 +1457,7 @@ function hexbox(boxDim::Vector{T},boxEl::Vector{Int64}) where T <: Real
                 
     E = [Vector{Int64}(undef,8) for _ in 1:numElements] # Allocate elements
 
-    for q ∈ 1:numElements
+    @inbounds for q ∈ 1:numElements
         ijk_1 = ind2sub(boxEl,ind1[q])    
         ijk_2 = ijk_1 .+ ijk_shift[2]
         ijk_3 = ijk_1 .+ ijk_shift[3]
@@ -1640,7 +1640,7 @@ function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
     end
 
     con_V2V = [Vector{Int64}() for _ ∈ 1:n]
-    for i_v ∈ 1:n
+    @inbounds for i_v ∈ 1:n
         if !isempty(con_V2F[i_v])
             for i ∈ unique(reduce(vcat,F[con_V2F[i_v]]))
                 if i_v!=i
@@ -1665,7 +1665,7 @@ function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
     end
 
     con_V2V = [Vector{Int64}() for _ ∈ 1:n]
-    for i_v ∈ 1:n
+    @inbounds for i_v ∈ 1:n
         if !isempty(con_V2E[i_v])
             for i ∈ reduce(vcat,E[con_V2E[i_v]])
                 if i_v!=i
@@ -1891,7 +1891,7 @@ function quadsphere(n,r)
     F = faces(M)
     V = coordinates(M)
     if n > 0
-        for q ∈ 1:n
+        for _ ∈ 1:n
             F,V = subquad(F,V,1)
             V = r .* (V ./ norm.(V))
         end
@@ -2002,7 +2002,7 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
         V0 = deepcopy(V)
         for qq ∈ 2:2:num_steps-1
             i = (1:num_loop) .+ (qq-1) *num_loop
-            for q ∈ 1:num_loop    
+            @inbounds for q ∈ 1:num_loop    
                 if q == num_loop       
                     V[i[q]] = 0.5 .* (V0[i[q]]+V0[i[1]]) 
                 else
@@ -2017,22 +2017,22 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
     # Build faces
     if face_type == :quad    
         F = Vector{QuadFace{Int64}}()
-        for i = 1:num_loop-1
-            for j = 1:num_steps-1    
+        @inbounds for i = 1:(num_loop-1)
+            @inbounds for j = 1:(num_steps-1)    
                 push!(F,QuadFace{Int64}([ij2ind(i,j+1),ij2ind(i+1,j+1),ij2ind(i+1,j),ij2ind(i,j)  ]))
             end
         end
 
         # Add faces to close over shape if requested
         if close_loop
-            for q ∈ 1:num_steps-1                
+            @inbounds for q ∈ 1:(num_steps-1)                
                 push!(F,QuadFace{Int64}([ ij2ind(num_loop,q+1), ij2ind(1,q+1), ij2ind(1,q), ij2ind(num_loop,q) ])) 
             end
         end
     elseif face_type == :tri_slash 
         F = Vector{TriangleFace{Int64}}()
-        for i = 1:num_loop-1
-            for j = 1:num_steps-1    
+        @inbounds for i = 1:num_loop-1
+            @inbounds for j = 1:num_steps-1    
                 push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i+1,j), ij2ind(i,j)     ])) # 1 2 3
                 push!(F,TriangleFace{Int64}([ ij2ind(i,j),     ij2ind(i,j+1), ij2ind(i+1,j+1) ])) # 3 4 1
             end
@@ -2040,15 +2040,15 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
 
         # Add faces to close over shape if requested
         if close_loop
-            for q ∈ 1:num_steps-1
+            @inbounds for q ∈ 1:num_steps-1
                 push!(F,TriangleFace{Int64}([ ij2ind(1,q+1),      ij2ind(1,q),          ij2ind(num_loop,q)  ])) # 1 2 3
                 push!(F,TriangleFace{Int64}([ ij2ind(num_loop,q), ij2ind(num_loop,q+1), ij2ind(1,q+1)       ])) # 3 4 1
             end
         end
     elseif face_type == :tri 
         F = Vector{TriangleFace{Int64}}()
-        for i = 1:num_loop-1
-            for j = 1:num_steps-1    
+        @inbounds for i = 1:num_loop-1
+            @inbounds for j = 1:(num_steps-1)    
                 if iseven(j) # Normal slash
                     push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i+1,j),  ij2ind(i,j)     ])) # 1 2 3
                     push!(F,TriangleFace{Int64}([ ij2ind(i,j),     ij2ind(i,j+1),  ij2ind(i+1,j+1) ])) # 3 4 1
@@ -2061,7 +2061,7 @@ function loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
 
         # Add faces to close over shape if requested
         if close_loop
-            for q ∈ 1:num_steps-1
+            @inbounds for q ∈ 1:(num_steps-1)
                 if iseven(q) 
                     push!(F,TriangleFace{Int64}([ ij2ind(num_loop,q), ij2ind(num_loop,q+1), ij2ind(1,q+1)      ])) 
                     push!(F,TriangleFace{Int64}([ ij2ind(1,q+1),      ij2ind(1,q),          ij2ind(num_loop,q) ])) 
@@ -2342,7 +2342,7 @@ function pointspacingmean(V::Vector{Point3{Float64}})
     # Equivalent to:  mean(norm.(diff(V,dims=1)))
     p = 0.0
     n = length(V)
-    for i ∈ 1:n-1
+    @inbounds for i ∈ 1:(n-1)
         p += norm(V[i]-V[i+1])/(n-1)
     end
     return p
@@ -2356,7 +2356,7 @@ function pointspacingmean(F::Array{NgonFace{N, Int64}, 1},V::Vector{Point3{Float
     end
     p = 0.0
     n = length(E)
-    for i ∈ 1:n
+    @inbounds for i ∈ 1:n
         p += norm(V[E[i][1]]-V[E[i][2]])/n
     end
     return p
