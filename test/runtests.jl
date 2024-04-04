@@ -688,15 +688,20 @@ end
     @testset "Errors" begin
         @test_throws DomainError sub2ind(size(A),[[-1]])
         @test_throws DomainError sub2ind(size(A),[-1]) 
+        @test_throws DomainError sub2ind(size(A),[length(A)+1]) 
         @test_throws DimensionMismatch sub2ind(size(A),[1,2,3,4]) 
 
         @test_throws DomainError sub2ind(size(B),[[-1,1]])
         @test_throws DomainError sub2ind(size(B),[-1,1]) 
+        @test_throws DomainError sub2ind(size(B),[1,length(B)+1]) 
         @test_throws DimensionMismatch sub2ind(size(B),[1,2,3,4]) 
+        @test_throws DimensionMismatch sub2ind(size(B),[[1,2,3,4]])
 
         @test_throws DomainError sub2ind(size(C),[[-1,1,1]])
         @test_throws DomainError sub2ind(size(C),[-1,1,1]) 
+        @test_throws DomainError sub2ind(size(C),[length(C)+1,1,1]) 
         @test_throws DimensionMismatch sub2ind(size(C),[1,2,3,4]) 
+        @test_throws DimensionMismatch sub2ind(size(B),[[1,2,3,4]])
     end
 
     @testset "1D i.e. Vector" begin        
