@@ -2651,6 +2651,22 @@ end
         Mp = hp1[1].val
         @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(V)
+
+        fileName_mesh = joinpath(comododir(),"assets","obj","spot_control_mesh.obj")
+        M = load(fileName_mesh)   
+        F = faces(M)
+        V = coordinates(M)
+        hp1 =  normalplot(ax,M; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
+        Mp = hp1[1].val
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+        @test length(faces(Mp)) == length(V)
+
+        # Not supported yet
+        # hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
+        # Mp = hp1[1].val
+        # @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+        # @test length(faces(Mp)) == length(V)
+
     end
 end
 
