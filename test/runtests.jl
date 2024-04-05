@@ -969,6 +969,20 @@ end
         @test length(V) == 5
     end
 
+    @testset "Vector Vec{m,Float64}}" begin
+        m = 4
+        Vv = Vector{Vec{m,Float64}}(undef,5)       
+        V = togeometrybasics_points(Vv)
+        @test isa(V,Vector{GeometryBasics.Point{m,Float64}})
+        @test length(V) == 5
+
+        m = 5
+        Vv = Vector{Vec{m,Float64}}(undef,5)       
+        V = togeometrybasics_points(Vv)
+        @test isa(V,Vector{GeometryBasics.Point{m,Float64}})
+        @test length(V) == 5
+    end
+
     @testset "Imported mesh points" begin
         # Imported triangular mesh 
         fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
@@ -1999,7 +2013,7 @@ end
 
 @testset "mergevertices" begin
     eps_level = 1e-4
-    r = 2 * sqrt(3) / 2    
+    r = sqrt(3)    
     M = cube(r)
     F = faces(M)
     V = coordinates(M)
@@ -2631,6 +2645,12 @@ end
         Mp = hp1[1].val
         @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(V)
+
+
+        hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
+        Mp = hp1[1].val
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+        @test length(faces(Mp)) == length(V)
     end
 end
 
@@ -2930,6 +2950,14 @@ end
         r = pointspacingmean(F,V)
         @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_level)
     end
+
+    @testset "Mesh" begin        
+        M = cube(sqrt(3))
+        F = faces(M)
+        V = coordinates(M)
+        @test pointspacingmean(F,V)==2.0
+        @test pointspacingmean(M)==2.0
+    end
 end
 
 
@@ -3212,7 +3240,7 @@ end
         @test all(isnan.(d[.!b])) # Now check NaNs
 
         # Single cube
-        r = 2 * sqrt(3) / 2
+        r = sqrt(3)
         M = cube(r)
         F = faces(M)
         V = coordinates(M)
@@ -3248,7 +3276,7 @@ end
     eps_level = 1e-4
 
     # Single cube
-    r = 2 * sqrt(3) / 2
+    r = sqrt(3)
     M = cube(r)
     F = faces(M)
     V = coordinates(M)

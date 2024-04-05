@@ -1125,34 +1125,23 @@ function togeometrybasics_faces(FM::Matrix{Int64})
     return F
 end
 
-function togeometrybasics_points(VM)
-    # Loop over vertex matrix and convert to GeometryBasics vector of Points
-    n = length(VM)
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef, n)
-    @inbounds for q ∈ 1:n
-        V[q] = GeometryBasics.Point{3, Float64}(VM[q])
-    end
-    return V
+function togeometrybasics_points(VM::Matrix{T}) where T<: Real
+    m = size(VM,2)
+    return [GeometryBasics.Point{m, T}(v) for v ∈ eachrow(VM)]
 end
 
-function togeometrybasics_points(VM::Matrix{Float64})
-    n = size(VM,1)
-    # Loop over vertices and convert to GeometryBasics vector of Points
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef, n)
-    @inbounds for q ∈ 1:n
-        V[q] = GeometryBasics.Point{3, Float64}(VM[q,:])
-    end
-    return V
+function togeometrybasics_points(VM::Array{Vec{m, T}, 1}) where T <: Real where m
+    return [GeometryBasics.Point{m, T}(v) for v ∈ eachindex(VM)]
 end
 
-function togeometrybasics_points(VM::Union{Vector{Vector{T}},Vector{Vec3{T}}}) where T <: Real
-    n = length(VM)
-    # Loop over vertices and convert to GeometryBasics vector of Points
-    V = Vector{GeometryBasics.Point{3, Float64}}(undef, n)
-    @inbounds for q ∈ 1:n
-        V[q] = GeometryBasics.Point{3, Float64}(VM[q])
-    end
-    return V
+function togeometrybasics_points(VM::Vector{Vector{T}}) where T <: Real
+    m = length(VM[1]) # Check length based on first one, and assume it is homogeneous
+    return [GeometryBasics.Point{m, T}(v) for v ∈ VM]
+end
+
+function togeometrybasics_points(VM) # TO DO, fix types of these
+    m = length(VM[1])
+    return [GeometryBasics.Point{m, Float64}(v) for v ∈ VM]
 end
 
 function togeometrybasics_mesh(VM,FM)
@@ -2093,12 +2082,9 @@ function dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:from)
     return hp
 end
 
-function normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
-    F = faces(M)
-    V = coordinates(M)
-    E = meshedges(F)
+function normalplot(ax,F::Union{Array{NgonFace{M, Int64}, 1},Array{NgonFace{M, OffsetInteger{-1, UInt32}},1}},V::Vector{Point3{Float64}}; type_flag=:face, color=:black,linewidth=3,scaleval=nothing) where M    
     if isnothing(scaleval)
-        scaleval = mean([norm(V[e[1]]-V[e[2]])/2.0 for e ∈ E])
+        scaleval = pointspacingmean(F,V)/2.0
     end
     if type_flag == :face        
         N = facenormal(F,V)
@@ -2110,6 +2096,21 @@ function normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=not
     end 
     hp = dirplot(ax,V,N; color=color,linewidth=linewidth,scaleval=scaleval,style=:from)
     return hp 
+end
+
+function normalplot(ax,M::GeometryBasics.Mesh; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
+    F = faces(M)
+    V = coordinates(M)
+
+    if !isa(F,Array{NgonFace{length(F[1]), Int64}, 1}) 
+        F = togeometrybasics_faces(F)
+    end
+
+    if !isa(V,Vector{GeometryBasics.Point3{Float64}})
+        V = togeometrybasics_points(V)
+    end
+    
+    return normalplot(ax,F,V;type_flag=type_flag, color=color,linewidth=linewidth,scaleval=scaleval)
 end
 
 function wrapindex(i::Union{Array{Int64,1},UnitRange{Int64},StepRange{Int64, Int64}}, n)
@@ -2360,6 +2361,10 @@ function pointspacingmean(F::Array{NgonFace{N, Int64}, 1},V::Vector{Point3{Float
         p += norm(V[E[i][1]]-V[E[i][2]])/n
     end
     return p
+end
+
+function pointspacingmean(M::GeometryBasics.Mesh)    
+    return pointspacingmean(faces(M),coordinates(M))
 end
 
 
