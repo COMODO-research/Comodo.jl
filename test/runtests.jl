@@ -3442,6 +3442,7 @@ end
 
 end
 
+
 @testset "curve_length" verbose = true begin
     tol_level = 1e-6
     r = 2.25
@@ -3455,6 +3456,7 @@ end
     @test isapprox(L,length_true,atol=tol_level)    
     @test L isa Vector{Float64}
 end
+
 
 @testset "evenly_sample" begin
     
@@ -3498,4 +3500,16 @@ end
         @test typeof(V) == typeof(Vi) # Did not manipulate input type
         @test length(Vi) == n # Correct length
     end
+end
+
+@testset "invert_faces" begin
+    # Single face
+    F = TriangleFace{Int64}[[1,2,3]]
+    F_inv = TriangleFace{Int64}[[3,2,1]]
+    @test invert_faces(F)==F_inv
+
+    # Two face
+    F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(4, 5, 6)]   
+    F_inv = [TriangleFace{Int64}(3, 2, 1),TriangleFace{Int64}(6, 5, 4)]   
+    @test invert_faces(F)==F_inv    
 end

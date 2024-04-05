@@ -2757,3 +2757,14 @@ function evenly_sample(V::Array{Point{N, Float64}, 1}, n::Int64; rtol = 1e-8, ni
     l = range(0.0, 1.0, n) #Even allong curve distance 
     return S.(l), S # Evaluate interpolator at even distance increments
 end
+
+"""
+    invert_faces(F::Array{NgonFace{N, Int64}, 1}) where N
+
+# Description
+This function inverts the faces in `F`, such that the face normal will be 
+flipped, by reversing the node order for each face. 
+"""
+function invert_faces(F::Array{NgonFace{N, Int64}, 1}) where N    
+    return map(f-> reverse(f),F) # [NgonFace{N, Int64}(reverse(f)) for f ∈ F]    
+end
