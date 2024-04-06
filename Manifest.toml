@@ -2,7 +2,7 @@
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "d033fa29a644db60fc5e6aeb38e2ece2b7d0fc92"
+project_hash = "3ec2d41cb347d8597a69892af02440dbe8605a8b"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -73,9 +73,9 @@ version = "7.9.0"
 
 [[deps.ArrayLayouts]]
 deps = ["FillArrays", "LinearAlgebra"]
-git-tree-sha1 = "6404a564c24a994814106c374bec893195e19bac"
+git-tree-sha1 = "0330bc3e828a05d1073553fb56f9695d73077370"
 uuid = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
-version = "1.8.0"
+version = "1.9.1"
 weakdeps = ["SparseArrays"]
 
     [deps.ArrayLayouts.extensions]
@@ -177,9 +177,9 @@ version = "3.24.0"
 
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
-git-tree-sha1 = "eb7f0f8307f71fac7c606984ea5fb2817275d6e4"
+git-tree-sha1 = "b10d0b65641d57b8b4d5e234446582de5047050d"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
-version = "0.11.4"
+version = "0.11.5"
 
 [[deps.ColorVectorSpace]]
 deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "Requires", "Statistics", "TensorCore"]
@@ -467,9 +467,9 @@ version = "2.13.1+0"
 
 [[deps.FreeTypeAbstraction]]
 deps = ["ColorVectorSpace", "Colors", "FreeType", "GeometryBasics"]
-git-tree-sha1 = "055626e1a35f6771fe99060e835b72ca61a52621"
+git-tree-sha1 = "2493cdfd0740015955a8e46de4ef28f49460d8bc"
 uuid = "663a7486-cb36-511b-a19d-713bb74d65c9"
-version = "0.10.1"
+version = "0.10.3"
 
 [[deps.FriBidi_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -495,9 +495,9 @@ version = "3.3.9+0"
 
 [[deps.GLMakie]]
 deps = ["ColorTypes", "Colors", "FileIO", "FixedPointNumbers", "FreeTypeAbstraction", "GLFW", "GeometryBasics", "LinearAlgebra", "Makie", "Markdown", "MeshIO", "ModernGL", "Observables", "PrecompileTools", "Printf", "ShaderAbstractions", "StaticArrays"]
-git-tree-sha1 = "7a411adf08375e01d864386fb1eaf384de5ac9e9"
+git-tree-sha1 = "b99a999cdcc7467769c7ea8cdc0978a5f059aa7b"
 uuid = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
-version = "0.9.9"
+version = "0.9.10"
 
 [[deps.GeoInterface]]
 deps = ["Extents"]
@@ -859,10 +859,10 @@ uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 version = "0.5.13"
 
 [[deps.Makie]]
-deps = ["Animations", "Base64", "CRC32c", "ColorBrewer", "ColorSchemes", "ColorTypes", "Colors", "Contour", "DelaunayTriangulation", "Distributions", "DocStringExtensions", "Downloads", "FFMPEG_jll", "FileIO", "FilePaths", "FixedPointNumbers", "Format", "FreeType", "FreeTypeAbstraction", "GeometryBasics", "GridLayoutBase", "ImageIO", "InteractiveUtils", "IntervalSets", "Isoband", "KernelDensity", "LaTeXStrings", "LinearAlgebra", "MacroTools", "MakieCore", "Markdown", "MathTeXEngine", "Observables", "OffsetArrays", "Packing", "PlotUtils", "PolygonOps", "PrecompileTools", "Printf", "REPL", "Random", "RelocatableFolders", "Scratch", "ShaderAbstractions", "Showoff", "SignedDistanceFields", "SparseArrays", "StableHashTraits", "Statistics", "StatsBase", "StatsFuns", "StructArrays", "TriplotBase", "UnicodeFun"]
-git-tree-sha1 = "27af6be179c711fb916a597b6644fbb5b80becc0"
+deps = ["Animations", "Base64", "CRC32c", "ColorBrewer", "ColorSchemes", "ColorTypes", "Colors", "Contour", "DelaunayTriangulation", "Distributions", "DocStringExtensions", "Downloads", "FFMPEG_jll", "FileIO", "FilePaths", "FixedPointNumbers", "Format", "FreeType", "FreeTypeAbstraction", "GeometryBasics", "GridLayoutBase", "ImageIO", "InteractiveUtils", "IntervalSets", "Isoband", "KernelDensity", "LaTeXStrings", "LinearAlgebra", "MacroTools", "MakieCore", "Markdown", "MathTeXEngine", "Observables", "OffsetArrays", "Packing", "PlotUtils", "PolygonOps", "PrecompileTools", "Printf", "REPL", "Random", "RelocatableFolders", "Scratch", "ShaderAbstractions", "Showoff", "SignedDistanceFields", "SparseArrays", "Statistics", "StatsBase", "StatsFuns", "StructArrays", "TriplotBase", "UnicodeFun"]
+git-tree-sha1 = "46ca613be7a1358fb93529726ea2fc28050d3ae0"
 uuid = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
-version = "0.20.8"
+version = "0.20.9"
 
 [[deps.MakieCore]]
 deps = ["Observables", "REPL"]
@@ -898,9 +898,9 @@ version = "0.4.11"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
-git-tree-sha1 = "f66bdc5de519e8f8ae43bdc598782d35a25b1272"
+git-tree-sha1 = "ec4f7fbeab05d7747bdf98eb74d130a2a2ed298d"
 uuid = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
-version = "1.1.0"
+version = "1.2.0"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
@@ -1076,12 +1076,6 @@ deps = ["Combinatorics", "LinearAlgebra", "Random"]
 git-tree-sha1 = "eb3f9df2457819bf0a9019bd93cc451697a0751e"
 uuid = "2ae35dd2-176d-5d53-8349-f30d82d94d4f"
 version = "0.4.20"
-
-[[deps.PikaParser]]
-deps = ["DocStringExtensions"]
-git-tree-sha1 = "d6ff87de27ff3082131f31a714d25ab6d0a88abf"
-uuid = "3bbf5609-3e7b-44cd-8549-7c69f321e792"
-version = "0.6.1"
 
 [[deps.Pixman_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LLVMOpenMP_jll", "Libdl"]
@@ -1367,12 +1361,6 @@ weakdeps = ["ChainRulesCore"]
     [deps.SpecialFunctions.extensions]
     SpecialFunctionsChainRulesCoreExt = "ChainRulesCore"
 
-[[deps.StableHashTraits]]
-deps = ["Compat", "PikaParser", "SHA", "Tables", "TupleTools"]
-git-tree-sha1 = "10dc702932fe05a0e09b8e5955f00794ea1e8b12"
-uuid = "c5dd0088-6c3f-4803-b00e-f31a60c170fa"
-version = "1.1.8"
-
 [[deps.StackViews]]
 deps = ["OffsetArrays"]
 git-tree-sha1 = "46e589465204cd0c08b4bd97385e4fa79a0c770c"
@@ -1414,9 +1402,9 @@ version = "1.7.0"
 
 [[deps.StatsBase]]
 deps = ["DataAPI", "DataStructures", "LinearAlgebra", "LogExpFunctions", "Missings", "Printf", "Random", "SortingAlgorithms", "SparseArrays", "Statistics", "StatsAPI"]
-git-tree-sha1 = "1d77abd07f617c4868c33d4f5b9e1dbb2643c9cf"
+git-tree-sha1 = "5cf7606d6cef84b543b483848d4ae08ad9832b21"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-version = "0.34.2"
+version = "0.34.3"
 
 [[deps.StatsFuns]]
 deps = ["HypergeometricFunctions", "IrrationalConstants", "LogExpFunctions", "Reexport", "Rmath", "SpecialFunctions"]
@@ -1510,11 +1498,6 @@ weakdeps = ["Random", "Test"]
 git-tree-sha1 = "4d4ed7f294cda19382ff7de4c137d24d16adc89b"
 uuid = "981d1d27-644d-49a2-9326-4793e63143c3"
 version = "0.1.0"
-
-[[deps.TupleTools]]
-git-tree-sha1 = "41d61b1c545b06279871ef1a4b5fcb2cac2191cd"
-uuid = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
-version = "1.5.0"
 
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]

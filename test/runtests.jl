@@ -1,4 +1,4 @@
-using Test, FileIO, Comodo, Comodo.GeometryBasics, Statistics, LinearAlgebra, GLMakie
+using Test, FileIO, Comodo, Comodo.GeometryBasics, Statistics, LinearAlgebra, GLMakie, Rotations
 
 # ConnectivitySet
 
@@ -3527,7 +3527,6 @@ end
 
     # Even sampling should be nearly perfect for downsampling
     @testset "Evenly downsampling circular curve" begin
-
         # Example circle curve raw
         r = 2.25
         nc = 100    
@@ -3556,4 +3555,88 @@ end
     F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(4, 5, 6)]   
     F_inv = [TriangleFace{Int64}(3, 2, 1),TriangleFace{Int64}(6, 5, 4)]   
     @test invert_faces(F)==F_inv    
+end
+
+@testset "kabsch_rot" begin
+    tol_level = 1e-6
+
+    M = cube(sqrt(3))
+    V1 = coordinates(M)
+    R_true = RotXYZ(0.25*π,0.25*π,0.25*π)
+    V2 = [R_true*v for v ∈ V1]
+    R_kabsch_forward = kabsch_rot(V1,V2)
+    R_kabsch_backward = kabsch_rot(V2,V1)
+    V1r = [R_kabsch_backward*v for v ∈ V2]
+    @test isapprox(R_kabsch_forward,R_true,atol=tol_level) # Able to retrieve forward rotation
+    @test isapprox(V1r,V1,atol=tol_level) # Check if backward rotation is succesful   
+end
+
+@testset "sweeploft" verbose = true begin
+    tol_level = 1e-6
+
+    # Define guide curve
+    nc = 25 # Number of points on guide curve
+    P = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
+    P[1 ] = GeometryBasics.Point{3, Float64}( 0.0, 0.0, 0.0)
+    P[2 ] = GeometryBasics.Point{3, Float64}( 1.0, 0.0, 0.0)
+    P[3 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 0.0)
+    P[4 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 1.0)
+    Vc = nbezier(P,nc) # Get Bezier fit points
+    Vc = [vc.*10 for vc in Vc]
+    Vc,Sc = evenly_sample(Vc, nc)
+
+    # Define section curves
+    np = 20 # Number of section points
+    ff(t) = 2.0 + 0.5.*sin(3*t)
+    V1 = circlepoints(ff,np; dir=:acw)
+    V1,_ = evenly_sample(V1, np)
+    Q = RotXYZ(0.0,0.5*π,0.0) # Define a rotation tensor using Euler angles
+    V1 = [Q*v for v ∈ V1] # Rotate the coordinates
+
+    ff(t) = 2.0 + 0.5*sin(3*t)
+    V2 = circlepoints(ff,np; dir=:acw)
+    V2,_ = evenly_sample(V2, np)
+    V2 = [v2 .+ Vc[end] for v2 ∈ V2] 
+    
+    @testset "quad" begin
+        F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist=0, close_loop=true)
+        @test length(F) == (nc-1)*np
+        @test isa(F,Vector{QuadFace{Int64}})
+        @test length(V) == nc*np
+        @test isa(V,Vector{Point3{Float64}})
+
+        F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist=1, close_loop=false)
+        @test length(F) == (nc-1)*(np-1)
+        @test isa(F,Vector{QuadFace{Int64}})
+        @test length(V) == nc*np
+        @test isa(V,Vector{Point3{Float64}})        
+    end
+
+    @testset "tri_slash" begin
+        F,V = sweeploft(Vc,V1,V2; face_type=:tri_slash, num_twist=0, close_loop=true)
+        @test length(F) == (nc-1)*np*2
+        @test isa(F,Vector{TriangleFace{Int64}})
+        @test length(V) == nc*np
+        @test isa(V,Vector{Point3{Float64}})
+
+        F,V = sweeploft(Vc,V1,V2; face_type=:tri_slash, num_twist=1, close_loop=false)
+        @test length(F) == (nc-1)*(np-1)*2
+        @test isa(F,Vector{TriangleFace{Int64}})
+        @test length(V) == nc*np
+        @test isa(V,Vector{Point3{Float64}})        
+    end
+
+    @testset "tri" begin
+        F,V = sweeploft(Vc,V1,V2; face_type=:tri, num_twist=0, close_loop=true)
+        @test length(F) == (nc-1)*np*2
+        @test isa(F,Vector{TriangleFace{Int64}})
+        @test length(V) == nc*np
+        @test isa(V,Vector{Point3{Float64}})
+
+        F,V = sweeploft(Vc,V1,V2; face_type=:tri, num_twist=1, close_loop=false)
+        @test length(F) == (nc-1)*(np-1)*2
+        @test isa(F,Vector{TriangleFace{Int64}})
+        @test length(V) == nc*np
+        @test isa(V,Vector{Point3{Float64}})        
+    end
 end

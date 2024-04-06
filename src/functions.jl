@@ -1151,7 +1151,9 @@ function togeometrybasics_mesh(VM,FM)
 end
 
 
-function edgecrossproduct(F,V)    
+
+# function edgecrossproduct(F,V::Union{Array{Vec{m, T}, 1},Array{Point{m, T}, 1}})  where T<:Real where m 
+function edgecrossproduct(F,V) 
     C = Vector{GeometryBasics.Vec{3, Float64}}(undef,length(F)) # Allocate array cross-product vectors
     n =  length(F[1]) # Number of nodes per face    
     for q ∈ eachindex(F) # Loop over all faces
@@ -2772,4 +2774,129 @@ flipped, by reversing the node order for each face.
 """
 function invert_faces(F::Array{NgonFace{N, Int64}, 1}) where N    
     return map(f-> reverse(f),F) # [NgonFace{N, Int64}(reverse(f)) for f ∈ F]    
+end
+
+
+"""
+    R = kabsch_rot(V1::Array{Point{N, Float64}, 1},V2::Array{Point{N, Float64}, 1}) where N    
+
+# Description  
+Computes the rotation tensor `R` to rotate the points in `V1` to best match the 
+points in `V2`. 
+
+# Reference
+[Wolfgang Kabsch, A solution for the best rotation to relate two sets of vectors, Acta Crystallographica Section A, vol. 32, no. 5, pp. 922-923, 1976, doi: 10.1107/S0567739476001873](https://doi.org/10.1107/S0567739476001873)
+"""
+function kabsch_rot(V1::Array{Point{N, Float64}, 1},V2::Array{Point{N, Float64}, 1}) where N    
+    # Centre on means 
+    V1 = V1.-mean(V1)
+    V2 = V2.-mean(V2)
+        
+    # Compute A matrix
+    A = zeros(Float64,3,3)
+    for i = 1:3    
+        for j= 1:3
+            for q ∈ eachindex(V1)
+                @inbounds A[i,j] += V1[q][i]*V2[q][j] 
+            end
+        end
+    end
+
+    # Kabsch algorithm
+    U, _, V = svd(A)    
+    d = det(U)*det(V) #sign(det(U'*V))
+    D = [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
+    D[3,3] = d 
+    return Rotations.RotMatrix3{Float64}(V*D*U')
+end
+
+
+"""
+    F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist = 0, close_loop=true)   
+
+# Description
+This function implements swept lofting. The start curve `V1` is pulled allong the 
+guide curve `Vc` while also gradually (linearly) morphing into the end curve 
+`V2`. 
+The optional parameter `face_type` (default :quad) defines the type of mesh 
+faces uses. The same face types as `loftlinear` and `extrudecurve` are supported, 
+i.e. `:quad`, `:tri_slash`, or `tri`. 
+The optional parameter `num_twist` (default is 0) can be used to add an integer 
+number (negative or positive) of full twists to the loft. 
+Finally the optional parameter `close_loop` (default is `true`) determines if the
+section curves are deemed closed or open ended. 
+"""
+function sweeploft(Vc,V1,V2; face_type=:quad, num_twist = 0, close_loop=true)    
+    np = length(V1) # Number of section points
+    nc = length(Vc) # Number of curve steps
+
+    # Centre start/end sections arond means (should be curve start/end points)
+    V1b = [v.-Vc[1] for v ∈ V1] 
+    V2b = [v.-Vc[end] for v ∈ V2] 
+
+    # Determine rotation between sections 
+    n3_1 = facenormal([collect(1:length(V1))],V1)[1] # normalizevector(Vc[2]-Vc[1])
+    n1_1 = normalizevector(V1b[1]) 
+    n2_1 = normalizevector(cross(n1_1,n3_1))
+    n1_1 = normalizevector(cross(n3_1,n2_1))
+    S1p = mapreduce(permutedims,vcat,[n1_1,n2_1,n3_1])
+
+    n3_2 = facenormal([collect(1:length(V2))],V2)[1] # normalizevector(Vc[end]-Vc[end-1])
+    n1_2 = normalizevector(V2b[1]) 
+    n2_2 = normalizevector(cross(n1_2,n3_2))
+    n1_2 = normalizevector(cross(n3_2,n2_2))        
+    S2p = mapreduce(permutedims,vcat,[n1_2,n2_2,n3_2])
+
+    Q12 = RotMatrix3{Float64}(S1p\S2p) # nearest_rotation(S1p\S2p)
+    
+    # Rotate V2b to start orientation
+    V2b = [Q12*v for v ∈ V2b] 
+
+    # Linearly loft "alligned" sections to create draft intermediate sections
+    F,V = loftlinear(V1b,V2b;num_steps=nc,close_loop=close_loop,face_type=face_type)
+    
+    # Rotating and positioning all sections 
+    n1p = n1_1
+    for q = 1:nc # For all curve points 
+        
+        ind = (1:np) .+ (q-1)*np # Indices of the points to map
+        if q==1 # Just take the start section when we are at the start
+            V[ind] = V1
+        elseif q == nc # Just take the end section when we are at the start
+            V[ind] = V2            
+        else # Rotate and position intermediate section 
+            n3 = normalizevector(normalizevector(Vc[q]-Vc[q-1]) .+ normalizevector(Vc[q+1]-Vc[q]))                        
+            n2 = normalizevector(cross(n1p,n3))
+            n1 = normalizevector(cross(n3,n2))
+            S2 = mapreduce(permutedims,vcat,[n1,n2,n3])
+
+            Q12 = RotMatrix3{Float64}(S2\S1p)
+            V[ind] = [(Q12*v).+Vc[q] for v ∈ V[ind]]
+            n1p = n1
+        end   
+
+        if q == nc-1 # Once here, second to last, a potential rotational mismatch needs to be resolve
+            Q_fix = Rotations.RotMatrix3{Float64}(S2\S2p) # Rotation between last and second to last
+            t_a = Rotations.params(AngleAxis(Q_fix)) # Angle/axis representation
+            if dot(t_a[2:end],n3)<0 
+                β_fix = t_a[1]
+            else # Flip angle sign in this case 
+                β_fix = -t_a[1]
+            end
+
+            if β_fix>pi # Use shorter negative direction instead
+                β_fix = -(2.0*pi-β_fix)
+            end
+        
+            # Distribute the fix as around curve rotations for each intermediate step            
+            β_range = range(0,β_fix+(2.0*π*num_twist),nc) 
+            for q = 2:nc-1
+                ind = (1:np) .+ (q-1)*np
+                ns = normalizevector(normalizevector(Vc[q]-Vc[q-1]) .+ normalizevector(Vc[q+1]-Vc[q]))
+                Q = AngleAxis(β_range[q], ns[1], ns[2], ns[3])                  
+                V[ind] = [(Q*(v-Vc[q])).+Vc[q] for v ∈ V[ind]]
+            end
+        end
+    end      
+    return F,V
 end
