@@ -2567,6 +2567,11 @@ end
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
         @test isapprox(V[ind], Point3{Float64}[[1.0, 0.0, 0.0], [-0.8090169943749475, 0.587785252292473, 0.0], [0.7617793324199491, 0.9830110745024232, 1.5707963267948966], [3.4506096479647406, 2.1905361372946395, 3.141592653589793], [3.4506096479647406, 4.092649169884947, 3.141592653589793]], atol=eps_level)
+
+        # Providing "nothing" for the number of steps should create point spacing based number of steps
+        F,V = loftlinear(V1,V2;num_steps=nothing,close_loop=true,face_type=:quad)
+        @test length(V)/nc == ceil(Int64,norm(n)/(0.5*(pointspacingmean(V1)+pointspacingmean(V2))))
+
     end
 
     @testset "tri" begin
@@ -2603,8 +2608,7 @@ end
     end
 end
 
-@testset "loftpoints2surf" verbose = true begin
-    tol_level = 1e-4
+@testset "loftpoints2surf" verbose = true begin    
 
     nc = 5
     t = range(0,2.0*π-(2.0*π)/nc,nc) 
@@ -2612,8 +2616,12 @@ end
     V2 = [Point3{Float64}(v[1],v[2],v[3]+2.0) for v in V1]
     V3 = [Point3{Float64}(v[1],v[2],v[3]+4.0) for v in V1]
     Vp2 = vcat(V1,V2)
-    Vp3 = vcat(V1,V2,V3)
-     
+    Vp3 = vcat(V1,V2,V3)     
+
+    @testset "errors" begin
+        num_steps=4 # i.e. too many
+        @test_throws ArgumentError  loftpoints2surf(Vp3,num_steps; close_loop=false,face_type=:quad)
+    end    
 
     @testset "quad" begin
         #Non-closed loop
@@ -3751,7 +3759,18 @@ end
     V2 = circlepoints(2.0,np; dir=:acw)
     V2,_ = evenly_sample(V2, np)
     V2 = [v2 .+ Vc[end] for v2 in V2] 
-    
+
+    @testset "reversed" begin
+        F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist=0, close_loop=true)
+        Fr,Vr = sweeploft(Vc,reverse(V1),reverse(V2); face_type=:quad, num_twist=0, close_loop=true)
+
+        @test F == Fr
+        @test isa(F,Vector{QuadFace{Int64}})
+        @test length(Vr) == nc*np
+        @test length(Vr) == length(V)
+        @test isa(V,Vector{Point3{Float64}})  
+    end
+
     @testset "quad" begin
         F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist=0, close_loop=true)
         @test length(F) == (nc-1)*np
@@ -3874,6 +3893,13 @@ end
         ϕ = [atan(v[2],v[1]) for v in V]
         @test isapprox(minimum(ϕ),-π,atol=tol_level)
         @test isapprox(maximum(ϕ),0.0,atol=tol_level)
+    end
+    
+    @testset "Nothing for num_steps" begin
+        face_type =:quad
+        close_loop = true
+        F,V = revolvecurve(Vc,θ;  s=1, n=n,num_steps=nothing,close_loop=close_loop,face_type=face_type)
+        @test length(V)/nc == ceil(Int64,(2*θ)/pointspacingmean(Vc))
     end
 
     m = [-0.7838430424199713, 0.08108629344330351, -0.6156420208736807]
