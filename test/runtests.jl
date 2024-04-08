@@ -375,7 +375,7 @@ end
         eps_level = 1e-4
         np = 10
         t = range(0.0,2.0*π,np) # Parameterisation metric
-        V = [GeometryBasics.Point{3, Float64}(cos(t[i]),sin(t[i]),t[i]/(2.0*π)) for i ∈ eachindex(t)] # ND data, here 3D points
+        V = [GeometryBasics.Point{3, Float64}(cos(t[i]),sin(t[i]),t[i]/(2.0*π)) for i in eachindex(t)] # ND data, here 3D points
         np_i = np*3 
         ti = range(minimum(t)-0.5,maximum(t)+0.5,np_i)
 
@@ -590,7 +590,7 @@ end
 @testset "unique_simplices" verbose = true begin
     @testset "Single triangle" begin
         F = [TriangleFace{Int64}(1, 2, 3)]       
-        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]
+        V = [Point3{Float64}(rand(3)) for _ in 1:3]
         F_uni, ind1, ind2 = unique_simplices(F)
         @test F_uni == F
         F_uni, ind1, ind2 = unique_simplices(F,V)
@@ -599,7 +599,7 @@ end
 
     @testset "Set of two triangles" begin
         F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(1, 2, 3)]   
-        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]    
+        V = [Point3{Float64}(rand(3)) for _ in 1:3]    
         F_uni, ind1, ind2 = unique_simplices(F)
         @test F_uni == [F[1]]
         @test F_uni == F[ind1]
@@ -627,33 +627,33 @@ end
     @testset "1D i.e. Vector" begin
         A = rand(30)
         IJK_A = ind2sub(size(A),ind)
-        @test all([A[ind[i]] == A[IJK_A[i][1]] for i ∈ eachindex(ind)])
+        @test all([A[ind[i]] == A[IJK_A[i][1]] for i in eachindex(ind)])
         @test isempty(ind2sub(size(A),Int64[])) # Check if empty is returned
     end
 
     @testset "2D i.e. 2D Matrix" begin
         B = rand(5,6) 
         IJK_B = ind2sub(size(B),ind)
-        @test all([B[ind[i]] == B[IJK_B[i][1],IJK_B[i][2]] for i ∈ eachindex(ind)])
+        @test all([B[ind[i]] == B[IJK_B[i][1],IJK_B[i][2]] for i in eachindex(ind)])
     end
 
     @testset "3D i.e. 3D matrix" begin
         C = rand(3,5,2)
         IJK_C = ind2sub(size(C),ind)
-        @test all([C[ind[i]] == C[IJK_C[i][1],IJK_C[i][2],IJK_C[i][3]] for i ∈ eachindex(ind)])
+        @test all([C[ind[i]] == C[IJK_C[i][1],IJK_C[i][2],IJK_C[i][3]] for i in eachindex(ind)])
     end
 
     @testset "Vector specifying size" begin
         C = rand(3,5,2)
         IJK_C = ind2sub(collect(size(C)),ind)
-        @test all([C[ind[i]] == C[IJK_C[i][1],IJK_C[i][2],IJK_C[i][3]] for i ∈ eachindex(ind)])
+        @test all([C[ind[i]] == C[IJK_C[i][1],IJK_C[i][2],IJK_C[i][3]] for i in eachindex(ind)])
     end
 
     @testset "Tuple specifying indices" begin
         C = rand(3,5,2)
-        ind_tuple = Tuple(ind[i] for i ∈ eachindex(ind))
+        ind_tuple = Tuple(ind[i] for i in eachindex(ind))
         IJK_C = ind2sub(collect(size(C)),ind_tuple)
-        @test all([C[ind_tuple[i]] == C[IJK_C[i][1],IJK_C[i][2],IJK_C[i][3]] for i ∈ eachindex(ind_tuple)])
+        @test all([C[ind_tuple[i]] == C[IJK_C[i][1],IJK_C[i][2],IJK_C[i][3]] for i in eachindex(ind_tuple)])
     end
 end
 
@@ -717,7 +717,7 @@ end
     end
 
     @testset "Vector specifying indices 1D" begin        
-        @test [sub2ind(size(A),[i])[1] for i ∈ ind]==ind # IJK = ind for 1D case
+        @test [sub2ind(size(A),[i])[1] for i in ind]==ind # IJK = ind for 1D case
     end
 
     @testset "Vector specifying size" begin        
@@ -1529,7 +1529,7 @@ end
 @testset "con_face_face_v" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int64}[[1,2,3]]
-        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+        V = [Point3{Float64}(rand(3)) for _ in 1:3]        
         con_V2F = con_vertex_face(F,V) 
 
         con_F2F = con_face_face_v(F)
@@ -1541,7 +1541,7 @@ end
 
     @testset "Single quad" begin
         F = QuadFace{Int64}[[1,2,3,4]]
-        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]        
+        V = [Point3{Float64}(rand(4)) for _ in 1:4]        
         con_V2F = con_vertex_face(F,V)
 
         con_F2F = con_face_face_v(F)
@@ -1568,7 +1568,7 @@ end
 @testset "con_vertex_simplex" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int64}[[1,2,3]]
-        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+        V = [Point3{Float64}(rand(3)) for _ in 1:3]        
 
         con_V2F = con_vertex_simplex(F)
         @test con_V2F == fill([1],length(F[1]))
@@ -1579,7 +1579,7 @@ end
 
     @testset "Single quad" begin
         F = QuadFace{Int64}[[1,2,3,4]]
-        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]        
+        V = [Point3{Float64}(rand(4)) for _ in 1:4]        
 
         con_V2F = con_vertex_simplex(F)
         @test con_V2F == fill([1],length(F[1]))
@@ -1605,7 +1605,7 @@ end
 @testset "con_vertex_face" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int64}[[1,2,3]]
-        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+        V = [Point3{Float64}(rand(3)) for _ in 1:3]        
 
         con_V2F = con_vertex_face(F)
         @test con_V2F == fill([1],length(F[1]))
@@ -1616,7 +1616,7 @@ end
 
     @testset "Single quad" begin
         F = QuadFace{Int64}[[1,2,3,4]]
-        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]        
+        V = [Point3{Float64}(rand(4)) for _ in 1:4]        
 
         con_V2F = con_vertex_face(F)
         @test con_V2F == fill([1],length(F[1]))
@@ -1643,7 +1643,7 @@ end
     @testset "Single triangle" begin
         F = TriangleFace{Int64}[[1,2,3]]
         E = meshedges(F)
-        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+        V = [Point3{Float64}(rand(3)) for _ in 1:3]        
 
         con_V2E = con_vertex_edge(E)
         @test con_V2E == [[1, 3], [1, 2], [2, 3]]
@@ -1655,7 +1655,7 @@ end
     @testset "Single quad" begin
         F = QuadFace{Int64}[[1,2,3,4]]
         E = meshedges(F)
-        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]        
+        V = [Point3{Float64}(rand(4)) for _ in 1:4]        
 
         con_V2E = con_vertex_edge(E)
         @test con_V2E == [[1, 4], [1, 2], [2, 3], [3, 4]]
@@ -1728,7 +1728,7 @@ end
 @testset "con_vertex_vertex_f" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int64}[[1,2,3]]        
-        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+        V = [Point3{Float64}(rand(3)) for _ in 1:3]        
         con_V2F = con_vertex_face(F)
 
         con_V2V = con_vertex_vertex_f(F)
@@ -1740,7 +1740,7 @@ end
 
     @testset "Single quad" begin
         F = QuadFace{Int64}[[1,2,3,4]]        
-        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]        
+        V = [Point3{Float64}(rand(4)) for _ in 1:4]        
         con_V2F = con_vertex_face(F)
 
         con_V2V = con_vertex_vertex_f(F)
@@ -1767,7 +1767,7 @@ end
 @testset "con_vertex_vertex" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int64}[[1,2,3]]        
-        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+        V = [Point3{Float64}(rand(3)) for _ in 1:3]        
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
         con_V2E = con_vertex_edge(E_uni) 
@@ -1781,7 +1781,7 @@ end
 
     @testset "Single quad" begin
         F = QuadFace{Int64}[[1,2,3,4]]        
-        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]        
+        V = [Point3{Float64}(rand(4)) for _ in 1:4]        
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
         con_V2E = con_vertex_edge(E_uni) 
@@ -1812,7 +1812,7 @@ end
 @testset "meshconnectivity" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int64}[[1,2,3]]        
-        V = [Point3{Float64}(rand(3)) for _ ∈ 1:3]        
+        V = [Point3{Float64}(rand(3)) for _ in 1:3]        
 
         # EDGE-VERTEX connectivity
         E = meshedges(F)
@@ -1862,7 +1862,7 @@ end
 
     @testset "Single quad" begin
         F = QuadFace{Int64}[[1,2,3,4]]        
-        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]   
+        V = [Point3{Float64}(rand(4)) for _ in 1:4]   
 
         # EDGE-VERTEX connectivity
         E = meshedges(F)
@@ -1912,7 +1912,7 @@ end
 
     @testset "Triangles" begin
         F = TriangleFace{Int64}[[1,2,3],[2,3,4]]      
-        V = [Point3{Float64}(rand(4)) for _ ∈ 1:4]   
+        V = [Point3{Float64}(rand(4)) for _ in 1:4]   
 
         # EDGE-VERTEX connectivity
         E = meshedges(F)
@@ -1962,7 +1962,7 @@ end
 
     @testset "Quads" begin
         F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]                
-        V = [Point3{Float64}(rand(4)) for _ ∈ 1:6]   
+        V = [Point3{Float64}(rand(4)) for _ in 1:6]   
         
         # EDGE-VERTEX connectivity
         E = meshedges(F)
@@ -2023,7 +2023,7 @@ end
     @test V isa Vector{Point3{Float64}}
     @test length(Vm) == length(V)
     @test isapprox(Vm[1], [-1.0, -1.0, -1.0], atol=eps_level)
-    @test [indReverse[f] for f ∈ Fm] == Fs # Reverse mapping 
+    @test [indReverse[f] for f in Fm] == Fs # Reverse mapping 
     @test Fm isa Vector{QuadFace{Int64}} # Face type unaltered 
     @test length(Fm) == length(F) # Length is correct
     @test Fm[1] == [1, 2, 3, 4]
@@ -2033,7 +2033,7 @@ end
     @test V isa Vector{Point3{Float64}}
     @test length(Vm) == length(V)
     @test isapprox(Vm[1], [-1.0, -1.0, -1.0], atol=eps_level)
-    @test [indReverse[f] for f ∈ Fm] == Fs # Reverse mapping 
+    @test [indReverse[f] for f in Fm] == Fs # Reverse mapping 
     @test Fm isa Vector{QuadFace{Int64}} # Face type unaltered 
     @test length(Fm) == length(F) # Length is correct
     @test Fm[1] == [1, 2, 3, 4]
@@ -2283,17 +2283,17 @@ end
         @test isapprox(DV,repeat(DF,length(V1)), atol=eps_level)
 
         # Quads
-        DF = [i.*[1.0,2.0,3.0] for i ∈ eachindex(Fq)] # Vector data for each face
+        DF = [i.*[1.0,2.0,3.0] for i in eachindex(Fq)] # Vector data for each face
         DV = simplex2vertexdata(Fq,DF,Vq; weighting=:none)
         @test isapprox(DV,[[12.0, 24.0, 36.0], [9.666666666666666, 19.333333333333332, 29.0], [12.666666666666666, 25.333333333333332, 38.0], [15.666666666666666, 31.333333333333332, 47.0], [13.0, 26.0, 39.0], [10.0, 20.0, 30.0], [12.333333333333334, 24.666666666666668, 37.0], [14.666666666666666, 29.333333333333332, 44.0], [6.5, 13.0, 19.5], [11.5, 23.0, 34.5], [8.5, 17.0, 25.5], [10.0, 20.0, 30.0], [14.0, 28.0, 42.0], [9.0, 18.0, 27.0], [12.5, 25.0, 37.5], [16.5, 33.0, 49.5], [20.5, 41.0, 61.5], [16.5, 33.0, 49.5], [11.5, 23.0, 34.5], [13.0, 26.0, 39.0], [2.5, 5.0, 7.5], [6.5, 13.0, 19.5], [10.5, 21.0, 31.5], [14.5, 29.0, 43.5], [18.5, 37.0, 55.5], [22.5, 45.0, 67.5]], atol=eps_level)
 
         # Triangles
-        DF = [i.*[1.0,2.0,3.0] for i ∈ eachindex(Ft)] # Vector data for each face
+        DF = [i.*[1.0,2.0,3.0] for i in eachindex(Ft)] # Vector data for each face
         DV = simplex2vertexdata(Ft,DF,Vt; weighting=:none)
         @test isapprox(DV,[[10.333333333333334, 20.666666666666668, 31.0], [11.333333333333334, 22.666666666666668, 34.0], [13.333333333333334, 26.666666666666668, 40.0], [7.0, 14.0, 21.0], [6.833333333333333, 13.666666666666666, 20.5], [7.166666666666667, 14.333333333333334, 21.5], [8.166666666666666, 16.333333333333332, 24.5], [7.666666666666667, 15.333333333333334, 23.0], [8.666666666666666, 17.333333333333332, 26.0], [8.5, 17.0, 25.5]], atol=eps_level)
 
         # Hexahedral elements
-        DF = [i.*[1.0,2.0,3.0] for i ∈ eachindex(Eh)] # Vector data for each face
+        DF = [i.*[1.0,2.0,3.0] for i in eachindex(Eh)] # Vector data for each face
         DV = simplex2vertexdata(Eh,DF,Vh; weighting=:none)
         @test isapprox(DV,[[1.0, 2.0, 3.0], [1.5, 3.0, 4.5], [2.0, 4.0, 6.0], [2.0, 4.0, 6.0], [2.5, 5.0, 7.5], [3.0, 6.0, 9.0], [3.0, 6.0, 9.0], [3.5, 7.0, 10.5], [4.0, 8.0, 12.0], [3.0, 6.0, 9.0], [3.5, 7.0, 10.5], [4.0, 8.0, 12.0], [4.0, 8.0, 12.0], [4.5, 9.0, 13.5], [5.0, 10.0, 15.0], [5.0, 10.0, 15.0], [5.5, 11.0, 16.5], [6.0, 12.0, 18.0], [5.0, 10.0, 15.0], [5.5, 11.0, 16.5], [6.0, 12.0, 18.0], [6.0, 12.0, 18.0], [6.5, 13.0, 19.5], [7.0, 14.0, 21.0], [7.0, 14.0, 21.0], [7.5, 15.0, 22.5], [8.0, 16.0, 24.0]], atol=eps_level)
     end
@@ -2306,17 +2306,17 @@ end
         @test isapprox(DV,repeat(DF,length(V1)), atol=eps_level)
 
         # Quads
-        DF = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i ∈ eachindex(Fq)] # Matrix data for each face
+        DF = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i in eachindex(Fq)] # Matrix data for each face
         DV = simplex2vertexdata(Fq,DF,Vq; weighting=:area)
         @test isapprox(DV,[[12.0 24.0 36.0; 48.0 60.0 72.0], [9.666666666666668 19.333333333333336 28.999999999999996; 38.66666666666667 48.33333333333333 57.99999999999999], [12.666666666666666 25.333333333333332 38.0; 50.666666666666664 63.33333333333333 76.0], [15.666666666666664 31.33333333333333 47.0; 62.66666666666666 78.33333333333333 94.0], [13.0 26.0 39.0; 52.0 65.0 78.0], [10.0 20.0 30.0; 40.0 50.0 60.0], [12.333333333333332 24.666666666666664 37.0; 49.33333333333333 61.666666666666664 74.0], [14.666666666666666 29.333333333333332 44.0; 58.666666666666664 73.33333333333334 88.0], [6.500000000000001 13.000000000000002 19.5; 26.000000000000004 32.5 39.0], [11.5 23.0 34.5; 46.0 57.5 69.0], [8.5 17.0 25.500000000000004; 34.0 42.5 51.00000000000001], [10.0 20.0 30.0; 40.0 50.0 60.0], [14.0 28.0 42.0; 56.0 70.0 84.0], [9.0 18.0 27.0; 36.0 44.99999999999999 54.0], [12.5 25.0 37.50000000000001; 50.0 62.5 75.00000000000001], [16.5 33.0 49.5; 66.0 82.5 99.0], [20.5 41.0 61.5; 82.0 102.50000000000001 123.0], [16.5 33.0 49.5; 66.0 82.5 99.0], [11.5 23.0 34.5; 46.0 57.5 69.0], [13.000000000000002 26.000000000000004 39.0; 52.00000000000001 65.0 78.0], [2.5 5.0 7.5; 10.0 12.5 15.0], [6.500000000000001 13.000000000000002 19.5; 26.000000000000004 32.5 39.0], [10.5 21.0 31.5; 42.0 52.49999999999999 63.0], [14.5 29.0 43.5; 58.0 72.49999999999999 87.0], [18.5 37.0 55.5; 74.0 92.5 111.0], [22.5 45.0 67.5; 90.0 112.50000000000001 135.0]], atol=eps_level)
 
         # Triangles
-        DF = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i ∈ eachindex(Ft)] # Matrix data for each face
+        DF = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i in eachindex(Ft)] # Matrix data for each face
         DV = simplex2vertexdata(Ft,DF,Vt; weighting=:none)
         @test isapprox(DV,[[10.333333333333334 20.666666666666668 31.0; 41.333333333333336 51.666666666666664 62.0], [11.333333333333334 22.666666666666668 34.0; 45.333333333333336 56.666666666666664 68.0], [13.333333333333334 26.666666666666668 40.0; 53.333333333333336 66.66666666666667 80.0], [7.0 14.0 21.0; 28.0 35.0 42.0], [6.833333333333333 13.666666666666666 20.5; 27.333333333333332 34.166666666666664 41.0], [7.166666666666667 14.333333333333334 21.5; 28.666666666666668 35.833333333333336 43.0], [8.166666666666666 16.333333333333332 24.5; 32.666666666666664 40.833333333333336 49.0], [7.666666666666667 15.333333333333334 23.0; 30.666666666666668 38.333333333333336 46.0], [8.666666666666666 17.333333333333332 26.0; 34.666666666666664 43.333333333333336 52.0], [8.5 17.0 25.5; 34.0 42.5 51.0]], atol=eps_level)
 
         # Hexahedral elements
-        DF = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i ∈ eachindex(Eh)] # Matrix data for each face
+        DF = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i in eachindex(Eh)] # Matrix data for each face
         DV = simplex2vertexdata(Eh,DF,Vh; weighting=:none)
         @test isapprox(DV,[[1.0 2.0 3.0; 4.0 5.0 6.0], [1.5 3.0 4.5; 6.0 7.5 9.0], [2.0 4.0 6.0; 8.0 10.0 12.0], [2.0 4.0 6.0; 8.0 10.0 12.0], [2.5 5.0 7.5; 10.0 12.5 15.0], [3.0 6.0 9.0; 12.0 15.0 18.0], [3.0 6.0 9.0; 12.0 15.0 18.0], [3.5 7.0 10.5; 14.0 17.5 21.0], [4.0 8.0 12.0; 16.0 20.0 24.0], [3.0 6.0 9.0; 12.0 15.0 18.0], [3.5 7.0 10.5; 14.0 17.5 21.0], [4.0 8.0 12.0; 16.0 20.0 24.0], [4.0 8.0 12.0; 16.0 20.0 24.0], [4.5 9.0 13.5; 18.0 22.5 27.0], [5.0 10.0 15.0; 20.0 25.0 30.0], [5.0 10.0 15.0; 20.0 25.0 30.0], [5.5 11.0 16.5; 22.0 27.5 33.0], [6.0 12.0 18.0; 24.0 30.0 36.0], [5.0 10.0 15.0; 20.0 25.0 30.0], [5.5 11.0 16.5; 22.0 27.5 33.0], [6.0 12.0 18.0; 24.0 30.0 36.0], [6.0 12.0 18.0; 24.0 30.0 36.0], [6.5 13.0 19.5; 26.0 32.5 39.0], [7.0 14.0 21.0; 28.0 35.0 42.0], [7.0 14.0 21.0; 28.0 35.0 42.0], [7.5 15.0 22.5; 30.0 37.5 45.0], [8.0 16.0 24.0; 32.0 40.0 48.0]], atol=eps_level)
     end    
@@ -2371,12 +2371,12 @@ end
     @testset "Vector of Vector Float64 data" begin
 
         # Single element
-        DV = [i*[1.0,2.0,π] for i ∈ eachindex(V1)] # Vector data for each vertex
+        DV = [i*[1.0,2.0,π] for i in eachindex(V1)] # Vector data for each vertex
         DF = vertex2simplexdata(F1,DV)
         @test isapprox(DF,[mean(DV)], atol=eps_level)
 
         # Quads
-        DV = [i.*[1.0,2.0,π] for i ∈ eachindex(Vq)] # Vector data for each vertex
+        DV = [i.*[1.0,2.0,π] for i in eachindex(Vq)] # Vector data for each vertex
         DF = vertex2simplexdata(Fq,DV)
         @testset "simplexcenter" begin
             eps_level = 1e-4
@@ -2390,12 +2390,12 @@ end
         @test isapprox(DF,[[12.75, 25.5, 40.05530633326987], [11.5, 23.0, 36.12831551628262], [14.25, 28.5, 44.76769531365455], [16.0, 32.0, 50.26548245743669], [13.25, 26.5, 41.62610266006476], [12.75, 25.5, 40.05530633326986], [12.75, 25.5, 40.055306333269854], [12.75, 25.5, 40.05530633326986], [14.25, 28.5, 44.76769531365455], [13.75, 27.5, 43.19689898685965], [12.25, 24.5, 38.48451000647496], [12.75, 25.5, 40.05530633326986], [14.25, 28.5, 44.767695313654556], [14.75, 29.5, 46.33849164044945], [14.25, 28.5, 44.767695313654556], [13.75, 27.5, 43.19689898685965], [14.5, 29.0, 45.553093477052], [15.0, 30.0, 47.1238898038469], [16.25, 32.5, 51.050880620834135], [15.75, 31.5, 49.48008429403924], [16.0, 32.0, 50.26548245743669], [15.5, 31.0, 48.69468613064179], [16.25, 32.5, 51.05088062083414], [16.75, 33.5, 52.62167694762904]], atol=eps_level)
 
         # Triangles
-        DV = [i.*[1.0,2.0,π] for i ∈ eachindex(Vt)] # Vector data for each vertex
+        DV = [i.*[1.0,2.0,π] for i in eachindex(Vt)] # Vector data for each vertex
         DF = vertex2simplexdata(Ft,DV)
         @test isapprox(DF,[[8.0, 16.0, 25.132741228718345], [6.333333333333333, 12.666666666666666, 19.896753472735355], [7.333333333333333, 14.666666666666666, 23.03834612632515], [8.333333333333334, 16.666666666666668, 26.179938779914945], [5.333333333333333, 10.666666666666666, 16.755160819145562], [6.0, 12.0, 18.84955592153876], [5.666666666666667, 11.333333333333334, 17.802358370342162], [6.333333333333333, 12.666666666666666, 19.896753472735355], [5.333333333333333, 10.666666666666666, 16.755160819145562], [4.333333333333333, 8.666666666666666, 13.613568165555769], [6.333333333333333, 12.666666666666666, 19.896753472735355], [6.333333333333333, 12.666666666666666, 19.896753472735355], [7.333333333333333, 14.666666666666666, 23.03834612632515], [4.666666666666667, 9.333333333333334, 14.66076571675237], [5.666666666666667, 11.333333333333334, 17.80235837034216], [6.666666666666667, 13.333333333333334, 20.943951023931955]], atol=eps_level)
 
         # Hexahedral elements
-        DV = [i.*[1.0,2.0,π] for i ∈ eachindex(Vh)] # Vector data for each face
+        DV = [i.*[1.0,2.0,π] for i in eachindex(Vh)] # Vector data for each face
         DF = vertex2simplexdata(Ft,DV)
         @test isapprox(DF,[[8.0, 16.0, 25.132741228718345], [6.333333333333333, 12.666666666666666, 19.896753472735355], [7.333333333333333, 14.666666666666666, 23.03834612632515], [8.333333333333334, 16.666666666666668, 26.179938779914945], [5.333333333333333, 10.666666666666666, 16.755160819145562], [6.0, 12.0, 18.84955592153876], [5.666666666666667, 11.333333333333334, 17.802358370342162], [6.333333333333333, 12.666666666666666, 19.896753472735355], [5.333333333333333, 10.666666666666666, 16.755160819145562], [4.333333333333333, 8.666666666666666, 13.613568165555769], [6.333333333333333, 12.666666666666666, 19.896753472735355], [6.333333333333333, 12.666666666666666, 19.896753472735355], [7.333333333333333, 14.666666666666666, 23.03834612632515], [4.666666666666667, 9.333333333333334, 14.66076571675237], [5.666666666666667, 11.333333333333334, 17.80235837034216], [6.666666666666667, 13.333333333333334, 20.943951023931955]], atol=eps_level)
     end
@@ -2403,22 +2403,22 @@ end
     @testset "Vector of Matrix Float64 data" begin
 
         # Single element
-        DV = [i*[1.0 2.0 3.0; 4.0 5.0 6.0] for i ∈ eachindex(V1)] # Matrix data for each vertex
+        DV = [i*[1.0 2.0 3.0; 4.0 5.0 6.0] for i in eachindex(V1)] # Matrix data for each vertex
         DF = vertex2simplexdata(F1,DV)
         @test isapprox(DF,[mean(DV)], atol=eps_level)
 
         # Quads
-        DV = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i ∈ eachindex(Vq)] # Matrix data for each vertex
+        DV = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i in eachindex(Vq)] # Matrix data for each vertex
         DF = vertex2simplexdata(Fq,DV)
         @test isapprox(DF,[[12.75 25.5 38.25; 51.0 63.75 76.5], [11.5 23.0 34.5; 46.0 57.5 69.0], [14.25 28.5 42.75; 57.0 71.25 85.5], [16.0 32.0 48.0; 64.0 80.0 96.0], [13.25 26.5 39.75; 53.0 66.25 79.5], [12.75 25.5 38.25; 51.0 63.75 76.5], [12.75 25.5 38.25; 51.0 63.75 76.5], [12.75 25.5 38.25; 51.0 63.75 76.5], [14.25 28.5 42.75; 57.0 71.25 85.5], [13.75 27.5 41.25; 55.0 68.75 82.5], [12.25 24.5 36.75; 49.0 61.25 73.5], [12.75 25.5 38.25; 51.0 63.75 76.5], [14.25 28.5 42.75; 57.0 71.25 85.5], [14.75 29.5 44.25; 59.0 73.75 88.5], [14.25 28.5 42.75; 57.0 71.25 85.5], [13.75 27.5 41.25; 55.0 68.75 82.5], [14.5 29.0 43.5; 58.0 72.5 87.0], [15.0 30.0 45.0; 60.0 75.0 90.0], [16.25 32.5 48.75; 65.0 81.25 97.5], [15.75 31.5 47.25; 63.0 78.75 94.5], [16.0 32.0 48.0; 64.0 80.0 96.0], [15.5 31.0 46.5; 62.0 77.5 93.0], [16.25 32.5 48.75; 65.0 81.25 97.5], [16.75 33.5 50.25; 67.0 83.75 100.5]], atol=eps_level)
 
         # Triangles
-        DV = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i ∈ eachindex(Vt)] # Matrix data for each vertex
+        DV = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i in eachindex(Vt)] # Matrix data for each vertex
         DF = vertex2simplexdata(Ft,DV)
         @test isapprox(DF,[[8.0 16.0 24.0; 32.0 40.0 48.0], [6.333333333333333 12.666666666666666 19.0; 25.333333333333332 31.666666666666668 38.0], [7.333333333333333 14.666666666666666 22.0; 29.333333333333332 36.666666666666664 44.0], [8.333333333333334 16.666666666666668 25.0; 33.333333333333336 41.666666666666664 50.0], [5.333333333333333 10.666666666666666 16.0; 21.333333333333332 26.666666666666668 32.0], [6.0 12.0 18.0; 24.0 30.0 36.0], [5.666666666666667 11.333333333333334 17.0; 22.666666666666668 28.333333333333332 34.0], [6.333333333333333 12.666666666666666 19.0; 25.333333333333332 31.666666666666668 38.0], [5.333333333333333 10.666666666666666 16.0; 21.333333333333332 26.666666666666668 32.0], [4.333333333333333 8.666666666666666 13.0; 17.333333333333332 21.666666666666668 26.0], [6.333333333333333 12.666666666666666 19.0; 25.333333333333332 31.666666666666668 38.0], [6.333333333333333 12.666666666666666 19.0; 25.333333333333332 31.666666666666668 38.0], [7.333333333333333 14.666666666666666 22.0; 29.333333333333332 36.666666666666664 44.0], [4.666666666666667 9.333333333333334 14.0; 18.666666666666668 23.333333333333332 28.0], [5.666666666666667 11.333333333333334 17.0; 22.666666666666668 28.333333333333332 34.0], [6.666666666666667 13.333333333333334 20.0; 26.666666666666668 33.333333333333336 40.0]], atol=eps_level)
 
         # Hexahedral elements
-        DV = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i ∈ eachindex(Vh)] # Matrix data for each face
+        DV = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i in eachindex(Vh)] # Matrix data for each face
         DF = vertex2simplexdata(Eh,DV)
         @test isapprox(DF,[[7.5 15.0 22.5; 30.0 37.5 45.0], [8.5 17.0 25.5; 34.0 42.5 51.0], [10.5 21.0 31.5; 42.0 52.5 63.0], [11.5 23.0 34.5; 46.0 57.5 69.0], [16.5 33.0 49.5; 66.0 82.5 99.0], [17.5 35.0 52.5; 70.0 87.5 105.0], [19.5 39.0 58.5; 78.0 97.5 117.0], [20.5 41.0 61.5; 82.0 102.5 123.0]], atol=eps_level)
     end        
@@ -2473,7 +2473,7 @@ end
         F = faces(M)
         V = coordinates(M)
         N = facenormal(F,V)
-        U = [n./(1.0.+rand(1)) for n ∈ N]
+        U = [n./(1.0.+rand(1)) for n in N]
         NN = normalizevector(U)
 
         @test eltype(NN) == eltype(U)
@@ -2589,6 +2589,146 @@ end
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
         @test isapprox(V[ind], Point3{Float64}[[1.0, 0.0, 0.0], [-0.8090169943749475, 0.587785252292473, 0.0], [0.7617793324199491, 0.9830110745024232, 1.5707963267948966], [3.4506096479647406, 2.1905361372946395, 3.141592653589793], [3.4506096479647406, 4.092649169884947, 3.141592653589793]], atol=eps_level)
+    end
+
+    @testset "quad2tri" begin
+        F,V = loftlinear(V1,V2;num_steps=num_steps,close_loop=true,face_type=:quad2tri)
+        ind = round.(Int64,range(1,length(V),5))
+
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == (nc*(num_steps-1))*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test isapprox(V[ind], Point3{Float64}[[1.0, 0.0, 0.0], [-0.8090169943749475, 0.587785252292473, 0.0], [0.7617793324199491, 0.9830110745024232, 1.5707963267948966], [3.4506096479647406, 2.1905361372946395, 3.141592653589793], [3.4506096479647406, 4.092649169884947, 3.141592653589793]], atol=eps_level)
+    end
+end
+
+@testset "loftpoints2surf" verbose = true begin
+    tol_level = 1e-4
+
+    nc = 5
+    t = range(0,2.0*π-(2.0*π)/nc,nc) 
+    V1 = [Point3{Float64}(cos(tt), sin(tt),0.0) for tt in t]
+    V2 = [Point3{Float64}(v[1],v[2],v[3]+2.0) for v in V1]
+    V3 = [Point3{Float64}(v[1],v[2],v[3]+4.0) for v in V1]
+    Vp2 = vcat(V1,V2)
+    Vp3 = vcat(V1,V2,V3)
+     
+
+    @testset "quad" begin
+        #Non-closed loop
+        num_steps = 2
+        F,V = loftpoints2surf(Vp2,num_steps; close_loop=false,face_type=:quad)
+        @test F isa Vector{QuadFace{Int64}}
+        @test length(F) == (nc-1)*(num_steps-1)
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test V == Vp2
+
+        # Closed loop
+        num_steps = 2
+        F,V = loftpoints2surf(Vp2,num_steps; close_loop=true,face_type=:quad)
+        @test F isa Vector{QuadFace{Int64}}
+        @test length(F) == nc*(num_steps-1)
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test V == Vp2
+
+        # 3 layers
+        num_steps = 3
+        F,V = loftpoints2surf(Vp3,num_steps; close_loop=true,face_type=:quad)
+        @test F isa Vector{QuadFace{Int64}}
+        @test length(F) == nc*(num_steps-1)
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test V == Vp3
+    end
+
+    @testset "tri_slash" begin
+        #Non-closed loop
+        num_steps = 2
+        F,V = loftpoints2surf(Vp2,num_steps; close_loop=false,face_type=:tri_slash)
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == (nc-1)*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test V == Vp2
+
+        # Closed loop
+        num_steps = 2
+        F,V = loftpoints2surf(Vp2,num_steps; close_loop=true,face_type=:tri_slash)
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == nc*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test V == Vp2
+
+        # 3 layers
+        num_steps = 3
+        F,V = loftpoints2surf(Vp3,num_steps; close_loop=true,face_type=:tri_slash)
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == nc*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test V == Vp3
+    end
+
+    @testset "tri" begin
+        #Non-closed loop
+        num_steps = 2
+        F,V = loftpoints2surf(Vp2,num_steps; close_loop=false,face_type=:tri)
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == (nc-1)*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test V == Vp2
+
+        # Closed loop
+        num_steps = 2
+        F,V = loftpoints2surf(Vp2,num_steps; close_loop=true,face_type=:tri)
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == nc*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test V == Vp2
+
+        # 3 layers
+        num_steps = 3
+        F,V = loftpoints2surf(Vp3,num_steps; close_loop=true,face_type=:tri)
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == nc*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test V == Vp3
+    end
+
+    @testset "quad2tri" begin
+        #Non-closed loop
+        num_steps = 2
+        F,V = loftpoints2surf(Vp2,num_steps; close_loop=false,face_type=:quad2tri)
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == (nc-1)*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test V == Vp2
+
+        # Closed loop
+        num_steps = 2
+        F,V = loftpoints2surf(Vp2,num_steps; close_loop=true,face_type=:quad2tri)
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == nc*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test V == Vp2
+
+        # 3 layers
+        num_steps = 3
+        F,V = loftpoints2surf(Vp3,num_steps; close_loop=true,face_type=:quad2tri)
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == nc*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test V == Vp3
     end
 end
 
@@ -2719,21 +2859,20 @@ end
     V = coordinates(M)
 
     # Build deformation gradient tensor to induce shear with known angles
-    f = zeros(3,3)
+    fDef = zeros(3,3)
     for i=1:3
-        f[i,i]=1.0
+        fDef[i,i]=1.0
     end
     a = pi/4 # "45 degree shear"  
-    f[1,2] = tan(a) 
+    fDef[1,2] = tan(a) 
 
     # Sheared cube coordinates
-    V2 = togeometrybasics_points([f*v for v ∈ V]) 
+    V2 = togeometrybasics_points([fDef*v for v in V]) 
 
     A = edgeangles(F,V) # Angles for regular cube
     A2 = edgeangles(F,V2) # Angles for sheared cube
     @test all([all(a.==pi/2) for a in A]) # All right angles in undeformed cube
     @test isapprox(sort(unique(reduce(vcat,A2))),[pi/4, pi/2, pi/2+pi/4],atol=eps_level)
-
 end
 
 
@@ -2749,7 +2888,7 @@ end
     end
     a = pi/6 # "45 degree shear"  
     f[1,2] = tan(a) 
-    V = togeometrybasics_points([f*v for v ∈ V]) # Shear the cube
+    V = togeometrybasics_points([f*v for v in V]) # Shear the cube
 
     # Build deformation gradient tensor to induce shear with known angles
     f = zeros(3,3)
@@ -2758,7 +2897,7 @@ end
     end
     a = pi/6 # "45 degree shear"  
     f[3,1] = tan(a) 
-    V = togeometrybasics_points([f*v for v ∈ V]) # Shear the cube
+    V = togeometrybasics_points([f*v for v in V]) # Shear the cube
 
     @testset "Errors" begin
         @test_throws ArgumentError quad2tri(F,V; convert_method = :wrong)
@@ -2825,7 +2964,7 @@ end
     Fn_below = Fn[Cn.<0]
     En_below = boundaryedges(Fn_below)
     ind_below = unique(reduce(vcat,En_below))
-    d = [norm(v) for v ∈ Vn[ind_below]]
+    d = [norm(v) for v in Vn[ind_below]]
     @test isapprox(sum((d.-r).^2),0.0,atol=tol_level) # Should 
 
     p = [0.0,0.0,0.0]; # Point on cutting plane
@@ -2839,7 +2978,7 @@ end
     Fn_below = Fn[Cn.<0]
     En_below = boundaryedges(Fn_below)
     ind_below = unique(reduce(vcat,En_below))
-    d = [norm(v) for v ∈ Vn[ind_below]]
+    d = [norm(v) for v in Vn[ind_below]]
     @test isapprox(sum((d.-r).^2),0.0,atol=tol_level) # Should 
 
     p = [0.0,0.0,0.0]; # Point on cutting plane
@@ -2853,7 +2992,7 @@ end
     Fn_below = Fn[Cn.<0]
     En_below = boundaryedges(Fn_below)
     ind_below = unique(reduce(vcat,En_below))
-    d = [norm(v) for v ∈ Vn[ind_below]]
+    d = [norm(v) for v in Vn[ind_below]]
     @test isapprox(sum((d.-r).^2),0.0,atol=tol_level) # Should 
 end
 
@@ -3060,6 +3199,23 @@ end
         [0.9238795325112865, 0.3826834323650904, 3.0]],atol = eps_level)
     end
 
+    @testset "face_type=:tri" begin
+        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:tri)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)
+
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == (nc*(num_steps-1))*2
+
+        ind = round.(Int64,range(1,length(V),5))
+        @test V isa Vector{Point3{Float64}}
+        @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+        @test isapprox(V[ind],Point3{Float64}[[1.0, 0.0, 0.0], [-0.1913417161825446, -0.9619397662556435, 0.75], 
+        [-0.9238795325112867, -0.3826834323650899, 1.5], [-0.19134171618254525, 0.9619397662556433, 2.25], 
+        [0.9238795325112865, 0.3826834323650904, 3.0]],atol = eps_level)
+    end
+
     @testset "face_type=:tri_slash" begin
         F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:tri_slash)
         z = [v[3] for v in V]
@@ -3077,8 +3233,8 @@ end
         [0.9238795325112865, 0.3826834323650904, 3.0]],atol = eps_level)
     end
 
-    @testset "face_type=:tri" begin
-        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:tri)
+    @testset "face_type=:quad2tri" begin
+        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad2tri)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)
@@ -3089,8 +3245,8 @@ end
         ind = round.(Int64,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point3{Float64}[[1.0, 0.0, 0.0], [-0.1913417161825446, -0.9619397662556435, 0.75], 
-        [-0.9238795325112867, -0.3826834323650899, 1.5], [-0.19134171618254525, 0.9619397662556433, 2.25], 
+        @test isapprox(V[ind],Point3{Float64}[[1.0, 0.0, 0.0], [2.83276944882399e-16, -1.0, 0.75], 
+        [-0.9238795325112867, -0.3826834323650899, 1.5], [-0.38268343236509034, 0.9238795325112865, 2.25], 
         [0.9238795325112865, 0.3826834323650904, 3.0]],atol = eps_level)
     end
 
@@ -3267,7 +3423,7 @@ end
         # Triangulated sphere, distance should approximate π 
         r = 1.0
         F,V = geosphere(4,r)
-        z = [v[3] for v ∈ V]
+        z = [v[3] for v in V]
         indStart =[findmin(z)[2]]
         d,dd,l = distmarch(F,V,indStart)
         @test isapprox(maximum(d),π,atol=0.01)
@@ -3275,7 +3431,7 @@ end
         # Quadrangulated sphere, distance should approximate π 
         r = 1.0
         F,V = quadsphere(4,r)
-        z = [v[3] for v ∈ V]
+        z = [v[3] for v in V]
         indStart =[findmin(z)[2]]
         d,dd,l = distmarch(F,V,indStart)
         @test isapprox(maximum(d),π,atol=0.01)
@@ -3510,12 +3666,12 @@ end
     @testset "Evenly upsampling linear curve" begin
         # Example linear curve raw
         X = range(0, 10, 5)
-        V = [GeometryBasics.Point{3,Float64}(x, 2.0*x, 0.0) for x ∈ X]
+        V = [GeometryBasics.Point{3,Float64}(x, 2.0*x, 0.0) for x in X]
 
         # Create true evenly upsampled data 
         n = 20
         Xt = range(0, 10, n)
-        Vt = [GeometryBasics.Point{3,Float64}(x, 2.0*x, 0.0) for x ∈ Xt]
+        Vt = [GeometryBasics.Point{3,Float64}(x, 2.0*x, 0.0) for x in Xt]
 
         # Resample using evenly_sample
         Vi, S = evenly_sample(V, n; niter=5)
@@ -3530,11 +3686,11 @@ end
         # Example circle curve raw
         r = 2.25
         nc = 100    
-        V = [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0.0,2.0*π,nc)]
+        V = [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t in range(0.0,2.0*π,nc)]
 
         # Create true evenly upsampled data 
         n = 10
-        Vt = [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t ∈ range(0.0,2.0*π,n)]
+        Vt = [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t in range(0.0,2.0*π,n)]
         
         # Resample using evenly_sample
         Vi, S = evenly_sample(V, n; niter=5)
@@ -3563,10 +3719,10 @@ end
     M = cube(sqrt(3))
     V1 = coordinates(M)
     R_true = RotXYZ(0.25*π,0.25*π,0.25*π)
-    V2 = [R_true*v for v ∈ V1]
+    V2 = [R_true*v for v in V1]
     R_kabsch_forward = kabsch_rot(V1,V2)
     R_kabsch_backward = kabsch_rot(V2,V1)
-    V1r = [R_kabsch_backward*v for v ∈ V2]
+    V1r = [R_kabsch_backward*v for v in V2]
     @test isapprox(R_kabsch_forward,R_true,atol=tol_level) # Able to retrieve forward rotation
     @test isapprox(V1r,V1,atol=tol_level) # Check if backward rotation is succesful   
 end
@@ -3586,17 +3742,15 @@ end
     Vc,Sc = evenly_sample(Vc, nc)
 
     # Define section curves
-    np = 20 # Number of section points
-    ff(t) = 2.0 + 0.5.*sin(3*t)
-    V1 = circlepoints(ff,np; dir=:acw)
+    np = 20 # Number of section points    
+    V1 = circlepoints(2.0,np; dir=:acw)
     V1,_ = evenly_sample(V1, np)
     Q = RotXYZ(0.0,0.5*π,0.0) # Define a rotation tensor using Euler angles
-    V1 = [Q*v for v ∈ V1] # Rotate the coordinates
+    V1 = [Q*v for v in V1] # Rotate the coordinates
 
-    ff(t) = 2.0 + 0.5*sin(3*t)
-    V2 = circlepoints(ff,np; dir=:acw)
+    V2 = circlepoints(2.0,np; dir=:acw)
     V2,_ = evenly_sample(V2, np)
-    V2 = [v2 .+ Vc[end] for v2 ∈ V2] 
+    V2 = [v2 .+ Vc[end] for v2 in V2] 
     
     @testset "quad" begin
         F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist=0, close_loop=true)
@@ -3639,4 +3793,208 @@ end
         @test length(V) == nc*np
         @test isa(V,Vector{Point3{Float64}})        
     end
+
+    @testset "quad2tri" begin
+        F,V = sweeploft(Vc,V1,V2; face_type=:quad2tri, num_twist=0, close_loop=true)
+        @test length(F) == (nc-1)*np*2
+        @test isa(F,Vector{TriangleFace{Int64}})
+        @test length(V) == nc*np
+        @test isa(V,Vector{Point3{Float64}})
+
+        F,V = sweeploft(Vc,V1,V2; face_type=:quad2tri, num_twist=1, close_loop=false)
+        @test length(F) == (nc-1)*(np-1)*2
+        @test isa(F,Vector{TriangleFace{Int64}})
+        @test length(V) == nc*np
+        @test isa(V,Vector{Point3{Float64}})        
+    end
+end
+
+
+@testset "revolvecurve" verbose = true begin
+    tol_level = 1e-6
+    nc = 5
+    t = range(1.0,2.0,nc)
+    Vc = [Point3(tt,0.0,0.0) for tt in t]
+    n = Vec{3, Float64}(0.0,0.0,1.0)
+    rMax = 0.0
+    rMin = Inf
+    for v in Vc
+        typeof(n)
+        typeof(v)
+        rNow = dot(normalizevector(cross(cross(n,v),n)),v)
+        if !isnan(rNow)
+            rMax = max(rMax,rNow)
+            rMin = min(rMin,rNow)
+        else
+            rMin = 0.0
+        end
+    end    
+        
+    num_steps = 6
+    close_loop = false
+
+    ind = round.(Int64,range(1,nc*num_steps,5))
+
+    θ = 1.0*π
+
+    # Check if revolved line which is orthogonal to n yields zero dot product 
+    # with n, and check if this is rotation invariant. 
+    @testset "Rotation invariance" begin
+        _,VN = geosphere(3,1.0)   # Create point on a sphere
+        b = zeros(Bool,length(VN))
+        for i in eachindex(VN)
+            m = VN[i] # Current rotation axis
+            Q = rotation_between(n,m) # Rotation matrix to rotate Vc orthogonal to m       
+            F1,V1 = revolvecurve([Q*v for v in Vc],θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=:quad)
+            
+            d = sum([dot(m,v) for v in V1])
+            b[i]=isapprox(d,0.0,atol=tol_level)
+        end
+        @test all(b)
+    end
+
+    @testset "Direction (s) variations" begin
+        face_type =:quad
+        close_loop = true
+
+        s=1
+        F,V = revolvecurve(Vc,θ;  s=s, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        ϕ = [atan(v[2],v[1]) for v in V]
+        @test isapprox(minimum(ϕ),0.0,atol=tol_level)
+        @test isapprox(maximum(ϕ),π,atol=tol_level)
+
+        s=0
+        F,V = revolvecurve(Vc,θ;  s=s, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        ϕ = [atan(v[2],v[1]) for v in V]
+        @test isapprox(minimum(ϕ),-π/2,atol=tol_level)
+        @test isapprox(maximum(ϕ),π/2,atol=tol_level)
+
+        s=-1
+        F,V = revolvecurve(Vc,θ;  s=s, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        ϕ = [atan(v[2],v[1]) for v in V]
+        @test isapprox(minimum(ϕ),-π,atol=tol_level)
+        @test isapprox(maximum(ϕ),0.0,atol=tol_level)
+    end
+
+    m = [-0.7838430424199713, 0.08108629344330351, -0.6156420208736807]
+    @testset "quad" begin        
+        face_type =:quad
+        close_loop = true
+        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+
+        @test F isa Vector{QuadFace{Int64}}
+        @test length(F) == nc*(num_steps-1)
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
+        [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
+        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
+        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+
+        face_type =:quad
+        close_loop = false
+        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+
+        @test F isa Vector{QuadFace{Int64}}
+        @test length(F) == (nc-1)*(num_steps-1)
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
+        [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
+        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
+        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+    end
+
+    @testset "tri_slash" begin        
+        face_type =:tri_slash
+        close_loop = true
+        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == nc*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
+        [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
+        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
+        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+
+        face_type =:tri_slash
+        close_loop = false
+        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == (nc-1)*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
+        [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
+        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
+        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+    end
+
+    @testset "quad2tri" begin        
+        face_type =:quad2tri
+        close_loop = true
+        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == nc*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
+        [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
+        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
+        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+
+        face_type =:quad2tri
+        close_loop = false
+        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == (nc-1)*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
+        [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
+        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
+        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+    end
+
+    @testset "tri" begin        
+        face_type =:tri
+        close_loop = true
+        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == nc*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
+        [1.2737434141522277, -0.5142554662637147, 0.06118848193668663], 
+        [0.9286050488796189, -1.253831383463123, 1.0398194675222394], 
+        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+
+        face_type =:tri
+        close_loop = false
+        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+
+        @test F isa Vector{TriangleFace{Int64}}
+        @test length(F) == (nc-1)*(num_steps-1)*2
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == nc*num_steps
+        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
+        [1.2737434141522277, -0.5142554662637147, 0.06118848193668663], 
+        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
+        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+    end
+
 end

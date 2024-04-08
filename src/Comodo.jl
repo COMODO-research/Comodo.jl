@@ -31,7 +31,7 @@ export circlepoints, loftlinear, trisurfslice
 export wrapindex, edgeangles, count_edge_face, boundaryedges, edges2curve
 export pointspacingmean, extrudecurve, meshgroup, ray_triangle_intersect
 export distmarch, mesh_curvature_polynomial, curve_length, evenly_sample
-export invert_faces, kabsch_rot, sweeploft
+export invert_faces, kabsch_rot, sweeploft, loftpoints2surf, revolvecurve
 
 # Export functions: Visualization related
 export slidercontrol
