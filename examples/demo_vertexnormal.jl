@@ -34,7 +34,7 @@ for q=1:1:4
         M = load(fileName_mesh)
 
         # Obtain mesh faces and vertices
-        F = faces(M)
+        F = tofaces(faces(M))
         V = topoints(coordinates(M))        
         F,V,_ = mergevertices(F,V)    
         M = GeometryBasics.Mesh(V,F)

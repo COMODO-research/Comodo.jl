@@ -2874,14 +2874,19 @@ end
         @test length(faces(Mp)) == length(V)
 
         fileName_mesh = joinpath(comododir(),"assets","obj","spot_control_mesh.obj")
-        M = load(fileName_mesh)   
-        F = faces(M)
-        V = topoints(coordinates(M))
+        Mn = load(fileName_mesh)   
+        F = tofaces(faces(Mn))
+        V = topoints(coordinates(Mn))
 
         hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
         @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float32, Line{3, Float32}, SimpleFaceView{3, Float32, 2, Int64, Point3{Float32}, LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(V)
+
+        hp1 =  normalplot(ax,Mn; type_flag=:face)
+        Mp = hp1[1].val
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float32, Line{3, Float32}, SimpleFaceView{3, Float32, 2, Int64, Point3{Float32}, LineFace{Int64}}}}}
+        @test length(faces(Mp)) == length(F)
 
         # Not supported yet
         # hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)

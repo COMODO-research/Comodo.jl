@@ -810,7 +810,7 @@ defined by `F`. The input `F` can either represent a vector of faces or a
 GeometryBasics mesh.  
 """
 function meshedges(F::Array{NgonFace{N,T},1}; unique_only=false) where N where T<:Integer        
-    E = LineFace{T}[]    
+    E = LineFace{Int64}[]    
     for j1 in 1:N # Loop over each node/point for the current simplex           
         if j1<N
             j2 = j1+1
@@ -2143,8 +2143,8 @@ function normalplot(ax,F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; type_f
 end
 
 function normalplot(ax,M::GeometryBasics.Mesh; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
-    F = faces(M)
-    V = coordinates(M)        
+    F = tofaces(faces(M))
+    V = topoints(coordinates(M))
     return normalplot(ax,F,V;type_flag=type_flag, color=color,linewidth=linewidth,scaleval=scaleval)
 end
 
