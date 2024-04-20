@@ -810,7 +810,7 @@ defined by `F`. The input `F` can either represent a vector of faces or a
 GeometryBasics mesh.  
 """
 function meshedges(F::Array{NgonFace{N,T},1}; unique_only=false) where N where T<:Integer        
-    E = LineFace{Int64}[]    
+    E = LineFace{T}[]    
     for j1 in 1:N # Loop over each node/point for the current simplex           
         if j1<N
             j2 = j1+1
@@ -1110,13 +1110,13 @@ end
 function tofaces(FM::Vector{NgonFace{m, OffsetInteger{-1, TF}}} ) where m where TF <: Integer
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)    
     if m == 2 # Edges
-        F = [LineFace{TF}(f) for f in FM]
+        F = [LineFace{Int64}(f) for f in FM]
     elseif m == 3 # Triangles
-        F = [TriangleFace{TF}(f) for f in FM]
+        F = [TriangleFace{Int64}(f) for f in FM]
     elseif m == 4 # Quads
-        F = [QuadFace{TF}(f) for f in FM]
+        F = [QuadFace{Int64}(f) for f in FM]
     else # Other mesh type
-        F = [NgonFace{m,TF}(f) for f in FM]
+        F = [NgonFace{m,Int64}(f) for f in FM]
     end
     return F
 end

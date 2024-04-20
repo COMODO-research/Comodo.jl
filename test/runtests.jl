@@ -886,6 +886,24 @@ end
             @test length(Ftm_G) == 1
         end
 
+        Fqm_G = tofaces([Fqm[1,:]])
+        @testset "1 QuadFace" begin        
+            @test isa(Fqm_G,Vector{GeometryBasics.QuadFace{Int64}})
+            @test length(Fqm_G) == 1
+        end
+
+        Fnm_G = tofaces([Fnm[1,:]])
+        @testset "1 NgonFace" begin        
+            @test isa(Fnm_G,Vector{GeometryBasics.NgonFace{5,Int64}})
+            @test length(Fnm_G) == 1
+        end  
+        
+        Fem_G = tofaces(Fem)
+        @testset "LineFace" begin        
+            @test isa(Fem_G,Vector{GeometryBasics.LineFace{Int64}})
+            @test length(Fem_G) == size(Fem,1)
+        end
+
         Ftm_G = tofaces(Ftm)
         @testset "TriangleFace" begin        
             @test isa(Ftm_G,Vector{GeometryBasics.TriangleFace{Int64}})
@@ -918,6 +936,24 @@ end
             @test length(Ftv_G) == 1
         end
 
+        Fqv_G = tofaces([Fqv[1]])
+        @testset "1 QuadFace" begin        
+            @test isa(Fqv_G,Vector{GeometryBasics.QuadFace{Int64}})
+            @test length(Fqv_G) == 1
+        end
+
+        Fnv_G = tofaces([Fnv[1]])
+        @testset "1 NgonFace" begin        
+            @test isa(Fnv_G,Vector{GeometryBasics.NgonFace{5,Int64}})
+            @test length(Fnv_G) == 1
+        end  
+
+        Fev_G = tofaces(Fev)        
+        @testset "LineFace" begin        
+            @test isa(Fev_G,Vector{GeometryBasics.LineFace{Int64}})
+            @test length(Fev_G) == length(Fev)
+        end
+
         Ftv_G = tofaces(Ftv)
         @testset "TriangleFace" begin        
             @test isa(Ftv_G,Vector{GeometryBasics.TriangleFace{Int64}})
@@ -941,6 +977,48 @@ end
             @test isa(Fnv_G2,Vector{GeometryBasics.NgonFace{5,Int64}})
             @test length(Fnv_G2) == length(Fnv_G)
         end    
+
+        @testset "Imported mesh points offset integer based" verbose = true begin
+            Fme = [NgonFace{2, OffsetInteger{-1, UInt32}}(1,2),
+                   NgonFace{2, OffsetInteger{-1, UInt32}}(2,3)] 
+           
+            Fmt = [NgonFace{3, OffsetInteger{-1, UInt32}}(1,2,3),
+                   NgonFace{3, OffsetInteger{-1, UInt32}}(2,3,4)] 
+            
+            Fmq = [NgonFace{4, OffsetInteger{-1, UInt32}}(1,2,3,4),
+                   NgonFace{4, OffsetInteger{-1, UInt32}}(3,4,5,6)]
+            
+            Fmn = [NgonFace{5, OffsetInteger{-1, UInt32}}(1,2,3,4,5),
+                   NgonFace{5, OffsetInteger{-1, UInt32}}(3,4,5,6,7)]
+
+            @testset "edges" begin
+                F = tofaces(Fme)
+                @test isa(F,Vector{GeometryBasics.LineFace{Int64}})
+                @test length(F) == length(Fme)
+                @test Fme[1] == F[1]
+            end  
+
+            @testset "Triangles" begin
+                F = tofaces(Fmt)
+                @test isa(F,Vector{GeometryBasics.TriangleFace{Int64}})
+                @test length(F) == length(Fmt)
+                @test Fmt[1] == F[1]
+            end
+
+            @testset "Quads" begin
+                F = tofaces(Fmq)
+                @test isa(F,Vector{GeometryBasics.QuadFace{Int64}})
+                @test length(F) == length(Fmq)
+                @test Fmq[1] == F[1]
+            end
+
+            @testset "NgonFace" begin
+                F = tofaces(Fmn)
+                @test isa(F,Vector{GeometryBasics.NgonFace{5,Int64}})
+                @test length(F) == length(Fmn)
+                @test Fmn[1] == F[1]
+            end
+        end
     end
 end
 
