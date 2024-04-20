@@ -14,13 +14,15 @@ F = [F[i] for i in findall(map(v-> v[3]>0,VC))] # Remove some faces
 
 Fc,Vc = remove_unused_vertices(F,V)
 
-
+# Visualization
+markersize = 12
 M = GeometryBasics.Mesh(Vc,Fc)
 fig = Figure(size=(1200,1200))
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A sliced mesh")
-
+ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A cut mesh")
 
 hp3 = poly!(ax1,M, strokewidth=1,color=:white, strokecolor=:blue, shading = FastShading, transparency=false)
-hp3 = normalplot(ax1,M)
+# hp3 = normalplot(ax1,M)
+scatter!(Vc,markersize=markersize,color=:red)
+
 
 fig

@@ -14,7 +14,7 @@ end
 a = pi/4 # "45 degree shear"  
 f[1,2] = tan(a) 
 
-V2 = togeometrybasics_points([f*v for v ∈ V]) # Shear the cube
+V2 = [eltype(V)(f*v) for v ∈ V] # Shear the cube
 
 A = edgeangles(F,V)
 A2 = edgeangles(F,V2)

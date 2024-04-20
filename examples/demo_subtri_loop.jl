@@ -27,7 +27,7 @@ ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", 
 slidercontrol(hSlider,ax)
 
 hp1=wireframe!(ax,M,linewidth=3,color=:red, overdraw=false)
-hp2=poly!(ax,Mn,strokewidth=2,color=:white, shading = FastShading)
+hp2=poly!(ax,Mn,strokewidth=1,color=:white, shading = FastShading)
 
 # hp2=poly!(scene,M,strokewidth=1,color=:white, shading = FastShading)
 

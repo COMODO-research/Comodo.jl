@@ -119,10 +119,10 @@ end
 
 The `gridpoints` function returns a vector of 3D points which span a grid in 3D 
 space. Points are defined as per the input ranges or range vectors. The output 
-point vector contains elements of the type `GeometryBasics.Point3`. 
+point vector contains elements of the type `Point`. 
 """
 function gridpoints(x::Union{Vector{T}, AbstractRange{T}}, y=x, z=x) where T<:Real
-    reshape([GeometryBasics.Point{3, Float64}(x, y, z) for z in z, y in y, x in x], 
+    reshape([Point{3, Float64}(x, y, z) for z in z, y in y, x in x], 
                              length(x)*length(y)*length(z))
 end  
 
@@ -131,7 +131,7 @@ end
 
 # Description
 
-This function uses biharmonic spline interpolation, which features radial basis 
+This function uses biharmonic spline interpolation [1], which features radial basis 
 functions. The input is assumed to represent ordered data, i.e. consequtive 
 unique points on a curve. The curve x-, and y-coordinates are provided through 
 the input parameters `x` and `y` respectively. The third input `xi` defines the 
@@ -139,7 +139,7 @@ sites at which to interpolate. Each of in the input parameters can be either a
 vector or a range. 
 
 # References
-[David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
+1. [David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
 """
 function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union{Vector{T}, AbstractRange{T}},xi::Union{Vector{T}, AbstractRange{T}}; extrapolate_method=:linear,pad_data=:linear) where T<:Real
 
@@ -236,13 +236,12 @@ end
 
 # Description 
 
-This function uses biharmonic interpolation. The input `x` should define a 
+This function uses biharmonic interpolation [1]. The input `x` should define a 
 vector consisting of m points which are n-dimensional, and the input `y` should
 be a vector consisting of m scalar data values. 
 
 # References 
-
-[David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
+1. [David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
 """
 function interp_biharmonic(x,y,xi)
     # Distances from all points in X to all points in X
@@ -269,9 +268,9 @@ end
 This function returns `n` points for an m-th order Bézier spline, based on the 
 m control points contained in the input vector `P`. This function supports point
 vectors with elements of the type `AbstractPoint{3}` (e.g.
-`GeometryBasics.Point{3, Float64}`) or `Vector{Float64}`.
+`Point{3, Float64}`) or `Vector{Float64}`.
 """
-function nbezier(P::Vector{T},n::Integer) where T<:Union{AbstractPoint{3},Vector{Float64}}
+function nbezier(P::Vector{Point{ND,TV}},n::Integer) where ND where TV<:Real
     if n<2
         error("The vale of n is too low. Request at least two data points")
     end
@@ -281,13 +280,8 @@ function nbezier(P::Vector{T},n::Integer) where T<:Union{AbstractPoint{3},Vector
     nnr = N-1:-1:0
     f = factorial.(nn) 
     s = factorial(N-1)./( f.*reverse(f) ); # Sigma
-    
-    if T<:AbstractPoint{3}
-        V =  [T(0.0,0.0,0.0) for _ in 1:n]
-    else
-        V =  fill(zeros(Float64,3),n)
-    end    
-    
+
+    V =  zeros(Point{ND,TV},n)    
     @inbounds for i in 1:n
         b = s.* ((1.0-t[i]).^nnr) .* (t[i].^nn)
         @inbounds for j = 1:N
@@ -345,7 +339,7 @@ end
     dist(V1,V2)
 # Description
 Function compute an nxm distance matrix for the n inputs points in `V1`, and the
-m input points in `V2`. The input points may be multidimensional, in face they
+m input points in `V2`. The input points may be multidimensional, in fact they
 can be any type supported by the `euclidean` function of `Distances.jl`. 
 See also: https://github.com/JuliaStats/Distances.jl
 """
@@ -812,31 +806,24 @@ end
 """
 meshedges(S; unique_only=false)
 This function returns the edges `E` for the input "simplices" (e.g. faces)
-defined by `S`. The input `S` can either represent a vector of faces or a 
+defined by `F`. The input `F` can either represent a vector of faces or a 
 GeometryBasics mesh.  
 """
-function meshedges(S; unique_only=false)
-    # Get number of nodes per simplex, use first for now (better to get this from some property)
-    s1 = S[1] # First simplex
-    m = length(s1) #Number of nodes per simplex
-    
-    E = GeometryBasics.LineFace{Int}[]    
-    for j1 in 1:m # Loop over each node/point for the current simplex           
-        if j1<m
+function meshedges(F::Array{NgonFace{N,T},1}; unique_only=false) where N where T<:Integer        
+    E = LineFace{Int64}[]    
+    for j1 in 1:N # Loop over each node/point for the current simplex           
+        if j1<N
             j2 = j1+1
         else
             j2 = 1
         end            
-        for s in S # Loop over each simplex        
-            push!(E,(s[j1],s[j2]))            
+        for f in F # Loop over each simplex        
+            push!(E,(f[j1],f[j2]))            
         end 
-    end
-
-    # Remove doubles e.g. 1-2 seen as same as 2-1
-    if unique_only
+    end    
+    if unique_only # Remove doubles if requested e.g. 1-2 seen as same as 2-1
         E = gunique(E; sort_entries=true);
     end
-
     return E
 end
 
@@ -858,19 +845,19 @@ function icosahedron(r=1.0)
     t = ϕ*s
 
     # Create vertices
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef,12)
-    V[1 ] = GeometryBasics.Point{3, Float64}( 0.0,   -s,  -t)
-    V[2 ] = GeometryBasics.Point{3, Float64}( 0.0,   -s,   t)
-    V[3 ] = GeometryBasics.Point{3, Float64}( 0.0,    s,   t)
-    V[4 ] = GeometryBasics.Point{3, Float64}( 0.0,    s,  -t)
-    V[5 ] = GeometryBasics.Point{3, Float64}(  -s,   -t, 0.0)
-    V[6 ] = GeometryBasics.Point{3, Float64}(  -s,    t, 0.0)
-    V[7 ] = GeometryBasics.Point{3, Float64}(   s,    t, 0.0)
-    V[8 ] = GeometryBasics.Point{3, Float64}(   s,   -t, 0.0)
-    V[9 ] = GeometryBasics.Point{3, Float64}(  -t,  0.0,  -s)
-    V[10] = GeometryBasics.Point{3, Float64}(   t,  0.0,  -s)
-    V[11] = GeometryBasics.Point{3, Float64}(   t,  0.0,   s)
-    V[12] = GeometryBasics.Point{3, Float64}(  -t,  0.0,   s)
+    V=Vector{Point{3, Float64}}(undef,12)
+    V[1 ] = Point{3, Float64}( 0.0,   -s,  -t)
+    V[2 ] = Point{3, Float64}( 0.0,   -s,   t)
+    V[3 ] = Point{3, Float64}( 0.0,    s,   t)
+    V[4 ] = Point{3, Float64}( 0.0,    s,  -t)
+    V[5 ] = Point{3, Float64}(  -s,   -t, 0.0)
+    V[6 ] = Point{3, Float64}(  -s,    t, 0.0)
+    V[7 ] = Point{3, Float64}(   s,    t, 0.0)
+    V[8 ] = Point{3, Float64}(   s,   -t, 0.0)
+    V[9 ] = Point{3, Float64}(  -t,  0.0,  -s)
+    V[10] = Point{3, Float64}(   t,  0.0,  -s)
+    V[11] = Point{3, Float64}(   t,  0.0,   s)
+    V[12] = Point{3, Float64}(  -t,  0.0,   s)
 
     # Create faces
     F = Vector{TriangleFace{Int64}}(undef,20)
@@ -910,13 +897,13 @@ function octahedron(r=1.0)
     s = r/sqrt(2.0)
 
     # Create vertices    
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef,6)
-    V[1 ] = GeometryBasics.Point{3, Float64}(   -s,    -s,  0.0)
-    V[2 ] = GeometryBasics.Point{3, Float64}(    s,    -s,  0.0)
-    V[3 ] = GeometryBasics.Point{3, Float64}(    s,     s,  0.0)
-    V[4 ] = GeometryBasics.Point{3, Float64}(   -s,     s,  0.0)
-    V[5 ] = GeometryBasics.Point{3, Float64}(  0.0,   0.0,   -r)
-    V[6 ] = GeometryBasics.Point{3, Float64}(  0.0,   0.0,    r)
+    V=Vector{Point{3, Float64}}(undef,6)
+    V[1 ] = Point{3, Float64}(   -s,    -s,  0.0)
+    V[2 ] = Point{3, Float64}(    s,    -s,  0.0)
+    V[3 ] = Point{3, Float64}(    s,     s,  0.0)
+    V[4 ] = Point{3, Float64}(   -s,     s,  0.0)
+    V[5 ] = Point{3, Float64}(  0.0,   0.0,   -r)
+    V[6 ] = Point{3, Float64}(  0.0,   0.0,    r)
     
     # Create faces
     F = Vector{TriangleFace{Int64}}(undef,8)
@@ -947,27 +934,27 @@ function dodecahedron(r=1.0)
     w = (ϕ-1.0)*s
 
     # Create vertices    
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef,20)
-    V[1 ] = GeometryBasics.Point{3, Float64}(   s,   s,   s)
-    V[2 ] = GeometryBasics.Point{3, Float64}(   w, 0.0,   t)
-    V[3 ] = GeometryBasics.Point{3, Float64}(  -t,  -w, 0.0)
-    V[4 ] = GeometryBasics.Point{3, Float64}(   t,   w, 0.0)
-    V[5 ] = GeometryBasics.Point{3, Float64}(  -s,   s,  -s)
-    V[6 ] = GeometryBasics.Point{3, Float64}( 0.0,  -t,  -w)
-    V[7 ] = GeometryBasics.Point{3, Float64}(  -t,   w, 0.0)
-    V[8 ] = GeometryBasics.Point{3, Float64}(   s,  -s,   s)
-    V[9 ] = GeometryBasics.Point{3, Float64}(  -s,   s,   s)
-    V[10] = GeometryBasics.Point{3, Float64}(  -s,  -s,   s)
-    V[11] = GeometryBasics.Point{3, Float64}(   s,  -s,  -s)
-    V[12] = GeometryBasics.Point{3, Float64}(   w, 0.0,  -t)
-    V[13] = GeometryBasics.Point{3, Float64}(  -s,  -s,  -s)
-    V[14] = GeometryBasics.Point{3, Float64}( 0.0,  -t,   w)
-    V[15] = GeometryBasics.Point{3, Float64}( 0.0,   t,  -w)
-    V[16] = GeometryBasics.Point{3, Float64}(  -w, 0.0,   t)
-    V[17] = GeometryBasics.Point{3, Float64}(   t,  -w, 0.0)
-    V[18] = GeometryBasics.Point{3, Float64}(  -w, 0.0,  -t)
-    V[19] = GeometryBasics.Point{3, Float64}(   s,   s,  -s)
-    V[20] = GeometryBasics.Point{3, Float64}( 0.0,   t,   w)
+    V=Vector{Point{3, Float64}}(undef,20)
+    V[1 ] = Point{3, Float64}(   s,   s,   s)
+    V[2 ] = Point{3, Float64}(   w, 0.0,   t)
+    V[3 ] = Point{3, Float64}(  -t,  -w, 0.0)
+    V[4 ] = Point{3, Float64}(   t,   w, 0.0)
+    V[5 ] = Point{3, Float64}(  -s,   s,  -s)
+    V[6 ] = Point{3, Float64}( 0.0,  -t,  -w)
+    V[7 ] = Point{3, Float64}(  -t,   w, 0.0)
+    V[8 ] = Point{3, Float64}(   s,  -s,   s)
+    V[9 ] = Point{3, Float64}(  -s,   s,   s)
+    V[10] = Point{3, Float64}(  -s,  -s,   s)
+    V[11] = Point{3, Float64}(   s,  -s,  -s)
+    V[12] = Point{3, Float64}(   w, 0.0,  -t)
+    V[13] = Point{3, Float64}(  -s,  -s,  -s)
+    V[14] = Point{3, Float64}( 0.0,  -t,   w)
+    V[15] = Point{3, Float64}( 0.0,   t,  -w)
+    V[16] = Point{3, Float64}(  -w, 0.0,   t)
+    V[17] = Point{3, Float64}(   t,  -w, 0.0)
+    V[18] = Point{3, Float64}(  -w, 0.0,  -t)
+    V[19] = Point{3, Float64}(   s,   s,  -s)
+    V[20] = Point{3, Float64}( 0.0,   t,   w)
 
     # Create faces
     F = Vector{NgonFace{5,Int64}}(undef,12)
@@ -999,15 +986,15 @@ function cube(r=1.0)
     # Create vertices       
     s = r/sqrt(3.0)
 
-    V = Vector{GeometryBasics.Point{3, Float64}}(undef,8)
-    V[1 ] = GeometryBasics.Point{3, Float64}( -s, -s, -s)
-    V[2 ] = GeometryBasics.Point{3, Float64}( -s,  s, -s)
-    V[3 ] = GeometryBasics.Point{3, Float64}(  s,  s, -s)
-    V[4 ] = GeometryBasics.Point{3, Float64}(  s, -s, -s)
-    V[5 ] = GeometryBasics.Point{3, Float64}( -s, -s,  s)
-    V[6 ] = GeometryBasics.Point{3, Float64}( -s,  s,  s)
-    V[7 ] = GeometryBasics.Point{3, Float64}(  s,  s,  s)
-    V[8 ] = GeometryBasics.Point{3, Float64}(  s, -s,  s)
+    V = Vector{Point{3, Float64}}(undef,8)
+    V[1 ] = Point{3, Float64}( -s, -s, -s)
+    V[2 ] = Point{3, Float64}( -s,  s, -s)
+    V[3 ] = Point{3, Float64}(  s,  s, -s)
+    V[4 ] = Point{3, Float64}(  s, -s, -s)
+    V[5 ] = Point{3, Float64}( -s, -s,  s)
+    V[6 ] = Point{3, Float64}( -s,  s,  s)
+    V[7 ] = Point{3, Float64}(  s,  s,  s)
+    V[8 ] = Point{3, Float64}(  s, -s,  s)
         
     # Create faces
     F = Vector{QuadFace{Int64}}(undef,6)
@@ -1035,11 +1022,11 @@ function tetrahedron(r=1.0)
     b = -r*sqrt(2.0)/3.0
     c = -r/3.0       
 
-    V=Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-    V[1 ] = GeometryBasics.Point{3, Float64}(   -a,      b,   c)
-    V[2 ] = GeometryBasics.Point{3, Float64}(    a,      b,   c)    
-    V[3 ] = GeometryBasics.Point{3, Float64}(  0.0,    0.0,   r)
-    V[4 ] = GeometryBasics.Point{3, Float64}(  0.0, -2.0*b,   c)  
+    V=Vector{Point{3, Float64}}(undef,4)
+    V[1 ] = Point{3, Float64}(   -a,      b,   c)
+    V[2 ] = Point{3, Float64}(    a,      b,   c)    
+    V[3 ] = Point{3, Float64}(  0.0,    0.0,   r)
+    V[4 ] = Point{3, Float64}(  0.0, -2.0*b,   c)  
 
     # Create faces
     F = Vector{TriangleFace{Int64}}(undef,4)
@@ -1089,72 +1076,95 @@ function platonicsolid(n::Integer,r=1.0)
     return M
 end
 
-function togeometrybasics_faces(FM::Union{Vector{Vector{Int64}},Vector{NgonFace{N, OffsetInteger{-1, UInt32}}}}) where N
-    # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)
-    n = length(FM)
-    m = length(FM[1])
-    if m == 3 # Triangles
-        F = [TriangleFace{Int64}(FM[q]) for q in eachindex(FM)]        
-    elseif m ==4 # Quads
-        F = [QuadFace{Int64}(FM[q]) for q in eachindex(FM)]        
-    else # Other mesh type        
-        F = [NgonFace{m,Int64}(FM[q]) for q in eachindex(FM)]        
-    end
-    return F
-end
 
-function togeometrybasics_faces(FM::Matrix{Int64})
-    # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)
-    n, m = size(FM)
-    if m == 3 # Triangles
-        F = Vector{TriangleFace{Int64}}(undef, n)
-        @inbounds for q in 1:n            
-            F[q] = TriangleFace{Int64}(FM[q,:])
-        end
+function tofaces(FM::Vector{Vector{TF}}) where TF<:Integer
+    # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)    
+    m = length(FM[1]) # Get number of points from first
+    if m == 2 # Edges
+        F = [LineFace{TF}(f) for f in FM]
+    elseif m == 3 # Triangles
+        F = [TriangleFace{TF}(f) for f in FM]
     elseif m == 4 # Quads
-        F = Vector{QuadFace{Int64}}(undef, n)
-        @inbounds for q in 1:n            
-            F[q] = QuadFace{Int64}(FM[q,:])
-        end
+        F = [QuadFace{TF}(f) for f in FM]
     else # Other mesh type
-        F = Vector{NgonFace{m,Int64}}(undef, n)        
-        @inbounds for q in 1:n            
-            F[q] = NgonFace{m,Int64}(FM[q,:])
-        end
+        F = [NgonFace{m,TF}(f) for f in FM]
     end
     return F
 end
 
-function togeometrybasics_points(VM::Matrix{T}) where T<: Real
+function tofaces(FM::Matrix{TF})  where TF<:Integer
+    # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)
+    m = size(FM,2) # number of points per face
+    if m == 2 # Edges
+        F = [LineFace{TF}(f) for f in eachrow(FM)]
+    elseif m == 3 # Triangles
+        F = [TriangleFace{TF}(f) for f in eachrow(FM)]
+    elseif m == 4 # Quads
+        F = [QuadFace{TF}(f) for f in eachrow(FM)]        
+    else # Other mesh type
+        F = [NgonFace{m,TF}(f) for f in eachrow(FM)]
+    end
+    return F
+end
+
+function tofaces(FM::Vector{NgonFace{m, OffsetInteger{-1, TF}}} ) where m where TF <: Integer
+    # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)    
+    if m == 2 # Edges
+        F = [LineFace{TF}(f) for f in FM]
+    elseif m == 3 # Triangles
+        F = [TriangleFace{TF}(f) for f in FM]
+    elseif m == 4 # Quads
+        F = [QuadFace{TF}(f) for f in FM]
+    else # Other mesh type
+        F = [NgonFace{m,TF}(f) for f in FM]
+    end
+    return F
+end
+
+function tofaces(FM::Vector{NgonFace{m, TF}} ) where m where TF <: Integer    
+    return FM
+end
+
+
+function topoints(VM::Matrix{T}) where T<: Real
     m = size(VM,2)
-    return [GeometryBasics.Point{m, T}(v) for v in eachrow(VM)]
+    return [Point{m, T}(v) for v in eachrow(VM)]
 end
 
-function togeometrybasics_points(VM::Array{Vec{m, T}, 1}) where T <: Real where m
-    return [GeometryBasics.Point{m, T}(v) for v in eachindex(VM)]
+function topoints(VM::Union{Array{Vec{N, T}, 1}, GeometryBasics.StructArray{TT,1} }) where TT <: AbstractPoint{N,T} where T <: Real where N   
+    if eltype(VM)<:PointMeta{N,T} where N where T<:Real               
+        return VM.position
+    else        
+        return [Point{N, T}(v) for v in VM]
+    end
 end
 
-function togeometrybasics_points(VM::Vector{Vector{T}}) where T <: Real
-    m = length(VM[1]) # Check length based on first one, and assume it is homogeneous
-    return [GeometryBasics.Point{m, T}(v) for v in VM]
+function topoints(VM::Vector{Vector{T}}) where T <: Real    
+        m = length(VM[1])
+        return [Point{m, T}(v) for v in VM]
 end
 
-function togeometrybasics_points(VM) # TO DO, fix types of these
-    m = length(VM[1])
-    return [GeometryBasics.Point{m, Float64}(v) for v in VM]
+function topoints(VM::Vector{Point{ND,TV}}) where ND where TV <: Real        
+    return VM
 end
+
 
 function togeometrybasics_mesh(VM,FM)
-    V = togeometrybasics_points(VM)
-    F = togeometrybasics_faces(FM)
+    V = topoints(VM)
+    F = tofaces(FM)
     return GeometryBasics.Mesh(V,F)
 end
 
 
+"""
+    edgecrossproduct(F,V::Vector{Point{ND,T}}) where ND where T<:Real  
+    edgecrossproduct(M::GeometryBasics.Mesh)
+This function computes the so-called edge-cross-product for a input mesh that is
+either defined by the faces `F` and vertices `V` or the mesh `M`. 
+"""
 
-# function edgecrossproduct(F,V::Union{Array{Vec{m, T}, 1},Array{Point{m, T}, 1}})  where T<:Real where m 
-function edgecrossproduct(F,V) 
-    C = Vector{GeometryBasics.Vec{3, Float64}}(undef,length(F)) # Allocate array cross-product vectors
+function edgecrossproduct(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
+    C = Vector{GeometryBasics.Vec{ND, TV}}(undef,length(F)) # Allocate array cross-product vectors
     n =  length(F[1]) # Number of nodes per face    
     for q in eachindex(F) # Loop over all faces
         c  = cross(V[F[q][n]],V[F[q][1]]) # Initialise as cross product of last and first vertex position vector
@@ -1176,7 +1186,7 @@ end
 This function computes the per face normal directions for the input mesh defined 
 either by the faces `F` and vertices `V` or by the GeometryBasics mesh `M`. 
 """
-function facenormal(F,V)
+function facenormal(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
     C = edgecrossproduct(F,V)
     return C./norm.(C)
 end
@@ -1185,12 +1195,13 @@ function facenormal(M::GeometryBasics.Mesh)
     return facenormal(faces(M),coordinates(M))
 end
 
+
 """
     facearea(F,V)
 This function computes the per face area for the input mesh defined either by 
 the faces `F` and vertices `V` or by the GeometryBasics mesh `M`. 
 """
-function facearea(F,V)        
+function facearea(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
     return norm.(edgecrossproduct(F,V))
 end
 
@@ -1208,7 +1219,7 @@ are averaged onto the vertices. If `weighting=:none` a plain average for the
 surrounding faces is used. If instead `weighting=:area` (default), then the
 average is weighted based on the face areas. 
 """
-function vertexnormal(F,V; weighting=:area)     
+function vertexnormal(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; weighting=:area) where N where TF<:Integer where ND where TV<:Real       
     return normalizevector(simplex2vertexdata(F,facenormal(F,V),V; weighting=weighting))
 end
 
@@ -1218,7 +1229,7 @@ end
 
 
 """
-    edgelengths(E::GeometryBasics.LineFace,V)
+    edgelengths(E::LineFace,V)
     edgelengths(F,V)
     edgelengths(M::GeometryBasics.Mesh)            
 This function computes the lengths of the edges defined by edge vector `E` (e.g
@@ -1226,12 +1237,12 @@ as obtained from `meshedges(F,V)`, where `F` is a face vector, and `V` is a
 vector of vertices. 
 Alternatively the input mesh can be a GeometryBasics mesh `M`.
 """
-function edgelengths(E::Vector{GeometryBasics.LineFace{Int64}},V::Union{Vector{T},Vector{Vec3{Float64}}}) where T<:AbstractPoint{3, Float64}    
-    return [norm(V[e[1]]-V[e[2]]) for e in E]
-end
-
-function edgelengths(F::Union{Vector{T},Vector{Vector{Int64}}},V::Union{Vector{TT},Vector{Vec3{Float64}}}) where T<:GeometryBasics.AbstractNgonFace{N, Int64} where N where TT<:AbstractPoint{3, Float64}   
-    return edgelengths(meshedges(F; unique_only=true),V)
+function edgelengths(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
+    if eltype(F)<:LineFace{T} where T<:Integer # Already edges 
+        return [norm(V[e[1]]-V[e[2]]) for e in F]
+    else # Need to compute edges
+        return edgelengths(meshedges(F; unique_only=true),V)
+    end
 end
 
 function edgelengths(M::GeometryBasics.Mesh)        
@@ -1254,17 +1265,17 @@ implemented:
 simple linear manor through splitting. Each input edge simply obtains a new 
 mid-edge node. 
     
-`method=:Loop` : This method features Loop-subdivision. Rather than linearly 
+`method=:Loop` : This method features Loop-subdivision [1,2]. Rather than linearly 
 splitting edges and maintaining the original coordinates, as for the linear 
 method, this method computes the new points in a special weighted sense such 
 that the surface effectively approaches a "quartic box spline". Hence this 
 method both refines and smoothes the geometry through spline approximation. 
 
 # References
-[Charles Loop, Smooth Subdivision Surfaces Based on Triangles M.S. Mathematics Thesis, University of Utah. 1987.](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/thesis-10.pdf)
-[Jos Stam, Charles Loop, Quad/Triangle Subdivision, doi: 10.1111/1467-8659.t01-2-00647](https://doi.org/10.1111/1467-8659.t01-2-00647)
+1. [Charles Loop, Smooth Subdivision Surfaces Based on Triangles M.S. Mathematics Thesis, University of Utah. 1987.](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/thesis-10.pdf)
+2. [Jos Stam, Charles Loop, Quad/Triangle Subdivision, doi: 10.1111/1467-8659.t01-2-00647](https://doi.org/10.1111/1467-8659.t01-2-00647)
 """
-function subtri(F,V,n::Int64; method = :linear)
+function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int64; method = :linear) where TF<:Integer where ND where TV <: Real
     
     if iszero(n)
         return F,V
@@ -1272,14 +1283,14 @@ function subtri(F,V,n::Int64; method = :linear)
         E = meshedges(F)
         Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
         
-        Fm1 = [TriangleFace{Int64}(a.+length(V)) for a in eachrow(reshape(indReverse,length(F),length(F[1])))] 
-        Fm2 = Vector{TriangleFace{Int64}}(undef,length(Fm1))
-        Fm3 = Vector{TriangleFace{Int64}}(undef,length(Fm1))
-        Fm4 = Vector{TriangleFace{Int64}}(undef,length(Fm1))        
+        Fm1 = [TriangleFace{TF}(a.+length(V)) for a in eachrow(reshape(indReverse,length(F),length(F[1])))] 
+        Fm2 = Vector{TriangleFace{TF}}(undef,length(Fm1))
+        Fm3 = Vector{TriangleFace{TF}}(undef,length(Fm1))
+        Fm4 = Vector{TriangleFace{TF}}(undef,length(Fm1))        
         for i in eachindex(F)                        
-            Fm2[i] = TriangleFace{Int64}([Fm1[i][1], Fm1[i][3], F[i][1]])
-            Fm3[i] = TriangleFace{Int64}([Fm1[i][2], Fm1[i][1], F[i][2]])
-            Fm4[i] = TriangleFace{Int64}([Fm1[i][3], Fm1[i][2], F[i][3]])
+            Fm2[i] = TriangleFace{TF}([Fm1[i][1], Fm1[i][3], F[i][1]])
+            Fm3[i] = TriangleFace{TF}([Fm1[i][2], Fm1[i][1], F[i][2]])
+            Fm4[i] = TriangleFace{TF}([Fm1[i][3], Fm1[i][2], F[i][3]])
         end
 
         # Create combined face set
@@ -1294,10 +1305,10 @@ function subtri(F,V,n::Int64; method = :linear)
         elseif method == :Loop #Loop subdivision 
     
             # New mid-edge like vertices
-            Vm = Vector{GeometryBasics.Point{3, Float64}}(undef,length(Eu)) 
+            Vm = Vector{Point{ND,TV}}(undef,length(Eu)) 
             for q in eachindex(Eu) # For each edge index                        
                 F_touch = F[con_E2F[q]] # Faces sharing current edge, mostly 2 but 1 for a boundary edge
-                indVerticesTouch = Vector{Int64}() 
+                indVerticesTouch = Vector{TF}() 
                 for f in F_touch        
                     b = f.!=Eu[q][1] .&& f.!=Eu[q][2]      
                     if any(b)  
@@ -1308,11 +1319,11 @@ function subtri(F,V,n::Int64; method = :linear)
             end
     
             # Modified vertices for original vertices
-            Vv = Vector{GeometryBasics.Point{3, Float64}}(undef,length(V))
+            Vv = Vector{Point{ND,TV}}(undef,length(V))
             for q in eachindex(V)            
                 B_vert_face = [any(f.==q) for f in F]
                 F_touch = F[B_vert_face] # Faces mostly 2 but 1 for a boundary edge
-                indVerticesTouch = Vector{Int64}()
+                indVerticesTouch = Vector{TF}()
                 for f in F_touch                
                     indTouch = f[f.!=q]        
                     for i in indTouch 
@@ -1345,7 +1356,7 @@ function subtri(F,V,n::Int64; method = :linear)
 end
 
 
-function subquad(F,V,n::Int64; method=:linear)
+function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int64; method=:linear) where TF<:Integer where ND where TV <: Real
     if iszero(n)
         return F,V
     elseif isone(n)
@@ -1371,13 +1382,13 @@ function subquad(F,V,n::Int64; method=:linear)
             Ve_mid = simplexcenter(Eu,V) # Mid edge points
 
             # Edge points 
-            Ve = Vector{GeometryBasics.Point{3, Float64}}(undef,length(Eu)) # Initialize edge points
+            Ve = Vector{Point{ND,TV}}(undef,length(Eu)) # Initialize edge points
             for q in eachindex(Eu)                         
                 Ve[q] = (mean(Vf[con_E2F[q]],dims=1)[1] .+ Ve_mid[q])./2.0
             end
 
             # Vertex points 
-            Vv = Vector{GeometryBasics.Point{3, Float64}}(undef,length(V)) # Initialize vertex points
+            Vv = Vector{Point{ND,TV}}(undef,length(V)) # Initialize vertex points
             for q in eachindex(V) # Loop over all vertices
                 indF = con_V2F[q]
                 indE = con_V2E[q]
@@ -1391,13 +1402,13 @@ function subquad(F,V,n::Int64; method=:linear)
         end
 
         # Define faces
-        Fn = Vector{QuadFace{Int64}}(undef,length(F)*4)        
+        Fn = Vector{QuadFace{TF}}(undef,length(F)*4)        
         nv = length(V)
         ne = length(Eu)
         for q in eachindex(F)
             i = 1 + (q-1)*4
             for ii = 0:3
-                Fn[i+ii] = QuadFace{Int64}([F[q][ii+1], con_F2E[q][ii+1]+nv, q+nv+ne, con_F2E[q][1+mod(3+ii,4)]+nv])                
+                Fn[i+ii] = QuadFace{TF}([F[q][ii+1], con_F2E[q][ii+1]+nv, q+nv+ne, con_F2E[q][1+mod(3+ii,4)]+nv])                
             end            
         end
         return Fn,Vn
@@ -1405,7 +1416,6 @@ function subquad(F,V,n::Int64; method=:linear)
         for _ =1:n
             F,V = subquad(F,V,1;method=method)
         end
-
         return F,V
     else
         throw(ArgumentError("n should be larger than 0"))
@@ -1414,7 +1424,7 @@ end
 
 
 # Create geodesic dome
-function geosphere(n,r)
+function geosphere(n::Int64,r::T) where T <: Real
     M = platonicsolid(4,r)
     V = coordinates(M)
     F = faces(M)
@@ -1430,7 +1440,7 @@ function geosphere(n,r)
 end
 
 
-function hexbox(boxDim::Vector{T},boxEl::Vector{Int64}) where T <: Real
+function hexbox(boxDim,boxEl)
     boxNod = boxEl.+1 # Number of nodes in each direction
     numElements = prod(boxEl) # Total number of elements
     numNodes = prod(boxNod) # Total number of nodes
@@ -1465,7 +1475,7 @@ function hexbox(boxDim::Vector{T},boxEl::Vector{Int64}) where T <: Real
     indNodes = collect(Int64,1:numNodes)
     IJK_nodes = ind2sub(boxNod,indNodes)
 
-    V = convert(Vector{GeometryBasics.Point{3, Float64}},IJK_nodes)
+    V = convert(Vector{Point{3, Float64}},IJK_nodes)
     for q in eachindex(V)
         V[q]=(V[q].-[1,1,1]).*(boxDim./boxEl)
     end
@@ -1669,7 +1679,7 @@ function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
     return con_V2V
 end
 
-function meshconnectivity(F,V)
+function meshconnectivity(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
 
     # EDGE-VERTEX connectivity
     E = meshedges(F)
@@ -1705,16 +1715,15 @@ function meshconnectivity(F,V)
     return ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) 
 end 
 
-function mergevertices(F,V; roundVertices = true, numDigitsMerge=nothing)
+function mergevertices(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; roundVertices = true, numDigitsMerge=nothing) where N where TF<:Integer where ND where TV<:Real
 
     m = length(V)
     if roundVertices
         if isnothing(numDigitsMerge)
             E = meshedges(F)
             d = [sqrt( sum((V[e[1]] .- V[e[2]]).^2) ) for e in E]
-            pointSpacing = mean(d)
-            m = round(Int64,log10(pointSpacing))
-            numDigitsMerge = 6-m
+            pointSpacing = mean(d)            
+            numDigitsMerge = 6-round(Int64,log10(pointSpacing))
         end
 
         # Create rounded coordinates to help obtain unique set
@@ -1726,7 +1735,7 @@ function mergevertices(F,V; roundVertices = true, numDigitsMerge=nothing)
     else
         V,ind1,ind2 = gunique(V; return_index=true, return_inverse=true,sort_entries=false)
     end
-
+    
     if length(V) != m # If the length has changed
         # Correct indices for faces
         for q in eachindex(F)
@@ -1753,7 +1762,8 @@ in the range (0,1). If `λ=0` then no smoothing occurs. If `λ=1` then pure
 Laplacian mean based smoothing occurs. For intermediate values a linear blending
 between the two occurs.  
 """
-function smoothmesh_laplacian(F,V,n=1, λ=0.5; con_V2V=nothing, constrained_points=nothing)
+function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, λ=0.5; con_V2V=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
+    
     if λ>1.0 || λ<0.0
         throw(ArgumentError("λ should be in the range 0-1"))
     end
@@ -1778,7 +1788,7 @@ function smoothmesh_laplacian(F,V,n=1, λ=0.5; con_V2V=nothing, constrained_poin
                 V = Vs
             end
         else #n<0
-            throw(ArgumentError("n should greater or equal to 0"))
+            throw(ArgumentError("n should be greater or equal to 0"))
         end
     end
     return V
@@ -1790,14 +1800,14 @@ end
 
 # Description 
 
-This function implements HC (Humphrey's Classes) smoothing. This method uses
+This function implements HC (Humphrey's Classes) smoothing [1]. This method uses
 Laplacian like smoothing but aims to compensate for shrinkage/swelling by also 
 "pushing back" towards the original coordinates. 
 
 # Reference 
-[Vollmer et al. Improved Laplacian Smoothing of Noisy Surface Meshes, 1999. doi: 10.1111/1467-8659.00334](https://doi.org/10.1111/1467-8659.00334)
+1. [Vollmer et al. Improved Laplacian Smoothing of Noisy Surface Meshes, 1999. doi: 10.1111/1467-8659.00334](https://doi.org/10.1111/1467-8659.00334)
 """
-function smoothmesh_hc(F,V, n=1, α=0.1, β=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing)
+function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, α=0.1, β=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
 
     if α>1.0 || α<0.0
         throw(ArgumentError("α should be in the range 0-1"))
@@ -1859,10 +1869,10 @@ end
 function quadplate(plateDim,plateElem)
     num_x = plateElem[1]+1
     num_y = plateElem[2]+1
-    V = Vector{GeometryBasics.Point{3, Float64}}()
+    V = Vector{Point{3, Float64}}()
     for y = range(-plateDim[2]/2,plateDim[2]/2,num_y)
         for x = range(-plateDim[1]/2,plateDim[1]/2,num_x)
-            push!(V,GeometryBasics.Point{3, Float64}(x,y,0.0))
+            push!(V,Point{3, Float64}(x,y,0.0))
         end
     end
 
@@ -1877,7 +1887,7 @@ function quadplate(plateDim,plateElem)
     return F, V
 end
 
-function quadsphere(n,r)
+function quadsphere(n::Int64,r::T) where T <: Real
     M = platonicsolid(2,r)
     F = faces(M)
     V = coordinates(M)
@@ -1924,33 +1934,33 @@ function vertex2simplexdata(F,DV)
     return DF
 end
 
-function simplexcenter(F,V)
+function simplexcenter(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
     return vertex2simplexdata(F,V)
 end
 
-function normalizevector(A)
-    if eltype(A) <: Number
-        return A./norm(A)
-    else
+function normalizevector(A::Union{Vector{Point{ND,TV}},Vector{Vec{ND,TV}}}) where ND where TV<:Real
         return A./norm.(A)
-    end
 end
 
-function circlepoints(r,n; dir=:acw)
+function normalizevector(A::Union{Point{ND,TV},Vec{ND,TV}}) where ND where TV<:Real    
+    return A./norm(A)    
+end
+
+function circlepoints(r::T,n::Int64; dir=:acw) where T <: Real
     if dir==:acw
-        return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t in range(0.0,2.0*π-(2.0*π)/n,n)]
+        return [Point{3, Float64}(r*cos(t),r*sin(t),0) for t in range(0.0,2.0*π-(2.0*π)/n,n)]
     elseif dir==:cw
-        return [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t in range(0.0,(2.0*π)/n-2.0*π,n)]
+        return [Point{3, Float64}(r*cos(t),r*sin(t),0) for t in range(0.0,(2.0*π)/n-2.0*π,n)]
     else
         throw(ArgumentError("Invalid dir specified :$dir, use :acw or :cw"))
     end
 end
 
-function circlepoints(f::FunctionType,n; dir=:acw) where {FunctionType <: Function}
+function circlepoints(f::FunctionType,n::Int64; dir=:acw) where {FunctionType <: Function}
     if dir==:acw
-        return [GeometryBasics.Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t in range(0,2*π-(2*π)/n,n)]
+        return [Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t in range(0,2*π-(2*π)/n,n)]
     elseif dir==:cw
-        return [GeometryBasics.Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t in range(0,(2*π)/n-2*π,n)]
+        return [Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t in range(0,(2*π)/n-2*π,n)]
     end
 end
 
@@ -1977,7 +1987,7 @@ latter, triangles are formed by slashing the quads.
 - `V2::Vector`: n-vector
 
 """
-function loftlinear(V1,V2;num_steps=nothing,close_loop=true,face_type=:quad)
+function loftlinear(V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}};num_steps=nothing,close_loop=true,face_type=:quad) where ND where TV<:Real
 
     # Derive num_steps from distance and mean curve point spacing if missing    
     if isnothing(num_steps)
@@ -1997,7 +2007,7 @@ function loftlinear(V1,V2;num_steps=nothing,close_loop=true,face_type=:quad)
 end 
 
 
-function loftpoints2surf(V,num_steps; close_loop=true,face_type=:quad)
+function loftpoints2surf(V::Vector{Point{ND,TV}},num_steps; close_loop=true,face_type=:quad) where ND where TV<:Real
 
     # Get number of points in each offset curve
     nc = length(V)/num_steps # Number of points in curve
@@ -2096,50 +2106,45 @@ function loftpoints2surf(V,num_steps; close_loop=true,face_type=:quad)
 end
 
 
-function dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:from)
-    E = [GeometryBasics.LineFace{Int}(i,i+length(V)) for i in 1:length(V)]
-    if style==:from
-        P = vcat(V,V.+(scaleval.*U))
+function dirplot(ax,V::Vector{Point{ND,TV1}},U::Union{Vector{Point{ND,TV2}},Vector{Vec{ND,TV2}}}; color=:black,linewidth=3,scaleval=1.0,style=:from) where ND where TV1 <: Real where TV2 <: Real
+    E = [LineFace{Int64}(i,i+length(V)) for i in 1:length(V)]
+
+    if style==:from        
+        P = deepcopy(V)
+        append!(P,V.+(scaleval.*U))
     elseif style==:to
-        P = vcat(V.-(scaleval.*U),V)
+        P = V.-(scaleval.*U)
+        append!(P,V)        
     elseif style==:through
         UU = (scaleval.*U)/2
-        P = vcat(V.-UU,V.+UU)
+        P = V.-UU
+        append!(P,V.+UU)        
     else
         throw(ArgumentError("Invalid style specified :$style, use :from, :to, or :through"))
-    end
+    end    
     hp = wireframe!(ax,GeometryBasics.Mesh(P,E),linewidth=linewidth, transparency=false, color=color)
     return hp
 end
 
-function normalplot(ax,F::Union{Array{NgonFace{M, Int64}, 1},Array{NgonFace{M, OffsetInteger{-1, UInt32}},1}},V::Vector{Point3{Float64}}; type_flag=:face, color=:black,linewidth=3,scaleval=nothing) where M    
+function normalplot(ax,F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; type_flag=:face, color=:black,linewidth=3,scaleval=nothing) where N where TF<:Integer where ND where TV<:Real
     if isnothing(scaleval)
         scaleval = pointspacingmean(F,V)/2.0
     end
     if type_flag == :face        
-        N = facenormal(F,V)
+        NF = facenormal(F,V)
         V = simplexcenter(F,V)        
     elseif type_flag == :vertex
-        N = vertexnormal(F,V)          
+        NF = vertexnormal(F,V)          
     else
         throw(ArgumentError("Incorrect type_flag, use :face or :vertex"))
     end 
-    hp = dirplot(ax,V,N; color=color,linewidth=linewidth,scaleval=scaleval,style=:from)
+    hp = dirplot(ax,V,NF; color=color,linewidth=linewidth,scaleval=scaleval,style=:from)
     return hp 
 end
 
 function normalplot(ax,M::GeometryBasics.Mesh; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
     F = faces(M)
-    V = coordinates(M)
-
-    if !isa(F,Array{NgonFace{length(F[1]), Int64}, 1}) 
-        F = togeometrybasics_faces(F)
-    end
-
-    if !isa(V,Vector{GeometryBasics.Point3{Float64}})
-        V = togeometrybasics_points(V)
-    end
-    
+    V = coordinates(M)        
     return normalplot(ax,F,V;type_flag=type_flag, color=color,linewidth=linewidth,scaleval=scaleval)
 end
 
@@ -2151,7 +2156,7 @@ function wrapindex(i::Int64,n)
     return 1+mod(i+(n-1),n)
 end
 
-function edgeangles(F,V)
+function edgeangles(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
     m = length(F[1])
     A = Vector{GeometryBasics.Vec{m, Float64}}()
     for f in F
@@ -2168,12 +2173,12 @@ function edgeangles(F,V)
     return A
 end
 
-function quad2tri(F,V; convert_method = :angle)::Vector{TriangleFace{Int64}}
+function quad2tri(F::Vector{QuadFace{TF}},V::Vector{Point{ND,TV}}; convert_method = :angle) where TF<:Integer where ND where TV<:Real
     # Local functions for slash based conversion   
-    forw_slash(f) = [[f[1],f[2],f[3]],[f[3],f[4],f[1]]] # Forward slash 
-    back_slash(f) = [[f[1],f[2],f[4]],[f[2],f[3],f[4]]] # Back slash
+    forw_slash(f) = [TriangleFace{TF}(f[1],f[2],f[3]),TriangleFace{TF}(f[3],f[4],f[1])] # Forward slash 
+    back_slash(f) = [TriangleFace{TF}(f[1],f[2],f[4]),TriangleFace{TF}(f[2],f[3],f[4])] # Back slash
 
-    Ft = Vector{TriangleFace{Int64}}()#(undef,length(Fn1)*2)
+    Ft = Vector{TriangleFace{TF}}()#(undef,length(Fn1)*2)
     for f in F        
         if convert_method == :forward
             ft = forw_slash(f)
@@ -2202,10 +2207,10 @@ function quad2tri(F,V; convert_method = :angle)::Vector{TriangleFace{Int64}}
     return Ft
 end
 
-function remove_unused_vertices(F,V)::Tuple
+function remove_unused_vertices(F,V::Vector{Point{ND,TV}})::Tuple where ND where TV<:Real
     if isempty(F) # If the face set is empty, return all emtpy outputs
         Fc = F
-        Vc = Vector{eltype(V)}(undef,0)
+        Vc = Vector{Point{ND,TV}}(undef,0)
         indFix = Vector{Int64}(undef,0)
     else # Faces not empty to check which indices are used and shorten V if needed        
         indUsed = elements2indices(F) # Indices used
@@ -2217,7 +2222,7 @@ function remove_unused_vertices(F,V)::Tuple
     return Fc, Vc, indFix
 end
 
-function trisurfslice(F,V,n = Vec{3, Float64}(0.0,1.0,1.0), p = mean(V,dims=1); snapTolerance = 0.0, output_type=:full)
+function trisurfslice(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}},n = Vec{3, Float64}(0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance = 0.0, output_type=:full) where TF<:Integer where ND where TV<:Real 
 
     if !in(output_type,(:full,:above,:below))
         throw(ArgumentError("Invalid output_type :$output_type provided, use :full,:above, or :below"))
@@ -2231,7 +2236,7 @@ function trisurfslice(F,V,n = Vec{3, Float64}(0.0,1.0,1.0), p = mean(V,dims=1); 
     end
     LV = d.<0.0
     
-    Fn =  Vector{TriangleFace{Int64}}()
+    Fn =  Vector{TriangleFace{TF}}()
     Cn =  Vector{Int64}()
     Vn = deepcopy(V)
     D = Dict{Vector{Int64},Int64}() # For pointing from edge to intersection point index
@@ -2262,14 +2267,14 @@ function trisurfslice(F,V,n = Vec{3, Float64}(0.0,1.0,1.0), p = mean(V,dims=1); 
                     end
 
                     if output_type == :above || output_type == :full       
-                        push!(Fn,TriangleFace{Int64}(D[e1],indP[2],indP[3]))
-                        push!(Fn,TriangleFace{Int64}(D[e1],indP[3],D[e2]))
+                        push!(Fn,TriangleFace{TF}(D[e1],indP[2],indP[3]))
+                        push!(Fn,TriangleFace{TF}(D[e1],indP[3],D[e2]))
                         push!(Cn,1)
                         push!(Cn,1)
                     end
                     
                     if output_type == :below || output_type == :full
-                        push!(Fn,TriangleFace{Int64}(indP[1],D[e1],D[e2]))
+                        push!(Fn,TriangleFace{TF}(indP[1],D[e1],D[e2]))
                         push!(Cn,-1)                        
                     end
 
@@ -2289,14 +2294,14 @@ function trisurfslice(F,V,n = Vec{3, Float64}(0.0,1.0,1.0), p = mean(V,dims=1); 
                     end
                     
                     if output_type == :below || output_type == :full                        
-                        push!(Fn,TriangleFace{Int64}(D[e1],indP[2],indP[3]))
-                        push!(Fn,TriangleFace{Int64}(D[e1],indP[3],D[e2]))
+                        push!(Fn,TriangleFace{TF}(D[e1],indP[2],indP[3]))
+                        push!(Fn,TriangleFace{TF}(D[e1],indP[3],D[e2]))
                         push!(Cn,-1)
                         push!(Cn,-1)
                     end
 
                     if output_type == :above || output_type == :full
-                        push!(Fn,TriangleFace{Int64}(indP[1],D[e1],D[e2]))
+                        push!(Fn,TriangleFace{TF}(indP[1],D[e1],D[e2]))
                         push!(Cn,1)                        
                     end
                 end
@@ -2328,14 +2333,14 @@ function count_edge_face(F,E_uni=nothing,indReverse=nothing)::Vector{Int64}
     return C
 end
 
-function boundaryedges(F)
+function boundaryedges(F::Vector{NgonFace{N,TF}}) where N where TF <: Integer
     E = meshedges(F)
     Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
     count_E2F = count_edge_face(F,Eu,indReverse)
     return Eu[isone.(count_E2F)]
 end
 
-function edges2curve(Eb)
+function edges2curve(Eb::Vector{LineFace{TF}}) where TF <: Integer
     # TO DO: 
     # Handle while loop safety/breaking
     # Cope with non-ordered meshes (normals not coherent) 
@@ -2362,14 +2367,14 @@ end
     pointspacingmean(F::Array{NgonFace{N, Int64}, 1},V::Vector{Point3{Float64}}) where N
 
 The `pointspacingmean` function computes the mean spacing between points. The 
-input can be just the coordinate set `V`, a vector of GeometryBasics.Point3 
+input can be just the coordinate set `V`, a vector of Point3 
 points, or also a set of edges `E` or faces `F`. If only `V` is provided it is 
 assumed that `V` represents an ordered set of "adjacent" points, e.g. as for a 
 curve. If a vector of edges `E` or a vector of faces `F is also provided, then 
 the average edge length is computed. If instead a set of faces `F` is provided 
 then edges are first computed after which the mean edge spacing is return. 
 """
-function pointspacingmean(V::Vector{Point3{Float64}})
+function pointspacingmean(V::Vector{Point{ND,TV}}) where ND where TV <: Real
     # Equivalent to:  mean(norm.(diff(V,dims=1)))
     p = 0.0
     n = length(V)
@@ -2379,7 +2384,7 @@ function pointspacingmean(V::Vector{Point3{Float64}})
     return p
 end
 
-function pointspacingmean(F::Array{NgonFace{N, Int64}, 1},V::Vector{Point3{Float64}}) where N
+function pointspacingmean(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
     if isa(F,Vector{LineFace{Int64}})
         E = F
     else
@@ -2398,7 +2403,7 @@ function pointspacingmean(M::GeometryBasics.Mesh)
 end
 
 
-function extrudecurve(V1,d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad)
+function extrudecurve(V1::Vector{Point{ND,TV}},d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad) where ND where TV<:Real
     # Derive num_steps from curve point spacing if missing    
     if isnothing(num_steps)
         num_steps = ceil(Int64,d/pointspacingmean(V1))
@@ -2478,7 +2483,7 @@ function meshgroup(F; con_type = :v)
     return C
 end
 
-function distmarch(F,V,indStart; d=nothing, dd=nothing, dist_tol=1e-3,con_V2V=nothing,l=nothing)
+function distmarch(F,V::Vector{Point{ND,TV}},indStart; d=nothing, dd=nothing, dist_tol=1e-3,con_V2V=nothing,l=nothing) where ND where TV<:Real
 
     # Get vertex-vertex connectivity
     if isnothing(con_V2V)
@@ -2566,12 +2571,12 @@ end
 
 # Description 
 This function can compute triangle-ray or triangle-line intersections through 
-the use of the "Möller-Trumbore triangle-ray intersection algorithm". The 
+the use of the "Möller-Trumbore triangle-ray intersection algorithm" [1]. The 
 required inputs are as follows: 
 
 `F` an single face or a vector of faces, e.g. `Vector{TriangleFace{Int64}}`
-`V` The triangle vertices as a vector of points, i.e. `Vector{GeometryBasics.Point{3, Float64}}`
-`ray_vector` The ray vector which can be `Vector{GeometryBasics.Point{3, Float64}}` or `Vec3{Float64}`
+`V` The triangle vertices as a vector of points, i.e. `Vector{Point{3, Float64}}`
+`ray_vector` The ray vector which can be `Vector{Point{3, Float64}}` or `Vec3{Float64}`
 
 The following optional input parameters can be provided: 
 `rayType = :ray` (default) or `:line`. This defines wether the vector is treated as a ray (extends indefinately) or as a line (finite length)
@@ -2582,10 +2587,10 @@ When `triSide=0` both inward and outward intersections are considered.
 `tolEps = eps(Float64)` (default) 
 
 # References 
-[Möller, Tomas; Trumbore, Ben (1997). "Fast, Minimum Storage Ray-Triangle Intersection". Journal of Graphics Tools. 2: 21-28. doi: 10.1080/10867651.1997.10487468.](https://doi.org/10.1080/10867651.1997.10487468)
+1. [Möller, Tomas; Trumbore, Ben (1997). "Fast, Minimum Storage Ray-Triangle Intersection". Journal of Graphics Tools. 2: 21-28. doi: 10.1080/10867651.1997.10487468.](https://doi.org/10.1080/10867651.1997.10487468)
 """
-function ray_triangle_intersect(F::Vector{TriangleFace{Int64}},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
-    P = Vector{GeometryBasics.Point{3, Float64}}()
+function ray_triangle_intersect(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}},ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64)) where TF <: Integer where ND where TV<:Real
+    P = Vector{Point{ND,TV}}()
     indIntersect = Vector{Int64}()
     for qf in eachindex(F)
         p = ray_triangle_intersect(F[qf],V,ray_origin,ray_vector; rayType = rayType, triSide = triSide, tolEps = tolEps)        
@@ -2597,7 +2602,7 @@ function ray_triangle_intersect(F::Vector{TriangleFace{Int64}},V,ray_origin,ray_
     return P,indIntersect
 end
 
-function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
+function ray_triangle_intersect(f::TriangleFace{Int64},V::Vector{Point{ND,TV}},ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64)) where ND where TV<:Real
 
     # Edge vectors
     P1 = V[f[1]] # First corner point
@@ -2615,7 +2620,7 @@ function ray_triangle_intersect(f::TriangleFace{Int64},V,ray_origin,ray_vector; 
         boolDet = det_vec<tolEps
     end
 
-    p = GeometryBasics.Point{3, Float64}(NaN,NaN,NaN)
+    p = Point{ND,TV}(NaN,NaN,NaN)
     if boolDet        
         s = ray_origin.-P1
         u = dot(s,ray_cross_e2)/det_vec    
@@ -2645,14 +2650,14 @@ each point's "Laplacian umbrella" (point neighbourhood), and the curvature of
 this fitted form is derived. Instead of the mesh faces and vertices one may 
 instead specify the `GeometryBasics.Mesh` `M` as the input. 
 
-The reference below provides more detail on the algorithm. In addition, this 
+The reference below [1] provides more detail on the algorithm. In addition, this 
 implementation was created with the help of [this helpful document](https://github.com/alecjacobson/geometry-processing-curvature/blob/master/README.md), 
 which features a nice overview of the theory/steps involved in this algorithm. 
 
 # References 
-[F. Cazals and M. Pouget, "Estimating differential quantities using polynomial fitting of osculating jets", Computer Aided Geometric Design, vol. 22, no. 2, pp. 121-146, Feb. 2005, doi: 10.1016/j.cagd.2004.09.004](https://doi.org/10.1016/j.cagd.2004.09.004)
+1. [F. Cazals and M. Pouget, "Estimating differential quantities using polynomial fitting of osculating jets", Computer Aided Geometric Design, vol. 22, no. 2, pp. 121-146, Feb. 2005, doi: 10.1016/j.cagd.2004.09.004](https://doi.org/10.1016/j.cagd.2004.09.004)
 """
-function mesh_curvature_polynomial(F::Array{NgonFace{M, Int64}, 1},V::Vector{Point3{Float64}}) where M
+function mesh_curvature_polynomial(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
     # Get the unique mesh edges
     E_uni = meshedges(F;unique_only=true) 
 
@@ -2660,7 +2665,7 @@ function mesh_curvature_polynomial(F::Array{NgonFace{M, Int64}, 1},V::Vector{Poi
     con_V2V = con_vertex_vertex(E_uni,V)
 
     
-    N = vertexnormal(F,V) # The vertex normal directions
+    NV = vertexnormal(F,V) # The vertex normal directions
     nz = Vec{3,Float64}(0.0,0.0,1.0) # A z-axis vector
 
     K1 = Vector{Float64}(undef,length(V)) # Allocate first principal curvature
@@ -2668,7 +2673,7 @@ function mesh_curvature_polynomial(F::Array{NgonFace{M, Int64}, 1},V::Vector{Poi
     U1 = Vector{Vec3{Float64}}(undef,length(V)) # Allocate first principal curvature vector
     U2 = Vector{Vec3{Float64}}(undef,length(V)) # Allocate second principal curvature vector
     for q in eachindex(V)
-        n = N[q] # The current vertex normal
+        n = NV[q] # The current vertex normal
         Q = rotation_between(n,nz) # The rotation between the current normal and the z-axis
         ind = con_V2V[q] # The indices for the current Laplacian umbrella       
         vr = [Q*(v-V[q]) for v in V[ind]] # Rotate point set to a 2D problem
@@ -2711,7 +2716,7 @@ function mesh_curvature_polynomial(M::GeometryBasics.Mesh)
 end
 
 """
-    separate_vertices(F,V)
+    separate_vertices(F::Array{NgonFace{N, Int64}, 1},V::Array{Point{M, T}, 1}) where N where M where T<:Real
     separate_vertices(M::GeometryBasics.Mesh)
 
 This function takes the input mesh defined by the faces `F` and vertices `V` and
@@ -2719,7 +2724,7 @@ separates any shared vertices. It does this by giving each face its own set of
 unshared vertices. Note that any unused points are not returned in the output 
 point array `Vn`. 
 """
-function separate_vertices(F::Array{NgonFace{N, Int64}, 1},V::Vector{Point3{Float64}}) where N
+function separate_vertices(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
     Vn = Vector{eltype(V)}()
     Fn = deepcopy(F)
     c = 0 
@@ -2741,7 +2746,7 @@ function separate_vertices(M::GeometryBasics.Mesh)
 end
 
 """
-    curve_length(V::Array{Point{N, Float64}, 1}; close_loop=false) where N
+    curve_length(V::Vector{Point{ND,TV}}; close_loop=false) where ND where TV<:Real
 
 This function computes the stepwise length of the input curve defined by the ND 
 points in `V`. The output is a vector containining the distance for each point, 
@@ -2751,7 +2756,7 @@ If the optional parameter `close_loop` is set to `true` then it is assumed that
 the curve should be seen as closed, i.e. the last entry is for returning to the 
 start point from the last point in `V`. 
 """
-function curve_length(V::Array{Point{N, Float64}, 1}; close_loop=false) where N
+function curve_length(V::Vector{Point{ND,TV}}; close_loop=false) where ND where TV<:Real
     if close_loop 
         return pushfirst!(cumsum(push!(norm.(diff(V)),norm(V[1]-V[end]))),0.0) # Along curve distance from start-to-start
     else
@@ -2761,7 +2766,7 @@ end
 
 
 """
-evenly_sample(V::Array{Point{N, Float64}, 1}, n::Int64; rtol = 1e-8, niter = 1) where N
+    evenly_sample(V::Vector{Point{ND,TV}}, n::Int64; rtol = 1e-8, niter = 1) where ND where TV<:Real
 This function aims to evenly resample the input curve defined by the ND points 
 `V` using `n` points. The function returns the resampled points as well as the 
 spline interpolator `S` used. The output points can also be retriebed by using: 
@@ -2772,18 +2777,18 @@ curvature exists for the B-spline between two adjacent data points then the
 spacing between points in the output may be non-uniform (despite the allong 
 B-spline distance being uniform). 
 """
-function evenly_sample(V::Array{Point{N, Float64}, 1}, n::Int64; rtol = 1e-8, niter = 1) where N
+function evenly_sample(V::Vector{Point{ND,TV}}, n::Int64; rtol = 1e-8, niter = 1) where ND where TV<:Real
     m = length(V)
-    T = curve_length(V) # Initialise as along curve (multi-linear) distance
-    T ./= last(T) # Normalise
-    S = BSplineKit.interpolate(T, V, BSplineOrder(4), BSplineKit.Natural()) # Create interpolator
+    LL = curve_length(V) # Initialise as along curve (multi-linear) distance
+    LL ./= last(LL) # Normalise
+    S = BSplineKit.interpolate(LL, V, BSplineOrder(4), BSplineKit.Natural()) # Create interpolator
     for _ in 1:niter
         dS = Derivative() * S  # spline derivative
-        L = similar(T) # Initialise spline length vector
+        L = similar(LL) # Initialise spline length vector
         L[1] = 0
         for i in 2:m
             # Compute length of segment [i-1, i]
-            segment_length, _ = quadgk(T[i-1], T[i]; rtol) do t
+            segment_length, _ = quadgk(LL[i-1], LL[i]; rtol) do t
                 norm(dS(t))  # integrate |S'(t)| in segment [i, i + 1]
             end        
             L[i] = L[i - 1] + segment_length
@@ -2796,19 +2801,19 @@ function evenly_sample(V::Array{Point{N, Float64}, 1}, n::Int64; rtol = 1e-8, ni
 end
 
 """
-    invert_faces(F::Array{NgonFace{N, Int64}, 1}) where N
+    invert_faces(F::Vector{NgonFace{N, TF}, 1}) where N where TF<:Integer
 
 # Description
 This function inverts the faces in `F`, such that the face normal will be 
 flipped, by reversing the node order for each face. 
 """
-function invert_faces(F::Array{NgonFace{N, Int64}, 1}) where N    
+function invert_faces(F::Vector{NgonFace{N, TF}}) where N where TF<:Integer     
     return map(f-> reverse(f),F) # [NgonFace{N, Int64}(reverse(f)) for f in F]    
 end
 
 
 """
-    R = kabsch_rot(V1::Array{Point{N, Float64}, 1},V2::Array{Point{N, Float64}, 1}) where N    
+    R = kabsch_rot(V1::Array{Point{N, T}, 1},V2::Array{Point{N, TT}, 1}) where N where T<:Real where TT<:Real
 
 # Description  
 Computes the rotation tensor `R` to rotate the points in `V1` to best match the 
@@ -2818,7 +2823,7 @@ points in `V2`.
 [Wolfgang Kabsch, A solution for the best rotation to relate two sets of vectors, Acta Crystallographica Section A, vol. 32, no. 5, pp. 922-923, 1976, doi: 10.1107/S0567739476001873](https://doi.org/10.1107/S0567739476001873) 
 [https://en.wikipedia.org/wiki/Kabsch_algorithm](https://en.wikipedia.org/wiki/Kabsch_algorithm) 
 """
-function kabsch_rot(V1::Array{Point{N, Float64}, 1},V2::Array{Point{N, Float64}, 1}) where N    
+function kabsch_rot(V1::Vector{Point{ND,TV1}},V2::Vector{Point{ND,TV2}}) where ND where TV1<:Real where TV2<:Real
     # Centre on means 
     V1 = V1.-mean(V1)
     V2 = V2.-mean(V2)
@@ -2857,7 +2862,7 @@ number (negative or positive) of full twists to the loft.
 Finally the optional parameter `close_loop` (default is `true`) determines if the
 section curves are deemed closed or open ended. 
 """
-function sweeploft(Vc,V1,V2; face_type=:quad, num_twist = 0, close_loop=true)    
+function sweeploft(Vc::Vector{Point{ND,TV}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}}; face_type=:quad, num_twist = 0, close_loop=true) where ND where TV<:Real   
     np = length(V1) # Number of section points
     nc = length(Vc) # Number of curve steps
 
@@ -2907,7 +2912,7 @@ function sweeploft(Vc,V1,V2; face_type=:quad, num_twist = 0, close_loop=true)
         end   
 
         if q == nc-1 # Once here, second to last, a potential rotational mismatch needs to be resolve
-            Q_fix = Rotations.RotMatrix3{Float64}(S2\S2p) # Rotation between last and second to last
+            Q_fix = RotMatrix3{Float64}(S2\S2p) # Rotation between last and second to last
             t_a = Rotations.params(AngleAxis(Q_fix)) # Angle/axis representation
             if dot(t_a[2:end],n3)<0                 
                 β_fix = t_a[1]
@@ -2933,7 +2938,7 @@ function sweeploft(Vc,V1,V2; face_type=:quad, num_twist = 0, close_loop=true)
 end
 
 
-function revolvecurve(Vc,θ=2.0*pi; s=0, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad)    
+function revolvecurve(Vc::Vector{Point{ND,TV}},θ=2.0*pi; s=0, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad)  where ND where TV<:Real   
     # Compute num_steps from curve point spacing
     if isnothing(num_steps)
         rMax = 0.0
@@ -2967,4 +2972,64 @@ function revolvecurve(Vc,θ=2.0*pi; s=0, n=Vec{3, Float64}(0.0,0.0,1.0),num_step
     end    
    
     return loftpoints2surf(V,num_steps;close_loop=close_loop,face_type=face_type)
+end
+
+
+"""
+    batman(n::Int64)
+# Description
+The `batman` function creates points on the curve for the Batman logo. The curve
+is useful for testing surface meshing algorithms since it contains sharp 
+transitions and pointy features. The user requests `n` points on the curve. The
+default forces exactly `n` points which may result in an assymetric curve. To 
+instead force symmetry the user can set the optional parameter `symmetric=true`. 
+In this case the output will be symmetric allong the y-axis, however the number
+of points on the curve may have increased (if the input `n` is not even). The
+second optional input is the direction of the curve, i.e. if it is clockwise, 
+`dir=:cw` or anti-clockwise `dir=:acw`. 
+The implementation is based on a "parameterised Batman equation" [1](https://www.desmos.com/calculator/ajnzwedvql).
+The following modifications where made, the curve is here centered around 
+[0,0,0], scaled to be 2 in width, resampled evenly, and the default curve 
+direction is anti-clockwise. 
+
+# References 
+1. https://www.desmos.com/calculator/ajnzwedvql
+"""
+function batman(n::Int64; symmetric = false, dir=:acw)
+    tt = range(8,0.0,n)
+
+    x = [( 0.3*t + 0.2*abs(t-1.0) + 2.2*abs(t-2.0) - 2.7*abs(t-3.0) -3.0*abs(t-5.0) + 3*abs(t-7.0) 
+        + 5.0*sin(π/4.0*(abs(t-3.0)-abs(t-4.0)+1.0))
+        + 5.0/4.0 * (abs(t-4.0)-abs(t-5.0)-1.0)^3.0 
+        - 5.3*cos((π/2.0 + asin(47/53))*(abs(t-7.0) 
+        - abs(t-8.0) - 1.0)/2.0) + 2.8 ) for t in tt] 
+
+    y = [( 3.0/2.0*abs(t-1.0) - 3.0/2.0*abs(t-2.0) - 29.0/4.0*abs(t-4.0) + 29.0/4.0*abs(t-5.0) 
+        + 7.0/16.0*(abs(t-2.0) - abs(t-3.0) -1.0)^4.0 
+        + 4.5*sin( π/4.0*(abs(t-3.0) - abs(t-4.0) - 1.0) )
+        - ((3.0/5.0*sqrt(2)) * abs(abs(t-5.0)-abs(t-7.0))^(5.0/2.0))
+        + 6.4 * sin( ( (π/2.0 + asin(47/53)) * ((abs(t-7.0) 
+        - abs(t-8.0) + 1.0)/2.0) ) + asin(56/64) ) + 4.95 ) for t in tt]   
+
+    if symmetric == true    
+        if iseven(n)
+            m = round(Int64,n/2+1)
+        else
+            m = ceil(Int64,n/2)+1 
+        end
+        V,_ = evenly_sample([Point{3, Float64}(x[i]/22,y[i]/22,0.0) for i in eachindex(x)],m)
+        V2 = [Point{3, Float64}(-V[i][1],V[i][2],0.0) for i in length(V)-1:-1:2]
+        append!(V,V2)    
+    else
+        V = [Point{3, Float64}(x[i]/22,y[i]/22,0.0) for i in eachindex(x)]    
+        V2 = [Point{3, Float64}(-V[i][1],V[i][2],0.0) for i in length(V)-1:-1:2]
+        append!(V,V2) 
+        V,_ = evenly_sample(V,n)
+    end
+    if dir==:cw
+        reverse!(V)   
+        circshift!(V,1)     
+    end
+    V = V.-mean(V,dims=1)
+    return V
 end

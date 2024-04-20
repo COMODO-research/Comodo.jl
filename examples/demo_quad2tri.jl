@@ -34,7 +34,7 @@ elseif testCase ==3
     end
     a = pi/6 # "45 degree shear"  
     f[1,2] = tan(a) 
-    V = togeometrybasics_points([f*v for v ∈ V]) # Shear the cube
+    V = [eltype(V)(f*v) for v ∈ V] # Shear the cube
 
     # Build deformation gradient tensor to induce shear with known angles
     f = zeros(3,3)
@@ -44,7 +44,7 @@ elseif testCase ==3
     a = pi/6 # "45 degree shear"  
     f[3,1] = tan(a) 
     
-    V = togeometrybasics_points([f*v for v ∈ V]) # Shear the cube
+    V = [eltype(V)(f*v) for v ∈ V] # Shear the cube
 
 end
 

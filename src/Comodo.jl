@@ -20,7 +20,7 @@ export gridpoints, interp_biharmonic_spline, interp_biharmonic, nbezier, gunique
 export ind2sub, sub2ind, meshedges, edgelengths, unique_simplices, unique_dict
 export subtri, subquad, geosphere, quad2tri 
 export icosahedron, tetrahedron, cube, dodecahedron, octahedron, platonicsolid
-export togeometrybasics_faces, togeometrybasics_points, togeometrybasics_mesh
+export tofaces, topoints, togeometrybasics_mesh
 export quadplate, quadsphere, smoothmesh_laplacian, smoothmesh_hc
 export mergevertices, separate_vertices, remove_unused_vertices
 export edgecrossproduct, facearea, facenormal, vertexnormal, normalizevector, dirplot, normalplot
@@ -32,6 +32,7 @@ export wrapindex, edgeangles, count_edge_face, boundaryedges, edges2curve
 export pointspacingmean, extrudecurve, meshgroup, ray_triangle_intersect
 export distmarch, mesh_curvature_polynomial, curve_length, evenly_sample
 export invert_faces, kabsch_rot, sweeploft, loftpoints2surf, revolvecurve
+export batman
 
 # Export functions: Visualization related
 export slidercontrol

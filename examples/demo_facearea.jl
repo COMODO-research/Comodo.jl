@@ -31,18 +31,18 @@ elseif testCase==4 # Merged STL for single object
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
-    F = togeometrybasics_faces(faces(M))
-    V = togeometrybasics_points(coordinates(M))
+    F = tofaces(faces(M))
+    V = topoints(coordinates(M))
     F,V,_ = mergevertices(F,V)
-    F,V = subtri(F,V,2; method = :loop)
+    # F,V = subtri(F,V,3; method = :Loop)
 elseif testCase==5 # Merged STL for single object
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
-    F = togeometrybasics_faces(faces(M))
-    V = togeometrybasics_points(coordinates(M))
+    F = tofaces(faces(M))
+    V = topoints(coordinates(M))
     F,V,_ = mergevertices(F,V)
 elseif testCase==6
     # Loading a mesh
@@ -50,8 +50,8 @@ elseif testCase==6
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
-    F = togeometrybasics_faces(faces(M))
-    V = togeometrybasics_points(coordinates(M))
+    F = tofaces(faces(M))
+    V = topoints(coordinates(M))
 end
 
 

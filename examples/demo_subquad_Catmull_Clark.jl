@@ -20,7 +20,7 @@ rs3 = mean(Rn3)
 d3 = Rn3.-rs3
 
 ## Visualization
-fig = Figure(size=(1600,800))
+fig = Figure(size=(800,800))
 
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=1")
 wireframe!(ax1,M, linewidth=8,color=:red, overdraw=false)

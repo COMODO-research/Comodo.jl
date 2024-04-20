@@ -66,8 +66,8 @@ elseif testCase==5 # Unmerged STL, each triangle is seperate group
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
-    F = togeometrybasics_faces(faces(M))
-    V = togeometrybasics_points(coordinates(M))
+    F = tofaces(faces(M))
+    V = topoints(coordinates(M))
 elseif testCase==6 # Merged STL for single object
     # Loading a mesh
     using FileIO
@@ -75,8 +75,8 @@ elseif testCase==6 # Merged STL for single object
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
-    F = togeometrybasics_faces(faces(M))
-    V = togeometrybasics_points(coordinates(M))
+    F = tofaces(faces(M))
+    V = topoints(coordinates(M))
     F,V,_ = mergevertices(F,V)
 elseif testCase==7 # Merged STL for single object
     # Loading a mesh
@@ -85,8 +85,8 @@ elseif testCase==7 # Merged STL for single object
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
-    F = togeometrybasics_faces(faces(M))
-    V = togeometrybasics_points(coordinates(M))
+    F = tofaces(faces(M))
+    V = topoints(coordinates(M))
     F,V,_ = mergevertices(F,V)
 
     F2 = map(f-> f.+length(V),deepcopy(F))

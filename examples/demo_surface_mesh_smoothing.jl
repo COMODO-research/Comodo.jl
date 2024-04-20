@@ -8,9 +8,8 @@ if testCase == 1 # Triangle mesh bunny
     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
     M = load(fileName_mesh)
     F = faces(M)
-    V = coordinates(M)
-    F = togeometrybasics_faces(F) 
-    V = togeometrybasics_points(V) 
+    V = coordinates(M)    
+    V = topoints(V) 
     F,V,ind1,ind2 = mergevertices(F,V; roundVertices=true)
 elseif testCase == 2 # Quad mesh sphere
     F,V = quadsphere(4,100)

@@ -336,24 +336,6 @@ end
         @test isapprox(V, expected, atol = eps_level)
     end
 
-    @testset "Vector Vector" begin 
-        P = [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 1.0]]
-        n = 10 # Number of points
-        V = nbezier(P,n) # Get Bezier fit points
-        expected = [[0.0, 0.0, 0.0], 
-        [0.29766803840877915, 0.034293552812071325, 0.0013717421124828531], 
-        [0.5294924554183813, 0.1262002743484225, 0.010973936899862825], 
-        [0.7037037037037037, 0.25925925925925924, 0.037037037037037035], 
-        [0.8285322359396433, 0.4170096021947874, 0.0877914951989026], 
-        [0.9122085048010974, 0.5829903978052127, 0.1714677640603567], 
-        [0.9629629629629629, 0.7407407407407407, 0.2962962962962963], 
-        [0.9890260631001372, 0.8737997256515775, 0.4705075445816187], 
-        [0.9986282578875172, 0.9657064471879286, 0.7023319615912208], 
-        [1.0, 1.0, 1.0]] 
-        @test typeof(V) == typeof(P)  
-        @test length(V) == n
-        @test isapprox(V, expected, atol = eps_level)
-    end
 end 
 
 
@@ -870,7 +852,11 @@ end
 end
 
 
-@testset "togeometrybasics_faces" verbose = true begin
+@testset "tofaces" verbose = true begin
+    # Edges matrix and vector
+    Fem = [1 2; 4 5]
+    Fev = [[1,2],[4,5]]
+
     # Triangles matrix and vector
     Ftm = [1 2 3; 4 5 6]
     Ftv = [[1,2,3],[4,5,6]]
@@ -887,84 +873,96 @@ end
     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
     M = load(fileName_mesh)   
     
-    @testset "Matrix input" begin        
-        Ftm_G = togeometrybasics_faces([Ftm[1,:]])
+    @testset "Matrix input" verbose = true begin        
+        Fem_G = tofaces([Fem[1,:]])
+        @testset "1 LineFace" begin        
+            @test isa(Fem_G,Vector{GeometryBasics.LineFace{Int64}})
+            @test length(Fem_G) == 1
+        end
+
+        Ftm_G = tofaces([Ftm[1,:]])
         @testset "1 TriangleFace" begin        
             @test isa(Ftm_G,Vector{GeometryBasics.TriangleFace{Int64}})
             @test length(Ftm_G) == 1
         end
 
-        Ftm_G = togeometrybasics_faces(Ftm)
+        Ftm_G = tofaces(Ftm)
         @testset "TriangleFace" begin        
             @test isa(Ftm_G,Vector{GeometryBasics.TriangleFace{Int64}})
             @test length(Ftm_G) == size(Ftm,1)
         end
 
-        Fqm_G = togeometrybasics_faces(Fqm)
+        Fqm_G = tofaces(Fqm)
         @testset "QuadFace" begin        
             @test isa(Fqm_G,Vector{GeometryBasics.QuadFace{Int64}})
             @test length(Fqm_G) == size(Fqm,1)
         end
 
-        Fnm_G = togeometrybasics_faces(Fnm)
+        Fnm_G = tofaces(Fnm)
         @testset "NgonFace" begin        
             @test isa(Fnm_G,Vector{GeometryBasics.NgonFace{5,Int64}})
             @test length(Fnm_G) == size(Fnm,1)
         end        
     end
 
-    @testset "vector input" begin        
-        Ftv_G = togeometrybasics_faces([Ftv[1]])        
+    @testset "vector input" verbose = true begin        
+        Fev_G = tofaces([Fev[1]])        
+        @testset "1 LineFace" begin        
+            @test isa(Fev_G,Vector{GeometryBasics.LineFace{Int64}})
+            @test length(Fev_G) == 1
+        end
+
+        Ftv_G = tofaces([Ftv[1]])        
         @testset "1 TriangleFace" begin        
             @test isa(Ftv_G,Vector{GeometryBasics.TriangleFace{Int64}})
             @test length(Ftv_G) == 1
         end
 
-        Ftv_G = togeometrybasics_faces(Ftv)
+        Ftv_G = tofaces(Ftv)
         @testset "TriangleFace" begin        
             @test isa(Ftv_G,Vector{GeometryBasics.TriangleFace{Int64}})
             @test length(Ftv_G) == length(Ftv)
         end
 
-        Fqv_G = togeometrybasics_faces(Fqv)
+        Fqv_G = tofaces(Fqv)
         @testset "QuadFace" begin        
             @test isa(Fqv_G,Vector{GeometryBasics.QuadFace{Int64}})
             @test length(Fqv_G) == length(Fqv)
         end
 
-        Fnv_G = togeometrybasics_faces(Fnv)
+        Fnv_G = tofaces(Fnv)
         @testset "NgonFace" begin        
             @test isa(Fnv_G,Vector{GeometryBasics.NgonFace{5,Int64}})
             @test length(Fnv_G) == length(Fnv)
-        end        
-
-        F = togeometrybasics_faces(faces(M)) 
-        @testset "Vector{NgonFace{3, OffsetInteger{-1, UInt32}}}" begin        
-            @test isa(F,Vector{GeometryBasics.TriangleFace{Int64}})
-            @test length(F) == length(faces(M))
-        end        
+        end    
+        
+        Fnv_G2 = tofaces(Fnv_G)
+        @testset "NgonFace no change" begin        
+            @test isa(Fnv_G2,Vector{GeometryBasics.NgonFace{5,Int64}})
+            @test length(Fnv_G2) == length(Fnv_G)
+        end    
     end
 end
 
 
-@testset "togeometrybasics_points" verbose = true begin
+@testset "topoints" verbose = true begin
 
     @testset "Matrix input" begin        
-        V = togeometrybasics_points(rand(10,3))
+        V = topoints(rand(10,3))
         @test isa(V,Vector{GeometryBasics.Point3{Float64}})
         @test length(V) == 10
     end
 
     @testset "Vector Float64" begin
         Vv = [rand(3) for _ in 1:5]       
-        V = togeometrybasics_points(Vv)
+        V = topoints(Vv)
         @test isa(V,Vector{GeometryBasics.Point3{Float64}})
         @test length(V) == 5
     end
 
     @testset "Vector Vec3" begin
         Vv = Vector{Vec3{Float64}}(undef,5)       
-        V = togeometrybasics_points(Vv)
+        V = topoints(Vv)
         @test isa(V,Vector{GeometryBasics.Point3{Float64}})
         @test length(V) == 5
     end
@@ -972,13 +970,13 @@ end
     @testset "Vector Vec{m,Float64}}" begin
         m = 4
         Vv = Vector{Vec{m,Float64}}(undef,5)       
-        V = togeometrybasics_points(Vv)
+        V = topoints(Vv)
         @test isa(V,Vector{GeometryBasics.Point{m,Float64}})
         @test length(V) == 5
 
         m = 5
         Vv = Vector{Vec{m,Float64}}(undef,5)       
-        V = togeometrybasics_points(Vv)
+        V = topoints(Vv)
         @test isa(V,Vector{GeometryBasics.Point{m,Float64}})
         @test length(V) == 5
     end
@@ -988,11 +986,21 @@ end
         fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
         M = load(fileName_mesh) 
         Vv = coordinates(M)       
-        V = togeometrybasics_points(Vv)
+        V = topoints(Vv)
+        @test isa(V,Vector{GeometryBasics.Point3{Float32}})
+        @test length(V) == length(Vv)
+    end
+
+    @testset "points no change" begin
+        # Imported triangular mesh 
+        Vv = rand(Point{3,Float64},5) 
+        V = topoints(Vv)
         @test isa(V,Vector{GeometryBasics.Point3{Float64}})
         @test length(V) == length(Vv)
     end
+
 end
+
 
 @testset "togeometrybasics_mesh" verbose = true begin
 
@@ -1254,17 +1262,6 @@ end
         
         @test edgelengths(F,V) == [1.0, 1.0, 1.0, 1.0] # Unit square
         @test edgelengths(F,V*pi) == pi.*[1.0, 1.0, 1.0, 1.0] # Scaled square
-    end
-
-    @testset "F::Vector{Vector{Int64}}, V::Vector{Vec3}" begin
-        F = [[1,2,3,4]]
-        V = Vector{Vec3{Float64}}(undef,4)
-        V[1] = Vec3(0.0, 0.0, 0.0)
-        V[2] = Vec3(1.0, 0.0, 0.0)
-        V[3] = Vec3(1.0, 1.0, 0.0)
-        V[4] = Vec3(0.0, 1.0, 0.0)
-        
-        @test edgelengths(F,V) == [1.0, 1.0, 1.0, 1.0]    
     end
 
     @testset "GeometryBasics LineFace edges" begin
@@ -2448,6 +2445,7 @@ end
     end
 end
 
+
 @testset "normalizevector"  verbose = true begin
     eps_level = 1e-4
 
@@ -2457,7 +2455,7 @@ end
         @test n isa typeof(v)
         @test n == [0.0, 0.0, 1.0]
 
-        v = [1.0, 1.0, 0.0]
+        v = Vec{3,Float64}(1.0, 1.0, 0.0)
         n = normalizevector(v)
         @test n isa typeof(v)
         @test isapprox(n,√2/2*[1.0, 1.0, 0.0], atol=eps_level)
@@ -2473,15 +2471,13 @@ end
         F = faces(M)
         V = coordinates(M)
         N = facenormal(F,V)
-        U = [n./(1.0.+rand(1)) for n in N]
+        U = [Vec{3,Float64}(n./(1.0.+rand(1))) for n in N]
         NN = normalizevector(U)
 
         @test eltype(NN) == eltype(U)
         @test isapprox(NN,N, atol=eps_level)
     end
-
 end
-
 
 
 @testset "circlepoints" verbose = true begin
@@ -2794,7 +2790,6 @@ end
         @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(V)
 
-
         hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
         @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
@@ -2803,10 +2798,11 @@ end
         fileName_mesh = joinpath(comododir(),"assets","obj","spot_control_mesh.obj")
         M = load(fileName_mesh)   
         F = faces(M)
-        V = coordinates(M)
-        hp1 =  normalplot(ax,M; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
+        V = topoints(coordinates(M))
+
+        hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float32, Line{3, Float32}, SimpleFaceView{3, Float32, 2, Int64, Point3{Float32}, LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(V)
 
         # Not supported yet
@@ -2875,7 +2871,7 @@ end
     fDef[1,2] = tan(a) 
 
     # Sheared cube coordinates
-    V2 = togeometrybasics_points([fDef*v for v in V]) 
+    V2 = topoints([fDef*v for v in V]) 
 
     A = edgeangles(F,V) # Angles for regular cube
     A2 = edgeangles(F,V2) # Angles for sheared cube
@@ -2896,7 +2892,7 @@ end
     end
     a = pi/6 # "45 degree shear"  
     f[1,2] = tan(a) 
-    V = togeometrybasics_points([f*v for v in V]) # Shear the cube
+    V = topoints([f*v for v in V]) # Shear the cube
 
     # Build deformation gradient tensor to induce shear with known angles
     f = zeros(3,3)
@@ -2905,7 +2901,7 @@ end
     end
     a = pi/6 # "45 degree shear"  
     f[3,1] = tan(a) 
-    V = togeometrybasics_points([f*v for v in V]) # Shear the cube
+    V = topoints([f*v for v in V]) # Shear the cube
 
     @testset "Errors" begin
         @test_throws ArgumentError quad2tri(F,V; convert_method = :wrong)
@@ -3148,19 +3144,19 @@ end
     end
 
     @testset "Direction (s) variations" begin
-        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
+        F, V = extrudecurve(Vc, d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
        
-        F, V = extrudecurve(Vc, d; s=0, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
+        F, V = extrudecurve(Vc, d; s=0, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
         @test isapprox(zMax,d/2,atol = eps_level) && isapprox(zMin,-d/2,atol = eps_level)
 
-        F, V = extrudecurve(Vc, d; s=-1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
+        F, V = extrudecurve(Vc, d; s=-1, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
@@ -3168,21 +3164,21 @@ end
     end
     
     @testset "Direction (n) variations" begin
-        n=[0.0,0.0,1.0] # Upward
+        n=Vec{3, Float64}(0.0,0.0,1.0) # Upward
         F, V = extrudecurve(Vc, d; s=1, n=n, num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
        
-        n=[0.0,0.0,-1.0] # Downward
+        n=Vec{3, Float64}(0.0,0.0,-1.0) # Downward
         F, V = extrudecurve(Vc, d; s=1, n=n, num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
         @test isapprox(zMax,0.0,atol = eps_level) && isapprox(zMin,-d,atol = eps_level)
 
-        n = normalizevector([1.0,0.0,1.0]) # 45 degree direction upward
+        n = normalizevector(Vec{3, Float64}(1.0,0.0,1.0)) # 45 degree direction upward
         F, V = extrudecurve(Vc, d; s=1, n=n, num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
@@ -3191,7 +3187,7 @@ end
     end
 
     @testset "face_type=:quad" begin
-        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
+        F, V = extrudecurve(Vc, d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)
@@ -3208,7 +3204,7 @@ end
     end
 
     @testset "face_type=:tri" begin
-        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:tri)
+        F, V = extrudecurve(Vc, d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:tri)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)
@@ -3225,7 +3221,7 @@ end
     end
 
     @testset "face_type=:tri_slash" begin
-        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:tri_slash)
+        F, V = extrudecurve(Vc, d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:tri_slash)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)
@@ -3242,7 +3238,7 @@ end
     end
 
     @testset "face_type=:quad2tri" begin
-        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad2tri)
+        F, V = extrudecurve(Vc, d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad2tri)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)
@@ -4024,3 +4020,46 @@ end
     end
 
 end
+
+@testset "batman" verbose=true begin
+    eps_level = 1e-6
+
+    n = 50 # Number of points, first testig an even number
+    V = batman(n)
+    ind = round.(Int64,range(1,length(V),5))
+
+    @test length(V) == n # Correct length
+    @test isa(V,Vector{Point{3,Float64}}) # Correct type
+    # Correct coordinates for this case 
+    @test isapprox(V[ind],Point3{Float64}[
+        [4.959248144765713e-5, -0.6888052278988526, 0.0], 
+        [0.9989308524502467, -0.12980802206407838, 0.0], 
+        [-0.004310373406159424, 0.3627431045478119, 0.0], 
+        [-0.9715858301799283, -0.014868116101481532, 0.0], 
+        [-0.022332909569322653, -0.5717894489374953, 0.0]],atol=eps_level)  
+          
+    V = batman(n; dir=:cw)
+    @test length(V) == n # Correct length
+    @test isa(V,Vector{Point{3,Float64}})
+
+    V = batman(n; dir=:acw, symmetric=false)
+    @test length(V) == n # Correct length
+    @test isa(V,Vector{Point{3,Float64}})
+
+    V = batman(n; dir=:acw, symmetric=true)
+    @test length(V) == n # Correct length
+    @test isa(V,Vector{Point{3,Float64}})
+
+    m = n+1 # force uneven
+    V = batman(m; dir=:acw, symmetric=true)
+    @test length(V) == m+1 # Correct length
+    @test isa(V,Vector{Point{3,Float64}})
+
+    V = batman(m; dir=:cw, symmetric=true)
+    @test length(V) == m+1 # Correct length
+    @test isa(V,Vector{Point{3,Float64}})
+
+
+end
+
+

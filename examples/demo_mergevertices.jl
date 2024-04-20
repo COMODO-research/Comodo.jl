@@ -8,10 +8,8 @@ using FileIO
 # Loading a mesh
 fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
 M1 = load(fileName_mesh)
-F1 = faces(M1)
-V1 = coordinates(M1)
-F1 = togeometrybasics_faces(F1) 
-V1 = togeometrybasics_points(V1) 
+F1 = tofaces(faces(M1)) 
+V1 = topoints(coordinates(M1)) 
 
 F2 = deepcopy(F1)
 V2 = deepcopy(V1)

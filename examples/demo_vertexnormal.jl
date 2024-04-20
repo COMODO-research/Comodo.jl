@@ -34,8 +34,8 @@ for q=1:1:4
         M = load(fileName_mesh)
 
         # Obtain mesh faces and vertices
-        F = togeometrybasics_faces(faces(M))
-        V = togeometrybasics_points(coordinates(M))        
+        F = faces(M)
+        V = topoints(coordinates(M))        
         F,V,_ = mergevertices(F,V)    
         M = GeometryBasics.Mesh(V,F)
         titleString="bunny"         

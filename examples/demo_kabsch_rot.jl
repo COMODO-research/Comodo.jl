@@ -11,12 +11,18 @@ are visualized.
 =#
 
 # Loading a mesh
+
+# fileName_mesh = joinpath(comododir(),"assets","obj","spot_control_mesh_texture.obj")
+# M = load(fileName_mesh)
+
 fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
 M = load(fileName_mesh)
 
 # Obtain mesh faces and vertices
 F = faces(M)
-V1 = togeometrybasics_points(coordinates(M))
+V1 = topoints(coordinates(M))
+V1 = [Point{3, Float64}(v) for v in V1]
+
 F,V1 = mergevertices(F,V1)
 
 # Define a rotation tensor using Euler angles

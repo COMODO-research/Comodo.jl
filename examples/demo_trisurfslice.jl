@@ -15,10 +15,8 @@ elseif testCase == 2
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
-    F = faces(M)
-    V = coordinates(M)
-    F = togeometrybasics_faces(F)
-    V = togeometrybasics_points(V)
+    F = tofaces(faces(M))
+    V = topoints(coordinates(M))        
     F,V,ind1,ind2 = mergevertices(F,V)
     # F,V=subtri(F,V,1)
 elseif testCase == 3
@@ -27,10 +25,8 @@ elseif testCase == 3
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
-    F = faces(M)
-    V = coordinates(M)
-    F = togeometrybasics_faces(F)
-    V = togeometrybasics_points(V)
+    F = tofaces(faces(M))
+    V = topoints(coordinates(M))    
     F,V,ind1,ind2 = mergevertices(F,V)
 end
 
@@ -61,7 +57,7 @@ MG = GeometryBasics.Mesh(VGn,FG1)
 fig = Figure(size=(800,800))
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A sliced mesh")
 
-stepRange = range(-s,s,50)
+stepRange = range(-s,s,100)
 hSlider = Slider(fig[2, 1], range = stepRange, startvalue = 0,linewidth=30)
 
 # hp1 = mesh!(ax1,GeometryBasics.Mesh(V,F),color=:white, shading = FastShading, transparency=true)
@@ -84,7 +80,7 @@ on(hSlider.value) do stepIndex
     end
     
     VGn = [GeometryBasics.Point{3, Float64}(R'*v)+pp for v ∈ VG1] # Rotate plane    
-    MG = GeometryBasics.Mesh(togeometrybasics_points(VGn),FG1)
+    MG = GeometryBasics.Mesh(VGn,FG1)
 
     hp2[1] = MG
     hp3[1] = Mn
