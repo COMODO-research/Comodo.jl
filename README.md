@@ -15,13 +15,18 @@ pkg> add https://github.com/COMODO-research/Comodo.jl
 ```
 
 # Getting started
-The `examples` folder contains examples on the use of Comodo's functionality. 
+To get started install the package, study the documentation, and test some of the demos provided in the [`examples`](https://github.com/COMODO-research/Comodo.jl/tree/main/examples) folder. 
+
+<img src="assets/img/comodo_snippets.gif" alt="comodo overview" width="50%"/>
+
 
 # Documentation 
 [Functional Documentation](https://comodo-research.github.io/Comodo.jl/dev/)
 
 # Combining with finite element analysis
 For finite element analysis users are encouraged to combine the Comodo capabilities with the open source C++ solver [FEBio](https://febio.org/), e.g. based on the Julia wrapper [FEBio.jl](https://github.com/febiosoftware/FEBio.jl). In addition, users may want to explore the Julia packages [Gridap.jl](https://github.com/gridap/Gridap.jl) and [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl).
+
+<img src="assets/img/febio_example_01.gif" alt="febio functionality" width="50%"/>
 
 # Testing 
 You can test Comodo by running
@@ -31,7 +36,18 @@ pkg> test Comodo
 The source for the tests is [`runtests.jl`, found in the `test` folder](https://github.com/COMODO-research/Comodo.jl/blob/main/test/runtests.jl)
 
 # Roadmap
-A detailed roadmap is under construction. 
+New functionality to add:
+- [ ] TetGen demos
+- [ ] Mesh thickening (e.g. quads into hexahedra)
+- [ ] Discrete curvature analysis
+- [ ] Lattice structure creation: 
+	- Element based conversions 
+	- Triply periodic minimal and spinodoid surfaces
+	- Boundary conforming lattices
+- [ ] Surface stitching method
+- [ ] Levelset methods
+- [ ] Topology optimisation
+- [ ] Consider adding geogram wrapper
 
 # How to contribute? 
 Your help would be greatly appreciated! If you can contribute please do so by posting a pull-request. I am very much open to fully acknowledging your contributions e.g. by listing you as a contributor properly whereever possible, by welcoming you on board as a long term contributor, or by inviting you to be a co-author on publications featuring Comodo functionality. 
