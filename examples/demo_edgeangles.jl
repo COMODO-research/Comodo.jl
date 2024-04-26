@@ -21,9 +21,12 @@ A2 = edgeangles(F,V2)
 
 
 ## Visualize mesh
+
+Fs,Vs = separate_vertices(F,V2)
+
 fig = Figure(size=(800,800))
 
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Edge angles")
-hp2 = poly!(ax1,GeometryBasics.Mesh(V2,F), strokewidth=3,color=:white, shading = FastShading)
-
+hp3 = poly!(ax1,GeometryBasics.Mesh(Vs,Fs), strokewidth=3,color=reduce(vcat,A2), shading = FastShading,colormap=Makie.Reverse(:Spectral))
+Colorbar(fig[1,2],hp3)
 fig

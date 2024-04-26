@@ -15,11 +15,11 @@ Vi, S = evenly_sample(V, n; niter = 10) # Returns points and spline interpolatio
 # Visualization
 fig = Figure(size = (1200,800))
 
-ax1 = Axis3(fig[1, 1],aspect = :data)
+ax1 = Axis3(fig[1, 1],aspect = :data,azimuth=-pi/2,elevation=pi/2, title="raw")
 hp1 = scatter!(ax1, V,markersize=25,color=:red)
 hp2 = lines!(ax1, V,linewidth=3,color=:red)
 
-ax2 = Axis3(fig[1, 2],aspect = :data)
+ax2 = Axis3(fig[1, 2],aspect = :data,azimuth=-pi/2,elevation=pi/2, title="evenly sampled")
 hp1 = scatter!(ax2, Vi,markersize=20,color=:black)
 hp2 = lines!(ax2, Vi,linewidth=3,color=:black)
 hp2 = lines!(ax2, V,linewidth=2,color=:red)

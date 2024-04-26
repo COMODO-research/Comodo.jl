@@ -19,7 +19,7 @@ ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z",
 lines!(ax1,V1, linewidth = 5, color = :blue)
 scatter!(ax1,V1,markersize=25,color = :black)
 
-ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Altered radius")
+ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Radial function")
 lines!(ax2,V2, linewidth = 5, color = :blue)
 scatter!(ax2,V2,markersize=25,color = :black)
 

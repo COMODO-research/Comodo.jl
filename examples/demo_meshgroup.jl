@@ -3,7 +3,7 @@ using GLMakie
 using GeometryBasics
 
 # Example geometry
-testCase = 1
+testCase = 3
 if testCase == 1
     s=1.0
     V=Vector{GeometryBasics.Point{3, Float64}}(undef,5)

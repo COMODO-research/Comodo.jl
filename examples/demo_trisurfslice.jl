@@ -6,7 +6,7 @@ using Statistics
 using Rotations
 
 # Example geometry
-testCase = 1
+testCase = 3
 if testCase == 1
     F,V = geosphere(2,1.0)
 elseif testCase == 2

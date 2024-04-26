@@ -21,7 +21,7 @@ V = map(x-> x.+ (5.0 .* randn(eltype(V))),V)
 
 # Set smoothing parameters
 tol = 1e-3
-nMax = 100 # Maximum number of iterations
+nMax = 15 # Maximum number of iterations
 
 λ = 0.5 # Laplacian smoothing parameter
 
@@ -48,7 +48,7 @@ Ds = [sqrt(sum((Vs_HC[i]-V0[i]).^2)) for i ∈ eachindex(V)]
 Ds_LAP = [sqrt(sum((Vs_LAP[i]-V0[i]).^2)) for i ∈ eachindex(V)]
 cLim = maximum(Ds_LAP).*(0.0,1.0)
 
-fig = Figure(size=(900,900))
+fig = Figure(size=(1200,1200))
 
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Original")
 hp1=poly!(ax1,GeometryBasics.Mesh(V0,F),strokewidth=strokeWidth1,color=:white, shading = FastShading)
@@ -86,5 +86,8 @@ on(hSlider.value) do stepIndex
 end
 
 set_close_to!(hSlider,0)
+
+# fileName = comododir()*"/assets/temp/surface_mesh_smoothing_anim.mp4"
+# slider2anim(fig,hSlider,fileName; backforth=true, duration=2)
 
 fig
