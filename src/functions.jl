@@ -3119,6 +3119,11 @@ end
 
 """
     evenly_sample(V::Vector{Point{ND,TV}}, n::Int64; rtol = 1e-8, niter = 1) where ND where TV<:Real
+
+Evenly samples curves. 
+
+# Description
+
 This function aims to evenly resample the input curve defined by the ND points 
 `V` using `n` points. The function returns the resampled points as well as the 
 spline interpolator `S` used. The output points can also be retriebed by using: 
@@ -3161,7 +3166,10 @@ end
 """
     invert_faces(F::Vector{NgonFace{N, TF}, 1}) where N where TF<:Integer
 
+Flips face orientations.
+
 # Description
+
 This function inverts the faces in `F`, such that the face normal will be 
 flipped, by reversing the node order for each face. 
 """
