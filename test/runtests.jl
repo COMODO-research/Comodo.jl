@@ -152,6 +152,79 @@ end
     end
 end
 
+
+@testset "gridpoints_equilateral" verbose = true begin
+    eps_level = 1e-4
+       
+    @testset "Vectors, non-rectangular" begin 
+        xSpan = [-3,3]
+        ySpan = [-2,2]
+        pointSpacing = 0.5
+        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular=false)
+        ind = round.(Int64,range(1,length(V),10))
+        
+        @test isa(V,Vector{Point{3,Float64}})
+        @test isapprox(V[ind],Point3{Float64}[[-3.125, -2.0, 0.0], 
+        [-2.375, -1.5669872981077808, 0.0], [-1.625, -1.1339745962155614, 0.0], 
+        [-0.875, -0.700961894323342, 0.0], [-0.625, -0.2679491924311228, 0.0], 
+        [0.625, 0.16506350946109638, 0.0], [0.875, 0.598076211353316, 0.0], 
+        [1.625, 1.0310889132455352, 0.0], [2.375, 1.4641016151377544, 0.0], 
+        [3.125, 1.8971143170299736, 0.0]],atol=eps_level)
+        x = [v[1] for v in V]
+        @test isapprox(minimum(x),xSpan[1]-pointSpacing/4,atol=eps_level)
+        @test isapprox(maximum(x),xSpan[2]+pointSpacing/4,atol=eps_level)
+    end
+
+    @testset "Tuples, rectangular" begin
+        xSpan = (-3,3)
+        ySpan = (-2,2)
+        pointSpacing = 1
+        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular=true)
+        ind = round.(Int64,range(1,length(V),10))
+
+        @test isa(V,Vector{Point{3,Float64}})
+        @test isapprox(V[ind],Point3{Float64}[[-3.0, -2.0, 0.0], [0.75, -2.0, 0.0], 
+        [-1.75, -1.1339745962155614, 0.0], [1.25, -1.1339745962155614, 0.0], 
+        [-2.25, -0.2679491924311228, 0.0], [1.75, -0.2679491924311228, 0.0], 
+        [-0.75, 0.598076211353316, 0.0], [2.25, 0.598076211353316, 0.0], 
+        [-1.25, 1.4641016151377544, 0.0], [3.0, 1.4641016151377544, 0.0]],atol=eps_level)
+
+        x = [v[1] for v in V]
+        @test isapprox(minimum(x),xSpan[1],atol=eps_level)
+        @test isapprox(maximum(x),xSpan[2],atol=eps_level)
+    end
+
+
+    @testset "Return faces" begin
+        xSpan = (-3,3)
+        ySpan = (-2,2)
+        pointSpacing = 1
+        F,V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = true, rectangular=true)
+        ind = round.(Int64,range(1,length(V),10))
+        indF = round.(Int64,range(1,length(F),10))
+
+        @test isa(F,Vector{TriangleFace{Int64}})
+        @test F[indF] == TriangleFace{Int64}[TriangleFace(1, 2, 8), 
+        TriangleFace(16, 23, 22), TriangleFace(9, 10, 17), TriangleFace(3, 4, 10), 
+        TriangleFace(18, 25, 24), TriangleFace(11, 12, 19), TriangleFace(33, 32, 25), 
+        TriangleFace(20, 27, 26), TriangleFace(13, 14, 21), TriangleFace(35, 34, 27)]
+
+        @test isa(V,Vector{Point{3,Float64}})
+        @test isapprox(V[ind],Point3{Float64}[[-3.0, -2.0, 0.0], [0.75, -2.0, 0.0], 
+        [-1.75, -1.1339745962155614, 0.0], [1.25, -1.1339745962155614, 0.0], 
+        [-2.25, -0.2679491924311228, 0.0], [1.75, -0.2679491924311228, 0.0], 
+        [-0.75, 0.598076211353316, 0.0], [2.25, 0.598076211353316, 0.0], 
+        [-1.25, 1.4641016151377544, 0.0], [3.0, 1.4641016151377544, 0.0]],atol=eps_level)
+
+        x = [v[1] for v in V]
+        @test isapprox(minimum(x),xSpan[1],atol=eps_level)
+        @test isapprox(maximum(x),xSpan[2],atol=eps_level)
+    end
+
+
+end
+
+
 @testset "interp_biharmonic_spline" verbose = true begin
     eps_level = 1e-4
 
@@ -3749,6 +3822,22 @@ end
     end
 end
 
+
+@testset "evenly_space" verbose = true begin
+    eps_level = 1e-3
+    np = 10
+    t = range(0.0,2.0*π,np) # Parameterisation metric
+    V = [GeometryBasics.Point{3, Float64}(cos(t[i]),sin(t[i]),0.0) for i in eachindex(t)] 
+    
+    Vn = evenly_space(V)
+    @test isapprox(pointspacingmean(Vn),pointspacingmean(V),atol=eps_level)
+
+    pointSpacing = pointspacingmean(V)
+    Vn = evenly_space(V,pointSpacing)
+    @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
+end
+
+
 @testset "invert_faces" begin
     # Single face
     F = TriangleFace{Int64}[[1,2,3]]
@@ -4169,6 +4258,22 @@ end
     @test isa(V,Vector{Point{3,Float64}})
     @test isa(C,Vector{Float64})
     @test length(F) == length(C) # Color length matches faces
+
+    # Single region case which should trigger treatment of an "on boundary point"
+    n = 50
+    r = 2.0
+    V = circlepoints(r,n;dir=:acw) 
+    pointSpacing = pointspacingmean(V)
+
+    VT = (V,)
+    R = ([1],)
+    P = (pointSpacing)
+    F,V,C = regiontrimesh(VT,R,P)
+    @test isa(F,Vector{TriangleFace{Int64}})
+    @test isa(V,Vector{Point{3,Float64}})
+    @test isa(C,Vector{Float64})
+    @test length(F) == length(C)
+
 end
 
 

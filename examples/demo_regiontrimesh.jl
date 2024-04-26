@@ -19,7 +19,7 @@ if testCase == 1 # Batman curve
     R = ([1],)
     P = (pointSpacing)
 elseif testCase == 2 
-    n = 100
+    n = 50
     r = 2.0
     V = circlepoints(r,n;dir=:acw) 
     pointSpacing = pointspacingmean(V)

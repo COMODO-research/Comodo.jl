@@ -3154,7 +3154,10 @@ function evenly_sample(V::Vector{Point{ND,TV}}, n::Int64; rtol = 1e-8, niter = 1
     return S.(l), S # Evaluate interpolator at even distance increments
 end
 
-function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing::T; rtol = 1e-8, niter = 1) where ND where TV<:Real where T<:Real    
+function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8, niter = 1) where ND where TV<:Real
+    if isnothing(pointSpacing)
+        pointSpacing = pointspacingmean(V)
+    end
     n = ceil(Int64,maximum(curve_length(V))/pointSpacing)
     V,_ = evenly_sample(V,n; rtol=rtol, niter=niter)
     return V
@@ -3496,7 +3499,7 @@ function regiontrimesh(VT,R,P)
         Eb = boundaryedges(Fn)
         indB = unique(reduce(vcat,Eb))
         indRemove = indB[indB.>numCurvePoints]        
-        if !iszero(length(indRemove))            
+        if !iszero(length(indRemove))                        
             logicKeep = fill(true,length(Vn))
             logicKeep[indRemove] .= false
             indKeep = findall(logicKeep)
