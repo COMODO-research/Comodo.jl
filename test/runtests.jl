@@ -31,17 +31,17 @@ end
     hSlider = Slider(fig[2, 1], range = r,startvalue = startvalue,linewidth=30)
     fig
     
-    fileName = comododir()*"/assets/temp/temp_anim1.mp4"
+    fileName = comododir()*"/assets/temp_anim1.mp4"
     slider2anim(fig,hSlider,fileName; backforth=true, duration=2)
     @test isfile(fileName) # File exists 
     rm(fileName) # Clean up
 
-    fileName = comododir()*"/assets/temp/temp_anim2.mp4"
+    fileName = comododir()*"/assets/temp_anim2.mp4"
     slider2anim(fig,hSlider,fileName; backforth=false, duration=pi)
     @test isfile(fileName) # File exists 
     rm(fileName) # Clean up
 
-    fileName = comododir()*"/assets/temp/temp_anim3.gif"
+    fileName = comododir()*"/assets/temp_anim3.gif"
     slider2anim(fig,hSlider,fileName; backforth=false, duration=1.0)
     @test isfile(fileName) # File exists 
     rm(fileName) # Clean up
