@@ -10,6 +10,7 @@ using Interpolations # E.g. for resampling curves
 using BSplineKit # E.g. for resampling curves
 using QuadGK: quadgk # For numerical integration
 using Distances
+using DelaunayTriangulation # For triangular meshing
 
 """
     ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v)
@@ -47,6 +48,8 @@ end
 
 """
     slidercontrol(hSlider,ax)    
+
+Adds arrow key control to sliders
 
 # Description 
 
@@ -95,7 +98,29 @@ function slidercontrol(hSlider::Slider,ax::Union{Axis3, Figure})
 end
 
 """
+    slider2anim(fig::Figure,hSlider::Slider,fileName::String; backforth=true, duration=2)
+
+Exports movies from slider based visualisations.
+
+# Description
+Converts the effect of the slider defined by the slider handle `hSlider` for the 
+figure `fig` to an animation/movie file
+"""
+function slider2anim(fig::Figure,hSlider::Slider,fileName::String; backforth=true, duration=2)
+    stepRange = collect(hSlider.range[])
+    if backforth
+        append!(stepRange,reverse(stepRange[2:end-1]))
+    end
+    framerate = ceil(Int64,length(stepRange)/duration)
+    record(fig, fileName, stepRange; framerate = framerate) do stepIndex
+        set_close_to!(hSlider, stepIndex)
+    end
+end
+
+"""
     elements2indices(F)
+
+Returns the indices contained in `F`
 
 # Description
     
@@ -115,6 +140,8 @@ end
 """
     gridpoints(x::Vector{T}, y=x, z=x) where T<:Real
 
+Returns 3D grids of points
+
 # Description
 
 The `gridpoints` function returns a vector of 3D points which span a grid in 3D 
@@ -122,12 +149,117 @@ space. Points are defined as per the input ranges or range vectors. The output
 point vector contains elements of the type `Point`. 
 """
 function gridpoints(x::Union{Vector{T}, AbstractRange{T}}, y=x, z=x) where T<:Real
-    reshape([Point{3, Float64}(x, y, z) for z in z, y in y, x in x], 
-                             length(x)*length(y)*length(z))
+    # reshape([Point{3, Float64}(x, y, z) for x in x, y in y, z in z],length(x)*length(y)*length(z)) # Features more allocations    
+    V = Vector{Point{3,Float64}}(undef,length(x)*length(y)*length(z)) # Allocate point vector 
+    c = 1 # Initiate linear index into V
+    # Create grid with point order x->y->z (important for related meshing functions which assume this order)
+    @inbounds for z in z  
+        @inbounds for y in y
+            @inbounds for x in x                           
+                V[c] = Point{3,Float64}(x,y,z)
+                c += 1 
+            end
+        end
+    end
+    return V
 end  
 
 """
+    gridpoints_equilateral(xSpan,ySpan,pointSpacing::T; return_faces = false, rectangular=false) where T <: Real
+
+Returns a "grid" of 3D points that are located on the corners of an equilateral triangle tesselation.
+
+# Description
+
+This function returns 3D point data in the form of a `Vector{Point{3,Float64}}`. 
+The point distribution is for an equilateral triangle tesselation. The input 
+consists of the span in the x-, and y-direction, i.e. `xSpan` and `ySpan` 
+respectively, as well as the desired `pointSpacing`. The "spans" should be 
+vectors or tuples defining the minimum and maximum coordinates for the grid. The
+true point spacing in the x-direction is computed such that a nearest whole 
+number of steps can cover the required distance. Next this spacing is used to 
+create the equilateral triangle point grid. Although the `xSpan` is closely 
+adhered to through this method, the `ySpan` is not fully covered. In the 
+y-direction the grid does start at the minimum level, but may stop short of 
+reaching the maximum y as it may not be reachable in a whole number of steps 
+from the minimum. Optional arguments include `return_faces` (default is 
+`false`), which will cause the function to return triangular faces `F` as well 
+as the vertices `V`. Secondly the option `rectangular` will force the grid to 
+conform to a rectangular domain. This means the "jagged" sides are forced to be 
+flat such that all x-coordinates on the left are at the minimum in `xSpan` and
+all on the right are at the maximum in `xSpan`, however, this does result in a 
+non-uniform spacing at these edges.  
+"""
+function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Union{Vector{TT},Tuple{TT,TT}},pointSpacing::T; return_faces = false, rectangular=false) where T <: Real where TT <: Real
+    minX = minimum(xSpan)
+    maxX = maximum(xSpan)
+    minY = minimum(ySpan)
+    maxY = maximum(ySpan)
+
+    wx = maxX - minX
+    nx = ceil(Int64,wx./pointSpacing)+1 # Number of points in the x-direction
+    xRange = range(minX,maxX,nx) # The xRange
+    pointSpacingReal_X=xRange[2]-xRange[1]
+
+    pointSpacingReal_Y=pointSpacingReal_X.*0.5*sqrt(3)
+    yRange = minY:pointSpacingReal_Y:maxY
+
+    # Create the point grid
+    V = Vector{Point{3,Float64}}(undef,length(xRange)*length(yRange))    
+    c = 1
+    sx = pointSpacingReal_X/4
+    for j in eachindex(yRange)
+        for i in eachindex(xRange)                 
+            if iseven(j) # Shift over every second row of points
+                x = xRange[i]+sx
+            else
+                x = xRange[i]-sx
+            end                    
+            if rectangular
+                if isone(i)
+                    x = minX
+                elseif i == nx
+                    x = maxX
+                end
+            end
+
+            V[c] = Point{3}{Float64}(x,yRange[j],0.0)
+            c += 1
+        end
+    end
+
+    # Creat output, including faces if requested
+    if return_faces == true
+        plateElem=[length(xRange)-1,length(yRange)-1]
+        F = Vector{TriangleFace{Int64}}(undef,prod(plateElem)*2)
+        num_x = length(xRange)
+        ij2ind(i,j) = i + ((j-1)*num_x) # function to convert subscript to linear indices    
+        c = 1
+        for i = 1:plateElem[1]
+            for j = 1:plateElem[2]      
+                if iseven(j)  
+                    F[c] = TriangleFace{Int64}([ij2ind(i,j),ij2ind(i+1,j),ij2ind(i+1,j+1)])
+                    c += 1
+                    F[c] = TriangleFace{Int64}([ij2ind(i+1,j+1),ij2ind(i,j+1),ij2ind(i,j)])
+                    c += 1
+                else
+                    F[c] = TriangleFace{Int64}([ij2ind(i,j),ij2ind(i+1,j),ij2ind(i,j+1)])
+                    c += 1
+                    F[c] = TriangleFace{Int64}([ij2ind(i+1,j),ij2ind(i+1,j+1),ij2ind(i,j+1)])
+                    c += 1
+                end
+            end
+        end        
+        return F,V
+    else
+        return V
+    end
+end
+
+"""
     interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union{Vector{T}, AbstractRange{T}},xi::Union{Vector{T}, AbstractRange{T}}; extrapolate_method=:linear,pad_data=:linear) where T<:Real
+
+Interpolates 1D (curve) data using biharmonic spline interpolation
 
 # Description
 
@@ -139,7 +271,7 @@ sites at which to interpolate. Each of in the input parameters can be either a
 vector or a range. 
 
 # References
-1. [David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
+1. [David T. Sandwell, _Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data_, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
 """
 function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union{Vector{T}, AbstractRange{T}},xi::Union{Vector{T}, AbstractRange{T}}; extrapolate_method=:linear,pad_data=:linear) where T<:Real
 
@@ -234,6 +366,8 @@ end
 """
     interp_biharmonic(x,y,xi)
 
+Interpolates n-dimensional data using biharmonic spline interpolation
+
 # Description 
 
 This function uses biharmonic interpolation [1]. The input `x` should define a 
@@ -241,7 +375,7 @@ vector consisting of m points which are n-dimensional, and the input `y` should
 be a vector consisting of m scalar data values. 
 
 # References 
-1. [David T. Sandwell, Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
+1. [David T. Sandwell, _Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data_, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
 """
 function interp_biharmonic(x,y,xi)
     # Distances from all points in X to all points in X
@@ -262,6 +396,9 @@ end
 
 """
     nbezier(P,n)
+
+Returns a Bezier spline for the control points P whose order matches the numbe 
+of control points provided. 
 
 # Description 
 
@@ -294,6 +431,8 @@ end
 
 """
     lerp(x::Union{T,Vector{T}, AbstractRange{T}},y,xi::Union{T,Vector{T}, AbstractRange{T}}) where T <: Real
+
+Linear interpolation
 
 # Description 
 
@@ -337,7 +476,11 @@ end
 
 """
     dist(V1,V2)
+
+Computes n-dimensional Euclidean distances
+
 # Description
+
 Function compute an nxm distance matrix for the n inputs points in `V1`, and the
 m input points in `V2`. The input points may be multidimensional, in fact they
 can be any type supported by the `euclidean` function of `Distances.jl`. 
@@ -371,6 +514,11 @@ end
 
 """
     mindist(V1,V2; getIndex=false, skipSelf = false )
+
+Returns nearest point distances 
+
+# Description
+
 Returns the closest point distance for the input points `V1` with respect to the 
 input points `V2`. If the optional parameter `getIndex` is set to `true` (`false` 
 by default) then this function also returns the indices of the nearest points 
@@ -409,6 +557,11 @@ end
 
 """
     unique_dict_index(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+
+Returns unique values and indices
+
+# Description
+
 Returns the unique entries in `X` as well as the indices for them. 
 The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
@@ -439,6 +592,11 @@ end
 
 """
     unique_dict_index_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+
+Returns unique values, indices, and inverse indices
+
+# Description
+    
 Returns the unique entries in `X` as well as the indices for them and the 
 reverse indices to retrieve the original from the unique entries. 
 The optional parameter `sort_entries` (default is `false`) can be set to `true`
@@ -476,6 +634,11 @@ end
 
 """
     unique_dict_index_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+
+Returns unique values, indices, and counts
+
+# Description
+    
 Returns the unique entries in `X` as well as the indices for them and the counts 
 in terms of how often they occured. 
 The optional parameter `sort_entries` (default is `false`) can be set to `true`
@@ -515,6 +678,11 @@ end
 
 """
     unique_dict_index_inverse_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+
+Returns unique values, indices, inverse indices, and counts
+
+# Description
+    
 Returns the unique entries in `X` as well as the indices for them and the reverse 
 indices to retrieve the original from the unique entries, and also the counts in 
 terms of how often they occured. 
@@ -556,7 +724,12 @@ end
 
 
 """
-unique_dict_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+    unique_dict_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+
+Returns unique values and counts
+
+# Description
+    
 Returns the unique entries in `X` as well as the counts in terms of how often 
 they occured. 
 The optional parameter `sort_entries` (default is `false`) can be set to `true`
@@ -592,6 +765,11 @@ end
 
 """
     unique_dict_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any 
+
+Returns unique values and inverse indices
+
+# Description
+
 Returns the unique entries in `X` as well as the reverse indices to retrieve the 
 original from the unique entries. 
 The optional parameter `sort_entries` (default is `false`) can be set to `true`
@@ -625,8 +803,14 @@ function unique_dict_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) wh
     return xUni, indInverse
 end 
 
+
 """
-unique_dict(X::AbstractVector{T}) where T <: Real    
+    unique_dict(X::AbstractVector{T}) where T <: Real    
+
+Returns unique values, indices, and inverse indices. Uses an OrderedDict.
+
+# Description
+    
 Returns the unique entries in `X` as well as the indices for them and the reverse 
 indices to retrieve the original from the unique entries. 
 """
@@ -650,7 +834,12 @@ end
 
 
 """
-gunique(X; return_unique=true, return_index=false, return_inverse=false, return_counts=false, sort_entries=false)
+    gunique(X; return_unique=true, return_index=false, return_inverse=false, return_counts=false, sort_entries=false)
+    
+Returns unique values and allows users to choose if they also want: sorting, indices, inverse indices, and counts. 
+
+# Description
+
 Returns the unique entries in `X`. Depending on the optional parameter choices
 the indices for the unique entries, the reverse indices to retrieve the original
 from the unique entries, as well as counts in terms of how often they occured, 
@@ -692,6 +881,11 @@ end
 
 """
     unique_simplices(F,V=nothing)
+
+Returns unique simplices (such as faces), independant of node order
+
+# Description
+    
 Returns the unique simplices in F as well as the indices of the unique simplices
 and the reverse indices to retrieve the original faces from the unique faces. 
 Entries in F are sorted such that the node order does not matter. 
@@ -715,7 +909,10 @@ end
 """
     ind2sub(siz,ind)
 
+Converts linear indices to subscript indices. 
+
 # Description
+
 Converts the linear indices in `ind`, for a matrix/array with size `siz`, to the 
 equivalent subscript indices.  
 """
@@ -753,8 +950,11 @@ function ind2sub_(ind::Int64,numDim::Int64,k::Union{Int64,Array{Int64, N},Tuple{
     return a
 end
 
+
 """
     sub2ind(siz,A)
+
+Converts subscript indices to linear indices. 
 
 # Description
 
@@ -803,11 +1003,18 @@ function sub2ind_(a::Union{Tuple{Vararg{Int64, N}}, Vector{Int64},NgonFace{M, In
     return ind
 end
 
+
 """
-meshedges(S; unique_only=false)
-This function returns the edges `E` for the input "simplices" (e.g. faces)
-defined by `F`. The input `F` can either represent a vector of faces or a 
-GeometryBasics mesh.  
+    meshedges(F::Array{NgonFace{N,T},1}; unique_only=false) where N where T<:Integer   
+
+Returns a mesh's edges.
+
+# Description
+
+This function returns the edges `E` for the input faces defined by `F`. 
+The input `F` can either represent a vector of faces or a 
+GeometryBasics.Mesh. The convention is such that for a face referring to the 
+nodes 1-2-3-4, the edges are 1-2, 2-3, 3-4, 4-1.   
 """
 function meshedges(F::Array{NgonFace{N,T},1}; unique_only=false) where N where T<:Integer        
     E = LineFace{Int64}[]    
@@ -835,8 +1042,12 @@ end
 """
     icosahedron(r=1.0)
 
+Creates an icosahedron mesh. 
+
 # Description
-Creates a GeometryBasics.Mesh for an icosahedron with radius `r`
+
+Creates a GeometryBasics.Mesh for an icosahedron with radius `r`. The default 
+radius, when not supplied, is `1.0`. 
 """
 function icosahedron(r=1.0)
 
@@ -888,9 +1099,13 @@ end
 
 """
     octahedron(r=1.0)
+
+Creates an octahedron mesh. 
     
 # Description
-Creates a GeometryBasics.Mesh for an octahedron with radius `r`
+
+Creates a GeometryBasics.Mesh for an octahedron with radius `r`. The default 
+radius, when not supplied, is `1.0`. 
 """
 function octahedron(r=1.0)
 
@@ -922,9 +1137,13 @@ end
 
 """
     dodecahedron(r=1.0)
+
+Creates a dodecahedron mesh. 
     
 # Description
-Creates a GeometryBasics.Mesh for an dodecahedron with radius `r`
+
+Creates a GeometryBasics.Mesh for an dodecahedron with radius `r`. The default 
+radius, when not supplied, is `1.0`. 
 """
 function dodecahedron(r=1.0)
 
@@ -977,9 +1196,13 @@ end
 
 """
     cube(r=1.0)
-    
+
+Creates a cube mesh. 
+
 # Description
-Creates a GeometryBasics.Mesh for an cube with radius `r`
+
+Creates a GeometryBasics.Mesh for an cube with radius `r`. The default 
+radius, when not supplied, is `1.0`. 
 """
 function cube(r=1.0)
 
@@ -1011,9 +1234,13 @@ end
 
 """
     tetrahedron(r=1.0)
-    
+
+Creates a tetrahedron mesh. 
+
 # Description
-Creates a GeometryBasics.Mesh for an tetrahedron with radius `r`
+
+Creates a GeometryBasics.Mesh for an tetrahedron with radius `r`. The default 
+radius, when not supplied, is `1.0`. 
 """
 function tetrahedron(r=1.0)
 
@@ -1042,6 +1269,8 @@ end
 """
     platonicsolid(n,r=1.0)
 
+Returns a platonic solid mesh.
+
 # Description
 
 Creates a GeometryBasics mesh description for a platonic solid of choice. The 
@@ -1053,7 +1282,8 @@ input `n` defines the choice.
 5. dodecahedron
 
 The final input parameter `r` defines the radius of the platonic solid (the 
-radius of the circumsphere to the vertices).
+radius of the circumsphere to the vertices).  The default radius, when not 
+supplied, is `1.0`. 
 
 # Arguments
 
@@ -1076,7 +1306,29 @@ function platonicsolid(n::Integer,r=1.0)
     return M
 end
 
+"""
+    tofaces(FM::Vector{Vector{TF}}) where TF<:Integer
+    tofaces(FM::Matrix{TF})  where TF<:Integer
+    tofaces(FM::Vector{NgonFace{m, OffsetInteger{-1, TF}}} ) where m where TF <: Integer
+    tofaces(FM::Vector{NgonFace{m, TF}} ) where m where TF <: Integer 
 
+Converts input to GeometryBasics compliant faces with standard integer types. 
+
+# Description 
+
+The `tofaces` function converts "non-standard" (for Comodo) face set 
+descriptions to "standard" ones. The following is considered such as standard: 
+`Vector{GeometryBasics.NgonFace{N,T}} where N where T<:Integer` 
+The input faces `FM` are converted to this format. `FM` can be of the following 
+types: 
+* `FM::Vector{Vector{TF}} where TF<:Integer`, whereby each Vector entry is 
+considered a face
+* `FM::Matrix{TF} where TF<:Integer`, whereby each row is considered a face
+* `Vector{NgonFace{m, OffsetInteger{-1, TF}}} where TF<:Integer`, whereby the 
+special integer type `OffsetInteger{-1, TF}` is converted to `Int64`.  
+If the intput is already of the right type this function leaves the input 
+unchanged.
+"""
 function tofaces(FM::Vector{Vector{TF}}) where TF<:Integer
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)    
     m = length(FM[1]) # Get number of points from first
@@ -1125,7 +1377,21 @@ function tofaces(FM::Vector{NgonFace{m, TF}} ) where m where TF <: Integer
     return FM
 end
 
+"""
+    topoints(VM::Matrix{T}) where T<: Real
+    topoints(VM::Union{Array{Vec{N, T}, 1}, GeometryBasics.StructArray{TT,1} }) where TT <: AbstractPoint{N,T} where T <: Real where N   
+    topoints(VM::Vector{Vector{T}}) where T <: Real  
+    topoints(VM::Vector{Point{ND,TV}}) where ND where TV <: Real    
 
+Converts input to GeometryBasics compliant simple points without meta content.
+
+# Description 
+The `topoints` function converts the "non-standard" (for Comodo) input points 
+defined by `VM` to the "standard" format:
+`VM::Vector{Point{ND,TV}} where ND where TV <: Real`.
+For matrix input each row is considered a point. For vector input each vector 
+entry is considered a point.     
+"""
 function topoints(VM::Matrix{T}) where T<: Real
     m = size(VM,2)
     return [Point{m, T}(v) for v in eachrow(VM)]
@@ -1148,7 +1414,17 @@ function topoints(VM::Vector{Point{ND,TV}}) where ND where TV <: Real
     return VM
 end
 
+"""
+    togeometrybasics_mesh
 
+Converts the input to a GeometryBasics.Mesh
+
+# Description
+
+This function converts the input faces `F` and vertices `V` to a 
+GeometryBasics.Mesh. The function `tofaces` and `topoints` are used prior to 
+conversion, to ensure standard faces and point types are used. 
+"""
 function togeometrybasics_mesh(VM,FM)
     V = topoints(VM)
     F = tofaces(FM)
@@ -1159,10 +1435,14 @@ end
 """
     edgecrossproduct(F,V::Vector{Point{ND,T}}) where ND where T<:Real  
     edgecrossproduct(M::GeometryBasics.Mesh)
+
+Returns the edge cross product, useful for nomal direction and area computations. 
+
+    # Description
+
 This function computes the so-called edge-cross-product for a input mesh that is
 either defined by the faces `F` and vertices `V` or the mesh `M`. 
 """
-
 function edgecrossproduct(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
     C = Vector{GeometryBasics.Vec{ND, TV}}(undef,length(F)) # Allocate array cross-product vectors
     n =  length(F[1]) # Number of nodes per face    
@@ -1183,6 +1463,11 @@ end
 
 """
     facenormal(F,V; weighting=:area)
+
+Returns the normal directions for each face.
+
+# Description
+
 This function computes the per face normal directions for the input mesh defined 
 either by the faces `F` and vertices `V` or by the GeometryBasics mesh `M`. 
 """
@@ -1198,6 +1483,11 @@ end
 
 """
     facearea(F,V)
+
+Returns the area for each face. 
+
+# Description
+
 This function computes the per face area for the input mesh defined either by 
 the faces `F` and vertices `V` or by the GeometryBasics mesh `M`. 
 """
@@ -1212,6 +1502,11 @@ end
 
 """
     vertexnormal(F,V; weighting=:area)
+
+Returns the surface normal at each vertex.
+
+# Description
+
 This function computes the per vertex surface normal directions for the input 
 mesh defined either by the faces `F` and vertices `V` or by the GeometryBasics
 mesh `M`. The optional parameter `weighting` sets how the face normal directions 
@@ -1232,6 +1527,10 @@ end
     edgelengths(E::LineFace,V)
     edgelengths(F,V)
     edgelengths(M::GeometryBasics.Mesh)            
+
+Returns edge lengths.
+
+# Description
 This function computes the lengths of the edges defined by edge vector `E` (e.g
 as obtained from `meshedges(F,V)`, where `F` is a face vector, and `V` is a 
 vector of vertices. 
@@ -1254,9 +1553,11 @@ end
     subtri(F,V,n; method = :linear)
     subtri(F,V,n; method = :Loop)
 
+Refines triangulations through splitting.
+
 # Description
 
-The`subtri` function refines triangulated meshes iteratively. For each iteration
+The `subtri` function refines triangulated meshes iteratively. For each iteration
 each original input triangle is split into 4 triangles to form the refined mesh 
 (one central one, and 3 at each corner). The following refinement methods are 
 implemented: 
@@ -1272,8 +1573,8 @@ that the surface effectively approaches a "quartic box spline". Hence this
 method both refines and smoothes the geometry through spline approximation. 
 
 # References
-1. [Charles Loop, Smooth Subdivision Surfaces Based on Triangles M.S. Mathematics Thesis, University of Utah. 1987.](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/thesis-10.pdf)
-2. [Jos Stam, Charles Loop, Quad/Triangle Subdivision, doi: 10.1111/1467-8659.t01-2-00647](https://doi.org/10.1111/1467-8659.t01-2-00647)
+1. [Charles Loop, _Smooth Subdivision Surfaces Based on Triangles_, M.S. Mathematics Thesis, University of Utah. 1987.](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/thesis-10.pdf)
+2. [Jos Stam, Charles Loop, _Quad/Triangle Subdivision_, doi: 10.1111/1467-8659.t01-2-00647](https://doi.org/10.1111/1467-8659.t01-2-00647)
 """
 function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int64; method = :linear) where TF<:Integer where ND where TV <: Real
     
@@ -1355,7 +1656,32 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int64; meth
     end
 end
 
+"""
+subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int64; method=:linear) where TF<:Integer where ND where TV <: Real
+subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int64; method=:Catmull_Clark) where TF<:Integer where ND where TV <: Real
 
+Refines quadrangulations through splitting.
+
+# Description
+
+The `subquad` function refines quad meshes iteratively. For each iteration each
+original input quad is split into 4 smaller quads to form the refined mesh. 
+The following refinement methods are implemented: 
+    
+`method=:linear` : This is the default method, and refines the quads in a 
+simple linear manor through splitting. Each input edge simply obtains a new 
+mid-edge node, and each face obtains a new central node. 
+    
+`method=:Catmull_Clark` : This method features Catmull_Clark-subdivision [1]. 
+Rather than linearly splitting edges and maintaining the original coordinates, 
+as for the linear method, this method computes the new points in a special 
+weighted sense such that the surface effectively approaches a bicubic B-spline 
+surface. Hence this method both refines and smoothes the geometry through 
+spline approximation. 
+
+# References
+1. [E. Catmull and J. Clark, _Recursively generated B-spline surfaces on arbitrary topological meshes_, Computer-Aided Design, vol. 10, no. 6, pp. 350-355, Nov. 1978, doi: 10.1016/0010-4485(78)90110-0](https://doi.org/10.1016/0010-4485(78)90110-0).
+"""
 function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int64; method=:linear) where TF<:Integer where ND where TV <: Real
     if iszero(n)
         return F,V
@@ -1423,7 +1749,20 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int64; met
 end
 
 
-# Create geodesic dome
+"""
+    geosphere(n::Int64,r::T) where T <: Real
+
+Returns a geodesic sphere triangulation
+
+# Description
+
+This function returns a geodesic sphere triangulation based on the number of
+refinement iterations `n` and the radius `r`. Geodesic spheres (aka Buckminster-Fuller
+ spheres) are triangulations of a sphere that have near uniform edge lenghts. 
+The algorithm starts with a regular icosahedron. Next this icosahedron is refined 
+`n` times, while nodes are pushed to a sphere surface with radius `r` at each
+iteration. 
+"""
 function geosphere(n::Int64,r::T) where T <: Real
     M = platonicsolid(4,r)
     V = coordinates(M)
@@ -1439,7 +1778,15 @@ function geosphere(n::Int64,r::T) where T <: Real
     return F,V
 end
 
+"""
+    hexbox(boxDim,boxEl)
 
+Returns a hexahedral mesh of a box
+
+# Description
+
+This function returns a hexahedral mesh for a 3D rectangular box domain. 
+"""
 function hexbox(boxDim,boxEl)
     boxNod = boxEl.+1 # Number of nodes in each direction
     numElements = prod(boxEl) # Total number of elements
@@ -1668,7 +2015,7 @@ function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
     con_V2V = [Vector{Int64}() for _ in 1:n]
     @inbounds for i_v in 1:n
         if !isempty(con_V2E[i_v])
-            for i in reduce(vcat,E[con_V2E[i_v]])
+            for i in unique(reduce(vcat,E[con_V2E[i_v]]))
                 if i_v!=i
                     push!(con_V2V[i_v],i)
                 end
@@ -1805,7 +2152,7 @@ Laplacian like smoothing but aims to compensate for shrinkage/swelling by also
 "pushing back" towards the original coordinates. 
 
 # Reference 
-1. [Vollmer et al. Improved Laplacian Smoothing of Noisy Surface Meshes, 1999. doi: 10.1111/1467-8659.00334](https://doi.org/10.1111/1467-8659.00334)
+1. [Vollmer et al., _Improved Laplacian Smoothing of Noisy Surface Meshes_, 1999. doi: 10.1111/1467-8659.00334](https://doi.org/10.1111/1467-8659.00334)
 """
 function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, α=0.1, β=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
 
@@ -1869,19 +2216,21 @@ end
 function quadplate(plateDim,plateElem)
     num_x = plateElem[1]+1
     num_y = plateElem[2]+1
-    V = Vector{Point{3, Float64}}()
-    for y = range(-plateDim[2]/2,plateDim[2]/2,num_y)
-        for x = range(-plateDim[1]/2,plateDim[1]/2,num_x)
-            push!(V,Point{3, Float64}(x,y,0.0))
-        end
-    end
+    V = gridpoints(range(-plateDim[1]/2,plateDim[1]/2,num_x),range(-plateDim[2]/2,plateDim[2]/2,num_y),0.0)
+    # V = Vector{Point{3, Float64}}()
+    # for y = range(-plateDim[2]/2,plateDim[2]/2,num_y)
+    #     for x = range(-plateDim[1]/2,plateDim[1]/2,num_x)
+    #         push!(V,Point{3, Float64}(x,y,0.0))
+    #     end
+    # end
 
-    F = Vector{QuadFace{Int64}}()
-    ij2ind(i,j) = i + ((j-1)*num_x) # function to convert subscript to linear indices
-
+    F = Vector{QuadFace{Int64}}(undef,prod(plateElem))
+    ij2ind(i,j) = i + ((j-1)*num_x) # function to convert subscript to linear indices    
+    c = 1
     for i = 1:plateElem[1]
         for j = 1:plateElem[2]        
-            push!(F,QuadFace{Int64}([ij2ind(i,j),ij2ind(i+1,j),ij2ind(i+1,j+1),ij2ind(i,j+1)]))
+            F[c] = QuadFace{Int64}([ij2ind(i,j),ij2ind(i+1,j),ij2ind(i+1,j+1),ij2ind(i,j+1)])
+            c += 1
         end
     end
     return F, V
@@ -2215,7 +2564,7 @@ function remove_unused_vertices(F,V::Vector{Point{ND,TV}})::Tuple where ND where
     else # Faces not empty to check which indices are used and shorten V if needed        
         indUsed = elements2indices(F) # Indices used
         Vc = V[indUsed] # Remove unused points    
-        indFix = zeros(length(V))
+        indFix = zeros(Int64,length(V))
         indFix[indUsed] .= 1:length(indUsed)
         Fc = [(eltype(F))(indFix[f]) for f in F] # Fix indices in F         
     end
@@ -2587,7 +2936,7 @@ When `triSide=0` both inward and outward intersections are considered.
 `tolEps = eps(Float64)` (default) 
 
 # References 
-1. [Möller, Tomas; Trumbore, Ben (1997). "Fast, Minimum Storage Ray-Triangle Intersection". Journal of Graphics Tools. 2: 21-28. doi: 10.1080/10867651.1997.10487468.](https://doi.org/10.1080/10867651.1997.10487468)
+1. [Möller, Tomas; Trumbore, Ben (1997). _Fast, Minimum Storage Ray-Triangle Intersection_. Journal of Graphics Tools. 2: 21-28. doi: 10.1080/10867651.1997.10487468.](https://doi.org/10.1080/10867651.1997.10487468)
 """
 function ray_triangle_intersect(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}},ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64)) where TF <: Integer where ND where TV<:Real
     P = Vector{Point{ND,TV}}()
@@ -2655,7 +3004,7 @@ implementation was created with the help of [this helpful document](https://gith
 which features a nice overview of the theory/steps involved in this algorithm. 
 
 # References 
-1. [F. Cazals and M. Pouget, "Estimating differential quantities using polynomial fitting of osculating jets", Computer Aided Geometric Design, vol. 22, no. 2, pp. 121-146, Feb. 2005, doi: 10.1016/j.cagd.2004.09.004](https://doi.org/10.1016/j.cagd.2004.09.004)
+1. [F. Cazals and M. Pouget, _Estimating differential quantities using polynomial fitting of osculating jets_, Computer Aided Geometric Design, vol. 22, no. 2, pp. 121-146, Feb. 2005, doi: 10.1016/j.cagd.2004.09.004](https://doi.org/10.1016/j.cagd.2004.09.004)
 """
 function mesh_curvature_polynomial(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
     # Get the unique mesh edges
@@ -2767,6 +3116,11 @@ end
 
 """
     evenly_sample(V::Vector{Point{ND,TV}}, n::Int64; rtol = 1e-8, niter = 1) where ND where TV<:Real
+
+Evenly samples curves. 
+
+# Description
+
 This function aims to evenly resample the input curve defined by the ND points 
 `V` using `n` points. The function returns the resampled points as well as the 
 spline interpolator `S` used. The output points can also be retriebed by using: 
@@ -2800,10 +3154,22 @@ function evenly_sample(V::Vector{Point{ND,TV}}, n::Int64; rtol = 1e-8, niter = 1
     return S.(l), S # Evaluate interpolator at even distance increments
 end
 
+function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8, niter = 1) where ND where TV<:Real
+    if isnothing(pointSpacing)
+        pointSpacing = pointspacingmean(V)
+    end
+    n = ceil(Int64,maximum(curve_length(V))/pointSpacing)
+    V,_ = evenly_sample(V,n; rtol=rtol, niter=niter)
+    return V
+end
+
 """
     invert_faces(F::Vector{NgonFace{N, TF}, 1}) where N where TF<:Integer
 
+Flips face orientations.
+
 # Description
+
 This function inverts the faces in `F`, such that the face normal will be 
 flipped, by reversing the node order for each face. 
 """
@@ -2820,7 +3186,7 @@ Computes the rotation tensor `R` to rotate the points in `V1` to best match the
 points in `V2`. 
 
 # Reference
-[Wolfgang Kabsch, A solution for the best rotation to relate two sets of vectors, Acta Crystallographica Section A, vol. 32, no. 5, pp. 922-923, 1976, doi: 10.1107/S0567739476001873](https://doi.org/10.1107/S0567739476001873) 
+[Wolfgang Kabsch, _A solution for the best rotation to relate two sets of vectors_, Acta Crystallographica Section A, vol. 32, no. 5, pp. 922-923, 1976, doi: 10.1107/S0567739476001873](https://doi.org/10.1107/S0567739476001873) 
 [https://en.wikipedia.org/wiki/Kabsch_algorithm](https://en.wikipedia.org/wiki/Kabsch_algorithm) 
 """
 function kabsch_rot(V1::Vector{Point{ND,TV1}},V2::Vector{Point{ND,TV2}}) where ND where TV1<:Real where TV2<:Real
@@ -2937,7 +3303,17 @@ function sweeploft(Vc::Vector{Point{ND,TV}},V1::Vector{Point{ND,TV}},V2::Vector{
     return F,V
 end
 
+"""
+    revolvecurve(Vc::Vector{Point{ND,TV}},θ=2.0*pi; s=0, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad)  where ND where TV<:Real   
 
+Revolves curves to build surfaces 
+
+# Description
+
+This function rotates the curve `Vc` by the angle `θ`, in the direction `s`,
+around the vector `n`, to build the output mesh defined by the faces `F` and 
+vertices `V`. 
+"""
 function revolvecurve(Vc::Vector{Point{ND,TV}},θ=2.0*pi; s=0, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad)  where ND where TV<:Real   
     # Compute num_steps from curve point spacing
     if isnothing(num_steps)
@@ -3032,4 +3408,195 @@ function batman(n::Int64; symmetric = false, dir=:acw)
     end
     V = V.-mean(V,dims=1)
     return V
+end
+
+"""
+    tridisc(r=1.0,n=0)
+
+# Description
+
+Generates the faces `F` and vertices `V` for a triangulated disc (circle). The 
+algorithm starts with a triangulated hexagon (obtained if `n=0`) and uses 
+iterative subtriangulation circular coordinate correction to obtain the final 
+mesh. 
+"""
+function tridisc(r=1.0,n=0)
+    # Create a triangulated hexagon
+    V = circlepoints(r,6)
+    push!(V,Point{3,Float64}(0.0,0.0,0.0))
+    F = [TriangleFace{Int64}(1,2,7), TriangleFace{Int64}(2,3,7), TriangleFace{Int64}(3,4,7), TriangleFace{Int64}(4,5,7), TriangleFace{Int64}(5,6,7), TriangleFace{Int64}(6,1,7)]
+
+    # Refine mesh n times
+    if n>0
+        @inbounds for _ = 1:n            
+            F,V = subtri(F,V,1; method = :linear)
+            indB = elements2indices(boundaryedges(F))
+            V[indB] = r.*V[indB]./norm.(V[indB]) # Push to conform to circle 
+        end
+        indB = elements2indices(boundaryedges(F))
+    end
+    return F,V
+end
+
+# """
+#     triplate(xSpan,ySpan,pointSpacing::T) where T <: Real    
+
+# # Description
+# Generates a triangulated mesh for a plate.
+# """
+# function triplate(xSpan,ySpan,pointSpacing::T) where T <: Real    
+#     return gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = true, rectangular=true)
+# end
+
+"""
+    regiontrimesh(VT,R,P)
+
+# Description
+
+Generates a multi-region triangle mesh for the input regions. The boundary 
+curves for all regions are containedin the tuple `VT`. Each region to be meshed
+is next defined using a tuple `R` containing indices into the curve typle `VT`. 
+If an entry in `R` contains only one index then the entire curve domain is 
+meshed. If `R` contains multiple indices then the first index is assumed to be 
+for the outer boundary curve, while all subsequent indices are for boundaries 
+defining holes in this region. 
+"""
+function regiontrimesh(VT,R,P)
+    V = Vector{Point{3,Float64}}() # eltype(VT)()
+    F = Vector{TriangleFace{Int64}}()
+    C = Vector{Float64}()
+    for q in eachindex(R)        
+        r = R[q] # The curve indices for the current region       
+        pointSpacing = P[q] # Region point spacing
+        Vn = reduce(vcat,VT[r]) # The current curve point set 
+        numCurvePoints = length(Vn) # Number of points in the current curve set
+
+        # Creating constraints
+        constrained_segments = Vector{Vector{Vector{Int64}}}()
+        n = 1        
+        for i in eachindex(r)
+            m = length(VT[r[i]])            
+            ind = append!(collect(n:(n-1)+m),n)
+            if i>1 #&& i==length(r)
+                reverse!(ind)
+            end
+            append!(constrained_segments,[[ind]])
+            n += m
+        end
+        
+        # Adding interior points 
+        xSpan =[minimum([v[1] for v in Vn]),maximum([v[1] for v in Vn])]
+        ySpan =[minimum([v[2] for v in Vn]),maximum([v[2] for v in Vn])]
+        Vg = gridpoints_equilateral(xSpan,ySpan,pointSpacing)
+        Vn = append!(Vn,Vg)
+        
+        # Initial triangulation 
+        constrained_segments_ori = deepcopy(constrained_segments) # Clone since triangulate can add new constraint points
+        TRn = triangulate(Vn; boundary_nodes=constrained_segments)
+        Fn =  [TriangleFace{Int64}(tr) for tr in TRn.triangles]
+
+        # Check if new boundary points were introduced and remove if needed 
+        Eb = boundaryedges(Fn)
+        indB = unique(reduce(vcat,Eb))
+        indRemove = indB[indB.>numCurvePoints]        
+        if !iszero(length(indRemove))                        
+            logicKeep = fill(true,length(Vn))
+            logicKeep[indRemove] .= false
+            indKeep = findall(logicKeep)
+            indFix = zeros(Int64,length(Vn))
+            indFix[indKeep] = 1:length(indKeep)
+            Vn = Vn[indKeep]
+            constrained_segments = [[indFix[c[1]]] for c in constrained_segments_ori] # Fix indices after point removal                
+            TRn = triangulate(Vn; boundary_nodes=constrained_segments)
+            Fn = [TriangleFace{Int64}(tr) for tr in TRn.triangles]
+            Vn = TRn.points
+        end
+
+        # Remove unused points (e.g. outside region)
+        Fn,Vn,indFix1 = remove_unused_vertices(Fn,Vn)
+        constrained_segments = [[indFix1[c[1]]] for c in constrained_segments]  # Fix indices after point removal 
+
+        # Remove 3 and 4 connected points
+        E_uni = meshedges(Fn; unique_only=false)
+        con_V2V = con_vertex_vertex(E_uni,Vn)
+        nCon = map(length,con_V2V)
+        Eb = boundaryedges(Fn)
+        indB = unique(reduce(vcat,Eb))
+
+        indLowCon = findall(nCon.<5)
+        indRemove = indLowCon[ [!in(i,indB) for i in indLowCon] ]
+
+        logicKeep = fill(true,length(Vn))
+        logicKeep[indRemove] .= false
+        indKeep = findall(logicKeep)
+        indFix = zeros(Int64,length(Vn))
+        indFix[indKeep] = 1:length(indKeep)
+
+        Vn = Vn[indKeep] # Remove points 
+        constrained_segments = [[indFix[c[1]]] for c in constrained_segments] # Fix indices after point removal 
+
+        # Redo triangulation after points have been removed
+        TRn = triangulate(Vn; boundary_nodes=constrained_segments)
+        Fn = [TriangleFace{Int64}(tr) for tr in TRn.triangles]
+        Vn = TRn.points
+        Fn,Vn,indFix = remove_unused_vertices(Fn,Vn)
+
+        # Smoothen mesh using Laplacian smoothing
+        Eb = boundaryedges(Fn)
+        indB = unique(reduce(vcat,Eb))
+        n = 25
+        λ = 0.5
+        Vn = smoothmesh_laplacian(Fn,Vn, n, λ; constrained_points=indB)
+
+        # Append to output 
+        if !iszero(length(V))
+            Fn = [f.+length(V) for f in Fn] # Shift indices of new faces
+        end
+        append!(V,Vn) # Append vertices 
+        append!(F,Fn) # Append faces 
+        append!(C,fill(q,length(Fn))) # Append color data 
+    end
+    F,V,_ = mergevertices(F,V) # merge shared vertices
+    return F,V,C 
+end
+
+"""
+    scalesimplex(F,V,s)
+Scales faces (or general simplices) wrt their centre. 
+
+# Description
+
+This function scales each simplex (e.g. a face) wrt their centre (mean of 
+coordinates). This function is useful in generating lattice structures from 
+elements as well as to create visualisations whereby "looking into" the mesh is
+needed. 
+"""
+function scalesimplex(F,V,s)
+    F,V = separate_vertices(F,V) # separate_vertices
+    for f in F 
+        vm = mean(V[f],dims=1)
+        V[f] = s.*(V[f].-vm).+vm        
+    end
+    return F,V
+end
+
+"""
+    subcurve(V,n)
+
+Adds points between each curve point.  
+
+# Description
+
+This function adds `n` points between each current point on the curve `V`.
+"""
+function subcurve(V,n)
+    m = length(V)
+    Vn = Vector{Point{3,Float64}}(undef,m+(m-1)*n)    
+    for q = 1:lastindex(V)-1                
+        vn = range(V[q],V[q+1],n+2)
+        i1 = 1+(q-1)*(n+1)
+        Vn[i1:i1+n] = vn[1:end-1]
+    end
+    Vn[end] = V[end]
+    return Vn
 end

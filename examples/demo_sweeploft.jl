@@ -5,7 +5,7 @@ using Rotations
 using Statistics
 using LinearAlgebra
 
-testCase = 1
+testCase = 3
 
 if testCase == 1    
     # Define guide curve
@@ -57,7 +57,7 @@ elseif testCase == 2
         Q = RotXYZ(0.0,0.5*π,0.0) # Define a rotation tensor using Euler angles
         V2 = [(Q*v) .+ Vc[end] for v ∈ V2] 
 elseif testCase == 3
-    nc = 201 # Number of points on guide curve
+    nc = 401 # Number of points on guide curve
     r = 10.0
     a = 4*π
     Vc = [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),10.0*(t/(a/2))) for t ∈ range(0,a,nc)]
@@ -179,32 +179,76 @@ end
 # face_type=:quad
 F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist=0)
 F = invert_faces(F)
-C = ceil.(collect(1:length(V))./length(Vc))
+C = ceil.(collect(1:length(V))./(length(V1)))
 
 # Visualization
-fig = Figure(size = (800,800))
-ax = Axis3(fig[1, 1],aspect = :data,title="Swept lofting")
 
-stepRange1 = -10:1:10
-hSlider1 = Slider(fig[2, 1], range = stepRange1, startvalue = 0,linewidth=30)
+cMap = Makie.Reverse(:Spectral)
+markersize = 6
+linewidth = 2
 
-# scatter!(ax, Vc,markersize=8,color=:black)
-hp1 = lines!(ax, Vc,linewidth=4,color=:black)
+vizCase = 2
+if vizCase ==1 
 
-scatter!(ax, V1,markersize=8,color=:blue)
-hp2 = lines!(ax, V1,linewidth=4,color=:blue)
+    CF = round.(Int64,vertex2simplexdata(F,C))
 
-scatter!(ax, V2,markersize=8,color=:red)
-hp3 = lines!(ax, V2,linewidth=4,color=:red)
+    fig = Figure(size = (1600,1600))
+    ax = Axis3(fig[1, 1],aspect = :data,title="Swept lofting")
 
-# hp1 = poly!(ax, GeometryBasics.Mesh(V,F), strokecolor=:black, strokewidth=0.5,color=C,transparency=false,shading = FastShading,colormap=:Spectral)
-hp1 = mesh!(ax, GeometryBasics.Mesh(V,F), color=C,transparency=false,shading = FastShading,colormap=Makie.Reverse(:Spectral))
+    stepRange1 = 0:maximum(C)
 
-on(hSlider1.value) do stepIndex1
-    F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist=stepIndex1)
-    F = invert_faces(F)   
-    hp1[1] = GeometryBasics.Mesh(V,F)    
+    hSlider1 = Slider(fig[2, 1], range = stepRange1, startvalue = 0,linewidth=30)
+
+    # scatter!(ax, Vc,markersize=markersize,color=:black)
+    hp1 = lines!(ax, Vc,linewidth=linewidth,color=:black)
+
+    scatter!(ax, V1,markersize=markersize,color=:blue)
+    hp2 = lines!(ax, V1,linewidth=linewidth,color=:blue)
+
+    scatter!(ax, V2,markersize=markersize,color=:red)
+    hp3 = lines!(ax, V2,linewidth=linewidth,color=:red)
+
+    # hp1 = poly!(ax, GeometryBasics.Mesh(V,F), color=C, strokecolor=:black, strokewidth=0.5,transparency=false,shading = FastShading,colormap=:Spectral)
+    hp1 = mesh!(ax, GeometryBasics.Mesh(V,F), color=C,transparency=false,shading = FastShading,colormap=cMap)
+
+    on(hSlider1.value) do stepIndex1        
+        hp1[1] = GeometryBasics.Mesh(V,F[CF.<=stepIndex1])  
+    end
+
+    # fileName = comododir()*"/assets/img/sweep_loft_anim_01.mp4"
+    # slider2anim(fig,hSlider1,fileName; backforth=true, duration=10)
+
+    fig 
+
+elseif vizCase ==2 
+    fig = Figure(size = (800,800))
+    ax = Axis3(fig[1, 1],aspect = :data,title="Swept lofting")
+
+    stepRange1 = -10:1:10
+    hSlider1 = Slider(fig[2, 1], range = stepRange1, startvalue = 0,linewidth=30)
+
+    # scatter!(ax, Vc,markersize=markersize,color=:black)
+    hp1 = lines!(ax, Vc,linewidth=linewidth,color=:black)
+
+    scatter!(ax, V1,markersize=markersize,color=:blue)
+    hp2 = lines!(ax, V1,linewidth=linewidth,color=:blue)
+
+    scatter!(ax, V2,markersize=markersize,color=:red)
+    hp3 = lines!(ax, V2,linewidth=linewidth,color=:red)
+
+    # hp1 = poly!(ax, GeometryBasics.Mesh(V,F), strokecolor=:black, strokewidth=0.5,color=C,transparency=false,shading = FastShading,colormap=:Spectral)
+    hp1 = mesh!(ax, GeometryBasics.Mesh(V,F), color=C,transparency=false,shading = FastShading,colormap=cMap)
+
+    on(hSlider1.value) do stepIndex1
+        F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist=stepIndex1)
+        F = invert_faces(F)   
+        hp1[1] = GeometryBasics.Mesh(V,F)    
+    end
+
+    # fileName = comododir()*"/assets/img/sweep_loft_anim_02.mp4"
+    # slider2anim(fig,hSlider1,fileName; backforth=true, duration=3)
+
+    fig
+
 end
-
-fig 
 

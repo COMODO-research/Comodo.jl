@@ -21,16 +21,19 @@ close_loop = true
 face_types=[:quad,:tri_slash,:tri,:quad2tri]
 
 ## Visualization
+markersize = 15
+linewidth = 3 
+
 fig = Figure(size=(1200,600))
 
 for q = 1:4
     F,V = loftlinear(V1,V2;num_steps=num_steps,close_loop=close_loop,face_type=face_types[q])
 
     ax1 = Axis3(fig[1, q], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A lofted surface: " * string(face_types[q]))
-    hp1=lines!(ax1,V1, linewidth = 6, color = :blue)
-    scatter!(V1,markersize=25,color = :blue)
-    hp2=lines!(ax1,V2, linewidth = 6, color = :red)
-    scatter!(V2,markersize=25,color = :red)
+    hp1=lines!(ax1,V1, linewidth = linewidth, color = :blue)
+    scatter!(V1,markersize=markersize,color = :blue)
+    hp2=lines!(ax1,V2, linewidth = linewidth, color = :red)
+    scatter!(V2,markersize=markersize,color = :red)
     hp3=poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,color=:white,shading=FastShading,transparency=false)
     # normalplot(ax1,GeometryBasics.Mesh(V,F); type_flag=:face, color=:black)
 end

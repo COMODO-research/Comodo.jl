@@ -25,7 +25,7 @@ Eun,Vn = separate_vertices(Eu,V)
 Cn = simplex2vertexdata(Eun,C,Vn)
 
 fig = Figure(size=(1200,1200))
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary curve Visualization")
+ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Counts for faces connected to edges")
 
 hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
 hp2 = wireframe!(ax1,GeometryBasics.Mesh(Vn,Eun), linewidth=5,color=Cn,colormap= colormap=Makie.Categorical(:viridis))

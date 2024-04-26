@@ -6,7 +6,7 @@ using LinearAlgebra
 using ProgressMeter
 
 # Example geometry
-testCase = 3
+testCase = 6
 if testCase == 1
     s=1.0
     V=Vector{GeometryBasics.Point{3, Float64}}(undef,5)
@@ -43,16 +43,16 @@ elseif testCase==5 # Unmerged STL, each triangle is seperate group
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
-    F = togeometrybasics_faces(faces(M))
-    V = togeometrybasics_points(coordinates(M))
+    F = tofaces(faces(M))
+    V = topoints(coordinates(M))
 elseif testCase==6 # Merged STL for single object
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
-    F = togeometrybasics_faces(faces(M))
-    V = togeometrybasics_points(coordinates(M))
+    F = tofaces(faces(M))
+    V = topoints(coordinates(M))
     F,V,_ = mergevertices(F,V)
 elseif testCase==7 # Merged STL for single object
     # Loading a mesh
@@ -60,8 +60,8 @@ elseif testCase==7 # Merged STL for single object
     M = load(fileName_mesh)
 
     # Obtain mesh faces and vertices
-    F = togeometrybasics_faces(faces(M))
-    V = togeometrybasics_points(coordinates(M))
+    F = tofaces(faces(M))
+    V = topoints(coordinates(M))
     F,V,_ = mergevertices(F,V)
 end
 
@@ -76,7 +76,7 @@ fig = Figure(size=(800,800))
 
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Distances")
 hp1 = mesh!(ax1,GeometryBasics.Mesh(V,F), color=d, shading = FastShading, transparency=false,colormap=Reverse(:Spectral))
-scatter!(ax1,V[ind],color=:black,markersize=25)
+# scatter!(ax1,V[ind],color=:black,markersize=25)
 Colorbar(fig[1, 2], hp1)
 
 ax2 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Point regions")

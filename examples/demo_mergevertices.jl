@@ -50,6 +50,7 @@ poly!(ax2,M2,strokewidth=2,color=:white, shading = FastShading)
 
 fig[2, :]=hSlider
 
-fig
+fileName = comododir()*"/assets/img/mergevertices_anim.gif"
+slider2anim(fig,hSlider,fileName; backforth=true, duration=2)
 
-    
+fig
