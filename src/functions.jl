@@ -190,7 +190,6 @@ flat such that all x-coordinates on the left are at the minimum in `xSpan` and
 all on the right are at the maximum in `xSpan`, however, this does result in a 
 non-uniform spacing at these edges.  
 """
-
 function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Union{Vector{TT},Tuple{TT,TT}},pointSpacing::T; return_faces = false, rectangular=false) where T <: Real where TT <: Real
     minX = minimum(xSpan)
     maxX = maximum(xSpan)
@@ -1393,7 +1392,6 @@ defined by `VM` to the "standard" format:
 For matrix input each row is considered a point. For vector input each vector 
 entry is considered a point.     
 """
-
 function topoints(VM::Matrix{T}) where T<: Real
     m = size(VM,2)
     return [Point{m, T}(v) for v in eachrow(VM)]
@@ -1445,7 +1443,6 @@ Returns the edge cross product, useful for nomal direction and area computations
 This function computes the so-called edge-cross-product for a input mesh that is
 either defined by the faces `F` and vertices `V` or the mesh `M`. 
 """
-
 function edgecrossproduct(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
     C = Vector{GeometryBasics.Vec{ND, TV}}(undef,length(F)) # Allocate array cross-product vectors
     n =  length(F[1]) # Number of nodes per face    
@@ -3303,7 +3300,17 @@ function sweeploft(Vc::Vector{Point{ND,TV}},V1::Vector{Point{ND,TV}},V2::Vector{
     return F,V
 end
 
+"""
+    revolvecurve(Vc::Vector{Point{ND,TV}},θ=2.0*pi; s=0, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad)  where ND where TV<:Real   
 
+Revolves curves to build surfaces 
+
+# Description
+
+This function rotates the curve `Vc` by the angle `θ`, in the direction `s`,
+around the vector `n`, to build the output mesh defined by the faces `F` and 
+vertices `V`. 
+"""
 function revolvecurve(Vc::Vector{Point{ND,TV}},θ=2.0*pi; s=0, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad)  where ND where TV<:Real   
     # Compute num_steps from curve point spacing
     if isnothing(num_steps)
