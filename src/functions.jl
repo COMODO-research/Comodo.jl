@@ -3550,8 +3550,19 @@ function regiontrimesh(VT,R,P)
     return F,V,C 
 end
 
+"""
+    scalesimplex(F,V,s)
+Scales faces (or general simplices) wrt their centre. 
+
+# Description
+
+This function scales each simplex (e.g. a face) wrt their centre (mean of 
+coordinates). This function is useful in generating lattice structures from 
+elements as well as to create visualisations whereby "looking into" the mesh is
+needed. 
+"""
 function scalesimplex(F,V,s)
-    F,V =separate_vertices(F,V) # separate_vertices
+    F,V = separate_vertices(F,V) # separate_vertices
     for f in F 
         vm = mean(V[f],dims=1)
         V[f] = s.*(V[f].-vm).+vm        
@@ -3559,7 +3570,15 @@ function scalesimplex(F,V,s)
     return F,V
 end
 
+"""
+    subcurve(V,n)
 
+Adds points between each curve point.  
+
+# Description
+
+This function adds `n` points between each current point on the curve `V`.
+"""
 function subcurve(V,n)
     m = length(V)
     Vn = Vector{Point{3,Float64}}(undef,m+(m-1)*n)    
