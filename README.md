@@ -11,7 +11,15 @@ Comodo.jl started out as a modern re-implementation in Julia of the MATLAB toolb
 
 # Installation
 ```julia
-pkg> add https://github.com/COMODO-research/Comodo.jl
+julia> ]
+(@v1.xx) pkg> add https://github.com/COMODO-research/Comodo.jl
+```
+
+or 
+
+```julia
+julia> using Pkg
+julia> Pkg.add(url = "https://github.com/COMODO-research/Comodo.jl")
 ```
 
 # Getting started
