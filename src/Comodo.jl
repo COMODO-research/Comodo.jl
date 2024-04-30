@@ -33,7 +33,7 @@ export wrapindex, edgeangles, count_edge_face, boundaryedges, edges2curve
 export pointspacingmean, extrudecurve, meshgroup, ray_triangle_intersect
 export distmarch, mesh_curvature_polynomial, curve_length, evenly_sample, evenly_space
 export invert_faces, kabsch_rot, sweeploft, loftpoints2surf, revolvecurve
-export batman, tridisc, triplate, regiontrimesh, scalesimplex, subcurve
+export batman, tridisc, triplate, regiontrimesh, scalesimplex, subcurve, dualclad
 
 # Export functions: Visualization related
 export slidercontrol, slider2anim, dirplot, normalplot

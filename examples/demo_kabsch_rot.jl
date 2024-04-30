@@ -21,7 +21,6 @@ M = load(fileName_mesh)
 # Obtain mesh faces and vertices
 F = faces(M)
 V1 = topoints(coordinates(M))
-V1 = [Point{3, Float64}(v) for v in V1]
 
 F,V1 = mergevertices(F,V1)
 

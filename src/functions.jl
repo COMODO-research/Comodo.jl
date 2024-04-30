@@ -222,7 +222,6 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
                     x = maxX
                 end
             end
-
             V[c] = Point{3}{Float64}(x,yRange[j],0.0)
             c += 1
         end
@@ -3572,26 +3571,32 @@ elements as well as to create visualisations whereby "looking into" the mesh is
 needed. 
 """
 function scalesimplex(F,V,s)
-    F,V = separate_vertices(F,V) # separate_vertices
-    for f in F 
-        vm = mean(V[f],dims=1)
-        V[f] = s.*(V[f].-vm).+vm        
+    Fs,Vs = separate_vertices(F,V) # separate_vertices
+    for (i,f) in enumerate(Fs) 
+        vm = mean(Vs[f],dims=1)
+        if length(s)==length(F)
+            Vs[f] = s[i].*(Vs[f].-vm).+vm    
+        elseif length(s)==length(V)
+            Vs[f] = s[F[i]].*(Vs[f].-vm).+vm    
+        elseif isone(length(s))
+            Vs[f] = s.*(Vs[f].-vm).+vm    
+        end    
     end
-    return F,V
+    return Fs,Vs
 end
 
 """
     subcurve(V,n)
 
-Adds points between each curve point.  
+Adds `n` points between each curve point.  
 
 # Description
 
 This function adds `n` points between each current point on the curve `V`.
 """
-function subcurve(V,n)
+function subcurve(V::Vector{Point{ND,TV}},n) where ND where TV<:Real
     m = length(V)
-    Vn = Vector{Point{3,Float64}}(undef,m+(m-1)*n)    
+    Vn = Vector{Point{ND,TV}}(undef,m+(m-1)*n)    
     for q = 1:lastindex(V)-1                
         vn = range(V[q],V[q+1],n+2)
         i1 = 1+(q-1)*(n+1)
@@ -3599,4 +3604,86 @@ function subcurve(V,n)
     end
     Vn[end] = V[end]
     return Vn
+end
+
+
+"""
+    dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s::T; connectivity=:face) where N where TF<:Integer where ND where TV<:Real where T<:Real
+
+Returns a surface conforming dual lattice
+
+# Description
+ 
+"""
+function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connectivity=:face) where N where TF<:Integer where ND where TV<:Real
+    Fs,Vs = scalesimplex(F,V,s) # Scaled faces
+
+    # All non-unique mesh edges 
+    E = meshedges(F;unique_only=false) 
+    E_Fs = meshedges(Fs;unique_only=false)
+
+    if connectivity == :face 
+        # Compute dict to find partner edges, unique edges as well as reverse indices for unique mapping
+        E_sort = sort.(E) 
+        d = Dict{eltype(E),Vector{Int64}}() # Use dict to keep track of used values    
+        Eu = Vector{eltype(E)}()
+        indReverse = Vector{Int64}(undef,length(E)) 
+        j=0
+        for (i,e) in enumerate(E_sort)          
+            if !haskey(d, e)    
+                j+=1 # Increment counter        
+                d[e]= [i]  
+                indReverse[i] = j  # Store inverse index    
+                push!(Eu, E[i]) #Grow unique set      
+            else
+                push!(d[e],i)    
+                indReverse[i] = indReverse[d[e][1]]      
+            end
+        end  
+
+        # Check for boundary faces 
+        count_E2F = count_edge_face(F,Eu,indReverse)
+        indBoundary = findall(isone.(count_E2F))
+        Eb = Eu[indBoundary]
+
+        indX = zeros(Int64,length(Eu))
+        indX[indBoundary]=1:length(indBoundary)
+        indX_E = indX[indReverse]
+
+        if !isempty(Eb)
+            Ebs,Vbs = scalesimplex(Eb,V,s)
+            Ebs,Vbs = remove_unused_vertices(Ebs,Vbs)
+            Ebs = [e.+length(Vs) for e in Ebs]
+            append!(Vs,Vbs) # Append boundary edge points 
+        end
+
+        Fq = Vector{QuadFace{Int64}}(undef,length(Eu))
+        for (i,e) in enumerate(Eu)
+            ii = d[sort(e)]
+            if length(ii)==2
+                Fq[i] = (E_Fs[ii[1]][2],E_Fs[ii[1]][1],E_Fs[ii[2]][2],E_Fs[ii[2]][1])
+            else
+                ii_b = indX_E[ii[1]]
+                Fq[i] = (E_Fs[ii[1]][2],E_Fs[ii[1]][1],Ebs[ii_b][1],Ebs[ii_b][2])
+            end
+        end
+    elseif connectivity == :edge
+        Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+
+        Es,V_Es = scalesimplex(Eu,V,s)
+        Es = [e.+length(Vs) for e in Es]
+        append!(Vs,V_Es) # Append boundary edge points 
+        
+        Fq = Vector{QuadFace{Int64}}(undef,length(E_Fs))
+        for i in eachindex(E_Fs)
+            ii = indReverse[i]
+            if E[i][1] == Eu[ii][1] # A first occurance edge, order matches
+                Fq[i] = (E_Fs[i][2],E_Fs[i][1],Es[ii][1],Es[ii][2])
+            else # A second occurance edge, needs inversion
+                Fq[i] = (E_Fs[i][2],E_Fs[i][1],Es[ii][2],Es[ii][1])
+            end
+        end
+    end
+
+    return Fs,Fq,Vs
 end
