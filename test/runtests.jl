@@ -1441,6 +1441,30 @@ end
         [-0.5150154647544891, 0.10752983753681045, -0.4922839938894113]], atol=eps_level)
     end
 
+    @testset "Loop, unconstrained boundary" begin
+        # Example with boundary edges (extruded prism)
+        r = 1.0
+        nc = 3
+        Vc = circlepoints(r,nc;dir=:cw)    
+        d = norm(Vc[1]-Vc[2])        
+        s = 1    
+        F,V = extrudecurve(Vc,d;s=s, num_steps=2, close_loop=true,face_type=:tri_slash)
+        
+        Fn, Vn = subtri(F, V, 0; method=:Loop, constrain_boundary=false)
+        @test Fn == F
+        @test Vn == V
+
+        Fn, Vn = subtri(F, V, n; method=:Loop, constrain_boundary=false)
+        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+
+        @test eltype(F) == eltype(Fn)
+        @test length(Fn) == 4^n*length(F)        
+        @test eltype(V) == eltype(Vn)        
+        @test isapprox(Vn[ind], Point{3, Float64}[[0.53125, 3.469446951953614e-17, 0.0], [-0.4531249999999999, 1.1102230246251565e-16, 1.7320508075688776], 
+        [-0.03125000000000011, -0.4871392896287467, 0.8660254037844388], [0.2265625000000002, 0.39241776108982385, 1.2990381056766582], 
+        [-0.2656249999999998, 0.4600759957604832, 1.2990381056766582], [-0.031249999999999778, 0.48713928962874686, 1.7320508075688776]], atol=eps_level)
+    end
+
     @testset "Loop, constrained boundary" begin
         # Example with boundary edges (extruded prism)
         r = 1.0
@@ -1510,6 +1534,29 @@ end
         [0.18414681640860342, -0.18414681640860342, -0.4257509268592806], [0.24244200756986245, 0.31179169810728824, -0.31179169810728824], 
         [-0.44889359308574917, 0.19141642225574024, 0.09422035643025145], [0.0977285611909523, -0.0977285611909523, 0.47360764269461497], 
         [0.0907121516695506, -0.407828803431474, -0.2770228830681994]], atol=eps_level)        
+    end
+
+    @testset "Catmull_Clark, unconstrained boundary" begin
+        # Example with boundary edges (extruded prism)
+        r = 1.0
+        nc = 3
+        Vc = circlepoints(r,nc;dir=:cw)    
+        d = norm(Vc[1]-Vc[2])        
+        s = 1    
+        F,V = extrudecurve(Vc,d;s=s, num_steps=2, close_loop=true,face_type=:quad)
+
+        Fn, Vn = subquad(F, V, 0; method=:Catmull_Clark, constrain_boundary=false)
+        @test Fn == F
+        @test Vn == V
+
+        Fn, Vn = subquad(F, V, n; method=:Catmull_Clark, constrain_boundary=false)
+        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+        @test eltype(F) == eltype(Fn)
+        @test length(Fn) == 4^n*length(F)        
+        @test eltype(V) == eltype(Vn)  
+        @test isapprox(Vn[ind], Point{3, Float64}[[0.5078125, 3.2959746043559335e-17, 0.0], [0.42285156249999994, -0.2114319833458102, 0.0], 
+        [-0.4296874999999999, 0.13531646934131863, 0.8660254037844388], [-0.3945312499999999, 0.26048420348203827, 1.0825317547305486], 
+        [-0.1484375000000001, -0.47360764269461486, 1.515544456622768], [0.09765625000000021, 0.43977852535928535, 0.2165063509461097]], atol=eps_level)        
     end
 
     @testset "Catmull_Clark, constrained boundary" begin
@@ -4586,4 +4633,39 @@ end
         [-1.0, -1.0, 0.5], [-1.0, -1.0, -0.5], [1.0, 0.5, -1.0], [1.0, -0.5, -1.0],
          [-0.5, -1.0, -1.0], [0.5, -1.0, -1.0]],atol=eps_level)
     end    
+
+    @testset "Triangles with boundary" begin
+        # Cut sphere 
+        F,V = geosphere(1,1.0)
+        B = [v[3]>0 for v in V]
+        BF = [all(B[f]) for f in F]
+        F = F[BF]
+        F,V = remove_unused_vertices(F,V)
+        E = meshedges(F; unique_only = true)
+        Eb = boundaryedges(F)
+
+        Fs,Fsq,Vs = dualclad(F,V,0.5; connectivity=:face)
+        ind = round.(Int64,range(1,length(Vs),6)) # Sample indices
+
+        @test length(Fs) == length(F)
+        @test length(Fsq) == length(E)
+        @test length(Vs) == length(F)*length(F[1])+length(Eb)*2
+        @test isapprox(Vs[ind],Point{3, Float64}[[-0.42418082864578954, -0.6741808286457895, 0.5196723314583158], 
+        [0.6741808286457895, 0.5196723314583158, 0.42418082864578954], [-0.28934466291663163, -0.6784693473323118, 0.6099446337878311], 
+        [-0.33333333333333337, 0.2936331816031539, 0.8477864643086384], [-0.1545084971874737, -0.8090169943749475, 0.5], 
+        [0.8194254478692206, 0.375, 0.36319552381099396]],atol=eps_level)
+
+
+        Fs,Fsq,Vs = dualclad(F,V,0.5; connectivity=:edge)
+        ind = round.(Int64,range(1,length(Vs),6)) # Sample indices
+
+        @test length(Fs) == length(F)
+        @test length(Fsq) == length(F)*length(F[1])
+        @test length(Vs) == length(F)*length(F[1]) + length(E)*2
+        @test isapprox(Vs[ind],Point{3, Float64}[[-0.42418082864578954, -0.6741808286457895, 0.5196723314583158], 
+        [0.33333333333333337, 0.2936331816031539, 0.8477864643086384], [0.7852700379638512, -0.1348361657291579, 0.5368264062044048], 
+        [0.375, 0.23176274578121053, 0.8567627457812106], [-0.07725424859373685, -0.5965525826830871, 0.76298810626403], 
+        [0.8194254478692206, 0.375, 0.36319552381099396]],atol=eps_level)
+    end
+
 end
