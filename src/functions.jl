@@ -1575,14 +1575,25 @@ method both refines and smoothes the geometry through spline approximation.
 1. [Charles Loop, _Smooth Subdivision Surfaces Based on Triangles_, M.S. Mathematics Thesis, University of Utah. 1987.](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/thesis-10.pdf)
 2. [Jos Stam, Charles Loop, _Quad/Triangle Subdivision_, doi: 10.1111/1467-8659.t01-2-00647](https://doi.org/10.1111/1467-8659.t01-2-00647)
 """
-function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int64; method = :linear) where TF<:Integer where ND where TV <: Real
+function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int64; method = :linear, constrain_boundary=false) where TF<:Integer where ND where TV <: Real
     
     if iszero(n)
         return F,V
     elseif isone(n)
         E = meshedges(F)
         Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
-        
+        # Check for boundary edges        
+        count_E2F = count_edge_face(F,Eu,indReverse)
+        B_boundary = isone.(count_E2F)
+        if any(B_boundary)
+            treatBoundary = true
+            Eb = Eu[B_boundary]
+            indB = unique(reduce(vcat,Eb))
+            con_V2V = con_vertex_vertex(Eb,V)
+        else
+            treatBoundary = false
+        end
+
         Fm1 = [TriangleFace{TF}(a.+length(V)) for a in eachrow(reshape(indReverse,length(F),length(F[1])))] 
         Fm2 = Vector{TriangleFace{TF}}(undef,length(Fm1))
         Fm3 = Vector{TriangleFace{TF}}(undef,length(Fm1))
@@ -1603,39 +1614,48 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int64; meth
             # Create complete point set
             Vn = [V; simplexcenter(Eu,V)]  # Old and new mid-edge points          
         elseif method == :Loop #Loop subdivision 
-    
             # New mid-edge like vertices
             Vm = Vector{Point{ND,TV}}(undef,length(Eu)) 
-            for q in eachindex(Eu) # For each edge index                        
-                F_touch = F[con_E2F[q]] # Faces sharing current edge, mostly 2 but 1 for a boundary edge
-                indVerticesTouch = Vector{TF}() 
-                for f in F_touch        
-                    b = f.!=Eu[q][1] .&& f.!=Eu[q][2]      
-                    if any(b)  
-                        append!(indVerticesTouch,f[b])           
-                    end
-                end        
-                Vm[q]=3/8 .*(V[Eu[q][1]] .+ V[Eu[q][2]])  .+ 1/8 .* (V[indVerticesTouch[1]] .+ V[indVerticesTouch[2]])
+            for q in eachindex(Eu) # For each edge index       
+                if treatBoundary && B_boundary[q]              
+                    Vm[q] = 1/2 .*(V[Eu[q][1]] .+ V[Eu[q][2]]) # Normal mid-edge point
+                else
+                    F_touch = F[con_E2F[q]] 
+                    indVerticesTouch = Vector{TF}() 
+                    for f in F_touch        
+                        b = f.!=Eu[q][1] .&& f.!=Eu[q][2]      
+                        if any(b)  
+                            append!(indVerticesTouch,f[b])           
+                        end
+                    end                   
+                    Vm[q] = 3/8 .*(V[Eu[q][1]] .+ V[Eu[q][2]])  .+ 1/8 .* (V[indVerticesTouch[1]] .+ V[indVerticesTouch[2]])
+                end
             end
     
             # Modified vertices for original vertices
-            Vv = Vector{Point{ND,TV}}(undef,length(V))
+            Vv = deepcopy(V)
             for q in eachindex(V)            
-                B_vert_face = [any(f.==q) for f in F]
-                F_touch = F[B_vert_face] # Faces mostly 2 but 1 for a boundary edge
-                indVerticesTouch = Vector{TF}()
-                for f in F_touch                
-                    indTouch = f[f.!=q]        
-                    for i in indTouch 
-                        if i ∉ indVerticesTouch 
-                            push!(indVerticesTouch,i)
+                if treatBoundary && in(q,indB)
+                    if !constrain_boundary
+                        Vv[q] = 6/8*V[q] + 1/8*(V[con_V2V[q][1]]+V[con_V2V[q][2]]) 
+                    end
+                else
+                    B_vert_face = [any(f.==q) for f in F]
+                    F_touch = F[B_vert_face] 
+                    indVerticesTouch = Vector{TF}()
+                    for f in F_touch                
+                        indTouch = f[f.!=q]        
+                        for i in indTouch 
+                            if i ∉ indVerticesTouch 
+                                push!(indVerticesTouch,i)
+                            end
                         end
                     end
+                    N = length(indVerticesTouch)                
+                    v_sum = sum(V[indVerticesTouch],dims=1)[1]                
+                    β = 1/N * (5/8-(3/8 +1/4*cos((2*π)/N))^2)        
+                    Vv[q] = (1-N*β) .* V[q] .+ β*v_sum                
                 end
-                N = length(indVerticesTouch)                
-                v_sum = sum(V[indVerticesTouch],dims=1)[1]                
-                β = 1/N * (5/8-(3/8 +1/4*cos((2*π)/N))^2)        
-                Vv[q] = (1-N*β) .* V[q] .+ β*v_sum                
             end    
             # Create complete point set
             Vn = [Vv;Vm] # Updated orignals and new "mid-edge-ish" points
@@ -1646,8 +1666,8 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int64; meth
         return Fn,Vn    
 
     elseif n>1
-        for _ =1:n
-            F,V = subtri(F,V,1; method=method)
+        for _ = 1:n
+            F,V = subtri(F,V,1; method=method, constrain_boundary=constrain_boundary)
         end
         return F,V
     else
@@ -1681,16 +1701,26 @@ spline approximation.
 # References
 1. [E. Catmull and J. Clark, _Recursively generated B-spline surfaces on arbitrary topological meshes_, Computer-Aided Design, vol. 10, no. 6, pp. 350-355, Nov. 1978, doi: 10.1016/0010-4485(78)90110-0](https://doi.org/10.1016/0010-4485(78)90110-0).
 """
-function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int64; method=:linear) where TF<:Integer where ND where TV <: Real
+function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int64; method=:linear, constrain_boundary=false) where TF<:Integer where ND where TV <: Real
     if iszero(n)
         return F,V
     elseif isone(n)
 
         # Get edges
         E = meshedges(F) # Non-unique edges
-
         Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
-        
+        # Check for boundary edges        
+        count_E2F = count_edge_face(F,Eu,indReverse)
+        B_boundary = isone.(count_E2F)
+        if any(B_boundary)
+            treatBoundary = true
+            Eb = Eu[B_boundary]
+            indB = unique(reduce(vcat,Eb))
+            con_V2V = con_vertex_vertex(Eb,V)
+        else
+            treatBoundary = false
+        end
+
         con_F2E = con_face_edge(F,Eu,indReverse)
         con_E2F = con_edge_face(F,Eu,indReverse)
         con_V2E = con_vertex_edge(Eu,V)
@@ -1703,22 +1733,32 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int64; met
             Vn = [V;Ve;Vf] # Joined point set
         elseif method ==:Catmull_Clark
             # Mid face points
-            Vf = simplexcenter(F,V)  
+            Vf = simplexcenter(F,V) # Mid face points
             Ve_mid = simplexcenter(Eu,V) # Mid edge points
 
             # Edge points 
             Ve = Vector{Point{ND,TV}}(undef,length(Eu)) # Initialize edge points
-            for q in eachindex(Eu)                         
-                Ve[q] = (mean(Vf[con_E2F[q]],dims=1)[1] .+ Ve_mid[q])./2.0
+            for q in eachindex(Eu)      
+                if treatBoundary && B_boundary[q]              
+                    Ve[q] = Ve_mid[q] # Normal mid-edge point
+                else                   
+                    Ve[q] = (mean(Vf[con_E2F[q]],dims=1)[1] .+ Ve_mid[q])./2.0
+                end
             end
 
             # Vertex points 
-            Vv = Vector{Point{ND,TV}}(undef,length(V)) # Initialize vertex points
+            Vv = deepcopy(V) # Initialize vertex points
             for q in eachindex(V) # Loop over all vertices
-                indF = con_V2F[q]
-                indE = con_V2E[q]
-                N = length(indF) # Number of faces (or edges) touching this vertex                    
-                Vv[q] = (mean(Vf[indF],dims=1)[1] .+ 2.0.*mean(Ve_mid[indE],dims=1)[1] .+ (N-3.0).*V[q])./N
+                if treatBoundary && in(q,indB)
+                    if !constrain_boundary
+                        Vv[q] = 6/8*V[q] + 1/8*(V[con_V2V[q][1]]+V[con_V2V[q][2]]) 
+                    end
+                else
+                    indF = con_V2F[q]
+                    indE = con_V2E[q]
+                    N = length(indF) # Number of faces (or edges) touching this vertex                    
+                    Vv[q] = (mean(Vf[indF],dims=1)[1] .+ 2.0.*mean(Ve_mid[indE],dims=1)[1] .+ (N-3.0).*V[q])./N
+                end
             end
 
             Vn = [Vv;Ve;Vf] # Joined point set
@@ -1739,7 +1779,7 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int64; met
         return Fn,Vn
     elseif n>1
         for _ =1:n
-            F,V = subquad(F,V,1;method=method)
+            F,V = subquad(F,V,1;method=method, constrain_boundary=constrain_boundary)
         end
         return F,V
     else
@@ -1859,7 +1899,20 @@ function hexbox(boxDim,boxEl)
     return E,V,F,Fb,CFb_type
 end
 
+"""
+    con_face_edge(F,E_uni=nothing,indReverse=nothing)
 
+Returns the edges connected to each face.
+
+# Description
+
+This function computes the face-edge connectivity. The input faces `F` (and 
+optionally also the unique edges `E_uni` and reverse indices `indReverse` to map
+to the non-unique edges, see also `gunique`) are used to create a list of edges 
+connected to each face. If `F` contains N faces then the output contains N such 
+lists. For triangles the output contains 3 edges per faces, for quads 4 per face
+and so on.   
+"""
 function con_face_edge(F,E_uni=nothing,indReverse=nothing)
     if isnothing(E_uni) | isnothing(indReverse)
         E = meshedges(F)
@@ -1869,6 +1922,20 @@ function con_face_edge(F,E_uni=nothing,indReverse=nothing)
 end
 
 
+"""
+con_edge_face(F,E_uni=nothing,indReverse=nothing)
+
+Returns the faces connected to each edge.
+
+# Description
+
+This function computes the edge-face connectivity. The input faces `F` (and 
+optionally also the unique edges `E_uni` and reverse indices `indReverse` to map
+to the non-unique edges, see also `gunique`) are used to create a list of faces 
+connected to each edges. If `E_uni` contains N edges then the output contains 
+N such lists. For non-boundary edges each edge should connect to 2 faces. 
+Boundary edges connect to just 1 face.  
+"""
 function con_edge_face(F,E_uni=nothing,indReverse=nothing)
     if isnothing(E_uni) || isnothing(indReverse)
         E = meshedges(F)
@@ -1886,6 +1953,23 @@ function con_edge_face(F,E_uni=nothing,indReverse=nothing)
 end
 
 
+"""
+    con_face_face(F,E_uni=nothing,indReverse=nothing,con_E2F=nothing,con_F2E=nothing)
+
+Returns the edge-connected faces for each face.
+
+# Description
+
+This function computes the face-face connectivity for each face. The input faces
+`F` are used to create a list of faces connected to each face by a shared edge.
+For non-boundary triangles for instance the output contains 3 edges per faces 
+(which may be less for boundary triangles), and similarly non-boundary quads 
+would each have 4 edge-connected faces. Additional optional inputs include: the 
+unique edges `E_uni`, the reverse indices `indReverse` to map to the non-unique 
+edges (see also `gunique`), as well as the edge-face `con_E2F` and face-edge 
+`con_F2E` connectivity. These are all needed for computing the face-face 
+connectivity and supplying them if already computed therefore save time.  
+"""
 function con_face_face(F,E_uni=nothing,indReverse=nothing,con_E2F=nothing,con_F2E=nothing)
     if length(F)>1 # More than one face so compute connectivity
         if isnothing(E_uni)| isnothing(indReverse)
@@ -1912,7 +1996,22 @@ function con_face_face(F,E_uni=nothing,indReverse=nothing,con_E2F=nothing,con_F2
     end
 end
 
+"""
+    con_face_face_v(F,V=nothing,con_V2F=nothing)
 
+Returns the vertex-connected faces for each face.
+
+# Description
+
+This function computes the face-face connectivity for each face. The input faces
+`F` are used to create a list of faces connected to each face by a shared vertex.
+Additional optional inputs include: the vertices `V`, and the vertex-face 
+connectivity `con_V2F`. In terms of vertices only the number of vertices, i.e. 
+`length(V)` is neede, if `V` is not provided it is assumed that `length(V)` 
+corresponds to the largest index in `F`. The vertex-face connectivity if not
+supplied, will be computed by this function, hence computational time may be saved 
+if it was already computed. 
+"""
 function con_face_face_v(F,V=nothing,con_V2F=nothing)
     if length(F)>1 # More than one face so compute connectivity
         if isnothing(con_V2F) 
@@ -1932,7 +2031,20 @@ function con_face_face_v(F,V=nothing,con_V2F=nothing)
     end
 end
 
+"""
+    con_vertex_simplex(F,V=nothing)
 
+Returns how vertices connect to simplices
+
+# Description
+
+This function computes the vertex-simplex connectivity for each vertex. The input
+simplices `F` are used to create a list of simplices connected to each vertex.
+Additional optional inputs include: the vertices `V`.
+In terms of vertices only the number of vertices, i.e. `length(V)` is needed, 
+if `V` is not provided it is assumed that `length(V)` corresponds to the largest
+index in `F`.  
+"""
 function con_vertex_simplex(F,V=nothing)
     if isnothing(V)
         n = maximum(reduce(vcat,F))
@@ -1948,17 +2060,53 @@ function con_vertex_simplex(F,V=nothing)
     return con_V2F
 end
 
+"""
+    con_vertex_face(F,V=nothing)
 
+Returns how vertices connect to faces
+
+# Description
+This function is an alias of `con_vertex_simplex`, and computes the vertex-face 
+connectivity for each vertex. The input faces `F` are used to create a list of 
+faces connected to each vertex. Additional optional inputs include: the vertices `V`.
+In terms of vertices only the number of vertices, i.e. `length(V)` is needed, 
+if `V` is not provided it is assumed that `length(V)` corresponds to the largest
+index in `F`.  
+"""
 function con_vertex_face(F,V=nothing)
     return con_vertex_simplex(F,V)
 end
 
 
+"""
+    con_vertex_edge(F,V=nothing)
+
+Returns how vertices connect to edges
+
+# Description
+This function is an alias of `con_vertex_simplex`, and computes the vertex-edge 
+connectivity for each vertex. The input edges `E` are used to create a list of 
+edges connected to each vertex. Additional optional inputs include: the vertices `V`.
+In terms of vertices only the number of vertices, i.e. `length(V)` is needed, 
+if `V` is not provided it is assumed that `length(V)` corresponds to the largest
+index in `E`.  
+"""
 function con_vertex_edge(E,V=nothing)
     return con_vertex_simplex(E,V)
 end
 
+"""
+    con_edge_edge(E_uni,con_V2E=nothing)
 
+Returns the vertex-connected edges for each edge.
+
+# Description
+
+This function computes the edge-edge connectivity for each edge. The input edges
+`F` are used to create a list of edges connected to each edge by a shared vertex.
+Additional optional inputs include: `con_V2E` (the vertex-edge connectivity), which
+is instead computed when not provided.  
+"""
 function con_edge_edge(E_uni,con_V2E=nothing)
     if isnothing(con_V2E)
         con_V2E = con_vertex_edge(E_uni) 
@@ -1974,7 +2122,21 @@ function con_edge_edge(E_uni,con_V2E=nothing)
     return con_E2E
 end
 
+"""
+    con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
 
+Returns the face-connected vertices for each vertex.
+
+# Description
+
+This function computes the vertex-vertex connectivity for each vertex using the 
+vertex connected faces. The input faces `F` are used to create a list of vertices
+connected to each vertex by a shared face. Additional optional inputs include: 
+the vertices `V` and `con_V2F` (the vertex-face connectivity). In terms of vertices
+only the number of vertices, i.e. `length(V)` is needed, if `V` is not provided 
+it is assumed that `length(V)` corresponds to the largest index in `F`. The 
+vertex-face connectivity `con_V2F` is needed, hence is computed when not provided.  
+"""
 function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
     if isnothing(V)
         n = maximum(reduce(vcat,F))
@@ -2000,7 +2162,21 @@ function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
 
 end
 
+"""
+    con_vertex_vertex(E,V=nothing,con_V2E=nothing)
 
+Returns the edge-connected vertices for each vertex.
+
+# Description
+
+This function computes the vertex-vertex connectivity for each vertex using the 
+vertex connected edges. The input edges `E` are used to create a list of vertices
+connected to each vertex by a shared edge. Additional optional inputs include: 
+the vertices `V` and `con_V2E` (the vertex-edge connectivity). In terms of vertices
+only the number of vertices, i.e. `length(V)` is needed, if `V` is not provided 
+it is assumed that `length(V)` corresponds to the largest index in `E`. The 
+vertex-edge connectivity `con_V2E` is needed, hence is computed when not provided.  
+"""
 function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
     if isnothing(V)
         n = maximum(reduce(vcat,E))
@@ -2025,6 +2201,25 @@ function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
     return con_V2V
 end
 
+"""
+    meshconnectivity(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
+
+Returns all mesh connectivity data
+
+# Description
+This function returns the `ConnectivitySet`, i.e. all mesh connectivity data for 
+the input mesh defined by the faces `F` and the vertices `V`. 
+The `ConnectivitySet` contains the following connectivity descriptions: 
+* face-edge
+* edge-face
+* face-face
+* face-face (wrt vertices)
+* vertex-face
+* vertex-edge
+* edge-edge
+* vertex-vertex
+* vertex-vertex (wrt faces)
+"""
 function meshconnectivity(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
 
     # EDGE-VERTEX connectivity
@@ -2061,6 +2256,16 @@ function meshconnectivity(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) whe
     return ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) 
 end 
 
+"""
+    mergevertices(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; roundVertices = true, numDigitsMerge=nothing) where N where TF<:Integer where ND where TV<:Real
+
+Merges points that coincide
+
+# Description
+This function take the faces `F` and vertices `V` and merges points that are sufficiently 
+similar. Once points are merged the indices in `F` are corrected for the new reduced
+point set. 
+"""
 function mergevertices(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; roundVertices = true, numDigitsMerge=nothing) where N where TF<:Integer where ND where TV<:Real
 
     m = length(V)
@@ -2212,6 +2417,18 @@ function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, �
     end
 end
 
+
+"""
+    quadplate(plateDim,plateElem)
+
+Returns a quad mesh for a plate
+
+# Description
+This function creates a quadrilateral mesh (faces `F` and vertices `V`) for a 
+plate. The dimensions in the x-, and y-direction are specified in the input vector 
+`plateDim`, and the number of elements to use in each direction in the input 
+vector `plateElem`. 
+"""
 function quadplate(plateDim,plateElem)
     num_x = plateElem[1]+1
     num_y = plateElem[2]+1
@@ -2235,6 +2452,18 @@ function quadplate(plateDim,plateElem)
     return F, V
 end
 
+"""
+    quadsphere(n::Int64,r::T) where T <: Real
+
+Returns a quadrangulated sphere
+
+# Description
+This function creates a quadrilateral mesh (faces `F` and vertices `V`) for a sphere
+with a radius defined by the input `r`. The input `n` defines the density of sphere
+mesh. The quad mesh is constructed using `subquad` subdivision of a regular cube, 
+whereby `n` sets the number of splitting iterations to use. Using `n=0` therefore
+returns a cube.
+"""
 function quadsphere(n::Int64,r::T) where T <: Real
     M = platonicsolid(2,r)
     F = faces(M)

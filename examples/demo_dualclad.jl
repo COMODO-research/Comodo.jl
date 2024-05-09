@@ -3,12 +3,17 @@ using GLMakie
 using GeometryBasics
 using FileIO
 using StaticArrays
+using Makie.Colors
+
+c1 = RGBf(1.0, 0.30196078431372547, 0.023529411764705882)
+c2 = RGBf(0.2235294117647059, 1.0, 0.0784313725490196)
+c3 = RGBf(0.5803921568627451, 0.3411764705882353, 0.9215686274509803)
 
 #=
 This demo shows the use of the dualclag function. 
 =#
 
-testCase = 2
+testCase = 1
 if testCase == 1 
     F,V = geosphere(2,1.0)
 elseif testCase == 2 
@@ -61,17 +66,20 @@ end
 
 
 s = 0.5
-con_type = :edge
+con_type = :face
 Fs,Fq,Vs = dualclad(F,V,s; connectivity=con_type)
 
-# Rotate the coordinates
-fig = Figure(size = (800,800))
+# Visualisation
+strokewidth =1
+
+Vn = V-0.01*vertexnormal(F,V)
+
+fig = Figure(size = (1200,1200))
 ax = Axis3(fig[1, 1], aspect = :data)
 
-# hp1 = poly!(ax, GeometryBasics.Mesh(V,F), color=:blue,transparency=true,strokewidth=0.15,strokecolor=:black, shading = FastShading)
-
-hp2 = poly!(ax, GeometryBasics.Mesh(Vs,Fs), color=:white,transparency=false,strokewidth=0.15,strokecolor=:black, shading = FastShading)
-hp3 = poly!(ax, GeometryBasics.Mesh(Vs,Fq), color=:white,transparency=false,strokewidth=0.15,strokecolor=:black, shading = FastShading)
+hp1 = mesh!(ax, GeometryBasics.Mesh(Vn,F), color=c3,transparency=false, shading = FastShading)
+hp2 = poly!(ax, GeometryBasics.Mesh(Vs,Fs), color=c1,transparency=false,strokewidth=strokewidth,strokecolor=:white, shading = FastShading)
+hp3 = poly!(ax, GeometryBasics.Mesh(Vs,Fq), color=c2,transparency=false,strokewidth=strokewidth,strokecolor=:white, shading = FastShading)
 
 # hp2 = mesh!(ax, GeometryBasics.Mesh(Vs,Fs), color=:white,transparency=false, shading = FastShading)
 # hp3 = mesh!(ax, GeometryBasics.Mesh(Vs,Fq), color=:white,transparency=false, shading = FastShading)
@@ -90,8 +98,8 @@ end
 
 set_close_to!(hSlider,0.5)
 
-# fileName = comododir()*"/assets/temp/dualclad_anim_05.mp4"
-# slider2anim(fig,hSlider,fileName; backforth=true, duration=3)
+fileName = comododir()*"/assets/temp/dualclad_anim_06.mp4"
+slider2anim(fig,hSlider,fileName; backforth=true, duration=6)
 
 fig
 

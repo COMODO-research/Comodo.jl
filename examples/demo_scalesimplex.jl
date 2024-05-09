@@ -21,27 +21,36 @@ F = tofaces(faces(M))
 V = topoints(coordinates(M))
 F,V = mergevertices(F,V)
 
-n = 1
-F,V = subtri(F,V,n; method=:Loop)
+# n = 1
+# F,V = subtri(F,V,n; method=:Loop)
 
 s = 0.5
 Fs,Vs = scalesimplex(F,V,s)
 
 
 ## Visualisation
-fig = Figure(size = (800,800))
+
+strokewidth = 0.1
+strokecolor = :white
+# Create slightly inward offset version so the visualisation does not co-inside
+Vn = V-0.01*vertexnormal(F,V)
+
+fig = Figure(size = (1400,800))
 
 ax1 = Axis3(fig[1, 1], aspect = :data,title="Single scale factor")
-mesh!(ax1, GeometryBasics.Mesh(V,F), color=:white,transparency=false,shading = FastShading)
-hp1 = poly!(ax1, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,strokewidth=1,strokecolor=:black,shading = FastShading)
+mesh!(ax1, GeometryBasics.Mesh(Vn,F), color=:white,transparency=false,shading = FastShading)
+hp1 = poly!(ax1, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
+# hp1 = mesh!(ax1, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,shading = FastShading)
 
 ax2 = Axis3(fig[1, 2], aspect = :data,title="Per vertex scale factor")
-mesh!(ax2, GeometryBasics.Mesh(V,F), color=:white,transparency=false,shading = FastShading)
-hp2 = poly!(ax2, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,strokewidth=1,strokecolor=:black,shading = FastShading)
+mesh!(ax2, GeometryBasics.Mesh(Vn,F), color=:white,transparency=false,shading = FastShading)
+hp2 = poly!(ax2, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
+# hp2 = mesh!(ax1, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,shading = FastShading)
 
-ax2 = Axis3(fig[1, 3], aspect = :data,title="Per face scale factor")
-mesh!(ax2, GeometryBasics.Mesh(V,F), color=:white,transparency=false,shading = FastShading)
-hp3 = poly!(ax2, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,strokewidth=1,strokecolor=:black,shading = FastShading)
+ax3 = Axis3(fig[1, 3], aspect = :data,title="Per face scale factor")
+mesh!(ax3, GeometryBasics.Mesh(Vn,F), color=:white,transparency=false,shading = FastShading)
+hp3 = poly!(ax3, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
+# hp3 = mesh!(ax3, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,shading = FastShading)
 
 
 stepRange = range(1.0,0.0,50)
@@ -74,6 +83,8 @@ end
 set_close_to!(hSlider,0.5)
 # fileName = comododir()*"/assets/temp/surface_mesh_smoothing_anim.mp4"
 # slider2anim(fig,hSlider,fileName; backforth=true, duration=2)
+
+
 
 fig
 

@@ -104,8 +104,8 @@ ax1 = Axis3(fig[1, 1],aspect = :data,title="Multi-region meshing",azimuth=-pi/2,
 # hp3 = scatter!(ax1, Vg,markersize=8,color=d,colormap=:Spectral)
 
 
-Fp,Vp = separate_vertices(F,V)
-Cp = simplex2vertexdata(Fp,C)
+Fp,Vp = separate_vertices(F,V) # Give each face its own point set 
+Cp = simplex2vertexdata(Fp,C) # Convert face color data to vertex color data 
 hp4 = poly!(ax1,GeometryBasics.Mesh(Vp,Fp), strokewidth=1,color=Cp, strokecolor=:black, shading = FastShading, transparency=false,colormap=Makie.Categorical(Makie.Reverse(:Spectral)))
 
 

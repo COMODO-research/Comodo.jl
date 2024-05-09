@@ -1397,40 +1397,72 @@ end
 
 @testset "subtri" verbose = true begin
     eps_level = 1e-4
-    M = platonicsolid(4, 1.0)
+    M = platonicsolid(4, 1.0) # icosahedron with radius 1.0 
     V = coordinates(M)
     F = faces(M)
-    n = 3
+    n = 2
 
     @testset "Errors" begin
-        @test_throws ArgumentError subtri(F, V, n; method=:wrong)
+        @test_throws ArgumentError subtri(F, V, n; method=:wrong)        
         @test_throws ArgumentError subtri(F, V, -1)
     end
 
     @testset "linear" begin
-        Fn, Vn = subtri(F, V, n; method=:linear)
-
-        @test Fn isa Vector{TriangleFace{Int64}}
-        @test length(Fn) == 1280
-        @test Fn[1] == TriangleFace(163, 323, 243)
-        @test Vn isa Vector{Point3{Float64}}
-        @test length(Vn) == 642
-        @test isapprox(Vn[1], [0.0, -0.5257311121191336, -0.85065080835204], atol=eps_level)
-
         Fn, Vn = subtri(F, V, 0)
         @test Fn == F
         @test Vn == V
+
+        Fn, Vn = subtri(F, V, n; method=:linear)
+        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+
+        @test eltype(F) == eltype(Fn)
+        @test length(Fn) == 4^n*length(F)        
+        @test eltype(V) == eltype(Vn)        
+        @test isapprox(Vn[ind], Point{3, Float64}[[0.0, -0.5257311121191336, -0.85065080835204], 
+        [-0.2628655560595668, 0.6881909602355868, 0.42532540417602], [0.0, -0.6881909602355868, -0.42532540417602], 
+        [0.1314327780297834, -0.7694208842938134, 0.21266270208801], [-0.21266270208801, 0.3942983340893502, 0.7694208842938134], 
+        [-0.63798810626403, 0.1314327780297834, -0.6069610361773602]], atol=eps_level)        
     end
 
     @testset "Loop" begin
-        Fn, Vn = subtri(F, V, n; method=:Loop)
+        Fn, Vn = subtri(F, V, 0; method=:Loop)
+        @test Fn == F
+        @test Vn == V
 
-        @test Fn isa Vector{TriangleFace{Int64}}
-        @test length(Fn) == 1280
-        @test Fn[1] == TriangleFace(163, 323, 243)
-        @test Vn isa Vector{Point3{Float64}}
-        @test length(Vn) == 642
-        @test isapprox(Vn[1], [0.0, -0.37343167032888536, -0.6042251350677821], atol=eps_level)
+        Fn, Vn = subtri(F, V, n; method=:Loop)
+        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+
+        @test eltype(F) == eltype(Fn)
+        @test length(Fn) == 4^n*length(F)        
+        @test eltype(V) == eltype(Vn)        
+        @test isapprox(Vn[ind], Point{3, Float64}[[-4.668111393312408e-18, -0.37854357368761526, -0.6124963684494119], 
+        [-0.22191241796362113, 0.5809742527544328, 0.3590618347908117], [0.0, -0.6134756030005282, -0.37014980570299627], 
+        [0.10988309631672716, -0.681387091313344, 0.19235522107345335], [-0.17398693193931355, 0.3182970619500977, 0.6225453022912995], 
+        [-0.5150154647544891, 0.10752983753681045, -0.4922839938894113]], atol=eps_level)
+    end
+
+    @testset "Loop, constrained boundary" begin
+        # Example with boundary edges (extruded prism)
+        r = 1.0
+        nc = 3
+        Vc = circlepoints(r,nc;dir=:cw)    
+        d = norm(Vc[1]-Vc[2])        
+        s = 1    
+        F,V = extrudecurve(Vc,d;s=s, num_steps=2, close_loop=true,face_type=:tri_slash)
+        
+        Fn, Vn = subtri(F, V, 0; method=:Loop, constrain_boundary=true)
+        @test Fn == F
+        @test Vn == V
+
+        Fn, Vn = subtri(F, V, n; method=:Loop, constrain_boundary=true)
+        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+
+        @test eltype(F) == eltype(Fn)
+        @test length(Fn) == 4^n*length(F)        
+        @test eltype(V) == eltype(Vn)        
+        @test isapprox(Vn[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [-0.4999999999999999, 1.1102230246251565e-16, 1.7320508075688776], 
+        [-0.054687500000000125, -0.5277342304311423, 0.8660254037844388], [0.2734375000000002, 0.39241776108982385, 1.2990381056766582], 
+        [-0.3359374999999997, 0.5818608181676699, 1.2990381056766582], [-0.1249999999999997, 0.6495190528383291, 1.7320508075688776]], atol=eps_level)
     end
 
 end
@@ -1449,45 +1481,77 @@ end
     end
 
     @testset "linear" begin
-        Fn, Vn = subquad(F, V, n; method=:linear)
-
-        @test Fn isa Vector{QuadFace{Int64}}
-        @test length(Fn) == 384
-        @test Fn[1] == QuadFace(1, 99, 291, 187)
-        @test Vn isa Vector{Point3{Float64}}
-        @test length(Vn) == 386
-        @test isapprox(Vn[1], [-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], atol=eps_level)
-        
-        Fn, Vn = subquad(F, V, 0)
+        Fn, Vn = subquad(F, V, 0; method=:Linear)
         @test Fn == F
         @test Vn == V
+
+        Fn, Vn = subquad(F, V, n; method=:linear)        
+        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+        @test eltype(F) == eltype(Fn)
+        @test length(Fn) == 4^n*length(F)        
+        @test eltype(V) == eltype(Vn)  
+        @test isapprox(Vn[ind], Point{3, Float64}[[-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], 
+        [0.2886751345948129, -0.2886751345948129, -0.5773502691896258], [0.4330127018922194, 0.5773502691896258, -0.5773502691896258], 
+        [-0.5773502691896258, 0.2886751345948129, 0.14433756729740646], [0.14433756729740646, -0.14433756729740646, 0.5773502691896258], 
+        [0.14433756729740646, -0.5773502691896258, -0.43301270189221935]], atol=eps_level)        
     end
 
     @testset "Catmull_Clark" begin
-        Fn, Vn = subquad(F, V, n; method=:Catmull_Clark)
+        Fn, Vn = subquad(F, V, 0; method=:Catmull_Clark)
+        @test Fn == F
+        @test Vn == V
 
-        @test Fn isa Vector{QuadFace{Int64}}
-        @test length(Fn) == 384
-        @test Fn[1] == QuadFace(1, 99, 291, 187)
-        @test Vn isa Vector{Point3{Float64}}
-        @test length(Vn) == 386
-        @test isapprox(Vn[1], [-0.2895661072324513, -0.2895661072324513, -0.2895661072324513], atol=eps_level)
+        Fn, Vn = subquad(F, V, n; method=:Catmull_Clark)
+        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+        @test eltype(F) == eltype(Fn)
+        @test length(Fn) == 4^n*length(F)        
+        @test eltype(V) == eltype(Vn)  
+        @test isapprox(Vn[ind], Point{3, Float64}[[-0.2895661072324513, -0.2895661072324513, -0.2895661072324513], 
+        [0.18414681640860342, -0.18414681640860342, -0.4257509268592806], [0.24244200756986245, 0.31179169810728824, -0.31179169810728824], 
+        [-0.44889359308574917, 0.19141642225574024, 0.09422035643025145], [0.0977285611909523, -0.0977285611909523, 0.47360764269461497], 
+        [0.0907121516695506, -0.407828803431474, -0.2770228830681994]], atol=eps_level)        
     end
 
+    @testset "Catmull_Clark, constrained boundary" begin
+        # Example with boundary edges (extruded prism)
+        r = 1.0
+        nc = 3
+        Vc = circlepoints(r,nc;dir=:cw)    
+        d = norm(Vc[1]-Vc[2])        
+        s = 1    
+        F,V = extrudecurve(Vc,d;s=s, num_steps=2, close_loop=true,face_type=:quad)
+
+        Fn, Vn = subquad(F, V, 0; method=:Catmull_Clark, constrain_boundary=true)
+        @test Fn == F
+        @test Vn == V
+
+        Fn, Vn = subquad(F, V, n; method=:Catmull_Clark, constrain_boundary=true)
+        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+        @test eltype(F) == eltype(Fn)
+        @test length(Fn) == 4^n*length(F)        
+        @test eltype(V) == eltype(Vn)  
+        @test isapprox(Vn[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [0.625, -0.21650635094610965, 0.0], 
+        [-0.4516601562499999, 0.16068830734281586, 0.8660254037844388], [-0.4296874999999998, 0.31757083898540706, 1.0825317547305486], 
+        [-0.25976562500000017, -0.6664336115059938, 1.515544456622768], [0.07128906250000025, 0.515894039363777, 0.2165063509461097]], atol=eps_level)        
+    end
 end
 
-@testset "geosphere" begin
-    r = 1.0
-    n = 3
-    F, V = geosphere(n, r)
-    eps_level = 1e-4
 
+@testset "geosphere" begin    
+    eps_level = 1e-4
+    r = 1.0
+    
+    n = 3
+    F, V = geosphere(n, r)    
+    ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
     @test F isa Vector{TriangleFace{Int64}}
-    @test length(F) == 1280
-    @test F[1] == [163,323,243]
-    @test V isa Vector{Point3{Float64}}
-    @test length(V) == 642
-    @test isapprox(V[1], [0.0, -0.5257311121191336 , -0.85065080835204], atol=eps_level)
+    @test length(F) == 4^n*20    
+    @test V isa Vector{Point3{Float64}}    
+    @test isapprox(V[ind],Point{3, Float64}[[0.0, -0.5257311121191336, -0.85065080835204], 
+    [-0.5877852522924731, -0.6881909602355868, -0.42532540417602], [0.26286555605956685, -0.16245984811645317, -0.9510565162951538], 
+    [-0.25989191300775444, 0.43388856455269487, 0.8626684804161864], [0.9129824929322992, 0.3996070517018512, 0.08232358003196016], 
+    [0.13279247682790243, -0.2201170274732924, 0.9663925974024391]], atol=eps_level)
+    @test isapprox(norm.(V),fill(r,length(V))) # Test radii
 end
 
 

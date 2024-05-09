@@ -211,6 +211,66 @@ Comodo.geosphere
 Comodo.hexbox
 ```
 
+## `con_face_edge`
+```@docs
+Comodo.con_face_edge
+```
+
+## `con_edge_face`
+```@docs
+Comodo.con_edge_face
+```
+
+## `con_face_face`
+```@docs
+Comodo.con_face_face
+```
+
+## `con_face_face_v`
+```@docs
+Comodo.con_face_face_v
+```
+
+## `con_vertex_simplex`
+```@docs
+Comodo.con_vertex_simplex
+```
+
+## `con_vertex_face`
+```@docs
+Comodo.con_vertex_face
+```
+
+## `con_vertex_edge`
+```@docs
+Comodo.con_vertex_edge
+```
+
+## `con_edge_edge`
+```@docs
+Comodo.con_edge_edge
+```
+
+## `con_vertex_vertex_f`
+```@docs
+Comodo.con_vertex_vertex_f
+```
+
+## `con_vertex_vertex`
+```@docs
+Comodo.con_vertex_vertex
+```
+
+## `meshconnectivity`
+```@docs
+Comodo.meshconnectivity
+```
+
+## `mergevertices`
+```@docs
+Comodo.mergevertices
+```
+
 ## `smoothmesh_laplacian`
 ```@docs
 Comodo.smoothmesh_laplacian
@@ -219,6 +279,16 @@ Comodo.smoothmesh_laplacian
 ## `smoothmesh_hc`
 ```@docs
 Comodo.smoothmesh_hc
+```
+
+## `quadplate`
+```@docs
+Comodo.quadplate
+```
+
+## `quadsphere`
+```@docs
+Comodo.quadsphere
 ```
 
 ## `loflinear`
