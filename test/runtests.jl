@@ -1543,7 +1543,7 @@ end
     
     n = 3
     F, V = geosphere(n, r)    
-    ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+    ind = round.(Int64,range(1,length(V),6)) # Sample indices
     @test F isa Vector{TriangleFace{Int64}}
     @test length(F) == 4^n*20    
     @test V isa Vector{Point3{Float64}}    
