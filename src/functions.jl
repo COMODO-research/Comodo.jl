@@ -11,6 +11,16 @@ using BSplineKit # E.g. for resampling curves
 using QuadGK: quadgk # For numerical integration
 using Distances
 using DelaunayTriangulation # For triangular meshing
+using StaticArrays
+
+# Define types
+abstract type AbstractPolyhedron{N,T} <: StaticVector{N,T} end
+abstract type AbstractNhedron{N,T} <: AbstractPolyhedron{N,T} end
+GeometryBasics.@fixed_vector Nhedron = AbstractNhedron
+const tet4{T} = Nhedron{4,T} where T<:Integer
+const tet10{T} = Nhedron{10,T} where T<:Integer
+const hex8{T} = Nhedron{8,T} where T<:Integer
+const penta6{T} = Nhedron{6,T} where T<:Integer
 
 """
     ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v)
@@ -33,6 +43,8 @@ struct ConnectivitySet
     face_face_v::Vector{Vector{Int64}}
     ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) = new(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) 
 end
+
+
 
 """
     comododir()
@@ -898,9 +910,6 @@ function unique_simplices(F,V=nothing)
     virtualFaceIndices = sub2ind(n.*ones(Int64,length(F[1])),sort.(F))    
     _, ind1, ind2 = unique_dict(virtualFaceIndices) 
 
-    # Fn, ind1, ind2 = gunique(F; return_unique=true, return_index=true, return_inverse=true, return_counts=false, sort_entries=true)
-    # return Fn, ind1, ind2
-
     return F[ind1], ind1, ind2
 end
 
@@ -1016,16 +1025,10 @@ GeometryBasics.Mesh. The convention is such that for a face referring to the
 nodes 1-2-3-4, the edges are 1-2, 2-3, 3-4, 4-1.   
 """
 function meshedges(F::Array{NgonFace{N,T},1}; unique_only=false) where N where T<:Integer        
-    E = LineFace{Int64}[]    
-    for j1 in 1:N # Loop over each node/point for the current simplex           
-        if j1<N
-            j2 = j1+1
-        else
-            j2 = 1
-        end            
-        for f in F # Loop over each simplex        
-            push!(E,(f[j1],f[j2]))            
-        end 
+    nf = length(F)
+    E = Vector{LineFace{T}}(undef,N*nf)        
+    for (i,f) in enumerate(F) # Loop over each node/point for the current simplex                           
+        E[i:nf:end] = [LineFace{T}(f[j],f[mod1(j+1,N)]) for j in 1:N]        
     end    
     if unique_only # Remove doubles if requested e.g. 1-2 seen as same as 2-1
         E = gunique(E; sort_entries=true);
@@ -1671,7 +1674,7 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int64; meth
         end
         return F,V
     else
-        throw(ArgumentError("n should be larger than 0"))
+        throw(ArgumentError("n should be larger than or equal to 0"))
     end
 end
 
@@ -1783,7 +1786,7 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int64; met
         end
         return F,V
     else
-        throw(ArgumentError("n should be larger than 0"))
+        throw(ArgumentError("n should be larger than or equal to 0"))
     end
 end
 
@@ -1842,7 +1845,8 @@ function hexbox(boxDim,boxEl)
                 [1,1,1],
                 [0,1,1]]
                 
-    E = [Vector{Int64}(undef,8) for _ in 1:numElements] # Allocate elements
+    
+    E = Vector{hex8{Int64}}(undef,numElements) # Allocate elements
 
     @inbounds for q in 1:numElements
         ijk_1 = ind2sub(boxEl,ind1[q])    
@@ -1854,7 +1858,8 @@ function hexbox(boxDim,boxEl)
         ijk_7 = ijk_1 .+ ijk_shift[7]
         ijk_8 = ijk_1 .+ ijk_shift[8]
         
-        E[q] = [sub2ind(boxNod,ijk_1),sub2ind(boxNod,ijk_2),sub2ind(boxNod,ijk_3),sub2ind(boxNod,ijk_4),sub2ind(boxNod,ijk_5),sub2ind(boxNod,ijk_6),sub2ind(boxNod,ijk_7),sub2ind(boxNod,ijk_8)]
+        E[q] = hex8{Int64}( sub2ind(boxNod,ijk_1),sub2ind(boxNod,ijk_2),sub2ind(boxNod,ijk_3),sub2ind(boxNod,ijk_4),
+                            sub2ind(boxNod,ijk_5),sub2ind(boxNod,ijk_6),sub2ind(boxNod,ijk_7),sub2ind(boxNod,ijk_8) )
     end
 
     # Create vertices aka nodal coordinates
@@ -1867,28 +1872,8 @@ function hexbox(boxDim,boxEl)
     end
 
     # Create face sets from elements
-    F = Vector{QuadFace{Int64}}(undef,numElements*6) # Allocate faces
-    CF_type = Vector{Int64}(undef,numElements*6) # Allocate face color/label data
-    for q = eachindex(E) # Loop over all elements
-        e = E[q] # The current element 
-        qf = 1 + (q-1)*6 # Index mapping into face array 
-
-        # Add the current element's faces
-        F[qf  ] = QuadFace{Int64}(e[4],e[3],e[2],e[1]) # Top
-        F[qf+1] = QuadFace{Int64}(e[5],e[6],e[7],e[8]) # Bottom
-        F[qf+2] = QuadFace{Int64}(e[1],e[2],e[6],e[5]) # Side 1
-        F[qf+3] = QuadFace{Int64}(e[3],e[4],e[8],e[7]) # Side 2
-        F[qf+4] = QuadFace{Int64}(e[2],e[3],e[7],e[6]) # Front
-        F[qf+5] = QuadFace{Int64}(e[4],e[1],e[5],e[8]) # Back
-
-        # Add the current element's face color/labels
-        CF_type[qf  ] = 1 # Top
-        CF_type[qf+1] = 2 # Bottom
-        CF_type[qf+2] = 3 # Side 1
-        CF_type[qf+3] = 4 # Side 2
-        CF_type[qf+4] = 5 # Front
-        CF_type[qf+5] = 6 # Back    
-    end
+    F = element2faces(E) 
+    CF_type = repeat(collect(1:6),numElements) # Allocate face color/label data
 
     F_uni,indUni,c_uni = gunique(F,return_index=true, return_inverse=false,return_counts=true,sort_entries=true)
     Lb = isone.(c_uni)
@@ -2725,22 +2710,14 @@ function normalplot(ax,M::GeometryBasics.Mesh; type_flag=:face, color=:black,lin
     return normalplot(ax,F,V;type_flag=type_flag, color=color,linewidth=linewidth,scaleval=scaleval)
 end
 
-function wrapindex(i::Union{Array{Int64,1},UnitRange{Int64},StepRange{Int64, Int64}}, n)
-    return 1 .+ mod.(i .+ (n-1),n)
-end 
-
-function wrapindex(i::Int64,n)
-    return 1+mod(i+(n-1),n)
-end
-
 function edgeangles(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
     m = length(F[1])
     A = Vector{GeometryBasics.Vec{m, Float64}}()
     for f in F
         a = Vector{Float64}(undef,m)
         for i in 1:m                        
-            ip1 = wrapindex(i+1,m)            
-            ip2 = wrapindex(i+2,m)
+            ip1 = mod1(i+1,m)            
+            ip2 = mod1(i+2,m)
             n1 = normalizevector(V[f[ip1]]-V[f[i]])
             n2 = normalizevector(V[f[ip2]]-V[f[ip1]])
             a[i] = acos(clamp(dot(n1,n2),-1.0,1.0))
@@ -2829,7 +2806,7 @@ function trisurfslice(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}},n = Ve
             else # Some below -> cut
                 nBelow = sum(lf) # Number of nodes below
                 if isone(nBelow) # 2-above, 1 below 
-                    indP = f[wrapindex(findfirst(lf) .+ (0:2),3)]
+                    indP = f[mod1.(findfirst(lf) .+ (0:2),3)]
                     
                     e1 = sort(indP[[1,2]])
                     if !haskey(D,e1)
@@ -2856,7 +2833,7 @@ function trisurfslice(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}},n = Ve
                     end
 
                 else # 1-above, 2 below
-                    indP = f[wrapindex(findfirst(.!lf) .+ (0:2),3)]
+                    indP = f[mod1.(findfirst(.!lf) .+ (0:2),3)]
 
                     e1 = sort(indP[[1,2]])
                     if !haskey(D,e1)
@@ -3915,4 +3892,317 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
     end
 
     return Fs,Fq,Vs
+end
+
+
+"""
+    tet2hex(E::Vector{tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer where ND where TV<:Real
+
+Converts tetrahedra to hexahedra
+
+# Description
+This function converts the input tetrahedra defined by the element set `E` and the 
+vertex set `V` to a set of hexahedral elements `Eh` with vertices `Vh`. The conversion
+involves a splitting of each tetrahedron into 4 hexahedra. 
+"""
+function tet2hex(E::Vector{tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer where ND where TV<:Real
+    # Non-unique tet element faces
+    Ft = element2faces(E)      
+    
+    # Unique faces and inverse mapping 
+    Ftu,_,inv_Ft = gunique(Ft; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+
+    # Non-unique structured (element by element) tet element edges
+    Et = Vector{LineFace{T}}(undef,length(E)*6)
+    for (i,e) in enumerate(E)         
+        ii = 1 + (i-1)*6
+        Et[ii  ] = LineFace{T}(e[1],e[2])
+        Et[ii+1] = LineFace{T}(e[2],e[3])
+        Et[ii+2] = LineFace{T}(e[3],e[1])
+        Et[ii+3] = LineFace{T}(e[1],e[4])
+        Et[ii+4] = LineFace{T}(e[2],e[4])
+        Et[ii+5] = LineFace{T}(e[3],e[4])
+    end
+
+    #Unique edges and inverse mapping 
+    Etu,_,inv_Et = gunique(Et; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+    
+    # Create new coordinates
+    Vc = simplexcenter(E,V) # Element centres
+    Vf = simplexcenter(Ftu,V) # Face centres
+    Ve = simplexcenter(Etu,V) # Edge centres   
+    Vh = [V;Vc;Vf;Ve] # Append vertices
+
+    # Create the 4 corner hexahedra for each tetrahedron
+    offset_Vc = length(V)
+    offset_F = offset_Vc + length(Vc)
+    offset_E = offset_F + length(Vf)
+    inv_Ft = inv_Ft .+ offset_F
+    inv_Et = inv_Et .+ offset_E
+    Eh = Vector{hex8{T}}(undef,length(E)*4) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
+    for i = eachindex(E)
+        i_e = 1 + (i-1)*6 # index of first edge
+        i_f = 1 + (i-1)*4 # index of first face (which happens to also be the first hex element for tetrahedra)        
+        i_vc = i+offset_Vc
+        Eh[i_f  ] = hex8{T}(      E[i][1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+2],
+                            inv_Et[i_e+3], inv_Ft[i_f+1],          i_vc, inv_Ft[i_f+3])
+        Eh[i_f+1] = hex8{T}(      E[i][2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e  ],
+                            inv_Et[i_e+4], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+1])
+        Eh[i_f+2] = hex8{T}(      E[i][3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
+                            inv_Et[i_e+5], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+2])                             
+        Eh[i_f+3] = hex8{T}(      E[i][4], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+3],
+                            inv_Et[i_e+5], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+3])                             
+    end    
+    return Eh,Vh
+end
+
+"""
+    element2faces(E::Vector{Nhedron{N,T}}) where N where T 
+
+Returns element faces
+
+# Description
+This function computes the faces for the input elements defined by `E`. The elements
+should be Vectors consisting of `tet4`, `hex8` elements. 
+"""
+function element2faces(E::Vector{Nhedron{N,T}}) where N where T 
+    if eltype(E) <: tet4{T}
+        nf = 4
+        F = Vector{TriangleFace{T}}(undef,length(E)*nf)
+        for i in eachindex(E)
+            ii = 1 + (i-1)*nf
+            F[ii  ] = TriangleFace{T}(E[i][3],E[i][2],E[i][1])
+            F[ii+1] = TriangleFace{T}(E[i][1],E[i][2],E[i][4])
+            F[ii+2] = TriangleFace{T}(E[i][2],E[i][3],E[i][4])
+            F[ii+3] = TriangleFace{T}(E[i][3],E[i][1],E[i][4])
+        end
+    elseif eltype(E) <: hex8{T}
+        nf = 6
+        F = Vector{QuadFace{T}}(undef,length(E)*nf)
+        for i in eachindex(E)
+            e = E[i]
+            ii = 1 + (i-1)*nf
+            F[ii  ] = QuadFace{T}(e[4],e[3],e[2],e[1]) # Top
+            F[ii+1] = QuadFace{T}(e[5],e[6],e[7],e[8]) # Bottom
+            F[ii+2] = QuadFace{T}(e[1],e[2],e[6],e[5]) # Side 1
+            F[ii+3] = QuadFace{T}(e[3],e[4],e[8],e[7]) # Side 2
+            F[ii+4] = QuadFace{T}(e[2],e[3],e[7],e[6]) # Front
+            F[ii+5] = QuadFace{T}(e[5],e[8],e[4],e[1]) # Back
+        end
+    end
+    return F
+end
+
+"""
+    subhex(E::Vector{hex8{T}},V::Vector{Point{ND,TV}},n::Int64; direction=0) where T<:Integer where ND where TV<:Real
+
+Split hexahedral elements
+
+# Description
+This function splits the hexahedral elements defined by the elements `E` and 
+vertices `V`. Splitting is done `n` times as requested. By default the splitting 
+occurs in all direction (corresponding to the default `direction=0`). If instead
+`direction` is set to 1, 2, or 3, then the splitting only occur in the first, second
+or third local element direction respectively. Note that this direction depends 
+on node order used. For a hexahedron where by nodes 1:4 are for the bottom, and 
+nodes 5:8 are for the top of the element then the directions 1, 2, and 3 correspond 
+to the x-, y-, and z-direction respectively.  
+"""
+function subhex(E::Vector{hex8{T}},V::Vector{Point{ND,TV}},n::Int64; direction=0) where T<:Integer where ND where TV<:Real
+    if iszero(n)
+        return E,V
+    elseif isone(n)
+
+        # Non-unique hex element faces
+        Ft = element2faces(E)      
+        
+        # Non-unique structured (element by element) hexbox element edges
+        if iszero(direction)
+            Et = Vector{LineFace{T}}(undef,length(E)*12)
+            for (i,e) in enumerate(E)         
+                ii = 1 + (i-1)*12
+                Et[ii   ] = LineFace{T}(e[1],e[2])
+                Et[ii+1 ] = LineFace{T}(e[2],e[3])
+                Et[ii+2 ] = LineFace{T}(e[3],e[4])
+                Et[ii+3 ] = LineFace{T}(e[4],e[1])
+                Et[ii+4 ] = LineFace{T}(e[5],e[6])
+                Et[ii+5 ] = LineFace{T}(e[6],e[7])
+                Et[ii+6 ] = LineFace{T}(e[7],e[8])
+                Et[ii+7 ] = LineFace{T}(e[8],e[5])
+                Et[ii+8 ] = LineFace{T}(e[1],e[5])
+                Et[ii+9 ] = LineFace{T}(e[2],e[6])
+                Et[ii+10] = LineFace{T}(e[3],e[7])
+                Et[ii+11] = LineFace{T}(e[4],e[8])
+            end
+        elseif isone(direction) # Split in 1st-direction
+            Et = Vector{LineFace{T}}(undef,length(E)*4)
+            for (i,e) in enumerate(E)         
+                ii = 1 + (i-1)*4
+                Et[ii   ] = LineFace{T}(e[1],e[2])
+                Et[ii+1 ] = LineFace{T}(e[3],e[4])
+                Et[ii+2 ] = LineFace{T}(e[5],e[6])
+                Et[ii+3 ] = LineFace{T}(e[7],e[8])
+            end
+        elseif direction==2 # Split in 2nd-direction
+            Et = Vector{LineFace{T}}(undef,length(E)*4)
+            for (i,e) in enumerate(E)         
+                ii = 1 + (i-1)*4
+                Et[ii   ] = LineFace{T}(e[2],e[3])
+                Et[ii+1 ] = LineFace{T}(e[4],e[1])
+                Et[ii+2 ] = LineFace{T}(e[6],e[7])
+                Et[ii+3 ] = LineFace{T}(e[8],e[5])
+            end
+        elseif direction==3 # Split in 3rd-direction
+            Et = Vector{LineFace{T}}(undef,length(E)*4)
+            for (i,e) in enumerate(E)         
+                ii = 1 + (i-1)*4
+                Et[ii   ] = LineFace{T}(e[1],e[5])
+                Et[ii+1 ] = LineFace{T}(e[2],e[6])
+                Et[ii+2 ] = LineFace{T}(e[3],e[7])
+                Et[ii+3 ] = LineFace{T}(e[4],e[8])
+            end
+        end
+        #Unique edges and inverse mapping 
+        Etu,_,inv_Et = gunique(Et; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        
+        # Create mid-edge coordinates
+        Ve = simplexcenter(Etu,V) # Edge centres           
+
+        if iszero(direction)
+            # Unique faces and inverse mapping 
+            Ftu,_,inv_Ft = gunique(Ft; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+            Vf = simplexcenter(Ftu,V) # Face centres
+            Vc = simplexcenter(E,V) # Element centres
+            Vh = [V;Vc;Vf;Ve] # Append vertices
+
+            # Create the 8 corner hexahedra for each hexahedron
+            offset_Vc = length(V)
+            offset_F = offset_Vc + length(Vc)
+            offset_E = offset_F + length(Vf)
+            inv_Ft = inv_Ft .+ offset_F
+            inv_Et = inv_Et .+ offset_E  
+            Eh = Vector{hex8{T}}(undef,length(E)*8) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
+            for i = eachindex(E)
+                i_e = 1 + (i-1)*12 # index of first edge
+                i_f = 1 + (i-1)*6 # index of first face 
+                i_vc = i + offset_Vc        
+                ii = 1 + (i-1)*8 
+                Eh[ii  ] = hex8{T}(        E[i][1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+3],
+                                    inv_Et[i_e+8 ], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+5] )   
+
+                Eh[ii+1] = hex8{T}(        E[i][2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e],
+                                    inv_Et[i_e+9 ], inv_Ft[i_f+4],          i_vc, inv_Ft[i_f+2] )   
+
+                Eh[ii+2] = hex8{T}(        E[i][3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
+                                    inv_Et[i_e+10], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+4] )   
+
+                Eh[ii+3] = hex8{T}(        E[i][4], inv_Et[i_e+3], inv_Ft[i_f  ], inv_Et[i_e+2],
+                                    inv_Et[i_e+11], inv_Ft[i_f+5],          i_vc, inv_Ft[i_f+3] )   
+            
+                Eh[ii+4] = hex8{T}(        E[i][5], inv_Et[i_e+7], inv_Ft[i_f+1], inv_Et[i_e+4],
+                                    inv_Et[i_e+8 ], inv_Ft[i_f+5],          i_vc, inv_Ft[i_f+2] )   
+
+                Eh[ii+5] = hex8{T}(        E[i][6], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+5],
+                                    inv_Et[i_e+9 ], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+4] )   
+
+                Eh[ii+6] = hex8{T}(        E[i][7], inv_Et[i_e+5], inv_Ft[i_f+1], inv_Et[i_e+6],
+                                    inv_Et[i_e+10], inv_Ft[i_f+4],          i_vc, inv_Ft[i_f+3] )   
+                                    
+                Eh[ii+7] = hex8{T}(        E[i][8], inv_Et[i_e+6], inv_Ft[i_f+1], inv_Et[i_e+7],
+                                    inv_Et[i_e+11], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+5] )  
+            end
+        elseif isone(direction) # Split in 1st-direction
+            Vh = [V;Ve] # Append vertices
+            inv_Et = inv_Et .+ length(V)  
+            Eh = Vector{hex8{T}}(undef,length(E)*2) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
+            for i = eachindex(E)
+                i_e = 1 + (i-1)*4 # index of first edge
+                i_f = 1 + (i-1)*6 # index of first face 
+                ii = 1 + (i-1)*2
+                Eh[ii  ] = hex8{T}( Ft[i_f+4][4],  Ft[i_f+4][3],  Ft[i_f+4][2],  Ft[i_f+4][1], 
+                                   inv_Et[i_e+2], inv_Et[i_e+3], inv_Et[i_e+1], inv_Et[i_e+0] )   
+
+                Eh[ii+1] = hex8{T}( Ft[i_f+5][4],  Ft[i_f+5][3],  Ft[i_f+5][2],  Ft[i_f+5][1], 
+                                   inv_Et[i_e+0], inv_Et[i_e+1], inv_Et[i_e+3], inv_Et[i_e+2] )      
+
+            end  
+        elseif direction == 2 # Split in 2nd-direction
+            Vh = [V;Ve] # Append vertices
+            inv_Et = inv_Et .+ length(V)  
+            Eh = Vector{hex8{T}}(undef,length(E)*2) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
+            for i = eachindex(E)
+                i_e = 1 + (i-1)*4 # index of first edge
+                i_f = 1 + (i-1)*6 # index of first face 
+                ii = 1 + (i-1)*2
+                Eh[ii  ] = hex8{T}( Ft[i_f+2][4],  Ft[i_f+2][3],  Ft[i_f+2][2],  Ft[i_f+2][1], 
+                                   inv_Et[i_e+3], inv_Et[i_e+2], inv_Et[i_e+0], inv_Et[i_e+1] )   
+
+                Eh[ii+1] = hex8{T}( Ft[i_f+3][4],  Ft[i_f+3][3],  Ft[i_f+3][2],  Ft[i_f+3][1],
+                                   inv_Et[i_e+2], inv_Et[i_e+3], inv_Et[i_e+1], inv_Et[i_e+0] )   
+
+            end    
+        elseif direction == 3 # Split in 3rd-direction
+            Vh = [V;Ve] # Append vertices
+            inv_Et = inv_Et .+ length(V)  
+            Eh = Vector{hex8{T}}(undef,length(E)*2) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
+            for i = eachindex(E)
+                i_e = 1 + (i-1)*4 # index of first edge
+                i_f = 1 + (i-1)*6 # index of first face 
+                ii = 1 + (i-1)*2
+                Eh[ii  ] = hex8{T}(   Ft[i_f][4],    Ft[i_f][3],     Ft[i_f][2],     Ft[i_f][1], 
+                                   inv_Et[i_e+0], inv_Et[i_e+1], inv_Et[i_e+2], inv_Et[i_e+3] )   
+
+                Eh[ii+1] = hex8{T}(  Ft[i_f+1][4],   Ft[i_f+1][3],  Ft[i_f+1][2],  Ft[i_f+1][1],
+                                   inv_Et[i_e+3], inv_Et[i_e+2], inv_Et[i_e+1], inv_Et[i_e+0] )   
+
+            end   
+        end 
+        return Eh,Vh
+    elseif n>1
+        for _ = 1:n
+            E,V = subhex(E,V,1; direction=direction)
+        end
+        return E,V
+    else
+        throw(ArgumentError("n should be larger than or equal to 0"))
+    end
+end
+
+function rhombicdodecahedron(r = 1.0)
+    F = Vector{QuadFace{Int64}}(undef,12)
+    F[ 1] = [ 1, 10,  5,  9]
+    F[ 2] = [ 2, 11,  6, 10]
+    F[ 3] = [ 3, 12,  7, 11]
+    F[ 4] = [ 4,  9,  8, 12]
+    F[ 5] = [ 5, 10,  6, 14]
+    F[ 6] = [ 6, 11,  7, 14]
+    F[ 7] = [ 7, 12,  8, 14]
+    F[ 8] = [ 8,  9,  5, 14]
+    F[ 9] = [ 1, 13,  2, 10]
+    F[10] = [ 2, 13,  3, 11]
+    F[11] = [ 3, 13,  4, 12]
+    F[12] = [ 4, 13,  1,  9]
+
+
+    V = Vector{Point{3,Float64}}(undef,14)
+    V[ 1] = [-0.5, -0.5, -0.5] 
+    V[ 2] = [ 0.5, -0.5, -0.5] 
+    V[ 3] = [ 0.5,  0.5, -0.5] 
+    V[ 4] = [-0.5,  0.5, -0.5] 
+    V[ 5] = [-0.5, -0.5,  0.5] 
+    V[ 6] = [ 0.5, -0.5,  0.5] 
+    V[ 7] = [ 0.5,  0.5,  0.5] 
+    V[ 8] = [-0.5,  0.5,  0.5] 
+    V[ 9] = [-1.0, -0.0,  0.0]
+    V[10] = [ 0.0, -1.0,  0.0]
+    V[11] = [ 1.0,  0.0,  0.0]
+    V[12] = [ 0.0,  1.0,  0.0]
+    V[13] = [ 0.0, -0.0, -1.0]
+    V[14] = [ 0.0, -0.0,  1.0]
+
+    if !isone(r)
+        V.*=r
+    end
+
+    return F,V
 end

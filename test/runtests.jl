@@ -1607,8 +1607,8 @@ end
         E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[1,1,1])
         @test E == [[1, 2, 4, 3, 5, 6, 8, 7]] 
         @test V == Point3{Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
-        @test F == QuadFace{Int64}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [3, 1, 5, 7]]
-        @test Fb == QuadFace{Int64}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [3, 1, 5, 7]]
+        @test F == QuadFace{Int64}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [5, 7, 3, 1]]
+        @test Fb == QuadFace{Int64}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [5, 7, 3, 1]]
         @test CFb_type == [1, 2, 3, 4, 5, 6]
     end
     @testset "2x2x2 hex box" begin
@@ -3039,46 +3039,6 @@ end
         # @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
         # @test length(faces(Mp)) == length(V)
 
-    end
-end
-
-
-@testset "wrapindex" verbose = true begin
-    eps_level = 1e-4
-
-    @testset "single value" begin
-        n = 5
-        m = 2
-        @test wrapindex(1,n) == 1
-        @test wrapindex(2,n) == 2
-        @test wrapindex(n,n) == n
-        @test wrapindex(n+m,n) == m      
-    end
-
-    @testset "Vector" begin
-        n = 5
-        a = 2
-        b = 2*n
-        m = [1,2,n,n+a,n+b]
-        @test wrapindex(m,n) == [1,2,n,a,n]  
-    end
-
-    @testset "Unit range" begin
-        n = 5
-        a = 2
-        b = 2*n
-        m = 1:(2*n)+2
-        r = wrapindex(m,n)
-        @test r == [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2]  
-    end
-
-    @testset "Step range" begin
-        n = 5
-        a = 2
-        b = 2*n
-        m = 1:2:(2*n)+2
-        r = wrapindex(m,n)
-        @test r == [1, 3, 5, 2, 4, 1] 
     end
 end
 
@@ -4668,4 +4628,123 @@ end
         [0.8194254478692206, 0.375, 0.36319552381099396]],atol=eps_level)
     end
 
+end
+
+
+
+@testset "tet2hex" verbose=true begin
+    eps_level = 1e-6
+
+    E = [tet4{Int64}(1,2,3,4),tet4{Int64}(2,3,4,5),tet4{Int64}(6,7,8,9)]
+    V = [Point{3,Float64}(-1.0,0.0,0.0),
+         Point{3,Float64}( 1.0,0.0,0.0),
+         Point{3,Float64}( 0.0,1.0,0.0),
+         Point{3,Float64}( 0.0,0.5,1.0),
+         Point{3,Float64}( 1.0,1.0,1.0),
+         Point{3,Float64}( 2.0,0.0,0.0),
+         Point{3,Float64}( 4.0,0.0,0.0),
+         Point{3,Float64}( 3.0,1.0,0.0),
+         Point{3,Float64}( 3.0,0.5,1.0),
+         ]
+         
+    Eh,Vh = tet2hex(E,V)
+    ind = round.(Int64,range(1,length(Vh),10))
+
+   
+    @test length(Eh) == length(E)*4
+    @test isapprox(Vh[ind],Point{3, Float64}[[-1.0, 0.0, 0.0], [1.0, 1.0, 1.0], [3.0, 0.5, 1.0], 
+    [0.0, 0.3333333333333333, 0.0], [0.6666666666666666, 0.6666666666666666, 0.3333333333333333], 
+    [3.3333333333333335, 0.5, 0.3333333333333333], [-0.5, 0.5, 0.0], [1.0, 0.5, 0.5], 
+    [3.5, 0.5, 0.0], [3.0, 0.75, 0.5]],atol=eps_level)
+
+    @test isa(Eh,Vector{hex8{Int64}})
+    @test isa(Vh,Vector{eltype(V)})
+
+end
+
+
+@testset "element2faces" verbose=true begin
+    @testset "hexahedra" begin
+        boxDim = [1.0,2.0,3.0] # Dimensions for the box in each direction
+        boxEl = [1,1,1] # Number of elements to use in each direction 
+        E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
+        F = element2faces(E)
+        @test length(F) == length(E)*6
+        @test isa(F,Vector{QuadFace{Int64}})
+        @test F[1] == [3,4,2,1]
+
+        boxDim = [1.0,2.0,3.0] # Dimensions for the box in each direction
+        boxEl = [1,2,3] # Number of elements to use in each direction 
+        E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
+        F = element2faces(E)
+        @test length(F) == length(E)*6
+        @test isa(F,Vector{QuadFace{Int64}})
+        @test F[1] == [3,4,2,1]
+    end
+
+    @testset "tetrahedra" begin
+        E = [tet4{Int64}(1,2,3,4)]
+        F = element2faces(E)
+        @test length(F) == length(E)*4
+        @test isa(F,Vector{TriangleFace{Int64}})
+        @test F[1] == [3,2,1]
+
+        E = [tet4{Int64}(1,2,3,4),tet4{Int64}(2,3,4,5),tet4{Int64}(6,7,8,9)]
+        F = element2faces(E)
+        @test length(F) == length(E)*4
+        @test isa(F,Vector{TriangleFace{Int64}})
+        @test F[1] == [3,2,1]
+    end
+end
+
+
+@testset "subhex" verbose=true begin
+    boxDim = [1.0,2.0,3.0] # Dimensions for the box in each direction
+    boxEl = [1,1,1] # Number of elements to use in each direction 
+    E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
+
+    Eh0,Vh0 = subhex(E,V,1;direction=0)
+    Eh1,Vh1 = subhex(E,V,1;direction=1)
+    Eh2,Vh2 = subhex(E,V,1;direction=2)
+    Eh3,Vh3 = subhex(E,V,1;direction=3)
+
+    @test length(Eh0) == length(E)*8
+    @test length(Eh1) == length(E)*2
+    @test length(Eh2) == length(E)*2
+    @test length(Eh3) == length(E)*2
+
+    @test length(Vh0) == 27
+    @test length(Vh1) == 12
+    @test length(Vh2) == 12
+    @test length(Vh3) == 12  
+
+    @test isa(Vh0,Vector{eltype(V)})
+
+    Eh0,Vh0 = subhex(E,V,2;direction=0)
+    @test length(Eh0) == length(E)*8*8
+    @test isa(Eh0,Vector{hex8{Int64}})
+    @test isa(Vh0,Vector{eltype(V)})
+end
+
+
+@testset "rhombicdodecahedron" verbose=true begin
+    eps_level = 1e-6
+
+    F,V = rhombicdodecahedron(1.0)
+
+    Vt = Point{3, Float64}[[-0.5, -0.5, -0.5], [0.5, -0.5, -0.5], [0.5, 0.5, -0.5], 
+    [-0.5, 0.5, -0.5], [-0.5, -0.5, 0.5], [0.5, -0.5, 0.5], [0.5, 0.5, 0.5], [-0.5, 0.5, 0.5], 
+    [-1.0, -0.0, 0.0], [0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, -0.0, -1.0], 
+    [0.0, -0.0, 1.0]]
+
+    @test F == QuadFace{Int64}[[1, 10, 5, 9], [2, 11, 6, 10], [3, 12, 7, 11], [4, 9, 8, 12], 
+    [5, 10, 6, 14], [6, 11, 7, 14], [7, 12, 8, 14], [8, 9, 5, 14], [1, 13, 2, 10], [2, 13, 3, 11], 
+    [3, 13, 4, 12], [4, 13, 1, 9]]
+
+    @test isapprox(V,Vt,atol=eps_level)
+
+    r = π
+    F,V = rhombicdodecahedron(r)
+    
+    @test isapprox(V,Vt.*r,atol=eps_level)
 end

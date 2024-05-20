@@ -1,6 +1,7 @@
 using Comodo
 using GLMakie
 using GeometryBasics
+using LinearAlgebra
 
 #=
 This demo shows the use of `subtri` to refine triangulated meshes. Each 
