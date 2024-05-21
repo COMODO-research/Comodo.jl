@@ -21,7 +21,7 @@ XML = "72c71f33-b9b6-44de-8c94-c961784809e2"
 [compat]
 BSplineKit = "0.17"
 DataStructures = "0.18.16"
-DelaunayTriangulation = "0.8, 1"
+DelaunayTriangulation = "0.8.12"
 Distances = "0.10"
 GLMakie = "0.9"
 GeometryBasics = "0.3, 0.4"
