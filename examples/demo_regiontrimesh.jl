@@ -93,7 +93,9 @@ elseif testCase == 5
     P = (1,0.75,0.5)  # Point spacings
 end
 
+
 F,V,C = regiontrimesh(VT,R,P)
+
 
 # Visualisation
 fig = Figure(size=(1000,1000))

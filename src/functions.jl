@@ -3653,6 +3653,29 @@ end
 #     return gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = true, rectangular=true)
 # end
 
+
+"""
+    _notghosttriangle(TR)
+
+Returns non-ghost triangles
+
+# Description
+
+This is a non-exported helper function for regiontrimesh. Normally, A
+triangulatio obtained using the DelaunayTriangulation package may return "ghost"
+edges/points/triangles. This function parses the triangles in TR and returns only 
+the non-ghost ones. 
+"""
+function _notghosttriangle(TR)
+    F = Vector{TriangleFace{Int64}}()
+    for t in TR.triangles
+        if !any(t.<1) # Not a ghost triangle
+            push!(F,t)
+        end
+    end
+    return F
+end
+
 """
     regiontrimesh(VT,R,P)
 
@@ -3670,6 +3693,7 @@ function regiontrimesh(VT,R,P)
     V = Vector{Point{3,Float64}}() # eltype(VT)()
     F = Vector{TriangleFace{Int64}}()
     C = Vector{Float64}()
+    
     for q in eachindex(R)        
         r = R[q] # The curve indices for the current region       
         pointSpacing = P[q] # Region point spacing
@@ -3698,7 +3722,7 @@ function regiontrimesh(VT,R,P)
         # Initial triangulation 
         constrained_segments_ori = deepcopy(constrained_segments) # Clone since triangulate can add new constraint points
         TRn = triangulate(Vn; boundary_nodes=constrained_segments)
-        Fn =  [TriangleFace{Int64}(tr) for tr in TRn.triangles]
+        Fn = _notghosttriangle(TRn) # Fn =  [TriangleFace{Int64}(tr) for tr in TRn.triangles]
 
         # Check if new boundary points were introduced and remove if needed 
         Eb = boundaryedges(Fn)
@@ -3713,7 +3737,7 @@ function regiontrimesh(VT,R,P)
             Vn = Vn[indKeep]
             constrained_segments = [[indFix[c[1]]] for c in constrained_segments_ori] # Fix indices after point removal                
             TRn = triangulate(Vn; boundary_nodes=constrained_segments)
-            Fn = [TriangleFace{Int64}(tr) for tr in TRn.triangles]
+            Fn = _notghosttriangle(TRn) #Fn = [TriangleFace{Int64}(tr) for tr in TRn.triangles]
             Vn = TRn.points
         end
 
@@ -3742,7 +3766,7 @@ function regiontrimesh(VT,R,P)
 
         # Redo triangulation after points have been removed
         TRn = triangulate(Vn; boundary_nodes=constrained_segments)
-        Fn = [TriangleFace{Int64}(tr) for tr in TRn.triangles]
+        Fn = _notghosttriangle(TRn) #Fn = [TriangleFace{Int64}(tr) for tr in TRn.triangles]
         Vn = TRn.points
         Fn,Vn,indFix = remove_unused_vertices(Fn,Vn)
 
