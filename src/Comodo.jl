@@ -20,7 +20,7 @@ include("functions.jl")
 export GeometryBasics
 
 # Export types
-export Nhedron, tet4, tet10, hex8, hex20, penta6 # Volumetric elements (polyhedra)
+export Nhedron, Tet4, Tet10, Hex8, Hex20, Penta6 # Volumetric elements (polyhedra)
 
 # Export types/structs
 export ConnectivitySet

@@ -4635,7 +4635,7 @@ end
 @testset "tet2hex" verbose=true begin
     eps_level = 1e-6
 
-    E = [tet4{Int64}(1,2,3,4),tet4{Int64}(2,3,4,5),tet4{Int64}(6,7,8,9)]
+    E = [Tet4{Int64}(1,2,3,4),Tet4{Int64}(2,3,4,5),Tet4{Int64}(6,7,8,9)]
     V = [Point{3,Float64}(-1.0,0.0,0.0),
          Point{3,Float64}( 1.0,0.0,0.0),
          Point{3,Float64}( 0.0,1.0,0.0),
@@ -4657,7 +4657,7 @@ end
     [3.3333333333333335, 0.5, 0.3333333333333333], [-0.5, 0.5, 0.0], [1.0, 0.5, 0.5], 
     [3.5, 0.5, 0.0], [3.0, 0.75, 0.5]],atol=eps_level)
 
-    @test isa(Eh,Vector{hex8{Int64}})
+    @test isa(Eh,Vector{Hex8{Int64}})
     @test isa(Vh,Vector{eltype(V)})
 
 end
@@ -4683,13 +4683,13 @@ end
     end
 
     @testset "tetrahedra" begin
-        E = [tet4{Int64}(1,2,3,4)]
+        E = [Tet4{Int64}(1,2,3,4)]
         F = element2faces(E)
         @test length(F) == length(E)*4
         @test isa(F,Vector{TriangleFace{Int64}})
         @test F[1] == [3,2,1]
 
-        E = [tet4{Int64}(1,2,3,4),tet4{Int64}(2,3,4,5),tet4{Int64}(6,7,8,9)]
+        E = [Tet4{Int64}(1,2,3,4),Tet4{Int64}(2,3,4,5),Tet4{Int64}(6,7,8,9)]
         F = element2faces(E)
         @test length(F) == length(E)*4
         @test isa(F,Vector{TriangleFace{Int64}})
@@ -4722,7 +4722,7 @@ end
 
     Eh0,Vh0 = subhex(E,V,2;direction=0)
     @test length(Eh0) == length(E)*8*8
-    @test isa(Eh0,Vector{hex8{Int64}})
+    @test isa(Eh0,Vector{Hex8{Int64}})
     @test isa(Vh0,Vector{eltype(V)})
 end
 

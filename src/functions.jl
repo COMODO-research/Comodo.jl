@@ -17,10 +17,11 @@ using StaticArrays
 abstract type AbstractPolyhedron{N,T} <: StaticVector{N,T} end
 abstract type AbstractNhedron{N,T} <: AbstractPolyhedron{N,T} end
 GeometryBasics.@fixed_vector Nhedron = AbstractNhedron
-const tet4{T} = Nhedron{4,T} where T<:Integer
-const tet10{T} = Nhedron{10,T} where T<:Integer
-const hex8{T} = Nhedron{8,T} where T<:Integer
-const penta6{T} = Nhedron{6,T} where T<:Integer
+const Tet4{T} = Nhedron{4,T} where T<:Integer
+const Tet10{T} = Nhedron{10,T} where T<:Integer
+const Hex8{T} = Nhedron{8,T} where T<:Integer
+const Hex20{T} = Nhedron{20,T} where T<:Integer
+const Penta6{T} = Nhedron{6,T} where T<:Integer
 
 """
     ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v)
@@ -43,7 +44,6 @@ struct ConnectivitySet
     face_face_v::Vector{Vector{Int64}}
     ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) = new(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) 
 end
-
 
 
 """
@@ -1846,7 +1846,7 @@ function hexbox(boxDim,boxEl)
                 [0,1,1]]
                 
     
-    E = Vector{hex8{Int64}}(undef,numElements) # Allocate elements
+    E = Vector{Hex8{Int64}}(undef,numElements) # Allocate elements
 
     @inbounds for q in 1:numElements
         ijk_1 = ind2sub(boxEl,ind1[q])    
@@ -1858,7 +1858,7 @@ function hexbox(boxDim,boxEl)
         ijk_7 = ijk_1 .+ ijk_shift[7]
         ijk_8 = ijk_1 .+ ijk_shift[8]
         
-        E[q] = hex8{Int64}( sub2ind(boxNod,ijk_1),sub2ind(boxNod,ijk_2),sub2ind(boxNod,ijk_3),sub2ind(boxNod,ijk_4),
+        E[q] = Hex8{Int64}( sub2ind(boxNod,ijk_1),sub2ind(boxNod,ijk_2),sub2ind(boxNod,ijk_3),sub2ind(boxNod,ijk_4),
                             sub2ind(boxNod,ijk_5),sub2ind(boxNod,ijk_6),sub2ind(boxNod,ijk_7),sub2ind(boxNod,ijk_8) )
     end
 
@@ -3920,7 +3920,7 @@ end
 
 
 """
-    tet2hex(E::Vector{tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer where ND where TV<:Real
+    tet2hex(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer where ND where TV<:Real
 
 Converts tetrahedra to hexahedra
 
@@ -3929,7 +3929,7 @@ This function converts the input tetrahedra defined by the element set `E` and t
 vertex set `V` to a set of hexahedral elements `Eh` with vertices `Vh`. The conversion
 involves a splitting of each tetrahedron into 4 hexahedra. 
 """
-function tet2hex(E::Vector{tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer where ND where TV<:Real
+function tet2hex(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer where ND where TV<:Real
     # Non-unique tet element faces
     Ft = element2faces(E)      
     
@@ -3963,18 +3963,18 @@ function tet2hex(E::Vector{tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer wh
     offset_E = offset_F + length(Vf)
     inv_Ft = inv_Ft .+ offset_F
     inv_Et = inv_Et .+ offset_E
-    Eh = Vector{hex8{T}}(undef,length(E)*4) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
+    Eh = Vector{Hex8{T}}(undef,length(E)*4) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
     for i = eachindex(E)
         i_e = 1 + (i-1)*6 # index of first edge
         i_f = 1 + (i-1)*4 # index of first face (which happens to also be the first hex element for tetrahedra)        
         i_vc = i+offset_Vc
-        Eh[i_f  ] = hex8{T}(      E[i][1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+2],
+        Eh[i_f  ] = Hex8{T}(      E[i][1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+2],
                             inv_Et[i_e+3], inv_Ft[i_f+1],          i_vc, inv_Ft[i_f+3])
-        Eh[i_f+1] = hex8{T}(      E[i][2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e  ],
+        Eh[i_f+1] = Hex8{T}(      E[i][2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e  ],
                             inv_Et[i_e+4], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+1])
-        Eh[i_f+2] = hex8{T}(      E[i][3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
+        Eh[i_f+2] = Hex8{T}(      E[i][3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
                             inv_Et[i_e+5], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+2])                             
-        Eh[i_f+3] = hex8{T}(      E[i][4], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+3],
+        Eh[i_f+3] = Hex8{T}(      E[i][4], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+3],
                             inv_Et[i_e+5], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+3])                             
     end    
     return Eh,Vh
@@ -3987,10 +3987,10 @@ Returns element faces
 
 # Description
 This function computes the faces for the input elements defined by `E`. The elements
-should be Vectors consisting of `tet4`, `hex8` elements. 
+should be Vectors consisting of `Tet4`, `Hex8` elements. 
 """
 function element2faces(E::Vector{Nhedron{N,T}}) where N where T 
-    if eltype(E) <: tet4{T}
+    if eltype(E) <: Tet4{T}
         nf = 4
         F = Vector{TriangleFace{T}}(undef,length(E)*nf)
         for i in eachindex(E)
@@ -4000,7 +4000,7 @@ function element2faces(E::Vector{Nhedron{N,T}}) where N where T
             F[ii+2] = TriangleFace{T}(E[i][2],E[i][3],E[i][4])
             F[ii+3] = TriangleFace{T}(E[i][3],E[i][1],E[i][4])
         end
-    elseif eltype(E) <: hex8{T}
+    elseif eltype(E) <: Hex8{T}
         nf = 6
         F = Vector{QuadFace{T}}(undef,length(E)*nf)
         for i in eachindex(E)
@@ -4018,7 +4018,7 @@ function element2faces(E::Vector{Nhedron{N,T}}) where N where T
 end
 
 """
-    subhex(E::Vector{hex8{T}},V::Vector{Point{ND,TV}},n::Int64; direction=0) where T<:Integer where ND where TV<:Real
+    subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int64; direction=0) where T<:Integer where ND where TV<:Real
 
 Split hexahedral elements
 
@@ -4032,7 +4032,7 @@ on node order used. For a hexahedron where by nodes 1:4 are for the bottom, and
 nodes 5:8 are for the top of the element then the directions 1, 2, and 3 correspond 
 to the x-, y-, and z-direction respectively.  
 """
-function subhex(E::Vector{hex8{T}},V::Vector{Point{ND,TV}},n::Int64; direction=0) where T<:Integer where ND where TV<:Real
+function subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int64; direction=0) where T<:Integer where ND where TV<:Real
     if iszero(n)
         return E,V
     elseif isone(n)
@@ -4105,78 +4105,78 @@ function subhex(E::Vector{hex8{T}},V::Vector{Point{ND,TV}},n::Int64; direction=0
             offset_E = offset_F + length(Vf)
             inv_Ft = inv_Ft .+ offset_F
             inv_Et = inv_Et .+ offset_E  
-            Eh = Vector{hex8{T}}(undef,length(E)*8) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
+            Eh = Vector{Hex8{T}}(undef,length(E)*8) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
             for i = eachindex(E)
                 i_e = 1 + (i-1)*12 # index of first edge
                 i_f = 1 + (i-1)*6 # index of first face 
                 i_vc = i + offset_Vc        
                 ii = 1 + (i-1)*8 
-                Eh[ii  ] = hex8{T}(        E[i][1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+3],
+                Eh[ii  ] = Hex8{T}(        E[i][1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+3],
                                     inv_Et[i_e+8 ], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+5] )   
 
-                Eh[ii+1] = hex8{T}(        E[i][2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e],
+                Eh[ii+1] = Hex8{T}(        E[i][2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e],
                                     inv_Et[i_e+9 ], inv_Ft[i_f+4],          i_vc, inv_Ft[i_f+2] )   
 
-                Eh[ii+2] = hex8{T}(        E[i][3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
+                Eh[ii+2] = Hex8{T}(        E[i][3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
                                     inv_Et[i_e+10], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+4] )   
 
-                Eh[ii+3] = hex8{T}(        E[i][4], inv_Et[i_e+3], inv_Ft[i_f  ], inv_Et[i_e+2],
+                Eh[ii+3] = Hex8{T}(        E[i][4], inv_Et[i_e+3], inv_Ft[i_f  ], inv_Et[i_e+2],
                                     inv_Et[i_e+11], inv_Ft[i_f+5],          i_vc, inv_Ft[i_f+3] )   
             
-                Eh[ii+4] = hex8{T}(        E[i][5], inv_Et[i_e+7], inv_Ft[i_f+1], inv_Et[i_e+4],
+                Eh[ii+4] = Hex8{T}(        E[i][5], inv_Et[i_e+7], inv_Ft[i_f+1], inv_Et[i_e+4],
                                     inv_Et[i_e+8 ], inv_Ft[i_f+5],          i_vc, inv_Ft[i_f+2] )   
 
-                Eh[ii+5] = hex8{T}(        E[i][6], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+5],
+                Eh[ii+5] = Hex8{T}(        E[i][6], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+5],
                                     inv_Et[i_e+9 ], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+4] )   
 
-                Eh[ii+6] = hex8{T}(        E[i][7], inv_Et[i_e+5], inv_Ft[i_f+1], inv_Et[i_e+6],
+                Eh[ii+6] = Hex8{T}(        E[i][7], inv_Et[i_e+5], inv_Ft[i_f+1], inv_Et[i_e+6],
                                     inv_Et[i_e+10], inv_Ft[i_f+4],          i_vc, inv_Ft[i_f+3] )   
                                     
-                Eh[ii+7] = hex8{T}(        E[i][8], inv_Et[i_e+6], inv_Ft[i_f+1], inv_Et[i_e+7],
+                Eh[ii+7] = Hex8{T}(        E[i][8], inv_Et[i_e+6], inv_Ft[i_f+1], inv_Et[i_e+7],
                                     inv_Et[i_e+11], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+5] )  
             end
         elseif isone(direction) # Split in 1st-direction
             Vh = [V;Ve] # Append vertices
             inv_Et = inv_Et .+ length(V)  
-            Eh = Vector{hex8{T}}(undef,length(E)*2) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
+            Eh = Vector{Hex8{T}}(undef,length(E)*2) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
             for i = eachindex(E)
                 i_e = 1 + (i-1)*4 # index of first edge
                 i_f = 1 + (i-1)*6 # index of first face 
                 ii = 1 + (i-1)*2
-                Eh[ii  ] = hex8{T}( Ft[i_f+4][4],  Ft[i_f+4][3],  Ft[i_f+4][2],  Ft[i_f+4][1], 
+                Eh[ii  ] = Hex8{T}( Ft[i_f+4][4],  Ft[i_f+4][3],  Ft[i_f+4][2],  Ft[i_f+4][1], 
                                    inv_Et[i_e+2], inv_Et[i_e+3], inv_Et[i_e+1], inv_Et[i_e+0] )   
 
-                Eh[ii+1] = hex8{T}( Ft[i_f+5][4],  Ft[i_f+5][3],  Ft[i_f+5][2],  Ft[i_f+5][1], 
+                Eh[ii+1] = Hex8{T}( Ft[i_f+5][4],  Ft[i_f+5][3],  Ft[i_f+5][2],  Ft[i_f+5][1], 
                                    inv_Et[i_e+0], inv_Et[i_e+1], inv_Et[i_e+3], inv_Et[i_e+2] )      
 
             end  
         elseif direction == 2 # Split in 2nd-direction
             Vh = [V;Ve] # Append vertices
             inv_Et = inv_Et .+ length(V)  
-            Eh = Vector{hex8{T}}(undef,length(E)*2) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
+            Eh = Vector{Hex8{T}}(undef,length(E)*2) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
             for i = eachindex(E)
                 i_e = 1 + (i-1)*4 # index of first edge
                 i_f = 1 + (i-1)*6 # index of first face 
                 ii = 1 + (i-1)*2
-                Eh[ii  ] = hex8{T}( Ft[i_f+2][4],  Ft[i_f+2][3],  Ft[i_f+2][2],  Ft[i_f+2][1], 
+                Eh[ii  ] = Hex8{T}( Ft[i_f+2][4],  Ft[i_f+2][3],  Ft[i_f+2][2],  Ft[i_f+2][1], 
                                    inv_Et[i_e+3], inv_Et[i_e+2], inv_Et[i_e+0], inv_Et[i_e+1] )   
 
-                Eh[ii+1] = hex8{T}( Ft[i_f+3][4],  Ft[i_f+3][3],  Ft[i_f+3][2],  Ft[i_f+3][1],
+                Eh[ii+1] = Hex8{T}( Ft[i_f+3][4],  Ft[i_f+3][3],  Ft[i_f+3][2],  Ft[i_f+3][1],
                                    inv_Et[i_e+2], inv_Et[i_e+3], inv_Et[i_e+1], inv_Et[i_e+0] )   
 
             end    
         elseif direction == 3 # Split in 3rd-direction
             Vh = [V;Ve] # Append vertices
             inv_Et = inv_Et .+ length(V)  
-            Eh = Vector{hex8{T}}(undef,length(E)*2) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
+            Eh = Vector{Hex8{T}}(undef,length(E)*2) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
             for i = eachindex(E)
                 i_e = 1 + (i-1)*4 # index of first edge
                 i_f = 1 + (i-1)*6 # index of first face 
                 ii = 1 + (i-1)*2
-                Eh[ii  ] = hex8{T}(   Ft[i_f][4],    Ft[i_f][3],     Ft[i_f][2],     Ft[i_f][1], 
+                Eh[ii  ] = Hex8{T}(   Ft[i_f][4],    Ft[i_f][3],     Ft[i_f][2],     Ft[i_f][1], 
                                    inv_Et[i_e+0], inv_Et[i_e+1], inv_Et[i_e+2], inv_Et[i_e+3] )   
 
-                Eh[ii+1] = hex8{T}(  Ft[i_f+1][4],   Ft[i_f+1][3],  Ft[i_f+1][2],  Ft[i_f+1][1],
+                Eh[ii+1] = Hex8{T}(  Ft[i_f+1][4],   Ft[i_f+1][3],  Ft[i_f+1][2],  Ft[i_f+1][1],
                                    inv_Et[i_e+3], inv_Et[i_e+2], inv_Et[i_e+1], inv_Et[i_e+0] )   
 
             end   
