@@ -1,7 +1,6 @@
 using Comodo
 using GLMakie
 using GeometryBasics
-using DelaunayTriangulation
 
 #=
 This demo shows the use of `hexbox` to generate a hexahedral mesh for a 3D box

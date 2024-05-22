@@ -65,7 +65,7 @@ Adds arrow key control to sliders
 
 # Description 
 
-This function adds arrow key control to GLMakie sliders. The inputs are the 
+This function adds arrow key control to Makie sliders. The inputs are the 
 slider handle `hSlider` as well as the axis `ax`. If this function is called the
 slider can be advanced a step by pressing the right arrow, and returned one step 
 by pressing the left arrow. When one presses and holds the right or left arrow 
