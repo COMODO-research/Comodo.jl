@@ -12,16 +12,16 @@ using QuadGK: quadgk # For numerical integration
 using Distances
 using DelaunayTriangulation # For triangular meshing
 using StaticArrays
+using TetGen # For tetrahedral meshing in tetgenmesh
 
 # Define types
-abstract type AbstractPolyhedron{N,T} <: StaticVector{N,T} end
-abstract type AbstractNhedron{N,T} <: AbstractPolyhedron{N,T} end
-GeometryBasics.@fixed_vector Nhedron = AbstractNhedron
-const Tet4{T} = Nhedron{4,T} where T<:Integer
-const Tet10{T} = Nhedron{10,T} where T<:Integer
-const Hex8{T} = Nhedron{8,T} where T<:Integer
-const Hex20{T} = Nhedron{20,T} where T<:Integer
-const Penta6{T} = Nhedron{6,T} where T<:Integer
+abstract type AbstractElement{N,T} <: StaticVector{N,T} end
+GeometryBasics.@fixed_vector Element = AbstractElement
+const Tet4{T} = Element{4,T} where T<:Integer
+const Tet10{T} = Element{10,T} where T<:Integer
+const Hex8{T} = Element{8,T} where T<:Integer
+const Hex20{T} = Element{20,T} where T<:Integer
+const Penta6{T} = Element{6,T} where T<:Integer
 
 """
     ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v)
@@ -845,6 +845,39 @@ end
 
 
 """
+    occursonce(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any    
+
+Checks if entries occur once
+
+# Description
+This function returns a Boolean vector where the entries are true where the 
+corresponding entry in the input `X` is unique (occurs once). If the optional 
+parameter `sort_entries` (default is false) is true, then each entry will be 
+sorted, in this case and entry [3,1,2] is viewed as the same as [1,3,2] and 
+[1,2,3] and so on. 
+"""
+function occursonce(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any    
+    d = Dict{T,Int64}() # Use dict to keep track of used values    
+    B = fill(false,length(X))
+    for i in eachindex(X)      
+        if sort_entries && length(X[1])>1
+            x = sort(X[i])        
+        else
+            x = X[i]
+        end  
+        if !haskey(d, x)            
+            d[x] = i # index in dict            
+            B[i] = true             
+        else
+            B[i] = false # Set urrent to false
+            B[d[x]] = false # And also one found earlier           
+        end
+    end
+    return B
+end
+
+
+"""
     gunique(X; return_unique=true, return_index=false, return_inverse=false, return_counts=false, sort_entries=false)
     
 Returns unique values and allows users to choose if they also want: sorting, indices, inverse indices, and counts. 
@@ -1445,13 +1478,19 @@ Returns the edge cross product, useful for nomal direction and area computations
 This function computes the so-called edge-cross-product for a input mesh that is
 either defined by the faces `F` and vertices `V` or the mesh `M`. 
 """
-function edgecrossproduct(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
-    C = Vector{GeometryBasics.Vec{ND, TV}}(undef,length(F)) # Allocate array cross-product vectors
-    n =  length(F[1]) # Number of nodes per face    
-    for q in eachindex(F) # Loop over all faces
-        c  = cross(V[F[q][n]],V[F[q][1]]) # Initialise as cross product of last and first vertex position vector
-        @inbounds for qe in 1:(n-1) # Loop from first to end-1            
-            c  += cross(V[F[q][qe]],V[F[q][qe+1]]) # Add next edge contribution          
+function edgecrossproduct(F::Union{Vector{NgonFace{NF,TF}},Vector{Vector{TF}}},V::Vector{Point{ND,TV}}) where NF where TF<:Integer where ND where TV<:Real
+    
+    if isa(F,Vector{Vector{TF}})
+        N = length(F[1])
+    else
+        N = NF
+    end
+
+    C = Vector{GeometryBasics.Vec{ND, TV}}(undef,length(F)) # Allocate array cross-product vectors      
+    for (q,f) in enumerate(F) # Loop over all faces
+        c  = cross(V[f[N]],V[f[1]]) # Initialise as cross product of last and first vertex position vector
+        @inbounds for qe in 1:(N-1) # Loop from first to end-1            
+            c  += cross(V[f[qe]],V[f[qe+1]]) # Add next edge contribution          
         end
         C[q] = c./2 # Length = face area, direction is along normal vector
     end
@@ -1903,7 +1942,7 @@ function con_face_edge(F,E_uni=nothing,indReverse=nothing)
         E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
     end
-    return [Vector{Int64}(a) for a in eachrow(reshape(indReverse,length(F),length(F[1])))] # [indReverse[[1,2,3].+ (i-1)*3] for i in eachindex(F)]
+    return [Vector{Int64}(a) for a in eachrow(reshape(indReverse,length(F),length(F[1])))] 
 end
 
 
@@ -2462,7 +2501,7 @@ function quadsphere(n::Int64,r::T) where T <: Real
     return F,V
 end
 
-function simplex2vertexdata(F,DF,V=nothing; con_V2F=nothing, weighting=:none)
+function simplex2vertexdata(F::Union{Vector{NgonFace{NF,TF}},Vector{Element{NE,TE}}},DF,V::Union{Nothing,Vector{Point{ND,TV}}}; con_V2F=nothing, weighting=:none) where NF where TF<:Integer where NE where TE<:Integer where ND where TV<:Real
     
     if isnothing(con_V2F)
         con_V2F = con_vertex_face(F,V)
@@ -2887,33 +2926,119 @@ function count_edge_face(F,E_uni=nothing,indReverse=nothing)::Vector{Int64}
     return C
 end
 
-function boundaryedges(F::Vector{NgonFace{N,TF}}) where N where TF <: Integer
-    E = meshedges(F)
-    Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
-    count_E2F = count_edge_face(F,Eu,indReverse)
-    return Eu[isone.(count_E2F)]
+
+"""
+    boundaryedges(F::Vector{NgonFace{N,TF}}) where N where TF <: Integer
+
+Returns boundary edges
+
+# Description
+This function returns the boundary edges `Eb` for the input mesh defined either 
+by a vector of faces or edges. Both should be of the type NgonFace (e.g. 
+LineFace for edges or TriangleFace, QuadFace, etc for faces). Boundary edges 
+are those edges that occur only once in the mesh. 
+"""
+function boundaryedges(F::Vector{NgonFace{N,T}}) where N where T <: Integer
+    if N == 2 # Input represents edges
+        return F[occursonce(F; sort_entries=true)]
+    else # Input assumed to represent faces
+        E = meshedges(F)
+        return E[occursonce(E; sort_entries=true)]
+    end
 end
 
-function edges2curve(Eb::Vector{LineFace{TF}}) where TF <: Integer
+
+"""
+    boundaryfaces(F::Vector{NgonFace{N,TF}}) where N where TF <: Integer
+    boundaryfaces(E::Vector{Element{N,T}}) where N where T <: Integer
+
+Returns boundary faces
+
+# Description
+This function returns the boundary faces `Fb` for the input mesh defined either 
+by a vector of elements or faces. 
+
+Boundary faces are those faces that occur only once in the mesh. 
+"""
+function boundaryfaces(F::Vector{NgonFace{N,T}}) where N where T <: Integer
+    return F[occursonce(F; sort_entries=true)]
+end
+
+function boundaryfaces(E::Vector{Element{N,T}}) where N where T <: Integer
+    F = element2faces(E)
+    return F[occursonce(F; sort_entries=true)]
+end
+
+"""
+    boundaryfaceindices(F::Vector{NgonFace{N,T}}) where N where T <: Integer
+
+Returns boundary face indices
+
+# Description
+This function returns the boundary face indices for the input mesh defined by 
+a vector of faces. 
+
+Boundary faces are those faces that occur only once in the mesh. 
+"""
+function boundaryfaceindices(F::Vector{NgonFace{N,T}}) where N where T <: Integer
+    return findall(occursonce(F; sort_entries=true))
+end
+
+""" 
+    edges2curve(Eb::Vector{LineFace{T}}) where T <: Integer
+
+Converts boundary edges to a curve
+
+# Description
+This function takes a set of boundary edges `Eb`, which may not be ordered e.g.
+consequtively, and returns an ordered set of indices `ind` defining a curve of 
+consequtive points. The function returns empty output if the input edges do not 
+for a proper curve. 
+"""
+function edges2curve(Eb::Vector{LineFace{T}}) where T <: Integer
     # TO DO: 
     # Handle while loop safety/breaking
     # Cope with non-ordered meshes (normals not coherent) 
 
-    con_E2E = con_edge_edge(Eb) # Edge-edge connectivity
-    seen = fill(false,length(Eb)) # Bool to keep track of visited points
-    i = 1 # Start with first edge
-    ind = [Eb[i][1]] # Add first edge point and grow this list
-    while !all(seen) # loop until all edges have been visited        
-        push!(ind,Eb[i][2]) # Add edge end point (start is already in list)
-        seen[i] = true # Lable current edge as visited       
-        e_ind = con_E2E[i] # Indices for connected edges
-        if Eb[e_ind[1]][1]==ind[end] #Check if 1st point of 1st edge equals end
-            i = e_ind[1]
-        elseif length(e_ind)>1 && Eb[e_ind[2]][1]==ind[end] #Check if 1st point of 2nd edge equals end
-            i = e_ind[2]
+    if isempty(Eb)
+        return Vector{T}[] # Return empty
+    else
+        numEdges = length(Eb)
+        numMax = 2*numEdges # Max number of connected points is all points
+        con_E2E = con_edge_edge(Eb) # Edge-edge connectivity
+        seen = fill(false,numEdges) # Bool to keep track of visited points
+        i = 1 # Start with first edge
+        ind = [Eb[i][1]] # Add first edge point and grow this list
+        while !all(seen) # loop until all edges have been visited        
+            push!(ind,Eb[i][2]) # Add edge end point (start is already in list)
+            seen[i] = true # Lable current edge as visited       
+            e_ind = con_E2E[i] # Indices for connected edges
+            if length(e_ind)>2 # Branch point detected
+                @warn "Branch point detected. Invalid curve."
+                ind = Int64[]
+                break
+            else
+                if Eb[e_ind[1]][1]==ind[end] #Check if 1st point of 1st edge equals end
+                    i = e_ind[1]
+                elseif length(e_ind)>1 && Eb[e_ind[2]][1]==ind[end] #Check if 1st point of 2nd edge equals end
+                    i = e_ind[2]
+                end
+            end
+
+            if seen[i] & !all(seen)
+                @warn "Invalid curve. Curve cannot proceed. Edges may contained multiple disconnected sets"
+                ind = Int64[]
+                break
+            end
+            
+            if length(ind)>numMax
+                @warn "Number of indices on curve is more than total. Invalid curve."
+                ind = Int64[]
+                break
+            end
         end
+        return ind
     end
-    return ind
 end
 
 """
@@ -3981,7 +4106,7 @@ function tet2hex(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer wh
 end
 
 """
-    element2faces(E::Vector{Nhedron{N,T}}) where N where T 
+    element2faces(E::Vector{Element{N,T}}) where N where T 
 
 Returns element faces
 
@@ -3989,7 +4114,7 @@ Returns element faces
 This function computes the faces for the input elements defined by `E`. The elements
 should be Vectors consisting of `Tet4`, `Hex8` elements. 
 """
-function element2faces(E::Vector{Nhedron{N,T}}) where N where T 
+function element2faces(E::Vector{Element{N,T}}) where N where T 
     if eltype(E) <: Tet4{T}
         nf = 4
         F = Vector{TriangleFace{T}}(undef,length(E)*nf)
@@ -4229,4 +4354,170 @@ function rhombicdodecahedron(r = 1.0)
     end
 
     return F,V
+end
+
+
+function tri2quad(F,V; method=:split)
+    # Get mesh edges 
+    E = meshedges(F) # Non-unique edges
+    Eu,_,inv_E = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+    Vf = simplexcenter(F,V) # Mid face points
+
+    if method == :split
+        # Compute new vertices 
+        Ve = simplexcenter(Eu,V) # Mid edge points
+        Vq = [V; Vf; Ve] # Append point sets
+
+        # Create quadrilateral faces 
+        Fq = Vector{QuadFace{Int64}}(undef,length(F)*3)
+        inv_E .+= length(V)+length(F) # Offset 
+        nf = length(F)
+        for (i,f) in enumerate(F)
+            i_f = 1 + (i-1)*3 # Index of first face
+            i_vf = i + length(V) # Index of mid face points
+            Fq[i_f  ] = QuadFace{Int64}(f[1], inv_E[i     ], i_vf, inv_E[i+2*nf] )
+            Fq[i_f+1] = QuadFace{Int64}(f[2], inv_E[i+  nf], i_vf, inv_E[i     ] )
+            Fq[i_f+2] = QuadFace{Int64}(f[3], inv_E[i+2*nf], i_vf, inv_E[i+  nf] )
+        end
+    elseif method == :rhombic
+        con_E2F = con_edge_face(F,Eu,inv_E)
+        nv = length(V)
+        Fq = Vector{QuadFace{Int64}}()
+        seen = Dict{Int64,LineFace{Int64}}()  
+        for (i,e) in enumerate(Eu)  
+            ind_F = con_E2F[i]
+            f1 = F[ind_F[1]]
+            if length(ind_F) == 2 # Edge touches two faces 
+                if e == f1[1:2] || e == f1[2:3] || e == f1[[3,1]] 
+                    push!(Fq, QuadFace{Int64}(e[1],ind_F[2]+nv,e[2],ind_F[1]+nv) )
+                else
+                    push!(Fq, QuadFace{Int64}(e[1],ind_F[1]+nv,e[2],ind_F[2]+nv) )
+                end 
+            else # Edge touches one face
+                i_f = ind_F[1] 
+                if haskey(seen,i_f) # Seen before
+                    ep = seen[i_f]
+                    B = [in(j,e) && in(j,ep) for j in f1]
+                    Vf[i_f] = V[f1[B][1]]
+                else
+                    Vf[i_f] = 0.5*(V[e[1]]+V[e[2]])
+                    seen[i_f] = e
+                end
+            end    
+        end
+        Vq = [V; Vf] # Append point sets
+    end
+    return Fq,Vq
+end
+
+"""
+    tetgenmesh(F::Array{NgonFace{N,TF}, 1},V::Vector{Point{3,TV}}; facetmarkerlist=nothing, V_regions=nothing,region_vol=nothing,V_holes=nothing,stringOpt="paAqYQ")  where N where TF<:Integer where TV<:Real
+
+Creates a tetrahedral mesh
+
+# Description
+This function uses the TetGen.jl library to mesh the input geometry defined by 
+the faces `F` and the vertices `V` using tetrahedral elements. Several optional
+input parameters are available: 
+
+* `facetmarkerlist`, a vector of integers with the same length as `F` and defines a face label for each face. 
+* `V_regions`, a vector of points inside regions which require tetrahedral meshing.
+* `region_vol`, a vector of scalar values to denote the desired tetrahedral volume for each region.  
+* `V_holes`, a vector of points inside holes (voids) that should remain empty. 
+* `stringOpt`, the TetGen command string to use. See also the TetGen documentation. 
+"""
+function tetgenmesh(F::Array{NgonFace{N,TF}, 1},V::Vector{Point{3,TV}}; facetmarkerlist=nothing, V_regions=nothing,region_vol=nothing,V_holes=nothing,stringOpt="paAqYQ")  where N where TF<:Integer where TV<:Real
+
+    # Initialise TetGen input
+    input = TetGen.RawTetGenIO{Cdouble}()
+
+    # Add points     
+    input.pointlist = reduce(hcat,V)
+
+    # Add faces (facets)
+    TetGen.facetlist!(input,F)
+
+    # Add face boundary markers 
+    if isnothing(facetmarkerlist)
+        input.facetmarkerlist = ones(length(F))
+    elseif length(facetmarkerlist) == length(F)
+        input.facetmarkerlist = facetmarkerlist
+    else
+        throw(ArgumentError("The length of the facetmarkerlist should be length(F)"))        
+    end
+
+    # Add region definitions
+    if isnothing(V_regions)
+        V_regions = [mean(V)]
+    end
+
+    if isnothing(region_vol)        
+        vol = mean(edgelengths(F,V))^3 / (6.0*sqrt(2.0)) # Volume for regular tetrahedron with mean edge length
+        region_vol = fill(vol,length(V_regions))        
+    elseif length(region_vol) == 1
+        region_vol = fill(region_vol,length(V_regions))
+    elseif length(region_vol) != length(V_regions)    
+        throw(ArgumentError("The length of region_vol should be 1 or length(V_regions)"))
+    end
+
+    input.regionlist = Matrix{Cdouble}(undef,5,length(V_regions))
+    for (i,v) in enumerate(V_regions)
+        input.regionlist[:,i] = [v[1]; v[2]; v[3]; i; region_vol[i]]
+    end
+    
+    # Add hole specifications 
+    if !isnothing(V_holes)
+        input.holelist = reduce(hcat,V_holes)
+    end
+
+    # TetGen meshing
+    TET = tetrahedralize(input, stringOpt)
+
+    # Retrieve elements, nodes, faces, and element/face labels
+    E = [Tet4{TF}(e) for e in eachcol(TET.tetrahedronlist)] # Tetrahedral elements
+    CE = vec(TET.tetrahedronattributelist)
+    V = [Point{3,TV}(v) for v in eachcol(TET.pointlist)] # Vertices
+    Fb = [TriangleFace{TF}(f) for f in eachcol(TET.trifacelist)]
+    Cb = TET.trifacemarkerlist
+
+    return E,V,CE,Fb,Cb
+end
+
+"""
+    surfacevolume(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
+
+Computes closed surface volume
+
+# Description
+This function computes the volume of a closed surface defined by the faces `F` 
+and the vertices `V`. 
+"""
+function surfacevolume(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
+    Z = [v[3] for v in V] # Z-coordinate for all vertices
+    vol = 0.0 
+    for f in F 
+        zm = mean(Z[f])       
+        @inbounds for qe in 1:N # Loop from first to end-1            
+            # vol += zm * cross(V[f[qe]],V[f[mod1(qe+1,N)]])[3] # Add next edge contribution
+            vol += zm * ( V[f[qe]][1]*V[f[mod1(qe+1,N)]][2] - V[f[qe]][2]*V[f[mod1(qe+1,N)]][1]) # Add next edge contribution          
+        end 
+    end    
+    return vol/2.0
+end
+
+"""
+    tetvolume(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer where ND where TV<:Real
+
+Computes tetrahedral volumes
+
+# Description 
+This function computes the volume for each tetrahedron defined by the input `E`, 
+a vector of Tet4 elements, and `V` the point coordinates. 
+"""
+function tetvolume(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer where ND where TV<:Real
+    vol = Vector{TV}(undef,length(E))
+    for (i,e) in enumerate(E)
+        vol[i] = sum( (V[e[1]]-V[e[4]]) .* cross((V[e[3]]-V[e[4]]),(V[e[2]]-V[e[4]])) )
+    end
+    return vol/6.0
 end

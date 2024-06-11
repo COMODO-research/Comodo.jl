@@ -236,8 +236,8 @@ elseif vizCase ==2
     scatter!(ax, V2,markersize=markersize,color=:red)
     hp3 = lines!(ax, V2,linewidth=linewidth,color=:red)
 
-    # hp1 = poly!(ax, GeometryBasics.Mesh(V,F), strokecolor=:black, strokewidth=0.5,color=C,transparency=false,shading = FastShading,colormap=:Spectral)
-    hp1 = mesh!(ax, GeometryBasics.Mesh(V,F), color=C,transparency=false,shading = FastShading,colormap=cMap)
+    hp1 = poly!(ax, GeometryBasics.Mesh(V,F), strokecolor=:black, strokewidth=0.5,color=C,transparency=false,shading = FastShading,colormap=:Spectral)
+    # hp1 = mesh!(ax, GeometryBasics.Mesh(V,F), color=C,transparency=false,shading = FastShading,colormap=cMap)
 
     on(hSlider1.value) do stepIndex1
         F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist=stepIndex1)

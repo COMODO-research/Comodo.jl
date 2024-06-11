@@ -566,6 +566,7 @@ end
     @test result2 == [1, 1, 2]
 end 
 
+
 @testset "unique_dict" begin 
     result1, result2, result3 = unique_dict([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
     @test result1 == [1, 2, 3, 4, 5]
@@ -573,6 +574,75 @@ end
     @test result3 == [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
 end 
 
+
+@testset "occursonce" verbose = true begin
+    @testset "vector input" begin 
+        # Vector of integers
+        A = [3,2,3,4,2,5,6]
+        B_true = Bool[0, 0, 0, 1, 0, 1, 1]
+        @test occursonce(A) == B_true
+
+        # Vector of floats
+        A = [3.1,2.0,3.1,4.5,2.0,5.0,6.0]
+        B_true = Bool[0, 0, 0, 1, 0, 1, 1]
+        @test occursonce(A) == B_true
+
+        # Vector of strings
+        A = ["three","two","three","four","two","five","six"]
+        B_true = Bool[0, 0, 0, 1, 0, 1, 1]
+        @test occursonce(A) == B_true
+    end
+
+    @testset "vector vectors" begin 
+        # Vector of integers (pre-sorted)
+        A = [[3,1],[2,0],[3,1],[4,0],[2,0],[5,0],[6,0]]
+        B_true = Bool[0, 0, 0, 1, 0, 1, 1]
+        @test occursonce(A) == B_true
+
+        # Vector of vectors (not sorted)
+        A = [[3,1],[2,0],[1,3],[4,0],[2,0],[5,0],[6,0]]
+        B_true = Bool[1, 0, 1, 1, 0, 1, 1]
+        @test occursonce(A) == B_true
+       
+        # Vector of vectors pre-sorting used
+        A = [[3,1],[2,0],[1,3],[4,0],[2,0],[5,0],[6,0]]
+        B_true = Bool[0, 0, 0, 1, 0, 1, 1]
+        @test occursonce(A; sort_entries=true) == B_true
+    end
+
+    @testset "vector edges or faces" begin 
+        # Vector of integers (pre-sorted)
+        A = LineFace{Int64}[[3,1],[2,0],[3,1],[4,0],[2,0],[5,0],[6,0]]
+        B_true = Bool[0, 0, 0, 1, 0, 1, 1]
+        @test occursonce(A) == B_true
+
+        # Vector of vectors (not sorted)
+        A = LineFace{Int64}[[3,1],[2,0],[1,3],[4,0],[2,0],[5,0],[6,0]]
+        B_true = Bool[1, 0, 1, 1, 0, 1, 1]
+        @test occursonce(A) == B_true
+       
+        # Vector of vectors pre-sorting used
+        A = LineFace{Int64}[[3,1],[2,0],[1,3],[4,0],[2,0],[5,0],[6,0]]
+        B_true = Bool[0, 0, 0, 1, 0, 1, 1]
+        @test occursonce(A; sort_entries=true) == B_true
+
+
+        # Vector of integers (pre-sorted)
+        A = TriangleFace{Int64}[[3,1,2],[2,1,2],[3,1,2],[4,1,2],[2,1,2],[5,1,2],[6,1,2]]
+        B_true = Bool[0, 0, 0, 1, 0, 1, 1]
+        @test occursonce(A) == B_true
+
+        # Vector of vectors (not sorted)
+        A = TriangleFace{Int64}[[3,1,2],[2,1,2],[3,2,1],[4,1,2],[2,1,2],[5,1,2],[6,1,2]]
+        B_true = Bool[1, 0, 1, 1, 0, 1, 1]
+        @test occursonce(A) == B_true
+        
+        # Vector of vectors pre-sorting used
+        A = TriangleFace{Int64}[[3,1,2],[2,1,2],[3,2,1],[4,1,2],[2,1,2],[5,1,2],[6,1,2]]
+        B_true = Bool[0, 0, 0, 1, 0, 1, 1]
+        @test occursonce(A; sort_entries=true) == B_true        
+    end
+end
 
 @testset "gunique" begin     
     r1, r2, r3, r4 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index=true, return_inverse=true, return_counts=true, sort_entries=false)
@@ -2432,7 +2502,7 @@ end
     eps_level = 1e-4
 
     # Single face/element
-    F1 = [[1,2,3,4,5,6]]
+    F1 = QuadFace{Int64}[[1,2,3,4]]
     V1 = [GeometryBasics.Point3(rand(3)) for _=1:length(F1[1])]
 
     # A quad mesh featuring a variation in terms of face areas and vertex connectivity 
@@ -2451,13 +2521,13 @@ end
     Eh,Vh,_,_,_ = hexbox([1.0,1.0,1.0],[2,2,2])
 
     @testset "Errors" begin
-        DF = [1.0] # Face data (here face number)
+        DF = [1.0] # Face data 
         @test_throws ArgumentError simplex2vertexdata(F1,DF,nothing; weighting=:area)
     end
 
     @testset "Vector Float64 data, weighting=:none" begin
         # Single element
-        DF = [1.0] # Face data (here face number)
+        DF = [1.0] # Face data 
         DV = simplex2vertexdata(F1,DF,V1; weighting=:none)
         @test isapprox(DV,ones(Float64,length(F1[1])), atol=eps_level)
 
@@ -2479,7 +2549,7 @@ end
     
     @testset "Vector Float64 data, weighting=:area" begin
         # Single element
-        DF = [1.0] # Face data (here face number)
+        DF = [1.0] # Face data 
         DV = simplex2vertexdata(F1,DF,V1; weighting=:area)
         @test isapprox(DV,ones(Float64,length(F1[1])), atol=eps_level)
 
@@ -2492,13 +2562,11 @@ end
         DF = collect(Float64,1:length(Ft)) # Face data (here face numbers)
         DV = simplex2vertexdata(Ft,DF,Vt; weighting=:area)
         @test isapprox(DV,[10.333333333333334, 11.333333333333334, 13.333333333333336, 6.999999999999999, 5.095917942265425, 5.646428199482246, 6.646428199482247, 6.146428199482247, 6.49489742783178, 6.545407685048602], atol=eps_level)
-
     end
     
     @testset "Vector of Vector Float64 data, weighting=:none" begin
-
         # Single element
-        DF = [[1.0,2.0,π]] # Face data (here face number)
+        DF = [[1.0,2.0,π]] # Face data 
         DV = simplex2vertexdata(F1,DF,V1; weighting=:none)
         @test isapprox(DV,repeat(DF,length(V1)), atol=eps_level)
 
@@ -2519,9 +2587,8 @@ end
     end
 
     @testset "Vector of Matrix Float64 data, weighting=:none" begin
-
         # Single element
-        DF = [[1.0 2.0 3.0; 4.0 5.0 6.0]] # Face data (here face number)
+        DF = [[1.0 2.0 3.0; 4.0 5.0 6.0]] # Face data 
         DV = simplex2vertexdata(F1,DF,V1; weighting=:none)
         @test isapprox(DV,repeat(DF,length(V1)), atol=eps_level)
 
@@ -2539,8 +2606,7 @@ end
         DF = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i in eachindex(Eh)] # Matrix data for each face
         DV = simplex2vertexdata(Eh,DF,Vh; weighting=:none)
         @test isapprox(DV,[[1.0 2.0 3.0; 4.0 5.0 6.0], [1.5 3.0 4.5; 6.0 7.5 9.0], [2.0 4.0 6.0; 8.0 10.0 12.0], [2.0 4.0 6.0; 8.0 10.0 12.0], [2.5 5.0 7.5; 10.0 12.5 15.0], [3.0 6.0 9.0; 12.0 15.0 18.0], [3.0 6.0 9.0; 12.0 15.0 18.0], [3.5 7.0 10.5; 14.0 17.5 21.0], [4.0 8.0 12.0; 16.0 20.0 24.0], [3.0 6.0 9.0; 12.0 15.0 18.0], [3.5 7.0 10.5; 14.0 17.5 21.0], [4.0 8.0 12.0; 16.0 20.0 24.0], [4.0 8.0 12.0; 16.0 20.0 24.0], [4.5 9.0 13.5; 18.0 22.5 27.0], [5.0 10.0 15.0; 20.0 25.0 30.0], [5.0 10.0 15.0; 20.0 25.0 30.0], [5.5 11.0 16.5; 22.0 27.5 33.0], [6.0 12.0 18.0; 24.0 30.0 36.0], [5.0 10.0 15.0; 20.0 25.0 30.0], [5.5 11.0 16.5; 22.0 27.5 33.0], [6.0 12.0 18.0; 24.0 30.0 36.0], [6.0 12.0 18.0; 24.0 30.0 36.0], [6.5 13.0 19.5; 26.0 32.5 39.0], [7.0 14.0 21.0; 28.0 35.0 42.0], [7.0 14.0 21.0; 28.0 35.0 42.0], [7.5 15.0 22.5; 30.0 37.5 45.0], [8.0 16.0 24.0; 32.0 40.0 48.0]], atol=eps_level)
-    end    
-    
+    end        
 end
 
 
@@ -3234,6 +3300,12 @@ end
 
 @testset "boundaryedges" verbose = true begin
 
+    @testset "Set of edges" begin
+        E = LineFace{Int64}[[1,2],[2,1],[3,1],[4,2],[2,4]]
+        Eb = boundaryedges(E)
+        @test Eb == LineFace{Int64}[[3, 1]]
+    end
+
     @testset "Single triangle" begin
         F = [TriangleFace{Int64}(1, 2, 3)]       
         Eb = boundaryedges(F)
@@ -3261,7 +3333,103 @@ end
 end
 
 
+@testset "boundaryfaces" verbose = true begin
+    @testset "Tetrahedron (all boundary faces)" begin
+        M = platonicsolid(1)
+        F = faces(M)        
+        Fb = boundaryfaces(F)        
+        @test F == Fb
+        @test typeof(F) == typeof(Fb)
+    end
+
+    @testset "Sphere mesh (all boundary faces)" begin
+        F,V = geosphere(2,1.0)
+        Fb = boundaryfaces(F)        
+        @test F == Fb
+        @test typeof(F) == typeof(Fb)
+    end
+
+    @testset "Tetrahedral mesh of a sphere" begin        
+        F1,V1 = geosphere(3,1.0)
+        E,V,CE,Fb,Cb = tetgenmesh(F1,V1)   
+        F = element2faces(E)
+
+        Fb1 = boundaryfaces(F)        
+        @test length(Fb1) == length(F1)
+        @test typeof(Fb1) == typeof(F1)
+
+        Fb2 = boundaryfaces(E)        
+        @test length(Fb2) == length(F1)
+        @test typeof(Fb2) == typeof(F1)
+        @test Fb1 == Fb2
+    end
+
+    @testset "Hex. mesh of a cube" begin        
+        sampleSize = 10
+        pointSpacing = 2
+        boxDim = sampleSize.*[1,1,1] # Dimensionsions for the box in each direction
+        boxEl = ceil.(Int64,boxDim./pointSpacing) # Number of elements to use in each direction 
+        E,V,F,Fbq,CFb_type = hexbox(boxDim,boxEl)   
+        F = element2faces(E)
+
+        Fb1 = boundaryfaces(F)        
+        @test length(Fb1) == length(Fbq)
+        @test typeof(Fb1) == typeof(F)
+
+        Fb2 = boundaryfaces(E)        
+        @test length(Fb2) == length(Fbq)
+        @test typeof(Fb2) == typeof(F)
+        @test Fb1 == Fb2
+    end
+end
+
+@testset "boundaryfaceindices" verbose = true begin
+    @testset "Tetrahedron (all boundary faces)" begin
+        M = platonicsolid(1)
+        F = faces(M)        
+        indB = boundaryfaceindices(F)
+        @test sort(indB) == collect(1:length(F))
+        @test typeof(indB) == Vector{Int64}
+    end
+
+    @testset "Sphere mesh (all boundary faces)" begin
+        F,V = geosphere(2,1.0)        
+        indB = boundaryfaceindices(F)
+        @test sort(indB) == collect(1:length(F))
+        @test typeof(indB) == Vector{Int64}
+    end
+
+    @testset "Tetrahedral mesh of a sphere" begin        
+        F1,V1 = geosphere(3,1.0)
+        E,V,CE,Fb,Cb = tetgenmesh(F1,V1)   
+        F = element2faces(E)
+
+        Fb1 = boundaryfaces(F)        
+        indB = boundaryfaceindices(F)        
+        @test F[indB] == Fb1
+    end
+
+    @testset "Hex. mesh of a cube" begin        
+        sampleSize = 10
+        pointSpacing = 2
+        boxDim = sampleSize.*[1,1,1] # Dimensionsions for the box in each direction
+        boxEl = ceil.(Int64,boxDim./pointSpacing) # Number of elements to use in each direction 
+        E,V,F,Fbq,CFb_type = hexbox(boxDim,boxEl)   
+        F = element2faces(E)
+
+        Fb1 = boundaryfaces(F)        
+        indB = boundaryfaceindices(F)        
+        @test F[indB] == Fb1
+    end
+end
+
+
 @testset "edges2curve" begin
+
+    # Empty input
+    E = LineFace{Int64}[]
+    ind = edges2curve(E)
+    @test isempty(ind)
 
     # Open curve
     E = LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 5]]
@@ -3273,6 +3441,15 @@ end
     ind = edges2curve(E)
     @test ind == [1,2,3,1]
 
+    # Disconnected edges
+    E = LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 5],[7,8]]
+    ind = edges2curve(E)
+    @test ind == Int64[]
+    
+    # Invalid curve with branch
+    E = LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 5],[5,3]]
+    ind = edges2curve(E)
+    @test ind == Int64[]
 end
 
 
@@ -4747,4 +4924,279 @@ end
     F,V = rhombicdodecahedron(r)
     
     @test isapprox(V,Vt.*r,atol=eps_level)
+end
+
+
+@testset "tri2quad" verbose=true begin
+    eps_level = 1e-6
+
+    @testset "tri2quad, split" verbose=true begin
+        @testset "Single triangle" begin
+            F = [TriangleFace{Int64}(1,2,3)]
+            V = [Point{3,Float64}(0.0,0.0,0.0),Point{3,Float64}(1.0,0.0,0.0),Point{3,Float64}(1.0,1.0,0.0)]
+            
+            E = meshedges(F; unique_only=true)
+            Fq,Vq = tri2quad(F,V; method=:split)
+            @test length(Fq) == length(F)*3
+            @test length(Vq) == length(V)+length(F)+length(E)
+            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Vq,typeof(V))
+            @test isapprox(Vq,Point{3, Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], 
+            [0.6666666666666666, 0.3333333333333333, 0.0], [0.5, 0.0, 0.0], [1.0, 0.5, 0.0], 
+            [0.5, 0.5, 0.0]],atol=eps_level)
+        end
+        
+        @testset "4 triangle tetrahedron mesh" begin
+            r = 1.0 #radius
+            M = platonicsolid(1,r) 
+            F = faces(M)
+            V = coordinates(M)
+
+            E = meshedges(F; unique_only=true)
+            Fq,Vq = tri2quad(F,V; method=:split)
+
+            ind = round.(Int64,range(1,length(Vq),6))
+
+            @test length(Fq) == length(F)*3
+            @test length(Vq) == length(V)+length(F)+length(E)
+            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Vq,typeof(V))
+            @test isapprox(Vq[ind],Point{3, Float64}[[-0.8164965809277261, -0.47140452079103173, -0.3333333333333333], 
+            [0.0, 0.9428090415820635, -0.3333333333333333], [0.0, 0.0, -0.3333333333333333], 
+            [0.0, -0.47140452079103173, -0.3333333333333333], [0.0, 0.47140452079103173, 0.33333333333333337], 
+            [-0.4082482904638631, -0.23570226039551587, 0.33333333333333337]],atol=eps_level)
+        end
+
+        @testset "icosahedron" begin
+            r = 1.0 #radius
+            M = platonicsolid(4,r) 
+            F = faces(M)
+            V = coordinates(M)
+
+            E = meshedges(F; unique_only=true)
+            Fq,Vq = tri2quad(F,V; method=:split)
+
+            ind = round.(Int64,range(1,length(Vq),6))
+
+            @test length(Fq) == length(F)*3
+            @test length(Vq) == length(V)+length(F)+length(E)
+            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Vq,typeof(V))
+            @test isapprox(Vq[ind],Point{3, Float64}[[0.0, -0.5257311121191336, -0.85065080835204], 
+            [-0.28355026945068, 0.0, -0.7423442429410713], [0.4587939734903912, -0.4587939734903912, 0.4587939734903912], 
+            [-0.2628655560595668, -0.6881909602355868, 0.42532540417602], [-0.6881909602355868, -0.42532540417602, -0.2628655560595668], 
+            [-0.6881909602355868, -0.42532540417602, 0.2628655560595668]],atol=eps_level)
+        end
+    end
+
+    @testset "tri2quad, rhombic" verbose=true begin
+        @testset "Single triangle" begin
+            F = [TriangleFace{Int64}(1,2,3)]
+            V = [Point{3,Float64}(0.0,0.0,0.0),Point{3,Float64}(1.0,0.0,0.0),Point{3,Float64}(1.0,1.0,0.0)]
+            
+            E = meshedges(F; unique_only=true)
+            Fq,Vq = tri2quad(F,V; method=:rhombic)
+            @test isempty(Fq)
+            @test length(Vq) == length(V)+length(F)
+            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Vq,typeof(V))
+            @test isapprox(Vq,Point{3, Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], 
+            [1.0, 1.0, 0.0], [0.0, 0.0, 0.0]],atol=eps_level)
+        end
+        
+        @testset "Single triangle, refined once" begin
+            F = [TriangleFace{Int64}(1,2,3)]
+            V = [Point{3,Float64}(0.0,0.0,0.0),Point{3,Float64}(1.0,0.0,0.0),Point{3,Float64}(1.0,1.0,0.0)]
+            F,V = subtri(F,V,1)
+
+            E = meshedges(F; unique_only=true)
+            Fq,Vq = tri2quad(F,V; method=:rhombic)
+            @test length(Fq) == 3
+            @test length(Vq) == length(V)+length(F)
+            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Vq,typeof(V))
+            @test isapprox(Vq,Point{3, Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], 
+            [1.0, 1.0, 0.0], [0.5, 0.0, 0.0], [1.0, 0.5, 0.0], [0.5, 0.5, 0.0], 
+            [0.6666666666666666, 0.3333333333333333, 0.0], [0.0, 0.0, 0.0], [1.0, 0.0, 0.0], 
+            [1.0, 1.0, 0.0]],atol=eps_level)
+        end
+
+        @testset "4 triangle tetrahedron mesh" begin
+            r = 1.0 #radius
+            M = platonicsolid(1,r) 
+            F = faces(M)
+            V = coordinates(M)
+
+            E = meshedges(F; unique_only=true)
+            Fq,Vq = tri2quad(F,V; method=:rhombic)
+
+            ind = round.(Int64,range(1,length(Vq),6))
+
+            @test length(Fq) == length(E)
+            @test length(Vq) == length(V)+length(F)
+            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Vq,typeof(V))
+            @test isapprox(Vq,Point{3, Float64}[[-0.8164965809277261, -0.47140452079103173, -0.3333333333333333], 
+            [0.8164965809277261, -0.47140452079103173, -0.3333333333333333], 
+            [0.0, 0.0, 1.0], [0.0, 0.9428090415820635, -0.3333333333333333], 
+            [0.0, -0.3142696805273545, 0.11111111111111112], [0.0, 0.0, -0.3333333333333333], 
+            [0.27216552697590873, 0.15713484026367724, 0.11111111111111115], 
+            [-0.27216552697590873, 0.15713484026367724, 0.11111111111111112]],atol=eps_level)
+        end
+
+        @testset "icosahedron" begin
+            r = 1.0 #radius
+            M = platonicsolid(4,r) 
+            F = faces(M)
+            V = coordinates(M)
+
+            E = meshedges(F; unique_only=true)
+            Fq,Vq = tri2quad(F,V; method=:rhombic)
+
+            ind = round.(Int64,range(1,length(Vq),6))
+
+            @test length(Fq) == length(E)
+            @test length(Vq) == length(V)+length(F)
+            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Vq,typeof(V))
+            @test isapprox(Vq[ind],Point{3, Float64}[[0.0, -0.5257311121191336, -0.85065080835204], 
+            [0.5257311121191336, 0.85065080835204, 0.0], [-0.28355026945068, 0.0, -0.7423442429410713], 
+            [-0.4587939734903912, 0.4587939734903912, 0.4587939734903912], [0.28355026945068, 0.0, 0.7423442429410713],
+             [-0.4587939734903912, 0.4587939734903912, -0.4587939734903912]],atol=eps_level)
+        end
+    end
+end
+
+
+@testset "tetgenmesh" verbose=true begin
+    eps_level = 1e-4
+
+    @testset "One region sphere" begin
+        r = pi/2
+        F1,V1 = geosphere(3,r)
+        E,V,CE,Fb,Cb = tetgenmesh(F1,V1)
+        vol = sum(tetvolume(E,V))
+        vol_true = surfacevolume(F1,V1)
+
+        @test isa(E,Vector{Tet4{eltype(F1[1])}})
+        @test isa(V,typeof(V1))
+        @test length(Fb) == length(F1)
+        @test isapprox(vol,vol_true,atol=eps_level)
+        
+        # Create 32-bit types to check type inheritance
+        F1,V1 = geosphere(3,1)
+        F1 = [TriangleFace{Int32}(f) for f in F1]
+        V1 = [Point{3,Float32}(v) for v in V1]
+        E,V,CE,Fb,Cb = tetgenmesh(F1,V1)
+        
+        @test isa(E,Vector{Tet4{eltype(F1[1])}})
+        @test isa(V,typeof(V1))
+    end
+
+    @testset "Two region sphere" begin
+        r1 = 2.0
+        r2 = r1/2
+        F1,V1 = geosphere(3,r1)
+        D1 = edgelengths(F1,V1) 
+    
+        F2,V2 = geosphere(3,r2)
+        D2 = edgelengths(F2,V2) 
+        vol_true = abs(surfacevolume(F1,V1))
+
+        F2 = [f.+length(V1) for f in invert_faces(F2)]    
+        Fb = [F1;F2]
+        Vb = [V1;V2]
+        
+        vol1 = mean(D1)^3 / (6.0*sqrt(2.0))
+        vol2 = mean(D2)^3 / (6.0*sqrt(2.0))
+    
+        Cb = ones(length(Fb))
+        Cb[length(F1)+1:end] .+= 1
+    
+        v_region1 = Point{3,Float64}(r2+((r1-r2)/2), 0.0, 0.0)
+        v_region2 = Point{3,Float64}(0.0, 0.0, 0.0)    
+    
+        region_vol = [vol1,vol2]
+    
+        stringOpt = "paAqYQ"
+        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=[v_region1,v_region2],region_vol=region_vol, stringOpt)
+        vol = sum(tetvolume(E,V))
+        
+        @test isa(E,Vector{Tet4{eltype(F1[1])}})
+        @test isa(V,typeof(Vb))
+        @test length(Fb) == length(F1)+length(F2)
+        @test isapprox(vol,vol_true,atol=eps_level)
+
+
+        r1 = 2.0
+        r2 = r1/2
+        F1,V1 = geosphere(3,r1)
+        D1 = edgelengths(F1,V1) 
+    
+        F2,V2 = geosphere(3,r2)
+        D2 = edgelengths(F2,V2) 
+        vol_true = abs(surfacevolume(F1,V1))
+
+        F2 = [f.+length(V1) for f in invert_faces(F2)]    
+        Fb = [F1;F2]
+        Vb = [V1;V2]
+        
+        vol1 = mean(D1)^3 / (6.0*sqrt(2.0))
+        vol2 = mean(D2)^3 / (6.0*sqrt(2.0))
+    
+        Cb = ones(length(Fb))
+        Cb[length(F1)+1:end] .+= 1
+    
+        v_region1 = Point{3,Float64}(r2+((r1-r2)/2), 0.0, 0.0)
+        v_region2 = Point{3,Float64}(0.0, 0.0, 0.0)    
+    
+        region_vol = [vol1,vol2]
+    
+        stringOpt = "paAqYQ"
+        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=[v_region1,v_region2],region_vol=vol1, stringOpt)
+        vol = sum(tetvolume(E,V))
+        
+        @test isa(E,Vector{Tet4{eltype(F1[1])}})
+        @test isa(V,typeof(Vb))
+        @test length(Fb) == length(F1)+length(F2)
+        @test isapprox(vol,vol_true,atol=eps_level)
+
+        # Check errror
+        @test_throws Exception tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=[v_region1,v_region2],region_vol=[1,2,3,4], stringOpt)
+        @test_throws Exception tetgenmesh(Fb,Vb; facetmarkerlist=[1,2], V_regions=[v_region1,v_region2],region_vol=region_vol, stringOpt)
+
+    end
+
+    @testset "Sphere with hole" begin
+        r1 = 2.0
+        r2 = r1/2
+    
+        F1,V1 = geosphere(3,r1)
+        F2,V2 = geosphere(2,r2)
+        vol_true = abs(surfacevolume(F1,V1))-abs(surfacevolume(F2,V2))
+    
+        F2 = [f.+length(V1) for f in invert_faces(F2)]    
+        Fb = [F1;F2]
+        Vb = [V1;V2]
+    
+        D = edgelengths(Fb,Vb) 
+        vol1 = mean(D)^3 / (6.0*sqrt(2.0))
+    
+        Cb = ones(length(Fb))
+        Cb[length(F1)+1:end] .+= 1
+    
+        v_hole = Point{3,Float64}(0.0, 0.0, 0.0)
+        v_region = Point{3,Float64}(r2+((r1-r2)/2), 0.0, 0.0)
+    
+        stringOpt = "paAqYQ"
+        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=[v_region],region_vol=vol1,V_holes=[v_hole], stringOpt)
+        vol = sum(tetvolume(E,V))
+        
+        @test isa(E,Vector{Tet4{eltype(F1[1])}})
+        @test isa(V,typeof(Vb))
+        @test length(Fb) == length(F1)+length(F2)
+        @test isapprox(vol,vol_true,atol=eps_level)
+    end
+
+
 end

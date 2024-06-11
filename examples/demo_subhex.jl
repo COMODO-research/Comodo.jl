@@ -50,4 +50,3 @@ hp2 = wireframe!(ax3,GeometryBasics.Mesh(V,F), linewidth=linewidth,color=:red, o
 # hp3 = normalplot(ax3,Fh3,Vh3;color=:black)
 
 fig
-

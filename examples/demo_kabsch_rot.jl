@@ -5,15 +5,14 @@ using FileIO
 using Rotations
 
 #=
-In this demo a mesh is loaded, in this case a triangulated surface from an STL 
-file. Next the coordinates are rotated, and the unrotated and rotated meshes 
-are visualized. 
+This demo is for the `kabsch_rot` function. The Kabsch method allows one to 
+determine the rotation that occured between two meshes (or point sets) with 
+point-to-point correspondance. In this demo a triangulated surface is loaded 
+from an STL file. Next the coordinates are rotated, and the Kabsch method is 
+used to retrieve the rotation performed, allowing one to "unrotate" the data.  
 =#
 
 # Loading a mesh
-
-# fileName_mesh = joinpath(comododir(),"assets","obj","spot_control_mesh_texture.obj")
-# M = load(fileName_mesh)
 
 fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
 M = load(fileName_mesh)

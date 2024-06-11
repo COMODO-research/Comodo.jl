@@ -20,15 +20,17 @@ include("functions.jl")
 export GeometryBasics
 
 # Export types
-export Nhedron, Tet4, Tet10, Hex8, Hex20, Penta6 # Volumetric elements (polyhedra)
+export Element, Tet4, Tet10, Hex8, Hex20, Penta6 # Volumetric elements (polyhedra)
 
 # Export types/structs
 export ConnectivitySet
 
 # Export functions
 export comododir, elements2indices, hexbox, mindist, dist, lerp
-export gridpoints, gridpoints_equilateral, interp_biharmonic_spline, interp_biharmonic, nbezier, gunique
-export ind2sub, sub2ind, meshedges, edgelengths, unique_simplices, unique_dict
+export gridpoints, gridpoints_equilateral
+export interp_biharmonic_spline, interp_biharmonic, nbezier
+export ind2sub, sub2ind, meshedges, edgelengths 
+export gunique, unique_simplices, unique_dict, occursonce
 export subtri, subquad, geosphere, quad2tri 
 export icosahedron, tetrahedron, cube, dodecahedron, octahedron, platonicsolid
 export tofaces, topoints, togeometrybasics_mesh
@@ -39,12 +41,13 @@ export con_edge_face, con_edge_edge, con_face_edge, con_face_face, con_face_face
 export con_vertex_face, con_vertex_vertex, con_vertex_simplex, meshconnectivity
 export simplexcenter, vertex2simplexdata, simplex2vertexdata
 export circlepoints, loftlinear, trisurfslice
-export edgeangles, count_edge_face, boundaryedges, edges2curve
+export edgeangles, count_edge_face, boundaryedges, boundaryfaces, boundaryfaceindices, edges2curve
 export pointspacingmean, extrudecurve, meshgroup, ray_triangle_intersect
 export distmarch, mesh_curvature_polynomial, curve_length, evenly_sample, evenly_space
 export invert_faces, kabsch_rot, sweeploft, loftpoints2surf, revolvecurve
 export batman, tridisc, triplate, regiontrimesh, scalesimplex, subcurve, dualclad
-export tet2hex, element2faces, subhex, rhombicdodecahedron
+export tet2hex, element2faces, subhex, rhombicdodecahedron, tri2quad
+export tetgenmesh, surfacevolume, tetvolume
 
 # Export functions: Visualization related
 export slidercontrol, slider2anim, dirplot, normalplot
