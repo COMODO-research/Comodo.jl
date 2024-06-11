@@ -3423,7 +3423,6 @@ end
     end
 end
 
-
 @testset "edges2curve" begin
 
     # Empty input
@@ -3443,13 +3442,14 @@ end
 
     # Disconnected edges
     E = LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 5],[7,8]]
-    ind = edges2curve(E)
-    @test ind == Int64[]
+    @test_throws Exception edges2curve(E)
     
     # Invalid curve with branch
     E = LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 5],[5,3]]
-    ind = edges2curve(E)
-    @test ind == Int64[]
+    @test_throws Exception edges2curve(E)
+
+    E = LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 5],[5,3]]
+    @test_throws Exception edges2curve(E)
 end
 
 
@@ -4901,6 +4901,14 @@ end
     @test length(Eh0) == length(E)*8*8
     @test isa(Eh0,Vector{Hex8{Int64}})
     @test isa(Vh0,Vector{eltype(V)})
+
+    # Check when n=0 (no refinement)
+    Eh0,Vh0 = subhex(E,V,0;direction=0)
+    @test Eh0 == E
+    @test Vh0 == V
+
+    @test_throws Exception subhex(E,V,-1;direction=0)
+    
 end
 
 

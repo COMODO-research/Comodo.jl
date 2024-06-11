@@ -332,7 +332,7 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
     elseif  pad_data==:none
         # No padding
     else
-        error("InvalidParameter: Invalid pad_data method provided, valued options are :linear, :constant, and :none")
+        throw(ArgumentError("Invalid pad_data method provided, valued options are :linear, :constant, and :none"))
     end
 
     # Change behaviour depending on extrapolation method
@@ -420,7 +420,7 @@ vectors with elements of the type `AbstractPoint{3}` (e.g.
 """
 function nbezier(P::Vector{Point{ND,TV}},n::Integer) where ND where TV<:Real
     if n<2
-        error("The vale of n is too low. Request at least two data points")
+        throw(ArgumentError("n is too low. Request at least two data points"))
     end
     t = range(0,1,n) # t range
     N = length(P) # Number of control points 
@@ -3013,10 +3013,11 @@ function edges2curve(Eb::Vector{LineFace{T}}) where T <: Integer
             push!(ind,Eb[i][2]) # Add edge end point (start is already in list)
             seen[i] = true # Lable current edge as visited       
             e_ind = con_E2E[i] # Indices for connected edges
+            
+            println(e_ind)
+
             if length(e_ind)>2 # Branch point detected
-                @warn "Branch point detected. Invalid curve."
-                ind = Int64[]
-                break
+                throw(ErrorException("Invalid edges or branch point detected."))    
             else
                 if Eb[e_ind[1]][1]==ind[end] #Check if 1st point of 1st edge equals end
                     i = e_ind[1]
@@ -3026,16 +3027,8 @@ function edges2curve(Eb::Vector{LineFace{T}}) where T <: Integer
             end
 
             if seen[i] & !all(seen)
-                @warn "Invalid curve. Curve cannot proceed. Edges may contained multiple disconnected sets"
-                ind = Int64[]
-                break
-            end
-            
-            if length(ind)>numMax
-                @warn "Number of indices on curve is more than total. Invalid curve."
-                ind = Int64[]
-                break
-            end
+                throw(ErrorException("Invalid edges. Edges may contained multiple disconnected sets"))
+            end            
         end
         return ind
     end
