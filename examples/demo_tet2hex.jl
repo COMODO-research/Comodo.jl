@@ -10,7 +10,7 @@ domain.
 testCase = 1
 
 if testCase == 1
-    E = [tet4{Int64}(1,2,3,4),tet4{Int64}(2,3,4,5),tet4{Int64}(6,7,8,9)]
+    E = [Tet4{Int64}(1,2,3,4),Tet4{Int64}(2,3,4,5),Tet4{Int64}(6,7,8,9)]
     V = [Point{3,Float64}(-1.0,0.0,0.0),
          Point{3,Float64}( 1.0,0.0,0.0),
          Point{3,Float64}( 0.0,1.0,0.0),

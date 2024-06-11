@@ -28,23 +28,23 @@ elseif testCase ==3
     V = coordinates(M)
 
     # Build deformation gradient tensor to induce shear with known angles
-    f = zeros(3,3)
+    fd = zeros(3,3)
     for i=1:3
-        f[i,i]=1.0
+        fd[i,i]=1.0
     end
     a = pi/6 # "45 degree shear"  
-    f[1,2] = tan(a) 
-    V = [eltype(V)(f*v) for v ∈ V] # Shear the cube
+    fd[1,2] = tan(a) 
+    V = [eltype(V)(fd*v) for v ∈ V] # Shear the cube
 
     # Build deformation gradient tensor to induce shear with known angles
-    f = zeros(3,3)
+    fd = zeros(3,3)
     for i=1:3
-        f[i,i]=1.0
+        fd[i,i]=1.0
     end
     a = pi/6 # "45 degree shear"  
-    f[3,1] = tan(a) 
+    fd[3,1] = tan(a) 
     
-    V = [eltype(V)(f*v) for v ∈ V] # Shear the cube
+    V = [eltype(V)(fd*v) for v ∈ V] # Shear the cube
 
 end
 

@@ -4,7 +4,7 @@ using Statistics
 using GLMakie
 using FileIO
 
-testCase = 1
+testCase = 3
 
 if testCase == 1
     r = 1.0
@@ -202,7 +202,7 @@ slidercontrol(hSlider,ax1)
 
 fig
 
-# fileName = comododir()*"/assets/img/TetGen_example_01.mp4"
+# fileName = comododir()*"/assets/img/tetvol_01.mp4"
 # slider2anim(fig,hSlider,fileName; backforth=true, duration=6)
 
 # fig

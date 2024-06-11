@@ -36,6 +36,6 @@ hp2 = poly!(ax3,GeometryBasics.Mesh(Vn3,Fn3), strokewidth=3,color=:white,shading
 Legend(fig[2, 1][1,2],[hp1,hp2],["Initial","Refined"])
 
 ax4 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=3, distance to sphere")
-hp3 = poly!(ax4,GeometryBasics.Mesh(Vn3,Fn3), strokewidth=0.5,color=d3,shading=FastShading,transparency=false,colormap=:Spectral,limits=maximum(abs.(d3)).*(-1.0,1.0))
+hp3 = poly!(ax4,GeometryBasics.Mesh(Vn3,Fn3), strokewidth=0.5,color=d3,shading=FastShading,transparency=false,colormap=:Spectral)
 Colorbar(fig[2, 2][1, 2],hp3)
 fig
