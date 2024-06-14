@@ -2645,30 +2645,30 @@ function loftpoints2surf(V::Vector{Point{ND,TV}},num_steps; close_loop=true,face
         F = Vector{QuadFace{Int64}}()
         @inbounds for i = 1:(nc-1)
             @inbounds for j = 1:(num_steps-1)    
-                push!(F,QuadFace{Int64}([ij2ind(i,j+1),ij2ind(i+1,j+1),ij2ind(i+1,j),ij2ind(i,j)  ]))
+                push!(F,QuadFace{Int64}([ij2ind(i,j), ij2ind(i+1,j), ij2ind(i+1,j+1), ij2ind(i,j+1)  ]))
             end
         end
 
         # Add faces to close over shape if requested
         if close_loop
             @inbounds for q in 1:(num_steps-1)                
-                push!(F,QuadFace{Int64}([ ij2ind(nc,q+1), ij2ind(1,q+1), ij2ind(1,q), ij2ind(nc,q) ])) 
+                push!(F,QuadFace{Int64}([ ij2ind(nc,q), ij2ind(1,q), ij2ind(1,q+1), ij2ind(nc,q+1) ])) 
             end
         end
     elseif face_type == :tri_slash 
         F = Vector{TriangleFace{Int64}}()
         @inbounds for i = 1:nc-1
             @inbounds for j = 1:num_steps-1    
-                push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i+1,j), ij2ind(i,j)     ])) # 1 2 3
-                push!(F,TriangleFace{Int64}([ ij2ind(i,j),     ij2ind(i,j+1), ij2ind(i+1,j+1) ])) # 3 4 1
+                push!(F,TriangleFace{Int64}([     ij2ind(i,j), ij2ind(i+1,j), ij2ind(i+1,j+1) ])) 
+                push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i,j+1), ij2ind(i,j)     ])) 
             end
         end
 
         # Add faces to close over shape if requested
         if close_loop
             @inbounds for q in 1:num_steps-1
-                push!(F,TriangleFace{Int64}([ ij2ind(1,q+1), ij2ind(1,q),    ij2ind(nc,q)  ])) # 1 2 3
-                push!(F,TriangleFace{Int64}([ ij2ind(nc,q),  ij2ind(nc,q+1), ij2ind(1,q+1) ])) # 3 4 1
+                push!(F,TriangleFace{Int64}([  ij2ind(nc,q),    ij2ind(1,q), ij2ind(1,q+1) ])) 
+                push!(F,TriangleFace{Int64}([ ij2ind(1,q+1), ij2ind(nc,q+1), ij2ind(nc,q)  ])) 
             end
         end
     elseif face_type == :tri 
@@ -2676,11 +2676,11 @@ function loftpoints2surf(V::Vector{Point{ND,TV}},num_steps; close_loop=true,face
         @inbounds for i = 1:nc-1
             @inbounds for j = 1:(num_steps-1)    
                 if iseven(j) # Normal slash
-                    push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i+1,j),  ij2ind(i,j)     ])) # 1 2 3
-                    push!(F,TriangleFace{Int64}([ ij2ind(i,j),     ij2ind(i,j+1),  ij2ind(i+1,j+1) ])) # 3 4 1
+                    push!(F,TriangleFace{Int64}([     ij2ind(i,j), ij2ind(i+1,j), ij2ind(i+1,j+1) ]))
+                    push!(F,TriangleFace{Int64}([ ij2ind(i+1,j+1), ij2ind(i,j+1), ij2ind(i,j)     ])) 
                 else # Other slash 
-                    push!(F,TriangleFace{Int64}([ ij2ind(i,j+1), ij2ind(i+1,j+1), ij2ind(i+1,j) ])) # 2 3 4
-                    push!(F,TriangleFace{Int64}([ ij2ind(i+1,j), ij2ind(i,j),     ij2ind(i,j+1) ])) # 4 1 2                 
+                    push!(F,TriangleFace{Int64}([ ij2ind(i+1,j), ij2ind(i+1,j+1), ij2ind(i,j+1) ])) 
+                    push!(F,TriangleFace{Int64}([ ij2ind(i,j+1),     ij2ind(i,j), ij2ind(i+1,j) ]))               
                 end
             end
         end
@@ -2689,11 +2689,11 @@ function loftpoints2surf(V::Vector{Point{ND,TV}},num_steps; close_loop=true,face
         if close_loop
             @inbounds for q in 1:(num_steps-1)
                 if iseven(q) 
-                    push!(F,TriangleFace{Int64}([ ij2ind(nc,q),  ij2ind(nc,q+1), ij2ind(1,q+1) ])) 
-                    push!(F,TriangleFace{Int64}([ ij2ind(1,q+1), ij2ind(1,q),    ij2ind(nc,q)  ])) 
+                    push!(F,TriangleFace{Int64}([ ij2ind(1,q+1), ij2ind(nc,q+1), ij2ind(nc,q)  ])) 
+                    push!(F,TriangleFace{Int64}([  ij2ind(nc,q),    ij2ind(1,q), ij2ind(1,q+1) ])) 
                 else
-                    push!(F,TriangleFace{Int64}([ ij2ind(nc,q+1), ij2ind(1,q+1), ij2ind(1,q)    ]))
-                    push!(F,TriangleFace{Int64}([ ij2ind(1,q),    ij2ind(nc,q),  ij2ind(nc,q+1) ]))   
+                    push!(F,TriangleFace{Int64}([    ij2ind(1,q), ij2ind(1,q+1), ij2ind(nc,q+1) ]))
+                    push!(F,TriangleFace{Int64}([ ij2ind(nc,q+1),  ij2ind(nc,q), ij2ind(1,q)    ]))   
                 end
             end
         end
@@ -3013,9 +3013,6 @@ function edges2curve(Eb::Vector{LineFace{T}}) where T <: Integer
             push!(ind,Eb[i][2]) # Add edge end point (start is already in list)
             seen[i] = true # Lable current edge as visited       
             e_ind = con_E2E[i] # Indices for connected edges
-            
-            println(e_ind)
-
             if length(e_ind)>2 # Branch point detected
                 throw(ErrorException("Invalid edges or branch point detected."))    
             else
@@ -3088,7 +3085,7 @@ function extrudecurve(V1::Vector{Point{ND,TV}},d; s=1, n=Vec{3, Float64}(0.0,0.0
         p = d.*n
     elseif isone(-s) # Against n from V1
         p = -d.*n
-        V1 = reverse(V1)
+        V1 = circshift(reverse(V1),1)
     elseif iszero(s) # Extrude both ways from V1
         p = d.*n
         V1 = [(eltype(V1))(v.-p./2) for v in V1] #Shift V1 in negative direction
@@ -3394,18 +3391,15 @@ end
 This function takes the input mesh defined by the faces `F` and vertices `V` and
 separates any shared vertices. It does this by giving each face its own set of 
 unshared vertices. Note that any unused points are not returned in the output 
-point array `Vn`. 
+point array `Vn`. Indices for the mapping are not created here but can simply be
+obtained using `reduce(vcat,F)`.
 """
 function separate_vertices(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
-    Vn = Vector{eltype(V)}()
-    Fn = deepcopy(F)
-    c = 0 
-    for q in eachindex(F)
-        f = F[q]
-        m = length(f)
-        Fn[q] = c .+ (1:m)
-        c += m
-        append!(Vn,V[f])
+    Vn = Vector{eltype(V)}(undef,length(F)*N)
+    Fn = Vector{eltype(F)}(undef,length(F))
+    for (i,f) in enumerate(F)   
+        Fn[i] = (eltype(F))( (i-1)*N .+ (1:N) )       
+        Vn[Fn[i]] = V[f]
     end
     return Fn,Vn
 end
@@ -3555,25 +3549,37 @@ function sweeploft(Vc::Vector{Point{ND,TV}},V1::Vector{Point{ND,TV}},V2::Vector{
     np = length(V1) # Number of section points
     nc = length(Vc) # Number of curve steps
 
-    # Centre start/end sections arond means (should be curve start/end points)
+    # Determine rotation between sections 
+    n = normalizevector(Vc[2]-Vc[1]) # Curve start vector 
+    n3_1 = facenormal([collect(1:length(V1))],V1)[1] # Curve normal vector
+    if dot(n,n3_1)<0 # Check if anti-aligned
+        n3_1 = -n3_1 # Flip vector
+        V1 = circshift(reverse(V1),1) # Reverse curve order
+        V2 = circshift(reverse(V2),1)
+    end
+
+    # Centre start/end sections around means (should be curve start/end points of curve)
     V1b = [v.-Vc[1] for v in V1] 
     V2b = [v.-Vc[end] for v in V2] 
-
-    # Determine rotation between sections 
-    n3_1 = facenormal([collect(1:length(V1))],V1)[1] # normalizevector(Vc[2]-Vc[1])
+    
     n1_1 = normalizevector(V1b[1]) 
-    n2_1 = normalizevector(cross(n1_1,n3_1))
-    n1_1 = normalizevector(cross(n3_1,n2_1))
+    n2_1 = normalizevector(cross(n3_1,n1_1))
+    n1_1 = normalizevector(cross(n2_1,n3_1))
     S1p = mapreduce(permutedims,vcat,[n1_1,n2_1,n3_1])
 
-    n3_2 = facenormal([collect(1:length(V2))],V2)[1] # normalizevector(Vc[end]-Vc[end-1])
+    n = normalizevector(Vc[end]-Vc[end-1])
+    n3_2 = facenormal([collect(1:length(V2))],V2)[1] 
+    # if dot(n,n3_2)<0
+    #     n3_2 = -n3_2
+    # end
+    
     n1_2 = normalizevector(V2b[1]) 
-    n2_2 = normalizevector(cross(n1_2,n3_2))
-    n1_2 = normalizevector(cross(n3_2,n2_2))        
+    n2_2 = normalizevector(cross(n3_2,n1_2))
+    n1_2 = normalizevector(cross(n2_2,n3_2))        
     S2p = mapreduce(permutedims,vcat,[n1_2,n2_2,n3_2])
 
     Q12 = RotMatrix3{Float64}(S1p\S2p) # nearest_rotation(S1p\S2p)
-    
+
     # Rotate V2b to start orientation
     V2b = [Q12*v for v in V2b] 
 
@@ -3586,13 +3592,15 @@ function sweeploft(Vc::Vector{Point{ND,TV}},V1::Vector{Point{ND,TV}},V2::Vector{
         
         ind = (1:np) .+ (q-1)*np # Indices of the points to map
         if q==1 # Just take the start section when we are at the start
-            V[ind] = V1
-        elseif q == nc # Just take the end section when we are at the start
-            V[ind] = V2            
+            V[ind] = V1    
         else # Rotate and position intermediate section 
-            n3 = normalizevector(normalizevector(Vc[q]-Vc[q-1]) .+ normalizevector(Vc[q+1]-Vc[q]))                        
-            n2 = normalizevector(cross(n1p,n3))
-            n1 = normalizevector(cross(n3,n2))
+            if q == nc
+                n3 = normalizevector(Vc[q]-Vc[q-1])                        
+            else
+                n3 = normalizevector(normalizevector(Vc[q]-Vc[q-1]) .+ normalizevector(Vc[q+1]-Vc[q]))                        
+            end
+            n2 = normalizevector(cross(n3,n1p))
+            n1 = normalizevector(cross(n2,n3))
             S2 = mapreduce(permutedims,vcat,[n1,n2,n3])
 
             Q12 = RotMatrix3{Float64}(S2\S1p)
@@ -3600,8 +3608,12 @@ function sweeploft(Vc::Vector{Point{ND,TV}},V1::Vector{Point{ND,TV}},V2::Vector{
             n1p = n1
         end   
 
-        if q == nc-1 # Once here, second to last, a potential rotational mismatch needs to be resolve
-            Q_fix = RotMatrix3{Float64}(S2\S2p) # Rotation between last and second to last
+        if q == nc # Once here, a potential rotational mismatch needs to be resolved
+            V[ind] = V2 # Overwrite end with desired end
+
+            # Determine rotation between last and actual end section
+            Q_fix = RotMatrix3{Float64}(S2\S2p) 
+            
             t_a = Rotations.params(AngleAxis(Q_fix)) # Angle/axis representation
             if dot(t_a[2:end],n3)<0                 
                 β_fix = t_a[1]
@@ -4108,7 +4120,8 @@ This function computes the faces for the input elements defined by `E`. The elem
 should be Vectors consisting of `Tet4`, `Hex8` elements. 
 """
 function element2faces(E::Vector{Element{N,T}}) where N where T 
-    if eltype(E) <: Tet4{T}
+    element_type = eltype(E)
+    if element_type <: Tet4{T}
         nf = 4
         F = Vector{TriangleFace{T}}(undef,length(E)*nf)
         for i in eachindex(E)
@@ -4118,7 +4131,7 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
             F[ii+2] = TriangleFace{T}(E[i][2],E[i][3],E[i][4])
             F[ii+3] = TriangleFace{T}(E[i][3],E[i][1],E[i][4])
         end
-    elseif eltype(E) <: Hex8{T}
+    elseif element_type <: Hex8{T}
         nf = 6
         F = Vector{QuadFace{T}}(undef,length(E)*nf)
         for i in eachindex(E)
@@ -4131,6 +4144,28 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
             F[ii+4] = QuadFace{T}(e[2],e[3],e[7],e[6]) # Front
             F[ii+5] = QuadFace{T}(e[5],e[8],e[4],e[1]) # Back
         end
+    elseif element_type <: Penta6{T}
+        nfq = 3
+        Fq = Vector{QuadFace{T}}(undef,length(E)*nfq)
+        for i in eachindex(E)
+            e = E[i]
+            ii = 1 + (i-1)*nfq
+            Fq[ii  ] = QuadFace{T}(e[1],e[2],e[5],e[4]) # Side 1
+            Fq[ii+1] = QuadFace{T}(e[2],e[3],e[6],e[5]) # Side 2
+            Fq[ii+2] = QuadFace{T}(e[3],e[1],e[4],e[6]) # Side 3            
+        end
+
+        nft = 2
+        Ft = Vector{TriangleFace{T}}(undef,length(E)*nft)
+        for i in eachindex(E)
+            e = E[i]
+            ii = 1 + (i-1)*nft
+            Ft[ii  ] = TriangleFace{T}(e[3],e[2],e[1]) # Bottom
+            Ft[ii+1] = TriangleFace{T}(e[4],e[5],e[6]) # Top
+        end
+        F = (Ft,Fq)
+    else
+        throw(ArgumentError("$element_type not supported yet"))
     end
     return F
 end

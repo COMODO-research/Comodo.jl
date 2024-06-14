@@ -7,10 +7,10 @@ using LinearAlgebra
 r = 1.0 # Radius
 nc = 26 # Number of points
 
-V1 = circlepoints(r,nc;dir=:cw)
+V1 = circlepoints(r,nc;dir=:acw)
 height = 2.5
 rFun(t) = r + 0.5.* sin(4.0*t)
-V2 = circlepoints(rFun,nc;dir=:cw)
+V2 = circlepoints(rFun,nc;dir=:acw)
 V2 = [GeometryBasics.Point{3, Float64}(v[1],v[2],height) for v ∈ V2]
 V2,_ = evenly_sample(V2,nc)
 ## Loft from curve 1 to curve 2
@@ -35,7 +35,7 @@ for q = 1:4
     hp2=lines!(ax1,V2, linewidth = linewidth, color = :red)
     scatter!(V2,markersize=markersize,color = :red)
     hp3=poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,color=:white,shading=FastShading,transparency=false)
-    # normalplot(ax1,GeometryBasics.Mesh(V,F); type_flag=:face, color=:black)
+    normalplot(ax1,GeometryBasics.Mesh(V,F); type_flag=:face, color=:black)
 end
 # Legend(fig[1, 4],[hp1,hp2,hp3],["curve 1", "curve 2", "lofted surface"])
 

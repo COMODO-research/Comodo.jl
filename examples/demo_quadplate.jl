@@ -6,6 +6,8 @@ plateDim = [20.0,24.0]
 plateElem = [11,16]
 
 F,V = quadplate(plateDim,plateElem)
+N = facenormal(F,V)
+
 
 ## Visualize mesh
 fig = Figure(size=(1000,1000))
