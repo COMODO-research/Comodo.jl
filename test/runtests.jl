@@ -5243,5 +5243,115 @@ end
         @test isapprox(vol,vol_true,atol=eps_level)
     end
 
-
 end
+
+
+@testset "extrudefaces" verbose=true begin
+    eps_level = 1e-6
+
+    @testset "Vector with single QuadFace" begin        
+        F = QuadFace{Int64}[ [1,2,3,4] ]
+        V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [0.0,1.0,0.0] ]
+
+        thickness = 2.0
+        num_steps = 4
+        directionSet = (:out,:in,:both)
+        for direction in directionSet
+            E, VE = extrudefaces(F,V; thickness=thickness, direction=direction, num_steps=num_steps)
+            E_ind = reduce(vcat,E)            
+            @test isa(E, Vector{Hex8{Int64}})
+            @test isa(VE, Vector{eltype(V)})
+            @test length(VE) == num_steps * length(V)
+            @test length(E) == (num_steps-1) * length(F)
+            @test minimum(E_ind) == 1
+            @test maximum(E_ind) == length(VE)
+            @test E == Hex8{Int64}[[1, 2, 3, 4, 5, 6, 7, 8], [5, 6, 7, 8, 9, 10, 11, 12], [9, 10, 11, 12, 13, 14, 15, 16]]
+        end
+        ind = round.(Int64,range(1,length(VE),6))
+        E, VE = extrudefaces(F,V; thickness=thickness, direction=:out, num_steps=num_steps)
+        @test isapprox(VE[ind],Point{3, Float64}[[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], 
+        [1.0, 1.0, 0.6666666666666666], [1.0, 0.0, 1.3333333333333333], 
+        [0.0, 0.0, 2.0], [0.0, 1.0, 2.0]],atol=eps_level)     
+    end
+    
+    @testset "Vector of QuadFaces" begin        
+        F = QuadFace{Int64}[ [1,2,3,4], [5,6,3,2] ]
+        V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [0.0,1.0,0.0], [2.0,0.0,0.0], [2.0,1.0,0.0] ]
+
+        thickness = 2.0
+        num_steps = 4
+        directionSet = (:out,:in,:both)
+        for direction in directionSet
+            E, VE = extrudefaces(F,V; thickness=thickness, direction=direction, num_steps=num_steps)
+            E_ind = reduce(vcat,E)            
+            @test isa(E, Vector{Hex8{Int64}})
+            @test isa(VE, Vector{eltype(V)})
+            @test length(VE) == num_steps * length(V)
+            @test length(E) == (num_steps-1) * length(F)
+            @test minimum(E_ind) == 1
+            @test maximum(E_ind) == length(VE)
+            @test E == Hex8{Int64}[[1, 2, 3, 4, 7, 8, 9, 10], [5, 6, 3, 2, 11, 12, 9, 8], 
+            [7, 8, 9, 10, 13, 14, 15, 16], [11, 12, 9, 8, 17, 18, 15, 14], 
+            [13, 14, 15, 16, 19, 20, 21, 22], [17, 18, 15, 14, 23, 24, 21, 20]]
+        end
+        ind = round.(Int64,range(1,length(VE),6))
+        E, VE = extrudefaces(F,V; thickness=thickness, direction=:out, num_steps=num_steps)
+        @test isapprox(VE[ind],Point{3, Float64}[[0.0, 0.0, 0.0], [2.0, 1.0, 0.0], 
+        [0.0, 1.0, 0.6666666666666666], [1.0, 1.0, 1.3333333333333333], 
+        [0.0, 0.0, 2.0], [2.0, 1.0, 2.0]],atol=eps_level)        
+    end
+
+    @testset "Vector with single TriangleFace" begin      
+        T = Int32
+        F = TriangleFace{T}[ [1,2,3] ]
+        V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0]]
+
+        thickness = 2.0
+        num_steps = 4
+        directionSet = (:out,:in,:both)
+        for direction in directionSet
+            E, VE = extrudefaces(F,V; thickness=thickness, direction=direction, num_steps=num_steps)
+            E_ind = reduce(vcat,E)            
+            @test isa(E, Vector{Penta6{T}})
+            @test isa(VE, Vector{eltype(V)})
+            @test length(VE) == num_steps * length(V)
+            @test length(E) == (num_steps-1) * length(F)
+            @test minimum(E_ind) == 1
+            @test maximum(E_ind) == length(VE)
+            @test E == Penta6{Int32}[[1, 2, 3, 4, 5, 6], [4, 5, 6, 7, 8, 9], [7, 8, 9, 10, 11, 12]]
+        end
+        E, VE = extrudefaces(F,V; thickness=thickness, direction=:out, num_steps=num_steps)
+        ind = round.(T,range(1,length(VE),6))
+        @test isapprox(VE[ind],Point{3, Float64}[[0.0, 0.0, 0.0], [1.0, 1.0, 0.0], 
+        [1.0, 0.0, 0.6666666666666666], [1.0, 0.0, 1.3333333333333333], 
+        [0.0, 0.0, 2.0], [1.0, 1.0, 2.0]],atol=eps_level)        
+    end
+
+    @testset "Vector of TriangeFaces" begin       
+        F = TriangleFace{Int64}[ [1,2,3], [2,4,3] ]
+        V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [2.0,0.0,0.0]]
+
+        thickness = 2.0
+        num_steps = 4
+        directionSet = (:out,:in,:both)
+        for direction in directionSet
+            E, VE = extrudefaces(F,V; thickness=thickness, direction=direction, num_steps=num_steps)
+            E_ind = reduce(vcat,E)
+            @test isa(E, Vector{Penta6{Int64}})
+            @test isa(VE, Vector{eltype(V)})
+            @test length(VE) == num_steps * length(V)
+            @test length(E) == (num_steps-1) * length(F)
+            @test minimum(E_ind) == 1
+            @test maximum(E_ind) == length(VE)
+            @test E == Penta6{Int64}[[1, 2, 3, 5, 6, 7], [2, 4, 3, 6, 8, 7], 
+            [5, 6, 7, 9, 10, 11], [6, 8, 7, 10, 12, 11], [9, 10, 11, 13, 14, 15], 
+            [10, 12, 11, 14, 16, 15]]
+        end
+        ind = round.(Int64,range(1,length(VE),6))
+        E, VE = extrudefaces(F,V; thickness=thickness, direction=:out, num_steps=num_steps)
+        @test isapprox(VE[ind],Point{3, Float64}[[0.0, 0.0, 0.0], [2.0, 0.0, 0.0], 
+        [1.0, 1.0, 0.6666666666666666], [1.0, 0.0, 1.3333333333333333], 
+        [0.0, 0.0, 2.0], [2.0, 0.0, 2.0]],atol=eps_level)        
+    end
+end
+

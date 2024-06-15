@@ -5,7 +5,7 @@ using Rotations
 using Statistics
 using LinearAlgebra
 
-testCase = 3
+testCase = 1
 
 if testCase ==1 
     plateDim = [10.0,10.0]
@@ -14,6 +14,7 @@ if testCase ==1
 
     t = 6
     n = 4
+    direction=:both
 elseif testCase == 2
     plateDim = [10.0,10.0]
     plateElem = [5,5]
@@ -22,6 +23,7 @@ elseif testCase == 2
 
     t = 6
     n = 4
+    direction=:out
 elseif testCase == 3
     nc = 101 # Number of points on guide curve
     r = 8
@@ -86,64 +88,14 @@ elseif testCase == 3
     F,V = sweeploft(Vc,V1,V2; face_type=:tri, num_twist=0)
 
     t = 1
-    n = 4
+    n = 5
+    direction=:out
 end
 
-"""
 
-"""
-function extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; thickness=1.0, direction=:out, num_steps=2, N::Union{Vector{Point{ND,TN}},Vector{Vec{ND, TN}},Nothing}=nothing) where NF where TF<:Integer where ND where TV<:Real where TN<:Real
-
-    nv = length(V)
-    nf = length(F)
-
-    if isnothing(N)
-        N = vertexnormal(F,V; weighting=:area)
-    end
-    # 
-
-    face_type=eltype(F)
-    if face_type == QuadFace{TF}
-        element_type = Hex8{TF}
-    elseif face_type == TriangleFace{TF}
-        element_type = Penta6{TF}
-    else
-        throw(ArgumentError("$face_type type face not supported. Supported types are QuadFace and TriangleFace."))
-    end
-
-    if direction == :out # Default, not action needed
-    elseif direction == :in # Against N from V
-        thickness = -thickness        
-    elseif direction == :both # Extrude both ways from V                
-        V -= thickness/2.0 .* N #Shift V in negative direction by half the thickness      
-    else
-        throw(ArgumentError("$direction is not a valid direction, Use :out, :in, or :both.")) 
-    end
-
-    # Create coordinates and elements
-    E = Vector{element_type}(undef,length(F)*(n-1))
-    Ve = repeat(V,n) # Vector{eltype(V)}(undef,n*m)
-    for q = 1:num_steps-1
-        # Create offset coordinates
-        iv = 1 + q*nv
-        Ve[iv:(iv-1)+nv] += q/(num_steps-1)*N*thickness
-
-        # Create elements 
-        ie = 1 + (q-1)*nf
-        for (i,f) in enumerate(F)
-            if thickness<0 # Use inverse order for elements here due to flipped extrusion direction
-                E[ie+(i-1)] = (element_type)([f .+ (nv*q); f .+ (nv*(q-1));])
-            else # Use normal element order 
-                E[ie+(i-1)] = (element_type)([f .+ (nv*(q-1)); f .+ (nv*q)])
-            end
-        end
-    end
-
-    return E, Ve
-end
 
 N = vertexnormal(F,V; weighting=:area)
-E, Ve = extrudefaces(F,V; thickness=t, direction=:out, num_steps=n)
+E, Ve = extrudefaces(F,V; thickness=t, direction=direction, num_steps=n)
 
 FE = element2faces(E)
 
@@ -185,10 +137,10 @@ else
     C = repeat(collect(1:n),inner=length(V))
     Cs = C[ind]
     FEs,Vs = separate_vertices(FE,Ve)
-    hp2=poly!(ax2,GeometryBasics.Mesh(Vs,FEs), strokewidth=strokewidth,color=Cs, shading = FastShading,transparency=false,colormap=:Spectral)
-    # normalplot(ax2,FE,Ve; scaleval=0.25)
+    hp2=poly!(ax2,GeometryBasics.Mesh(Vs,FEs), strokewidth=strokewidth,color=Cs, shading = FastShading,transparency=true,colormap=:Spectral)
+    normalplot(ax2,FE,Ve; scaleval=0.25)
 
-    # poly!(ax2,GeometryBasics.Mesh(V,F), strokewidth=strokewidth,color=:lightgreen, shading = FastShading,transparency=false)
+    poly!(ax2,GeometryBasics.Mesh(V,F), strokewidth=strokewidth,color=:lightgreen, shading = FastShading,transparency=false)
 end
 
 fig

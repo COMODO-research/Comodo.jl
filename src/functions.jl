@@ -4550,3 +4550,51 @@ function tetvolume(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer 
     return vol/6.0
 end
 
+"""
+
+"""
+function extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; thickness=1.0, direction=:out, num_steps=2, N::Union{Vector{Point{ND,TN}},Vector{Vec{ND, TN}},Nothing}=nothing) where NF where TF<:Integer where ND where TV<:Real where TN<:Real
+
+    nv = length(V)
+    nf = length(F)
+
+    if isnothing(N)
+        N = vertexnormal(F,V; weighting=:area)
+    end
+    # 
+
+    face_type=eltype(F)
+    if face_type == QuadFace{TF}
+        element_type = Hex8{TF}
+    elseif face_type == TriangleFace{TF}
+        element_type = Penta6{TF}
+    else
+        throw(ArgumentError("$face_type type face not supported. Supported types are QuadFace and TriangleFace."))
+    end
+
+    if direction == :out # Default, not action needed
+    elseif direction == :in # Against N from V
+        V -= thickness .* N #Shift V in negative direction by half the thickness      
+    elseif direction == :both # Extrude both ways from V                
+        V -= thickness/2.0 .* N #Shift V in negative direction by half the thickness      
+    else
+        throw(ArgumentError("$direction is not a valid direction, Use :out, :in, or :both.")) 
+    end
+
+    # Create coordinates and elements
+    E = Vector{element_type}(undef,length(F)*(num_steps-1))
+    VE = repeat(V,num_steps) # Vector{eltype(V)}(undef,n*m)
+    for q = 1:num_steps-1
+        # Create offset coordinates
+        iv = 1 + q*nv
+        VE[iv:(iv-1)+nv] += q/(num_steps-1)*N*thickness
+
+        # Create elements 
+        ie = 1 + (q-1)*nf
+        for (i,f) in enumerate(F)            
+            E[ie+(i-1)] = (element_type)([f .+ (nv*(q-1)); f .+ (nv*q)])            
+        end
+    end
+
+    return E, VE
+end
