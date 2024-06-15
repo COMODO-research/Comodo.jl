@@ -4165,7 +4165,7 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
         end
         F = (Ft,Fq)
     else
-        throw(ArgumentError("$element_type not supported yet"))
+        throw(ArgumentError("$element_type not supported. Supported types are Hex8, Tet4, and Penta6."))
     end
     return F
 end
@@ -4549,3 +4549,4 @@ function tetvolume(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer 
     end
     return vol/6.0
 end
+

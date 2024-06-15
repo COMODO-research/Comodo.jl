@@ -4883,6 +4883,32 @@ end
         @test isa(F,Vector{TriangleFace{Int64}})
         @test F[1] == [3,2,1]
     end
+
+    @testset "pentahedra" begin
+        E = [Penta6{Int64}(1,2,3,4,5,6)]
+        F = element2faces(E)
+        @test isa(F,Tuple)
+        @test length(F[1]) == length(E)*2
+        @test length(F[2]) == length(E)*3
+        @test isa(F[1],Vector{TriangleFace{Int64}})
+        @test isa(F[2],Vector{QuadFace{Int64}})
+        @test F[1][1] == [3,2,1]
+
+        E = [Penta6{Int64}(1,2,3,4,5,6),Penta6{Int64}(1,2,3,7,8,9),Penta6{Int64}(7,8,9,4,5,6)]
+        F = element2faces(E)
+        @test isa(F,Tuple)
+        @test length(F[1]) == length(E)*2
+        @test length(F[2]) == length(E)*3
+        @test isa(F[1],Vector{TriangleFace{Int64}})
+        @test isa(F[2],Vector{QuadFace{Int64}})
+        @test F[1][1] == [3,2,1]
+    end
+
+    @testset "errors" begin
+        E = [Tet10{Int64}(1,2,3,4,5,6,7,8,9,10)]                
+        @test_throws Exception element2faces(E)
+    end
+
 end
 
 

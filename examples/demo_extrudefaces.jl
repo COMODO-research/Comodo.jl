@@ -89,42 +89,51 @@ elseif testCase == 3
     n = 4
 end
 
-# function extrudecurve(V1::Vector{Point{ND,TV}},d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad) where ND where TV<:Real
+"""
 
-function extrudeFaces(F,V; d=1.0, s=1, num_steps=2, N = nothing)
+"""
+function extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; thickness=1.0, direction=:out, num_steps=2, N::Union{Vector{Point{ND,TN}},Vector{Vec{ND, TN}},Nothing}=nothing) where NF where TF<:Integer where ND where TV<:Real where TN<:Real
+
+    nv = length(V)
+    nf = length(F)
 
     if isnothing(N)
         N = vertexnormal(F,V; weighting=:area)
     end
-    nv = length(V)
-    nf = length(F)
+    # 
 
-    if isa(F,Vector{QuadFace{Int64}})
-        element_type = Hex8{Int64}
-    elseif isa(F,Vector{TriangleFace{Int64}})
-        element_type = Penta6{Int64}
+    face_type=eltype(F)
+    if face_type == QuadFace{TF}
+        element_type = Hex8{TF}
+    elseif face_type == TriangleFace{TF}
+        element_type = Penta6{TF}
+    else
+        throw(ArgumentError("$face_type type face not supported. Supported types are QuadFace and TriangleFace."))
     end
 
-    if isone(s) # Allong N from V
-        # nothing to do 
-    elseif isone(-s) # Against N from V
-        d = -d        
-    elseif iszero(s) # Extrude both ways from V                
-        V -= d/2.0 .* N #Shift V in negative direction        
+    if direction == :out # Default, not action needed
+    elseif direction == :in # Against N from V
+        thickness = -thickness        
+    elseif direction == :both # Extrude both ways from V                
+        V -= thickness/2.0 .* N #Shift V in negative direction by half the thickness      
+    else
+        throw(ArgumentError("$direction is not a valid direction, Use :out, :in, or :both.")) 
     end
 
     # Create coordinates and elements
     E = Vector{element_type}(undef,length(F)*(n-1))
     Ve = repeat(V,n) # Vector{eltype(V)}(undef,n*m)
     for q = 1:num_steps-1
+        # Create offset coordinates
         iv = 1 + q*nv
-        Ve[iv:(iv-1)+nv] += q/(num_steps-1)*N*d
+        Ve[iv:(iv-1)+nv] += q/(num_steps-1)*N*thickness
 
+        # Create elements 
         ie = 1 + (q-1)*nf
         for (i,f) in enumerate(F)
-            if d<0
+            if thickness<0 # Use inverse order for elements here due to flipped extrusion direction
                 E[ie+(i-1)] = (element_type)([f .+ (nv*q); f .+ (nv*(q-1));])
-            else
+            else # Use normal element order 
                 E[ie+(i-1)] = (element_type)([f .+ (nv*(q-1)); f .+ (nv*q)])
             end
         end
@@ -133,7 +142,8 @@ function extrudeFaces(F,V; d=1.0, s=1, num_steps=2, N = nothing)
     return E, Ve
 end
 
-E, Ve = extrudeFaces(F,V; d=t, s=0, num_steps=n)
+N = vertexnormal(F,V; weighting=:area)
+E, Ve = extrudefaces(F,V; thickness=t, direction=:out, num_steps=n)
 
 FE = element2faces(E)
 
