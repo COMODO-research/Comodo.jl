@@ -5353,5 +5353,18 @@ end
         [1.0, 1.0, 0.6666666666666666], [1.0, 0.0, 1.3333333333333333], 
         [0.0, 0.0, 2.0], [2.0, 0.0, 2.0]],atol=eps_level)        
     end
+
+    @testset "errors" begin
+        F = TriangleFace{Int64}[ [1,2,3], [2,4,3] ]
+        V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [2.0,0.0,0.0]]
+
+        thickness = 2.0
+        num_steps = 4
+        direction = :wrong
+        @test_throws Exception extrudefaces(F,V; thickness=thickness, direction=direction, num_steps=num_steps)        
+
+        F = LineFace{Int64}[ [1,2], [3,4] ]
+        @test_throws Exception extrudefaces(F,V; thickness=thickness, direction=:out, num_steps=num_steps)        
+    end
 end
 

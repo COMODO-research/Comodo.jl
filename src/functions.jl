@@ -4554,15 +4554,13 @@ end
 
 """
 function extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; thickness=1.0, direction=:out, num_steps=2, N::Union{Vector{Point{ND,TN}},Vector{Vec{ND, TN}},Nothing}=nothing) where NF where TF<:Integer where ND where TV<:Real where TN<:Real
-
-    nv = length(V)
-    nf = length(F)
-
+    
+    # Compute normal directions if not provided
     if isnothing(N)
         N = vertexnormal(F,V; weighting=:area)
     end
-    # 
 
+    # Set element type
     face_type=eltype(F)
     if face_type == QuadFace{TF}
         element_type = Hex8{TF}
@@ -4582,6 +4580,8 @@ function extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; thickn
     end
 
     # Create coordinates and elements
+    nv = length(V)
+    nf = length(F)
     E = Vector{element_type}(undef,length(F)*(num_steps-1))
     VE = repeat(V,num_steps) # Vector{eltype(V)}(undef,n*m)
     for q = 1:num_steps-1
