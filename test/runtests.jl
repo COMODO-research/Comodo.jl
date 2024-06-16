@@ -1515,10 +1515,9 @@ end
         # Example with boundary edges (extruded prism)
         r = 1.0
         nc = 3
-        Vc = circlepoints(r,nc;dir=:cw)    
+        Vc = circlepoints(r,nc;dir=:acw)    
         d = norm(Vc[1]-Vc[2])        
-        s = 1    
-        F,V = extrudecurve(Vc,d;s=s, num_steps=2, close_loop=true,face_type=:tri_slash)
+        F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:tri_slash)
         
         Fn, Vn = subtri(F, V, 0; method=:Loop, constrain_boundary=false)
         @test Fn == F
@@ -1530,22 +1529,18 @@ end
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)        
-        @test isapprox(Vn[ind], Point{3, Float64}[[0.53125, 3.469446951953614e-17, 0.0], 
-        [-0.26562500000000006, -0.46007599576048297, 0.8660254037844388], 
-        [0.2265624999999999, -0.39241776108982374, 0.4330127018922194], 
-        [-0.031249999999999778, 0.48713928962874686, 0.8660254037844388], 
-        [-0.031249999999999778, 0.48713928962874686, 1.7320508075688776], 
-        [0.4375000000000001, 0.2165063509461097, 1.7320508075688776]], atol=eps_level)
+        @test isapprox(Vn[ind], Point{3, Float64}[[0.53125, -3.469446951953614e-17, 0.0], [-0.26562500000000006, 0.46007599576048297, 0.8660254037844388], 
+        [0.2265624999999999, 0.39241776108982374, 0.4330127018922194], [-0.031249999999999778, -0.48713928962874686, 0.8660254037844388], 
+        [-0.031249999999999778, -0.48713928962874686, 1.7320508075688776], [0.4375000000000001, -0.2165063509461097, 1.7320508075688776]], atol=eps_level)
     end
 
     @testset "Loop, constrained boundary" begin
         # Example with boundary edges (extruded prism)
         r = 1.0
         nc = 3
-        Vc = circlepoints(r,nc;dir=:cw)    
+        Vc = circlepoints(r,nc;dir=:acw)    
         d = norm(Vc[1]-Vc[2])        
-        s = 1    
-        F,V = extrudecurve(Vc,d;s=s, num_steps=2, close_loop=true,face_type=:tri_slash)
+        F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:tri_slash)
         
         Fn, Vn = subtri(F, V, 0; method=:Loop, constrain_boundary=true)
         @test Fn == F
@@ -1557,12 +1552,26 @@ end
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)        
-        @test isapprox(Vn[ind], Point{3, Float64}[[1.0, 0.0, 0.0], 
-        [-0.2890625000000001, -0.5006709365628785, 0.8660254037844388], 
-        [0.2734374999999999, -0.39241776108982374, 0.4330127018922194], 
-        [-0.05468749999999976, 0.5277342304311424, 0.8660254037844388], 
-        [-0.1249999999999997, 0.6495190528383291, 1.7320508075688776], 
-        [0.6250000000000001, 0.2165063509461097, 1.7320508075688776]], atol=eps_level)
+        @test isapprox(Vn[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [-0.2890625000000001, 0.5006709365628785, 0.8660254037844388], 
+        [0.2734374999999999, 0.39241776108982374, 0.4330127018922194], [-0.05468749999999976, -0.5277342304311424, 0.8660254037844388], 
+        [-0.1249999999999997, -0.6495190528383291, 1.7320508075688776], [0.6250000000000001, -0.2165063509461097, 1.7320508075688776]], atol=eps_level)
+    end
+
+    @testset "errors" begin
+        r = 1.0
+        nc = 3
+        Vc = circlepoints(r,nc;dir=:acw)    
+        d = norm(Vc[1]-Vc[2])        
+        num_steps = -5
+        @test_throws Exception extrudecurve(Vc; extent=d, direction=:positive, num_steps=num_steps, close_loop=true,face_type=:tri_slash)
+
+        r = 1.0
+        nc = 3
+        Vc = circlepoints(r,nc;dir=:acw)    
+        d = norm(Vc[1]-Vc[2])        
+        num_steps = 2
+        direction = :wrong
+        @test_throws Exception extrudecurve(Vc; extent=d, direction=direction, num_steps=num_steps, close_loop=true,face_type=:tri_slash)
     end
 
 end
@@ -1618,8 +1627,7 @@ end
         nc = 3
         Vc = circlepoints(r,nc;dir=:cw)    
         d = norm(Vc[1]-Vc[2])        
-        s = 1    
-        F,V = extrudecurve(Vc,d;s=s, num_steps=2, close_loop=true,face_type=:quad)
+        F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:quad)
 
         Fn, Vn = subquad(F, V, 0; method=:Catmull_Clark, constrain_boundary=false)
         @test Fn == F
@@ -1630,12 +1638,9 @@ end
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)  
-        @test isapprox(Vn[ind], Point{3, Float64}[[0.5078125, 3.2959746043559335e-17, 0.0], 
-        [0.42285156249999994, -0.2114319833458102, 1.7320508075688776], 
-        [-0.4296874999999999, 0.13531646934131863, 0.8660254037844388], 
-        [-0.3945312499999999, 0.26048420348203827, 0.6495190528383292], 
-        [-0.1484375000000001, -0.47360764269461486, 0.2165063509461097], 
-        [0.09765625000000021, 0.43977852535928535, 1.5155444566227678]], atol=eps_level)        
+        @test isapprox(Vn[ind], Point{3, Float64}[[0.5078125, 3.2959746043559335e-17, 0.0], [0.4228515625000001, 0.21143198334581026, 1.7320508075688776], 
+        [-0.4296875, -0.13531646934131847, 0.8660254037844388], [-0.39453125, -0.26048420348203816, 0.6495190528383292], 
+        [-0.14843749999999978, 0.47360764269461497, 0.2165063509461097], [0.09765624999999989, -0.4397785253592852, 1.5155444566227678]], atol=eps_level)        
     end
 
     @testset "Catmull_Clark, constrained boundary" begin
@@ -1644,8 +1649,7 @@ end
         nc = 3
         Vc = circlepoints(r,nc;dir=:cw)    
         d = norm(Vc[1]-Vc[2])        
-        s = 1    
-        F,V = extrudecurve(Vc,d;s=s, num_steps=2, close_loop=true,face_type=:quad)
+        F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:quad)
 
         Fn, Vn = subquad(F, V, 0; method=:Catmull_Clark, constrain_boundary=true)
         @test Fn == F
@@ -1656,11 +1660,18 @@ end
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)  
-        @test isapprox(Vn[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [0.625, -0.21650635094610965, 1.7320508075688776], 
-        [-0.4516601562499999, 0.16068830734281586, 0.8660254037844388], 
-        [-0.4296874999999998, 0.31757083898540706, 0.6495190528383292], 
-        [-0.25976562500000017, -0.6664336115059938, 0.2165063509461097], 
-        [0.07128906250000025, 0.515894039363777, 1.5155444566227678]], atol=eps_level)        
+        @test isapprox(Vn[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [0.6250000000000001, 0.2165063509461097, 1.7320508075688776], 
+        [-0.45166015625, -0.1606883073428157, 0.8660254037844388], [-0.4296875, -0.3175708389854069, 0.6495190528383292], 
+        [-0.2597656249999997, 0.6664336115059939, 0.2165063509461097], [0.07128906249999988, -0.5158940393637769, 1.5155444566227678]], atol=eps_level)        
+    end
+
+    @testset "errors" begin
+        r = 1.0
+        nc = 3
+        Vc = circlepoints(r,nc;dir=:cw)    
+        d = norm(Vc[1]-Vc[2])        
+        direction = :wrong
+        @test_throws Exception extrudecurve(Vc; extent=d, direction=direction, num_steps=2, close_loop=true,face_type=:quad)
     end
 end
 
@@ -3506,13 +3517,13 @@ end
     num_steps = 5
 
     @testset "Default behaviours" begin
-        F, V = extrudecurve(Vc, d)
+        F, V = extrudecurve(Vc; extent=d)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
 
-        F, V = extrudecurve(Vc, d; face_type=:tri)
+        F, V = extrudecurve(Vc; extent=d, face_type=:tri)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
@@ -3520,19 +3531,19 @@ end
     end
 
     @testset "Direction (s) variations" begin
-        F, V = extrudecurve(Vc, d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
+        F, V = extrudecurve(Vc; extent=d, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
        
-        F, V = extrudecurve(Vc, d; s=0, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
+        F, V = extrudecurve(Vc; extent=d, direction=:both, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
         @test isapprox(zMax,d/2,atol = eps_level) && isapprox(zMin,-d/2,atol = eps_level)
 
-        F, V = extrudecurve(Vc, d; s=-1, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
+        F, V = extrudecurve(Vc; extent=d, direction=:negative, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
@@ -3541,21 +3552,21 @@ end
     
     @testset "Direction (n) variations" begin
         n=Vec{3, Float64}(0.0,0.0,1.0) # Upward
-        F, V = extrudecurve(Vc, d; s=1, n=n, num_steps=num_steps, close_loop=true, face_type=:quad)
+        F, V = extrudecurve(Vc; extent=d, direction=:positive, n=n, num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
        
         n=Vec{3, Float64}(0.0,0.0,-1.0) # Downward
-        F, V = extrudecurve(Vc, d; s=1, n=n, num_steps=num_steps, close_loop=true, face_type=:quad)
+        F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=n, num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
         @test isapprox(zMax,0.0,atol = eps_level) && isapprox(zMin,-d,atol = eps_level)
 
         n = normalizevector(Vec{3, Float64}(1.0,0.0,1.0)) # 45 degree direction upward
-        F, V = extrudecurve(Vc, d; s=1, n=n, num_steps=num_steps, close_loop=true, face_type=:quad)
+        F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=n, num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
@@ -3563,7 +3574,7 @@ end
     end
 
     @testset "face_type=:quad" begin
-        F, V = extrudecurve(Vc, d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
+        F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)
@@ -3574,13 +3585,13 @@ end
         ind = round.(Int64,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point3{Float64}[[1.0, 0.0, 0.0], [2.83276944882399e-16, -1.0, 0.75], 
-        [-0.9238795325112867, -0.3826834323650899, 1.5], [-0.38268343236509034, 0.9238795325112865, 2.25], 
-        [0.9238795325112865, 0.3826834323650904, 3.0]],atol = eps_level)
+        @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-1.8369701987210297e-16, 1.0, 0.75], 
+        [-0.923879532511287, 0.3826834323650892, 1.5], [-0.3826834323650895, -0.9238795325112868, 2.25], 
+        [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
     end
 
     @testset "face_type=:tri" begin
-        F, V = extrudecurve(Vc, d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:tri)
+        F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:tri)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)
@@ -3591,13 +3602,13 @@ end
         ind = round.(Int64,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point3{Float64}[[1.0, 0.0, 0.0], [-0.1913417161825446, -0.9619397662556435, 0.75], 
-        [-0.9238795325112867, -0.3826834323650899, 1.5], [-0.19134171618254525, 0.9619397662556433, 2.25], 
-        [0.9238795325112865, 0.3826834323650904, 3.0]],atol = eps_level)
+        @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-0.19134171618254525, 0.9619397662556433, 0.75], 
+        [-0.923879532511287, 0.3826834323650892, 1.5], [-0.1913417161825446, -0.9619397662556435, 2.25], 
+        [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
     end
 
     @testset "face_type=:tri_slash" begin
-        F, V = extrudecurve(Vc, d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:tri_slash)
+        F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:tri_slash)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)
@@ -3608,13 +3619,13 @@ end
         ind = round.(Int64,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point3{Float64}[[1.0, 0.0, 0.0], [2.83276944882399e-16, -1.0, 0.75], 
-        [-0.9238795325112867, -0.3826834323650899, 1.5], [-0.38268343236509034, 0.9238795325112865, 2.25], 
-        [0.9238795325112865, 0.3826834323650904, 3.0]],atol = eps_level)
+        @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-1.8369701987210297e-16, 1.0, 0.75], 
+        [-0.923879532511287, 0.3826834323650892, 1.5], [-0.3826834323650895, -0.9238795325112868, 2.25], 
+        [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
     end
 
     @testset "face_type=:quad2tri" begin
-        F, V = extrudecurve(Vc, d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad2tri)
+        F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad2tri)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)
@@ -3625,9 +3636,9 @@ end
         ind = round.(Int64,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point3{Float64}[[1.0, 0.0, 0.0], [2.83276944882399e-16, -1.0, 0.75], 
-        [-0.9238795325112867, -0.3826834323650899, 1.5], [-0.38268343236509034, 0.9238795325112865, 2.25], 
-        [0.9238795325112865, 0.3826834323650904, 3.0]],atol = eps_level)
+        @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-1.8369701987210297e-16, 1.0, 0.75], 
+        [-0.923879532511287, 0.3826834323650892, 1.5], [-0.3826834323650895, -0.9238795325112868, 2.25], 
+        [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
     end
 
 end
@@ -3942,7 +3953,7 @@ end
         Vc = circlepoints(r, nc; dir=:acw)
         num_steps = round(Int64,d/s)
         num_steps = num_steps + Int64(iseven(num_steps))
-        F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
+        F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
         K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V)
         @test isapprox(mean(K1),1.0/r,atol=tol_level)
         @test isapprox(mean(K2),0.0,atol=tol_level)
@@ -4252,7 +4263,7 @@ end
         for i in eachindex(VN)
             m = VN[i] # Current rotation axis
             Q = rotation_between(n,m) # Rotation matrix to rotate Vc orthogonal to m       
-            F1,V1 = revolvecurve([Q*v for v in Vc],θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=:quad)
+            F1,V1 = revolvecurve([Q*v for v in Vc]; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=:quad)
             
             d = sum([dot(m,v) for v in V1])
             b[i]=isapprox(d,0.0,atol=tol_level)
@@ -4264,29 +4275,27 @@ end
         face_type =:quad
         close_loop = true
 
-        s=1
-        F,V = revolvecurve(Vc,θ;  s=s, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
         ϕ = [atan(v[2],v[1]) for v in V]
         @test isapprox(minimum(ϕ),0.0,atol=tol_level)
         @test isapprox(maximum(ϕ),π,atol=tol_level)
 
-        s=0
-        F,V = revolvecurve(Vc,θ;  s=s, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:both, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
         ϕ = [atan(v[2],v[1]) for v in V]
         @test isapprox(minimum(ϕ),-π/2,atol=tol_level)
         @test isapprox(maximum(ϕ),π/2,atol=tol_level)
 
-        s=-1
-        F,V = revolvecurve(Vc,θ;  s=s, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        
+        F,V = revolvecurve(Vc; extent=θ,  direction=:negative, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
         ϕ = [atan(v[2],v[1]) for v in V]
         @test isapprox(minimum(ϕ),-π,atol=tol_level)
         @test isapprox(maximum(ϕ),0.0,atol=tol_level)
     end
     
-    @testset "Nothing for num_steps" begin
+    @testset "Nothing for num_steps" begin        
         face_type =:quad
         close_loop = true
-        F,V = revolvecurve(Vc,θ;  s=1, n=n,num_steps=nothing,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=n,num_steps=nothing,close_loop=close_loop,face_type=face_type)
         @test length(V)/nc == ceil(Int64,(2*θ)/pointspacingmean(Vc))
     end
 
@@ -4294,123 +4303,113 @@ end
     @testset "quad" begin        
         face_type =:quad
         close_loop = true
-        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
         @test F isa Vector{QuadFace{Int64}}
         @test length(F) == nc*(num_steps-1)
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
-        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
-        [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
-        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
-        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+        @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
+        [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
 
         face_type =:quad
         close_loop = false
-        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
         @test F isa Vector{QuadFace{Int64}}
         @test length(F) == (nc-1)*(num_steps-1)
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
-        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
-        [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
-        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
-        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+        @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
+        [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
     end
 
     @testset "tri_slash" begin        
         face_type =:tri_slash
         close_loop = true
-        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
         @test F isa Vector{TriangleFace{Int64}}
         @test length(F) == nc*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
-        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
-        [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
-        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
-        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+        @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
+        [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
 
         face_type =:tri_slash
         close_loop = false
-        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
         @test F isa Vector{TriangleFace{Int64}}
         @test length(F) == (nc-1)*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
-        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
-        [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
-        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
-        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+        @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
+        [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
     end
 
     @testset "quad2tri" begin        
         face_type =:quad2tri
         close_loop = true
-        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
         @test F isa Vector{TriangleFace{Int64}}
         @test length(F) == nc*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
-        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
-        [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
-        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
-        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+        @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
+        [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
 
         face_type =:quad2tri
         close_loop = false
-        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
         @test F isa Vector{TriangleFace{Int64}}
         @test length(F) == (nc-1)*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
-        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
-        [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
-        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
-        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+        @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
+        [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
     end
 
     @testset "tri" begin        
         face_type =:tri
         close_loop = true
-        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
         @test F isa Vector{TriangleFace{Int64}}
         @test length(F) == nc*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
-        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
-        [1.2737434141522277, -0.5142554662637147, 0.06118848193668663], 
-        [0.9286050488796189, -1.253831383463123, 1.0398194675222394], 
-        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+        @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.5053331258162692, -0.6077564601298446, 0.07231366047062965], 
+        [0.5571630293277714, -0.7522988300778739, 0.6238916805133436], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
 
         face_type =:tri
         close_loop = false
-        F,V = revolvecurve(Vc,θ;  s=1, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
         @test F isa Vector{TriangleFace{Int64}}
         @test length(F) == (nc-1)*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
-        @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], 
-        [1.2737434141522277, -0.5142554662637147, 0.06118848193668663], 
-        [0.9905120521382602, -1.3374201423606646, 1.1091407653570555], 
-        [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.2288198303003941, -0.1271178539023153, 0.965133429366411]], atol=tol_level)
+        @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.5053331258162692, -0.6077564601298446, 0.07231366047062965], 
+        [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
     end
 
+    @testset "errors" begin
+        face_type =:tri
+        close_loop = true
+        direction = :wrong
+        @test_throws Exception revolvecurve(Vc; extent=θ,  direction=:direction, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+    end
 end
 
 @testset "batman" verbose=true begin
@@ -5253,11 +5252,11 @@ end
         F = QuadFace{Int64}[ [1,2,3,4] ]
         V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [0.0,1.0,0.0] ]
 
-        thickness = 2.0
+        d = 2.0
         num_steps = 4
-        directionSet = (:out,:in,:both)
+        directionSet = (:positive,:negative,:both)
         for direction in directionSet
-            E, VE = extrudefaces(F,V; thickness=thickness, direction=direction, num_steps=num_steps)
+            E, VE = extrudefaces(F,V; extent=d, direction=direction, num_steps=num_steps)
             E_ind = reduce(vcat,E)            
             @test isa(E, Vector{Hex8{Int64}})
             @test isa(VE, Vector{eltype(V)})
@@ -5268,7 +5267,7 @@ end
             @test E == Hex8{Int64}[[1, 2, 3, 4, 5, 6, 7, 8], [5, 6, 7, 8, 9, 10, 11, 12], [9, 10, 11, 12, 13, 14, 15, 16]]
         end
         ind = round.(Int64,range(1,length(VE),6))
-        E, VE = extrudefaces(F,V; thickness=thickness, direction=:out, num_steps=num_steps)
+        E, VE = extrudefaces(F,V; extent=d, direction=:positive, num_steps=num_steps)
         @test isapprox(VE[ind],Point{3, Float64}[[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], 
         [1.0, 1.0, 0.6666666666666666], [1.0, 0.0, 1.3333333333333333], 
         [0.0, 0.0, 2.0], [0.0, 1.0, 2.0]],atol=eps_level)     
@@ -5278,11 +5277,11 @@ end
         F = QuadFace{Int64}[ [1,2,3,4], [5,6,3,2] ]
         V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [0.0,1.0,0.0], [2.0,0.0,0.0], [2.0,1.0,0.0] ]
 
-        thickness = 2.0
+        d =  2.0
         num_steps = 4
-        directionSet = (:out,:in,:both)
+        directionSet = (:positive,:negative,:both)
         for direction in directionSet
-            E, VE = extrudefaces(F,V; thickness=thickness, direction=direction, num_steps=num_steps)
+            E, VE = extrudefaces(F,V; extent=d, direction=direction, num_steps=num_steps)
             E_ind = reduce(vcat,E)            
             @test isa(E, Vector{Hex8{Int64}})
             @test isa(VE, Vector{eltype(V)})
@@ -5295,7 +5294,7 @@ end
             [13, 14, 15, 16, 19, 20, 21, 22], [17, 18, 15, 14, 23, 24, 21, 20]]
         end
         ind = round.(Int64,range(1,length(VE),6))
-        E, VE = extrudefaces(F,V; thickness=thickness, direction=:out, num_steps=num_steps)
+        E, VE = extrudefaces(F,V; extent=d, direction=:positive, num_steps=num_steps)
         @test isapprox(VE[ind],Point{3, Float64}[[0.0, 0.0, 0.0], [2.0, 1.0, 0.0], 
         [0.0, 1.0, 0.6666666666666666], [1.0, 1.0, 1.3333333333333333], 
         [0.0, 0.0, 2.0], [2.0, 1.0, 2.0]],atol=eps_level)        
@@ -5306,11 +5305,11 @@ end
         F = TriangleFace{T}[ [1,2,3] ]
         V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0]]
 
-        thickness = 2.0
+        d = 2.0
         num_steps = 4
-        directionSet = (:out,:in,:both)
+        directionSet = (:positive,:negative,:both)
         for direction in directionSet
-            E, VE = extrudefaces(F,V; thickness=thickness, direction=direction, num_steps=num_steps)
+            E, VE = extrudefaces(F,V; extent=d, direction=direction, num_steps=num_steps)
             E_ind = reduce(vcat,E)            
             @test isa(E, Vector{Penta6{T}})
             @test isa(VE, Vector{eltype(V)})
@@ -5320,7 +5319,7 @@ end
             @test maximum(E_ind) == length(VE)
             @test E == Penta6{Int32}[[1, 2, 3, 4, 5, 6], [4, 5, 6, 7, 8, 9], [7, 8, 9, 10, 11, 12]]
         end
-        E, VE = extrudefaces(F,V; thickness=thickness, direction=:out, num_steps=num_steps)
+        E, VE = extrudefaces(F,V; extent=d, direction=:positive, num_steps=num_steps)
         ind = round.(T,range(1,length(VE),6))
         @test isapprox(VE[ind],Point{3, Float64}[[0.0, 0.0, 0.0], [1.0, 1.0, 0.0], 
         [1.0, 0.0, 0.6666666666666666], [1.0, 0.0, 1.3333333333333333], 
@@ -5331,11 +5330,11 @@ end
         F = TriangleFace{Int64}[ [1,2,3], [2,4,3] ]
         V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [2.0,0.0,0.0]]
 
-        thickness = 2.0
+        d = 2.0
         num_steps = 4
-        directionSet = (:out,:in,:both)
+        directionSet = (:positive,:negative,:both)
         for direction in directionSet
-            E, VE = extrudefaces(F,V; thickness=thickness, direction=direction, num_steps=num_steps)
+            E, VE = extrudefaces(F,V; extent=d, direction=direction, num_steps=num_steps)
             E_ind = reduce(vcat,E)
             @test isa(E, Vector{Penta6{Int64}})
             @test isa(VE, Vector{eltype(V)})
@@ -5348,7 +5347,7 @@ end
             [10, 12, 11, 14, 16, 15]]
         end
         ind = round.(Int64,range(1,length(VE),6))
-        E, VE = extrudefaces(F,V; thickness=thickness, direction=:out, num_steps=num_steps)
+        E, VE = extrudefaces(F,V; extent=d, direction=:positive, num_steps=num_steps)
         @test isapprox(VE[ind],Point{3, Float64}[[0.0, 0.0, 0.0], [2.0, 0.0, 0.0], 
         [1.0, 1.0, 0.6666666666666666], [1.0, 0.0, 1.3333333333333333], 
         [0.0, 0.0, 2.0], [2.0, 0.0, 2.0]],atol=eps_level)        
@@ -5358,13 +5357,18 @@ end
         F = TriangleFace{Int64}[ [1,2,3], [2,4,3] ]
         V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [2.0,0.0,0.0]]
 
-        thickness = 2.0
+        d = 2.0
         num_steps = 4
         direction = :wrong
-        @test_throws Exception extrudefaces(F,V; thickness=thickness, direction=direction, num_steps=num_steps)        
+        @test_throws Exception extrudefaces(F,V; extent=d, direction=direction, num_steps=num_steps)        
+
+        d = 2.0
+        num_steps = -5
+        direction = :wrong
+        @test_throws Exception extrudefaces(F,V; extent=d, direction=direction, num_steps=num_steps)   
 
         F = LineFace{Int64}[ [1,2], [3,4] ]
-        @test_throws Exception extrudefaces(F,V; thickness=thickness, direction=:out, num_steps=num_steps)        
+        @test_throws Exception extrudefaces(F,V; extent=d, direction=:positive, num_steps=num_steps)        
     end
 end
 

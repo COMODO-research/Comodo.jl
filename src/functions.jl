@@ -2573,7 +2573,7 @@ Loft a surface mesh between two input curves
 # Description 
 
 The `loftlinear` function spans a surface from input curve `V1` to curve `V2`. 
-The surface is formed by "lerping" curves from `V1` to `V2` in `num_loft` 
+The surface is formed by "lerping" curves from `V1` to `V2` in `num_steps` 
 steps, and forming mesh faces between each curve. If `close_loop==true`
 then it is assumed the curves (and therefore the output surface mesh should be 
 closed over, i.e. that a connection should be made between each curve end and 
@@ -2766,7 +2766,8 @@ function edgeangles(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N w
     return A
 end
 
-function quad2tri(F::Vector{QuadFace{TF}},V::Vector{Point{ND,TV}}; convert_method = :angle) where TF<:Integer where ND where TV<:Real
+function quad2tri(F::Vector{QuadFace{TF}},V::Vector{Point{ND,TV}}; convert_method = :angle, eps_level=1e-9) where TF<:Integer where ND where TV<:Real
+   
     # Local functions for slash based conversion   
     forw_slash(f) = [TriangleFace{TF}(f[1],f[2],f[3]),TriangleFace{TF}(f[3],f[4],f[1])] # Forward slash 
     back_slash(f) = [TriangleFace{TF}(f[1],f[2],f[4]),TriangleFace{TF}(f[2],f[3],f[4])] # Back slash
@@ -2777,7 +2778,7 @@ function quad2tri(F::Vector{QuadFace{TF}},V::Vector{Point{ND,TV}}; convert_metho
             ft = forw_slash(f)
         elseif convert_method == :backward
             ft = back_slash(f)
-        elseif convert_method == :angle 
+        elseif convert_method == :angle             
             ff = forw_slash(f)
             fb = back_slash(f)
             # Get edge angles
@@ -2786,10 +2787,10 @@ function quad2tri(F::Vector{QuadFace{TF}},V::Vector{Point{ND,TV}}; convert_metho
             # Compare angles to perfect triangle angle π/3
             δaf = maximum(abs.(reduce(vcat,af) .- (π/3)))
             δab = maximum(abs.(reduce(vcat,ab) .- (π/3)))
-            if δaf<δab
-                ft = ff
-            else
+            if δab<(δaf-eps_level) # If significantly better (using eps_level avoids "noisy" numerical behaviour)
                 ft = fb
+            else
+                ft = ff
             end    
         else
             throw(ArgumentError("Incorrect convert_method set $convert_method, use :forward, :backward, or :angle"))
@@ -3071,24 +3072,57 @@ function pointspacingmean(M::GeometryBasics.Mesh)
     return pointspacingmean(faces(M),coordinates(M))
 end
 
+"""
+    extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad) where ND where TV<:Real
 
-function extrudecurve(V1::Vector{Point{ND,TV}},d; s=1, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad) where ND where TV<:Real
+Extrudes curves into surfaces
+ 
+# Description
+Extrudes (e.g. extends) the input curve defined by the points `V1` to a surface. 
+The following input parameters are defined: 
+* `extent<:Real` (default = 1.0) the length of the extrusion   
+* `direction` is a symbol that is either `:positive` (default), `:negative`, or `:both`. 
+* `n<:Vec{3, Float64}` The extrusion direction vector. The default is: Vec{3, Float64}(0.0,0.0,1.0). 
+* `num_steps` (default is `nothing`) is the number of nodes in the extrude direction, the 
+number of faces in the extrude direction is therefore `num_steps-1`. If not 
+provided or `nothing` then the number of steps is derived so the point spacing in 
+the extrusion direction matches the mean input curve point spacing. 
+* `close_loop<:Bool` if true the curve is assumed to be closed, e.g. a curcle 
+yields a closed cylinder
+* `face_type` is a symbol that is either `:quad` (default), `tri`, `tri_slash`, 
+or `quad2tri`. 
+"""
+function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad) where ND where TV<:Real
+
+    n1 = facenormal([collect(1:length(V1))],V1)[1] # Curve normal vector
+    if dot(n,n1)<0 # Check if anti-aligned with extrusion direction
+        V1 = circshift(reverse(V1),1) # Reverse curve order
+    end
+
     # Derive num_steps from curve point spacing if missing    
     if isnothing(num_steps)
-        num_steps = ceil(Int64,d/pointspacingmean(V1))
+        num_steps = ceil(Int64,extent/pointspacingmean(V1))
         if face_type==:tri
             num_steps = num_steps + Int64(iseven(num_steps)) # Force uneven
         end
     end
+
+    # Check if num_steps is okay
+    if num_steps<1
+        throw(ArgumentError("num_steps=$num_steps is not valid. num_steps should be larger than 0."))
+    end
+    
     # Create offset point depending on direction of extrude
-    if isone(s) # Allong n from V1
-        p = d.*n
-    elseif isone(-s) # Against n from V1
-        p = -d.*n
+    if direction == :positive # Allong n from V1
+        p = extent.*n
+    elseif direction == :negative # Against n from V1
+        p = -extent.*n
         V1 = circshift(reverse(V1),1)
-    elseif iszero(s) # Extrude both ways from V1
-        p = d.*n
+    elseif direction == :both # Extrude both ways from V1
+        p = extent.*n
         V1 = [(eltype(V1))(v.-p./2) for v in V1] #Shift V1 in negative direction
+    else
+        throw(ArgumentError("$direction is not a valid direction, Use :positive, :in, or :both.")) 
     end
     V2 = [(eltype(V1))(v.+p) for v in V1]  
     return loftlinear(V1,V2;num_steps=num_steps,close_loop=close_loop,face_type=face_type)
@@ -3639,17 +3673,18 @@ function sweeploft(Vc::Vector{Point{ND,TV}},V1::Vector{Point{ND,TV}},V2::Vector{
 end
 
 """
-    revolvecurve(Vc::Vector{Point{ND,TV}},θ=2.0*pi; s=0, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad)  where ND where TV<:Real   
+    revolvecurve(Vc::Vector{Point{ND,TV}}; extent = 2.0*pi, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=true,face_type=:quad)  where ND where TV<:Real   
 
 Revolves curves to build surfaces 
 
 # Description
 
-This function rotates the curve `Vc` by the angle `θ`, in the direction `s`,
-around the vector `n`, to build the output mesh defined by the faces `F` and 
-vertices `V`. 
+This function rotates the curve `Vc` by the angle `extent`, in the direction 
+defined by `direction` (`:positive`, `:negative`, `:both`), around the vector 
+`n`, to build the output mesh defined by the faces `F` and vertices `V`. 
 """
-function revolvecurve(Vc::Vector{Point{ND,TV}},θ=2.0*pi; s=0, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad)  where ND where TV<:Real   
+function revolvecurve(Vc::Vector{Point{ND,TV}}; extent = 2.0*pi, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=true,face_type=:quad)  where ND where TV<:Real   
+    
     # Compute num_steps from curve point spacing
     if isnothing(num_steps)
         rMax = 0.0
@@ -3659,20 +3694,18 @@ function revolvecurve(Vc::Vector{Point{ND,TV}},θ=2.0*pi; s=0, n=Vec{3, Float64}
                 rMax = max(rMax,rNow)
             end
         end
-        num_steps = ceil(Int64,(rMax*θ)/pointspacingmean(Vc))        
+        num_steps = ceil(Int64,(rMax*extent)/pointspacingmean(Vc))        
     end
     
     # Set up angle range
-    if isone(s) # Positive direction
-        θ_range = range(0,θ,num_steps) 
-        Vc = reverse(Vc) # To keep normal direction consistent    
-    elseif iszero(s) # Both positive and negative directions 
-        θ_range = range(0,θ,num_steps) # Positive range 
-        Q = AngleAxis(-θ/2, n[1], n[2], n[3])
-        Vc = [Q*v for v in Vc] #Rotate in negative direction by half the angle
-        Vc = reverse(Vc) # To keep normal direction consistent        
-    elseif isone(-s) # Negative direction
-        θ_range = range(0,-θ,num_steps)            
+    if direction == :positive # Positive direction
+        θ_range = range(0,extent,num_steps)               
+    elseif direction == :negative # Negative direction
+        θ_range = range(-extent,0,num_steps) # Positive range         
+    elseif direction == :both # Both positive and negative directions 
+        θ_range = range(-extent/2,extent/2,num_steps) # Positive range   
+    else
+        throw(ArgumentError("$direction is not a valid direction, Use :positive, :in, or :both.")) 
     end
 
     V = Vector{eltype(Vc)}()
@@ -4530,13 +4563,32 @@ function tetvolume(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer 
 end
 
 """
+    extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; extent=1.0, direction=:positive, num_steps=2, N::Union{Vector{Point{ND,TN}},Vector{Vec{ND, TN}},Nothing}=nothing) where NF where TF<:Integer where ND where TV<:Real where TN<:Real
 
+Extrudes/thickens faces to form elements
+
+# Description
+The inputs surface mesh, defined by the faces `F` and vertices `V` is extruded to
+create volumetric elements. Quadrilateral and triangular input faces are supported. 
+These extrude into hexahedral and pentahedral elements respectively. 
+The following input parameters are defined: 
+* `extent<:Real` (default = 1.0) the length of the extrusion   
+* `direction` is a symbol that is either `:positive` (default), `:negative`, or `:both`. 
+* `N` The extrusion vectors. The default is nothing in which case the local 
+vertex normals are used. 
+* `num_steps` (default is 2) is the number of nodes in the extrude direction, the 
+number of elements in the extrude direction is therefore `num_steps-1`. 
 """
-function extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; thickness=1.0, direction=:out, num_steps=2, N::Union{Vector{Point{ND,TN}},Vector{Vec{ND, TN}},Nothing}=nothing) where NF where TF<:Integer where ND where TV<:Real where TN<:Real
+function extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; extent=1.0, direction=:positive, num_steps=2, N::Union{Vector{Point{ND,TN}},Vector{Vec{ND, TN}},Nothing}=nothing) where NF where TF<:Integer where ND where TV<:Real where TN<:Real
     
     # Compute normal directions if not provided
     if isnothing(N)
         N = vertexnormal(F,V; weighting=:area)
+    end
+
+    # Check if num_steps is okay
+    if num_steps<1
+        throw(ArgumentError("num_steps=$num_steps is not valid. num_steps should be larger than 0."))
     end
 
     # Set element type
@@ -4549,13 +4601,14 @@ function extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; thickn
         throw(ArgumentError("$face_type type face not supported. Supported types are QuadFace and TriangleFace."))
     end
 
-    if direction == :out # Default, not action needed
-    elseif direction == :in # Against N from V
-        V -= thickness .* N #Shift V in negative direction by half the thickness      
+    if direction == :positive # Default
+        # no action needed
+    elseif direction == :negative # Against N from V
+        V -= extent .* N #Shift V in negative direction by half the extent      
     elseif direction == :both # Extrude both ways from V                
-        V -= thickness/2.0 .* N #Shift V in negative direction by half the thickness      
+        V -= extent/2.0 .* N #Shift V in negative direction by half the extent      
     else
-        throw(ArgumentError("$direction is not a valid direction, Use :out, :in, or :both.")) 
+        throw(ArgumentError("$direction is not a valid direction, Use :positive, :negative, or :both.")) 
     end
 
     # Create coordinates and elements
@@ -4566,7 +4619,7 @@ function extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; thickn
     for q = 1:num_steps-1
         # Create offset coordinates
         iv = 1 + q*nv
-        VE[iv:(iv-1)+nv] += q/(num_steps-1)*N*thickness
+        VE[iv:(iv-1)+nv] += q/(num_steps-1)*N*extent
 
         # Create elements 
         ie = 1 + (q-1)*nf

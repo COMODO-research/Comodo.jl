@@ -31,9 +31,8 @@ elseif testCase == 2 # Extruded prism/cylinder with nc points
     r = 1.0
     nc = 3
     Vc = circlepoints(r,nc;dir=:cw)    
-    d = norm(Vc[1]-Vc[2])    
-    s = 1    
-    F,V = extrudecurve(Vc,d;s=s, num_steps=2, close_loop=true,face_type=:tri_slash)
+    d = norm(Vc[1]-Vc[2])        
+    F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:tri_slash)
     M = GeometryBasics.Mesh(V,F)
 end
 

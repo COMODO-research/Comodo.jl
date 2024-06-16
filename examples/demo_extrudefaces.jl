@@ -23,7 +23,7 @@ elseif testCase == 2
 
     t = 6
     n = 4
-    direction=:out
+    direction=:positive
 elseif testCase == 3
     nc = 101 # Number of points on guide curve
     r = 8
@@ -89,13 +89,13 @@ elseif testCase == 3
 
     t = 1
     n = 5
-    direction=:out
+    direction=:positive
 end
 
 
 
 N = vertexnormal(F,V; weighting=:area)
-E, Ve = extrudefaces(F,V; thickness=t, direction=direction, num_steps=n)
+E, Ve = extrudefaces(F,V; extent=t, direction=direction, num_steps=n)
 
 FE = element2faces(E)
 

@@ -5,7 +5,7 @@ using Rotations
 using Statistics
 using LinearAlgebra
 
-testCase = 3
+testCase = 5
 vizCase = 2
 if testCase == 1    
     # Define guide curve
@@ -21,14 +21,14 @@ if testCase == 1
 
     # Define section curves
     np = 50 # Number of section points
-    f(t) = 2.0 + 0.5.*sin(3*t)
-    V1 = circlepoints(f,np; dir=:acw)
+    cFun(t) = 2.0 + 0.5.*sin(3*t)
+    V1 = circlepoints(cFun,np; dir=:acw)
     V1,_ = evenly_sample(V1, np)
     Q = RotXYZ(0.0,0.5*π,0.0) # Define a rotation tensor using Euler angles
     V1 = [Q*v for v ∈ V1] # Rotate the coordinates
 
-    f(t) = 2.0 + 0.5*sin(3*t)
-    V2 = circlepoints(f,np; dir=:acw)
+    cFun(t) = 2.0 + 0.5*sin(3*t)
+    V2 = circlepoints(cFun,np; dir=:acw)
     V2,_ = evenly_sample(V2, np)
     V2 = [v2 .+ Vc[end] for v2 ∈ V2] 
 elseif testCase == 2
@@ -45,14 +45,14 @@ elseif testCase == 2
     
         # Define section curves
         np = 35 # Number of section points
-        f(t) = 2.0 + 0.5.*sin(3*t)
-        V1 = circlepoints(f,np; dir=:acw)
+        cFun(t) = 2.0 + 0.5.*sin(3*t)
+        V1 = circlepoints(cFun,np; dir=:acw)
         V1,_ = evenly_sample(V1, np)
         Q = RotXYZ(0.0,0.5*π,0.0) # Define a rotation tensor using Euler angles
         V1 = [(Q*v) .+ Vc[1] for v ∈ V1] # Rotate the coordinates
     
-        f(t) = 2.0 + 0.5*sin(3*t)
-        V2 = circlepoints(f,np; dir=:acw)
+        cFun(t) = 2.0 + 0.5*sin(3*t)
+        V2 = circlepoints(cFun,np; dir=:acw)
         V2,_ = evenly_sample(V2, np)
         Q = RotXYZ(0.0,0.5*π,0.0) # Define a rotation tensor using Euler angles
         V2 = [(Q*v) .+ Vc[end] for v ∈ V2] 
@@ -66,8 +66,8 @@ elseif testCase == 3
     np = 50 # Number of section points
 
     # Section 1
-    f(t) = 1.5 + 0.5.*sin(3*t)
-    V1 = circlepoints(f,np; dir=:cw)
+    cFun(t) = 1.5 + 0.5.*sin(3*t)
+    V1 = circlepoints(cFun,np; dir=:cw)
     V1,_ = evenly_sample(V1, np)
     Q = RotXYZ(0.5*π,0.0,0.0) # Define a rotation tensor using Euler angles
     V1 = [Q*v for v ∈ V1] # Rotate the coordinates
@@ -88,8 +88,8 @@ elseif testCase == 3
     V1= [v .+ Vc[1] for v ∈ V1] 
 
     # Section 2
-    f(t) = 4 + 1.5*sin(5*t)
-    V2 = circlepoints(f,np; dir=:cw)
+    cFun(t) = 4 + 1.5*sin(5*t)
+    V2 = circlepoints(cFun,np; dir=:cw)
     V2,_ = evenly_sample(V2, np)
     Q1 = RotXYZ(0.5*π,0.0,0.0) # Define a rotation tensor using Euler angles
     Q2 = RotXYZ(0.0,-0.25*π,0.0) # Define a rotation tensor using Euler angles
@@ -125,8 +125,8 @@ elseif testCase == 4
     np = 150 # Number of section points
 
     # Section 1
-    f(t) = rc/3 + rc/5 .* sin(3*t)
-    V1 = circlepoints(f,np; dir=:cw)
+    cFun(t) = rc/3 + rc/5 .* sin(3*t)
+    V1 = circlepoints(cFun,np; dir=:cw)
     V1,_ = evenly_sample(V1, np)
     Q = RotXYZ(0.5*π,0.0,0.0) # Define a rotation tensor using Euler angles
     V1 = [Q*v for v ∈ V1] # Rotate the coordinates
@@ -147,8 +147,8 @@ elseif testCase == 4
     V1= [v .+ Vc[1] for v ∈ V1] 
 
     # Section 2
-    f(t) = rc/4 + rc/6*sin(5*t)
-    V2 = circlepoints(f,np; dir=:cw)
+    cFun(t) = rc/4 + rc/6*sin(5*t)
+    V2 = circlepoints(cFun,np; dir=:cw)
     V2,_ = evenly_sample(V2, np)
     Q1 = RotXYZ(0.5*π,0.0,0.0) # Define a rotation tensor using Euler angles
     Q2 = RotXYZ(0.0,-0.25*π,0.0) # Define a rotation tensor using Euler angles
@@ -179,8 +179,8 @@ elseif testCase ==5
     np = 40 # Number of section points
 
     # Section 1
-    f(t) = 3 + 0.25.*sin(3*t)
-    V1 = circlepoints(f,np; dir=:cw)
+    cFun(t) = 3 + 0.25.*sin(3*t)
+    V1 = circlepoints(cFun,np; dir=:cw)
     V1,_ = evenly_sample(V1, np)
     V1_ori = deepcopy(V1)
 
@@ -201,8 +201,8 @@ elseif testCase ==5
     V1= [v .+ Vc[1] for v ∈ V1] 
 
     # Section 2
-    f(t) = 5 + 0.5*sin(5*t)
-    V2 = circlepoints(f,np; dir=:cw)
+    cFun(t) = 5 + 0.5*sin(5*t)
+    V2 = circlepoints(cFun,np; dir=:cw)
     V2,_ = evenly_sample(V2, np)    
     V2_ori = deepcopy(V2)
 
