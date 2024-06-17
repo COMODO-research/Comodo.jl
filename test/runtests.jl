@@ -5367,7 +5367,10 @@ end
         direction = :wrong
         @test_throws Exception extrudefaces(F,V; extent=d, direction=direction, num_steps=num_steps)   
 
+        d = 2.0
+        num_steps = 5        
         F = LineFace{Int64}[ [1,2], [3,4] ]
+        V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [2.0,0.0,0.0]]
         @test_throws Exception extrudefaces(F,V; extent=d, direction=:positive, num_steps=num_steps)        
     end
 end
