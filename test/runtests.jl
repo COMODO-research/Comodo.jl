@@ -5451,16 +5451,15 @@ end
         @test isapprox(minimum(norm.(VC)),sqrt(d^2+(d-r)^2),atol=eps_level)
     end
 
-    @testset "Varying radius" begin        
-        # Forms rounded square with varying radius. 
+    @testset "Varying radius" begin                
         d = 10.0 
         V = Point{3,Float64}[ [-d,-d,0.0], [d,-d,0.0], [d,d,0.0], [-d,d,0.0]]
         close_loop = true
         n = 5
-        r = [2.0,3.0,4.0,4.5]
+        r = [2.0,3.0,0.0,4.5] # With 1-zero entry we also test not rounding a point
         VC = filletcurve(V; rMax=r,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
         @test eltype(VC) == eltype(V) # Same type
-        @test length(VC) == (n*length(V))
+        @test length(VC) == (n*length(V))-n+1 
         @test isapprox(minimum(norm.(VC)),sqrt(d^2+(d-maximum(r))^2),atol=eps_level)
     end
 
