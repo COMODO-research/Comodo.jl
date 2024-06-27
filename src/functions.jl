@@ -2589,7 +2589,6 @@ latter, triangles are formed by slashing the quads.
 
 """
 function loftlinear(V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}};num_steps=nothing,close_loop=true,face_type=:quad) where ND where TV<:Real
-
     # Derive num_steps from distance and mean curve point spacing if missing    
     if isnothing(num_steps)
         d = mean([norm(V1[i]-V2[i]) for i in eachindex(V1)])
@@ -2609,7 +2608,6 @@ end
 
 
 function loftpoints2surf(V::Vector{Point{ND,TV}},num_steps; close_loop=true,face_type=:quad) where ND where TV<:Real
-
     # Get number of points in each offset curve
     nc = length(V)/num_steps # Number of points in curve
     if !isinteger(nc) || nc<1
@@ -3094,9 +3092,11 @@ or `quad2tri`.
 """
 function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad) where ND where TV<:Real
 
-    n1 = facenormal([collect(1:length(V1))],V1)[1] # Curve normal vector
-    if dot(n,n1)<0 # Check if anti-aligned with extrusion direction
-        V1 = circshift(reverse(V1),1) # Reverse curve order
+    if close_loop
+        n1 = facenormal([collect(1:length(V1))],V1)[1] # Curve normal vector
+        if dot(n,n1)<0 # Check if anti-aligned with extrusion direction
+            V1 = circshift(reverse(V1),1) # Reverse curve order
+        end
     end
 
     # Derive num_steps from curve point spacing if missing    
@@ -3482,11 +3482,11 @@ curvature exists for the B-spline between two adjacent data points then the
 spacing between points in the output may be non-uniform (despite the allong 
 B-spline distance being uniform). 
 """
-function evenly_sample(V::Vector{Point{ND,TV}}, n::Int64; rtol = 1e-8, niter = 1) where ND where TV<:Real
+function evenly_sample(V::Vector{Point{ND,TV}}, n::Int64; rtol = 1e-8, niter = 1,spline_order=4) where ND where TV<:Real
     m = length(V)
     LL = curve_length(V) # Initialise as along curve (multi-linear) distance
-    LL ./= last(LL) # Normalise
-    S = BSplineKit.interpolate(LL, V, BSplineOrder(4), BSplineKit.Natural()) # Create interpolator
+    LL ./= last(LL) # Normalise    
+    S = BSplineKit.interpolate(LL, V, BSplineOrder(spline_order), BSplineKit.Natural()) # Create interpolator
     for _ in 1:niter
         dS = Derivative() * S  # spline derivative
         L = similar(LL) # Initialise spline length vector
@@ -3499,7 +3499,7 @@ function evenly_sample(V::Vector{Point{ND,TV}}, n::Int64; rtol = 1e-8, niter = 1
             L[i] = L[i - 1] + segment_length
         end
         L ./= last(L) # Normalise to 0-1 range
-        S = BSplineKit.interpolate(L, V, BSplineOrder(4), BSplineKit.Natural()) # Create interpolator
+        S = BSplineKit.interpolate(L, V, BSplineOrder(spline_order), BSplineKit.Natural()) # Create interpolator
     end
     l = range(0.0, 1.0, n) #Even allong curve distance 
     return S.(l), S # Evaluate interpolator at even distance increments
@@ -4629,4 +4629,148 @@ function extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; extent
     end
 
     return E, VE
+end
+
+function filletcurve(V::Vector{Point{NV,TV}}; rMax::Union{Vector{T},T,Nothing}=nothing, constrain_method = :max, n=25, close_loop = false, eps_level = 1e-6) where TV<:Real where NV where T<:Real
+    VP = deepcopy(V)
+    if length(VP)>2
+        if close_loop        
+            VP = pushfirst!(VP,VP[end])
+            VP = push!(VP,VP[2])   
+            if isa(rMax,Vector{})
+                rMax = pushfirst!(rMax,rMax[end])
+                rMax = push!(rMax,rMax[2])   
+            end
+        end
+
+        VC = Vector{eltype(VP)}()
+        if !close_loop
+            push!(VC,VP[1])
+        end
+        
+        e1 = VP[2]-VP[1]
+        e2 = VP[3]-VP[3]
+        lp = 0.0
+        i_last = length(VP)-1
+        L = [norm(VP[i+1]-VP[i]) for i in 1:i_last]
+        for i = 2:i_last
+            if isa(rMax,Vector{})
+                r = rMax[i]
+            else 
+                r = rMax
+            end
+
+            if i == 2
+                e1 = VP[i]-VP[i-1]
+            else
+                e1 = e2
+            end
+            e2 = VP[i+1]-VP[i]        
+
+            n1 = normalizevector(e1)
+            n2 = normalizevector(e2)
+            n3 = normalizevector(cross(n1,n2))
+            α = pi - acos(dot(n1,n2))    
+            if abs(α-pi) > eps_level        
+                β = pi/2 - α/2.0
+
+                n1_e = normalizevector(cross(n3,n1))
+                n2_e = normalizevector(cross(n3,n2))
+                m1 = normalizevector(n1_e + n2_e)
+            
+                l1 = L[i-1]
+                l2 = L[i]     
+                if constrain_method == :max
+                    if i==2
+                        if close_loop == true
+                            lp = L[end]/2
+                        else
+                            lp=0.0
+                        end
+                    end
+                    if i == i_last
+                        if close_loop == true
+                            l3 = L[2]
+                        else
+                            l3 = 0 
+                        end
+                    else
+                        l3 = L[i+1] 
+                    end
+                                
+                    if l3<l2   
+                        l = min(l1-lp,l2-l3/2)
+                    else
+                        l = min(l1-lp,l2/2)    
+                    end       
+                elseif constrain_method == :mid
+                    l = min(l1,l2)/2
+                else
+                    throw(ArgumentError("Incorrect constrain_method set $constrain_method, use :mid, or :max"))
+                end
+
+                rFit = l/tan(β)
+                if !isnothing(r) && r<=rFit
+                    rNow = r
+                    lNow = r*tan(β) # Update as as radius used is smaller
+                    if tan(β)*rNow == l
+                        fullRound = true
+                    else
+                        fullRound = false
+                    end
+                else
+                    fullRound = true
+                    rNow = rFit
+                    lNow = l
+                end
+
+                if rNow > 0                    
+                    d = abs(rNow/cos(β))
+                    S1 = mapreduce(permutedims,vcat,[-m1,normalizevector(cross(n3,-m1)),n3])        
+                    S2 = one(RotMatrix{3,Float64}) 
+                    Q = RotMatrix3{Float64}(S1\S2)
+                    
+                    m1p = Q'*(-m1)
+                    a = atan(m1p[2]/m1p[1])
+                    
+                    vc = (VP[i]+m1*d)                
+                    Vc = [Q*Point{3, Float64}(rNow*cos(t),rNow*sin(t),0.0) + vc for t in range(a-β,a+β,n)]
+
+                    if !close_loop && i==2 && fullRound && isapprox(norm(Vc[1]-VC[1]),0.0,atol=eps_level)                         
+                        # Start is the same as first point of input curve
+                        Vc = Vc[2:end] # Remove first point 
+                    end
+                    
+                    if i>2 && fullRound && isapprox(norm(Vc[1]-VC[end]),0.0,atol=eps_level)                        
+                        # The start of the current segment is the same as last point built curve so far 
+                        Vc = Vc[2:end] # Remove first point 
+                    end   
+
+                    if close_loop == true && i == i_last && fullRound && isapprox(norm(Vc[end]-VC[1]),0.0,atol=eps_level)                        
+                        # The end of the current segment is the same as the first point on the closed loop curve built
+                        Vc = Vc[1:end-1] # Remove last point
+                    end
+
+                    append!(VC,Vc) # Append new curve segment to curve being constructed
+                else
+                    push!(VC,VP[i]) # No rounding so just add point
+                    lNow=0.0                    
+                end
+                lp = lNow # Store as previous l 
+            else
+                push!(VC,VP[i]) # No rounding so add point
+                lNow=0.0  
+            end    
+        end
+        if !close_loop
+            if isapprox(norm(VC[end]-VP[end]),0.0,atol=eps_level)                
+                VC[end] = VP[end] # overwrite end
+            else
+                push!(VC,VP[end]) # add end
+            end
+        end
+        return VC
+    else
+        return VP
+    end
 end

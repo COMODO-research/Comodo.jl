@@ -47,7 +47,7 @@ export distmarch, mesh_curvature_polynomial, curve_length, evenly_sample, evenly
 export invert_faces, kabsch_rot, sweeploft, loftpoints2surf, revolvecurve
 export batman, tridisc, triplate, regiontrimesh, scalesimplex, subcurve, dualclad
 export tet2hex, element2faces, subhex, rhombicdodecahedron, tri2quad
-export tetgenmesh, surfacevolume, tetvolume, extrudefaces
+export tetgenmesh, surfacevolume, tetvolume, extrudefaces, filletcurve
 
 # Export functions: Visualization related
 export slidercontrol, slider2anim, dirplot, normalplot

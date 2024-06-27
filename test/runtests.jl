@@ -5375,3 +5375,111 @@ end
     end
 end
 
+@testset "filletcurve" verbose=true begin
+    eps_level = 1e-6
+
+    @testset "Two point line" begin        
+        V = Point{3,Float64}[ [0.0,0.0,0.0], [10.0,0.0,0.0]] 
+        close_loop = false
+        VC = filletcurve(V; rMax=nothing,  constrain_method = :max, n=25, close_loop = close_loop, eps_level = 1e-6)
+        @test eltype(VC) == eltype(V) # Same type
+        @test VC == V # Unchanged input 
+    end
+
+    @testset "Three points 90 degree lines" begin
+        # Forms quarter of a circle when rMax=nothing
+        d = 10.0 # This should become radius of circle segment 
+        V = Point{3,Float32}[ [d,0.0,0.0], [d,d,0.0], [0.0,d,0.0]]
+        close_loop = false
+        n = 25
+        r = nothing
+        VC = filletcurve(V; rMax=r,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
+        @test eltype(VC) == eltype(V) # Same type
+        @test length(VC) == n # Number equals n since this should be a full round
+        @test all(isapprox.(norm.(VC),d,atol=eps_level)) 
+
+        VC = filletcurve(V; rMax=0.0,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
+        @test eltype(VC) == eltype(V) # Same type
+        @test VC == V # Unchanged input 
+    end
+
+    @testset "Zero radius requested" begin
+        # Forms quarter of a circle when rMax=nothing
+        d = 10.0 # This should become radius of circle segment 
+        V = Point{3,Float32}[ [d,0.0,0.0], [d,d,0.0], [0.0,d,0.0]]
+        close_loop = false
+        n = 25
+        r = 0.0       
+        VC = filletcurve(V; rMax=r,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
+        @test eltype(VC) == eltype(V) # Same type
+        @test VC == V # Unchanged input 
+    end
+
+    @testset "4-corners of square non-closed" begin
+        # Keeps start and end but forms half circle with radius d (when rMax=nothing) in place of 2 other corners. 
+        d = 10.0 
+        V = Point{3,Float64}[ [-d,-d,0.0], [d,-d,0.0], [d,d,0.0], [-d,d,0.0]]
+        close_loop = false
+        n = 25
+        r = nothing
+        VC = filletcurve(V; rMax=r,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
+        @test eltype(VC) == eltype(V) # Same type
+        @test length(VC) == length(V)-2+2*n-1
+        @test VC[1] == VC[1]
+        @test VC[end] == VC[end]
+        @test all(isapprox.(norm.(VC[2:end-1]),d,atol=eps_level))  
+    end
+
+    @testset "4-corners of square closed" begin        
+        d = 10.0 
+        V = Point{3,Float64}[ [-d,-d,0.0], [d,-d,0.0], [d,d,0.0], [-d,d,0.0]]
+        close_loop = true
+        n = 5
+
+        # Forms circle with radius d
+        r = nothing
+        VC = filletcurve(V; rMax=r,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
+        @test eltype(VC) == eltype(V) # Same type
+        @test length(VC) == (n*length(V))-length(V)        
+        @test all(isapprox.(norm.(VC),d,atol=eps_level))  
+
+        # Forms rounded square with n points for each round 
+        r = d/2.0
+        VC = filletcurve(V; rMax=r,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
+        @test eltype(VC) == eltype(V) # Same type
+        @test length(VC) == (n*length(V))
+        @test isapprox(minimum(norm.(VC)),sqrt(d^2+(d-r)^2),atol=eps_level)
+    end
+
+    @testset "Varying radius" begin        
+        # Forms rounded square with varying radius. 
+        d = 10.0 
+        V = Point{3,Float64}[ [-d,-d,0.0], [d,-d,0.0], [d,d,0.0], [-d,d,0.0]]
+        close_loop = true
+        n = 5
+        r = [2.0,3.0,4.0,4.5]
+        VC = filletcurve(V; rMax=r,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
+        @test eltype(VC) == eltype(V) # Same type
+        @test length(VC) == (n*length(V))
+        @test isapprox(minimum(norm.(VC)),sqrt(d^2+(d-maximum(r))^2),atol=eps_level)
+    end
+
+    @testset "Circular polygon" begin        
+        # Forms circle 
+        d = 10.0 
+        nc = 12
+        V = circlepoints(d,nc)        
+        close_loop = true
+        n = 15
+        r = nothing
+        VC = filletcurve(V; rMax=r,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
+        @test eltype(VC) == eltype(V) # Same type
+        @test length(VC) == (n*length(V))-length(V)        
+        @test all(isapprox.(norm.(VC),d*cos(π/nc),atol=eps_level))  
+    end
+
+    @testset "errors" begin                
+        constrain_method = :wrong        
+        @test_throws Exception filletcurve(circlepoints(5,12); constrain_method = constrain_method)
+    end
+end
