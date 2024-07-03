@@ -9,7 +9,7 @@ using Random
 # Set seed so demo performs the same each time
 Random.seed!(1)
 
-testCase = 11
+testCase = 6
 
 if testCase == 1
     V = Point{3,Float64}[ [0.0,0.0,0.0], [10.0,0.0,0.0]]
@@ -59,7 +59,7 @@ elseif testCase == 11
 end
 
 
-rMax = [2.0,3.0,0.0,5.0] #nothing
+rMax = nothing
 
 VC = filletcurve(V; rMax=rMax,  constrain_method = :max, n=25, close_loop = close_loop, eps_level = 1e-6)
 # VC2,_ = evenly_sample(VC,100)
