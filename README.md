@@ -45,8 +45,8 @@ The source for the tests is [`runtests.jl`, found in the `test` folder](https://
 
 # Roadmap
 New functionality to add:
-- [ ] TetGen demos
-- [ ] Mesh thickening (e.g. quads into hexahedra)
+- [x] TetGen demos
+- [x] Mesh thickening (e.g. quads into hexahedra)
 - [ ] Discrete curvature analysis
 - [ ] Lattice structure creation: 
 	- Element based conversions 
@@ -55,7 +55,7 @@ New functionality to add:
 - [ ] Surface stitching method
 - [ ] Levelset methods
 - [ ] Topology optimisation
-- [ ] Consider adding geogram wrapper
+- [x] Consider adding basic geogram wrapper
 
 # How to contribute? 
 Your help would be greatly appreciated! If you can contribute please do so by posting a pull-request. I am very much open to fully acknowledging your contributions e.g. by listing you as a contributor properly whereever possible, by welcoming you on board as a long term contributor, or by inviting you to be a co-author on publications featuring Comodo functionality. 
