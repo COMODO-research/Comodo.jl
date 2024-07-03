@@ -4649,7 +4649,7 @@ function filletcurve(V::Vector{Point{NV,TV}}; rMax::Union{Vector{T},T,Nothing}=n
         end
         
         e1 = VP[2]-VP[1]
-        e2 = VP[3]-VP[3]
+        e2 = VP[3]-VP[2]
         lp = 0.0
         i_last = length(VP)-1
         L = [norm(VP[i+1]-VP[i]) for i in 1:i_last]
@@ -4712,8 +4712,8 @@ function filletcurve(V::Vector{Point{NV,TV}}; rMax::Union{Vector{T},T,Nothing}=n
                 rFit = l/tan(β)
                 if !isnothing(r) && r<=rFit
                     rNow = r
-                    lNow = r*tan(β) # Update as as radius used is smaller
-                    if tan(β)*rNow == l
+                    lNow = rNow*tan(β) # Update as as radius used is smaller
+                    if lNow == l
                         fullRound = true
                     else
                         fullRound = false
@@ -4726,10 +4726,8 @@ function filletcurve(V::Vector{Point{NV,TV}}; rMax::Union{Vector{T},T,Nothing}=n
 
                 if rNow > 0                    
                     d = abs(rNow/cos(β))
-                    S1 = mapreduce(permutedims,vcat,[-m1,normalizevector(cross(n3,-m1)),n3])        
-                    S2 = one(RotMatrix{3,Float64}) 
-                    Q = RotMatrix3{Float64}(S1\S2)
-                    
+                    Q = RotMatrix3{Float64}(reduce(hcat,[-m1,normalizevector(cross(n3,-m1)),n3]))        
+                                        
                     m1p = Q'*(-m1)
                     a = atan(m1p[2]/m1p[1])
                     

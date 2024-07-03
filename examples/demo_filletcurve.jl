@@ -9,7 +9,7 @@ using Random
 # Set seed so demo performs the same each time
 Random.seed!(1)
 
-testCase = 6
+testCase = 11
 
 if testCase == 1
     V = Point{3,Float64}[ [0.0,0.0,0.0], [10.0,0.0,0.0]]
@@ -33,6 +33,7 @@ elseif testCase == 6
     d = 10.0 
     nc = 12
     V = circlepoints(d,nc)  
+    close_loop = false
 elseif testCase == 7 
     V = Point{3,Float64}[ [-2.0,0.0,0.0], [-1.0,0.0,0.0], [0.0,0.0,0.0], [1.0,-1.0,1.0], [2.0,1.0,0.0], [3.0,2.0,8.0], [5.0,0.0,0.0], [7.0,0.0,0.0]]
     close_loop = false
@@ -51,10 +52,14 @@ elseif testCase == 10
         V[i] = Point{3,Float64}(v[1],v[2],v[3]+20.0)
     end
     close_loop = true
+elseif testCase == 11
+    d = 10.0 
+    V = Point{3,Float64}[ [-d,-d,0.0], [d,-d,0.0], [d,d,0.0], [-d,d,0.0]]
+    close_loop = true
 end
 
 
-rMax = nothing
+rMax = [2.0,3.0,0.0,5.0] #nothing
 
 VC = filletcurve(V; rMax=rMax,  constrain_method = :max, n=25, close_loop = close_loop, eps_level = 1e-6)
 # VC2,_ = evenly_sample(VC,100)
