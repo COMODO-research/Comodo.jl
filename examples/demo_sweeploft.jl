@@ -242,7 +242,7 @@ linewidth = 2
 
 if vizCase ==1 
 
-    CF = round.(Int64,vertex2simplexdata(F,C))
+    CF = round.(Int,vertex2simplexdata(F,C))
 
     fig = Figure(size = (1600,1600))
     ax = Axis3(fig[1, 1],aspect = :data,title="Swept lofting")

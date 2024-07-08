@@ -167,7 +167,7 @@ ZE = [v[3] for v in VE]
 Z = [v[3] for v in V]
 zMax = maximum(Z)
 zMin = minimum(Z)
-numSlicerSteps = 3*ceil(Int64,(zMax-zMin)/mean(edgelengths(F,V)))
+numSlicerSteps = 3*ceil(Int,(zMax-zMin)/mean(edgelengths(F,V)))
 
 stepRange = range(zMin,zMax,numSlicerSteps)
 hSlider = Slider(fig[2, 1], range = stepRange, startvalue = mean(stepRange),linewidth=30)
