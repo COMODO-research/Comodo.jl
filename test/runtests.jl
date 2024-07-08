@@ -4126,8 +4126,16 @@ end
     pointSpacing = pointspacingmean(V)
     Vn = evenly_space(V,pointSpacing)
     @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
-end
 
+    r = 1000
+    nc = 1000
+    V = circlepoints(r,nc)
+    pointSpacing = 1
+    Vn = evenly_space(V,pointSpacing; close_loop = true)    
+    @test isapprox(pointspacingmean(Vn),pointSpacing, atol=eps_level)
+    @test length(Vn) == ceil(2*pi*r/pointSpacing)
+
+end
 
 @testset "invert_faces" begin
     # Single face

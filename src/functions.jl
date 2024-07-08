@@ -3526,12 +3526,12 @@ function integrate_segment_(dS,l1,l2,rtol)
     return segment_length
 end
 
-function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8, niter = 1) where ND where TV<:Real
+function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8, niter = 1, close_loop=false) where ND where TV<:Real
     if isnothing(pointSpacing)
         pointSpacing = pointspacingmean(V)
     end
-    n = ceil(Int64,maximum(curve_length(V))/pointSpacing)
-    Vn,_ = evenly_sample(V,n; rtol=rtol, niter=niter)
+    n = ceil(Int64,maximum(curve_length(V; close_loop=close_loop))/pointSpacing)
+    Vn,_ = evenly_sample(V,n; rtol=rtol, niter=niter, close_loop=close_loop)
     return Vn
 end
 
