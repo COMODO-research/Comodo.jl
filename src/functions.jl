@@ -3482,27 +3482,48 @@ curvature exists for the B-spline between two adjacent data points then the
 spacing between points in the output may be non-uniform (despite the allong 
 B-spline distance being uniform). 
 """
-function evenly_sample(V::Vector{Point{ND,TV}}, n::Int64; rtol = 1e-8, niter = 1,spline_order=4) where ND where TV<:Real
-    m = length(V)
+function evenly_sample(V::Vector{Point{ND,TV}}, n::Int64; rtol = 1e-8, niter = 1,spline_order=4, close_loop=false) where ND where TV<:Real
     LL = curve_length(V) # Initialise as along curve (multi-linear) distance
-    LL ./= last(LL) # Normalise    
-    S = BSplineKit.interpolate(LL, V, BSplineOrder(spline_order), BSplineKit.Natural()) # Create interpolator
-    for _ in 1:niter
-        dS = Derivative() * S  # spline derivative
-        L = similar(LL) # Initialise spline length vector
-        L[1] = 0
-        for i in 2:m
-            # Compute length of segment [i-1, i]
-            segment_length, _ = quadgk(LL[i-1], LL[i]; rtol) do t
-                norm(dS(t))  # integrate |S'(t)| in segment [i, i + 1]
-            end        
-            L[i] = L[i - 1] + segment_length
-        end
-        L ./= last(L) # Normalise to 0-1 range
-        S = BSplineKit.interpolate(L, V, BSplineOrder(spline_order), BSplineKit.Natural()) # Create interpolator
+
+    if close_loop == true
+        LL ./= (last(LL)+ norm(V[1]-V[end]))  # Normalise 
+        bc = BSplineKit.Periodic(1.0) # Use periodic bc for closed curves
+    else
+        LL ./= last(LL) # Normalise  
+        bc = BSplineKit.Natural() # Otherwise use natural
     end
-    l = range(0.0, 1.0, n) #Even allong curve distance 
+    S = BSplineKit.interpolate(LL, deepcopy(V), BSplineOrder(spline_order), bc) # Create interpolator
+
+    @inbounds for _ in 1:niter
+        dS = Derivative() * S  # spline derivative
+        L = zeros(eltype(LL),length(LL)) # Initialise spline length vector
+        @inbounds for i in 2:lastindex(LL) 
+            # Compute length of segment [i-1, i]   
+            L[i] = L[i - 1] + integrate_segment_(dS,LL[i-1], LL[i],rtol)    
+        end
+
+        # Normalise
+        if close_loop == true
+            L ./= (last(L) + integrate_segment_(dS,LL[end], 1.0,rtol))
+        else
+            L ./= last(L)
+        end
+        S = BSplineKit.interpolate(L, deepcopy(V), BSplineOrder(spline_order), bc) # Create interpolator
+    end
+    # Even range for curve distance 
+    if close_loop == true
+        l = range(0.0, 1.0 - 1.0/n, n) 
+    else
+        l = range(0.0, 1.0, n) 
+    end
     return S.(l), S # Evaluate interpolator at even distance increments
+end
+
+function integrate_segment_(dS,l1,l2,rtol)
+    segment_length, _ = quadgk(l1, l2; rtol) do t
+        norm(dS(t))  # integrate |S'(t)| in segment [i, i + 1]
+    end    
+    return segment_length
 end
 
 function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8, niter = 1) where ND where TV<:Real
@@ -3510,8 +3531,8 @@ function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8
         pointSpacing = pointspacingmean(V)
     end
     n = ceil(Int64,maximum(curve_length(V))/pointSpacing)
-    V,_ = evenly_sample(V,n; rtol=rtol, niter=niter)
-    return V
+    Vn,_ = evenly_sample(V,n; rtol=rtol, niter=niter)
+    return Vn
 end
 
 """

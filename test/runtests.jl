@@ -4090,8 +4090,29 @@ end
         @test typeof(V) == typeof(Vi) # Did not manipulate input type
         @test length(Vi) == n # Correct length
     end
+
+    @testset "Closed loop" begin
+        r = 2.0
+        nc = 6
+        V = circlepoints(r,nc)
+        n = 25
+        Vi, S = evenly_sample(V, n; niter=5,close_loop = true)
+        @test typeof(V) == typeof(Vi) # Did not manipulate input type
+        @test length(Vi) == n # Correct length
+    end
+
 end
 
+@testset "Comodo.integrate_segment_" begin
+    eps_level = 1e-6
+    r = 3.25
+    nc = 1000
+    V = circlepoints(r,nc)
+    Vi, S = evenly_sample(V, nc; niter=5,close_loop = true)
+    dS = Derivative() * S  # spline derivative
+    L = Comodo.integrate_segment_(dS,0,1,1e-8)
+    @test isapprox(L,2*pi*r,atol=eps_level)
+end
 
 @testset "evenly_space" verbose = true begin
     eps_level = 1e-3
