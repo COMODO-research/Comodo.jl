@@ -50,22 +50,22 @@ end
 
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
-        F = Vector{TriangleFace{Int64}}(undef, 3)
-        F[1] = TriangleFace{Int64}(9, 4, 1)
-        F[2] = TriangleFace{Int64}(1, 5, 9)
-        F[3] = TriangleFace{Int64}(1, 8, 5)
+        F = Vector{TriangleFace{Int}}(undef, 3)
+        F[1] = TriangleFace{Int}(9, 4, 1)
+        F[2] = TriangleFace{Int}(1, 5, 9)
+        F[3] = TriangleFace{Int}(1, 8, 5)
         result = elements2indices(F)
         @test sort(result) == [1, 4, 5, 8, 9]
     end
 
     @testset "Quad. faces" begin
-        F = Vector{QuadFace{Int64}}(undef, 6)
-        F[1] = QuadFace{Int64}(1, 2, 3, 4)
-        F[2] = QuadFace{Int64}(8, 7, 6, 5)
-        F[3] = QuadFace{Int64}(5, 6, 2, 1)
-        F[4] = QuadFace{Int64}(6, 7, 3, 2)
-        F[5] = QuadFace{Int64}(7, 8, 4, 3)
-        F[6] = QuadFace{Int64}(8, 5, 1, 4)
+        F = Vector{QuadFace{Int}}(undef, 6)
+        F[1] = QuadFace{Int}(1, 2, 3, 4)
+        F[2] = QuadFace{Int}(8, 7, 6, 5)
+        F[3] = QuadFace{Int}(5, 6, 2, 1)
+        F[4] = QuadFace{Int}(6, 7, 3, 2)
+        F[5] = QuadFace{Int}(7, 8, 4, 3)
+        F[6] = QuadFace{Int}(8, 5, 1, 4)
         result = elements2indices(F)
         @test sort(result) == [1, 2, 3, 4, 5, 6, 7, 8]
     end
@@ -161,7 +161,7 @@ end
         ySpan = [-2,2]
         pointSpacing = 0.5
         V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular=false)
-        ind = round.(Int64,range(1,length(V),10))
+        ind = round.(Int,range(1,length(V),10))
         
         @test isa(V,Vector{Point{3,Float64}})
         @test isapprox(V[ind],Point3{Float64}[[-3.125, -2.0, 0.0], 
@@ -180,7 +180,7 @@ end
         ySpan = (-2,2)
         pointSpacing = 1
         V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular=true)
-        ind = round.(Int64,range(1,length(V),10))
+        ind = round.(Int,range(1,length(V),10))
 
         @test isa(V,Vector{Point{3,Float64}})
         @test isapprox(V[ind],Point3{Float64}[[-3.0, -2.0, 0.0], [0.75, -2.0, 0.0], 
@@ -200,11 +200,11 @@ end
         ySpan = (-2,2)
         pointSpacing = 1
         F,V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = true, rectangular=true)
-        ind = round.(Int64,range(1,length(V),10))
-        indF = round.(Int64,range(1,length(F),10))
+        ind = round.(Int,range(1,length(V),10))
+        indF = round.(Int,range(1,length(F),10))
 
-        @test isa(F,Vector{TriangleFace{Int64}})
-        @test F[indF] == TriangleFace{Int64}[TriangleFace(1, 2, 8), 
+        @test isa(F,Vector{TriangleFace{Int}})
+        @test F[indF] == TriangleFace{Int}[TriangleFace(1, 2, 8), 
         TriangleFace(16, 23, 22), TriangleFace(9, 10, 17), TriangleFace(3, 4, 10), 
         TriangleFace(18, 25, 24), TriangleFace(11, 12, 19), TriangleFace(33, 32, 25), 
         TriangleFace(20, 27, 26), TriangleFace(13, 14, 21), TriangleFace(35, 34, 27)]
@@ -612,33 +612,33 @@ end
 
     @testset "vector edges or faces" begin 
         # Vector of integers (pre-sorted)
-        A = LineFace{Int64}[[3,1],[2,0],[3,1],[4,0],[2,0],[5,0],[6,0]]
+        A = LineFace{Int}[[3,1],[2,0],[3,1],[4,0],[2,0],[5,0],[6,0]]
         B_true = Bool[0, 0, 0, 1, 0, 1, 1]
         @test occursonce(A) == B_true
 
         # Vector of vectors (not sorted)
-        A = LineFace{Int64}[[3,1],[2,0],[1,3],[4,0],[2,0],[5,0],[6,0]]
+        A = LineFace{Int}[[3,1],[2,0],[1,3],[4,0],[2,0],[5,0],[6,0]]
         B_true = Bool[1, 0, 1, 1, 0, 1, 1]
         @test occursonce(A) == B_true
        
         # Vector of vectors pre-sorting used
-        A = LineFace{Int64}[[3,1],[2,0],[1,3],[4,0],[2,0],[5,0],[6,0]]
+        A = LineFace{Int}[[3,1],[2,0],[1,3],[4,0],[2,0],[5,0],[6,0]]
         B_true = Bool[0, 0, 0, 1, 0, 1, 1]
         @test occursonce(A; sort_entries=true) == B_true
 
 
         # Vector of integers (pre-sorted)
-        A = TriangleFace{Int64}[[3,1,2],[2,1,2],[3,1,2],[4,1,2],[2,1,2],[5,1,2],[6,1,2]]
+        A = TriangleFace{Int}[[3,1,2],[2,1,2],[3,1,2],[4,1,2],[2,1,2],[5,1,2],[6,1,2]]
         B_true = Bool[0, 0, 0, 1, 0, 1, 1]
         @test occursonce(A) == B_true
 
         # Vector of vectors (not sorted)
-        A = TriangleFace{Int64}[[3,1,2],[2,1,2],[3,2,1],[4,1,2],[2,1,2],[5,1,2],[6,1,2]]
+        A = TriangleFace{Int}[[3,1,2],[2,1,2],[3,2,1],[4,1,2],[2,1,2],[5,1,2],[6,1,2]]
         B_true = Bool[1, 0, 1, 1, 0, 1, 1]
         @test occursonce(A) == B_true
         
         # Vector of vectors pre-sorting used
-        A = TriangleFace{Int64}[[3,1,2],[2,1,2],[3,2,1],[4,1,2],[2,1,2],[5,1,2],[6,1,2]]
+        A = TriangleFace{Int}[[3,1,2],[2,1,2],[3,2,1],[4,1,2],[2,1,2],[5,1,2],[6,1,2]]
         B_true = Bool[0, 0, 0, 1, 0, 1, 1]
         @test occursonce(A; sort_entries=true) == B_true        
     end
@@ -675,7 +675,7 @@ end
 
 @testset "unique_simplices" verbose = true begin
     @testset "Single triangle" begin
-        F = [TriangleFace{Int64}(1, 2, 3)]       
+        F = [TriangleFace{Int}(1, 2, 3)]       
         V = [Point3{Float64}(rand(3)) for _ in 1:3]
         F_uni, ind1, ind2 = unique_simplices(F)
         @test F_uni == F
@@ -684,7 +684,7 @@ end
     end
 
     @testset "Set of two triangles" begin
-        F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(1, 2, 3)]   
+        F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 2, 3)]   
         V = [Point3{Float64}(rand(3)) for _ in 1:3]    
         F_uni, ind1, ind2 = unique_simplices(F)
         @test F_uni == [F[1]]
@@ -714,7 +714,7 @@ end
         A = rand(30)
         IJK_A = ind2sub(size(A),ind)
         @test all([A[ind[i]] == A[IJK_A[i][1]] for i in eachindex(ind)])
-        @test isempty(ind2sub(size(A),Int64[])) # Check if empty is returned
+        @test isempty(ind2sub(size(A),Int[])) # Check if empty is returned
     end
 
     @testset "2D i.e. 2D Matrix" begin
@@ -833,33 +833,33 @@ end
 
 @testset "meshedges" verbose = true begin
     @testset "Single triangle" begin
-        F = [TriangleFace{Int64}(1, 2, 3)]       
+        F = [TriangleFace{Int}(1, 2, 3)]       
         E = meshedges(F)
-        @test E == LineFace{Int64}[[1, 2], [2, 3], [3, 1]]
+        @test E == LineFace{Int}[[1, 2], [2, 3], [3, 1]]
     end
 
     @testset "Single quad" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4)]       
+        F = [QuadFace{Int}(1, 2, 3, 4)]       
         E = meshedges(F)
-        @test E == LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 1]]
+        @test E == LineFace{Int}[[1, 2], [2, 3], [3, 4], [4, 1]]
     end
 
     @testset "Triangles" begin
-        F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(1, 4, 3)]
+        F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
         E = meshedges(F)
-        @test E == LineFace{Int64}[[1, 2], [1, 4], [2, 3], [4, 3], [3, 1], [3, 1]]
+        @test E == LineFace{Int}[[1, 2], [1, 4], [2, 3], [4, 3], [3, 1], [3, 1]]
     end
 
     @testset "Quads" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4),QuadFace{Int64}(6, 5, 4, 3)]
+        F = [QuadFace{Int}(1, 2, 3, 4),QuadFace{Int}(6, 5, 4, 3)]
         E = meshedges(F)
-        @test E == LineFace{Int64}[[1, 2], [6, 5], [2, 3], [5, 4], [3, 4], [4, 3], [4, 1], [3, 6]]
+        @test E == LineFace{Int}[[1, 2], [6, 5], [2, 3], [5, 4], [3, 4], [4, 3], [4, 1], [3, 6]]
     end
 
     @testset "Mesh" begin
         M = cube(1.0)
         E = meshedges(M,unique_only=true)
-        @test E == LineFace{Int64}[[1, 2], [7, 8], [5, 6], [6, 7], [5, 8], [2, 3], 
+        @test E == LineFace{Int}[[1, 2], [7, 8], [5, 6], [6, 7], [5, 8], [2, 3], 
         [2, 6], [3, 7], [4, 8], [1, 5], [3, 4], [1, 4]]
     end
 end
@@ -874,7 +874,7 @@ end
     M = icosahedron(r)
     F = faces(M)
     V = coordinates(M)
-    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
+    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int,Point3{Float64},TriangleFace{Int}}}
     @test length(F) == 20
     @test isapprox(V[1], [0.0, -s, -t], atol=eps_level)
 end
@@ -887,7 +887,7 @@ end
     M = octahedron(1.0) 
     F = faces(M)
     V = coordinates(M)
-    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
+    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int,Point3{Float64},TriangleFace{Int}}}
     @test length(F) == 8
     @test isapprox(V[1], [-s,  -s, 0.0], atol=eps_level)
 end
@@ -903,7 +903,7 @@ end
     M = dodecahedron(r)
     F = faces(M)
     V = coordinates(M)
-    @test M isa GeometryBasics.Mesh{3, Float64, GeometryBasics.Ngon{3, Float64, 5, Point3{Float64}}, SimpleFaceView{3, Float64, 5, Int64, Point3{Float64}, NgonFace{5, Int64}}}
+    @test M isa GeometryBasics.Mesh{3, Float64, GeometryBasics.Ngon{3, Float64, 5, Point3{Float64}}, SimpleFaceView{3, Float64, 5, Int, Point3{Float64}, NgonFace{5, Int}}}
     @test length(F) == 12
     @test isapprox(V[1], [s,s,s], atol=eps_level)
 end
@@ -916,7 +916,7 @@ end
     M = cube(1.0) 
     F = faces(M)
     V = coordinates(M)
-    @test M isa GeometryBasics.Mesh{3, Float64, GeometryBasics.Ngon{3, Float64, 4, Point3{Float64}}, SimpleFaceView{3, Float64, 4, Int64, Point3{Float64}, QuadFace{Int64}}}
+    @test M isa GeometryBasics.Mesh{3, Float64, GeometryBasics.Ngon{3, Float64, 4, Point3{Float64}}, SimpleFaceView{3, Float64, 4, Int, Point3{Float64}, QuadFace{Int}}}
     @test length(F) == 6
     @test isapprox(V[1], [-s,  -s, -s], atol=eps_level)
 end
@@ -931,7 +931,7 @@ end
     M = tetrahedron(1.0) 
     F = faces(M)
     V = coordinates(M)
-    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int64,Point3{Float64},TriangleFace{Int64}}}
+    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int,Point3{Float64},TriangleFace{Int}}}
     @test length(F) == 4
     @test isapprox(V[1], [-a,  b, c], atol=eps_level)
 end
@@ -980,49 +980,49 @@ end
     @testset "Matrix input" verbose = true begin        
         Fem_G = tofaces([Fem[1,:]])
         @testset "1 LineFace" begin        
-            @test isa(Fem_G,Vector{GeometryBasics.LineFace{Int64}})
+            @test isa(Fem_G,Vector{GeometryBasics.LineFace{Int}})
             @test length(Fem_G) == 1
         end
 
         Ftm_G = tofaces([Ftm[1,:]])
         @testset "1 TriangleFace" begin        
-            @test isa(Ftm_G,Vector{GeometryBasics.TriangleFace{Int64}})
+            @test isa(Ftm_G,Vector{GeometryBasics.TriangleFace{Int}})
             @test length(Ftm_G) == 1
         end
 
         Fqm_G = tofaces([Fqm[1,:]])
         @testset "1 QuadFace" begin        
-            @test isa(Fqm_G,Vector{GeometryBasics.QuadFace{Int64}})
+            @test isa(Fqm_G,Vector{GeometryBasics.QuadFace{Int}})
             @test length(Fqm_G) == 1
         end
 
         Fnm_G = tofaces([Fnm[1,:]])
         @testset "1 NgonFace" begin        
-            @test isa(Fnm_G,Vector{GeometryBasics.NgonFace{5,Int64}})
+            @test isa(Fnm_G,Vector{GeometryBasics.NgonFace{5,Int}})
             @test length(Fnm_G) == 1
         end  
         
         Fem_G = tofaces(Fem)
         @testset "LineFace" begin        
-            @test isa(Fem_G,Vector{GeometryBasics.LineFace{Int64}})
+            @test isa(Fem_G,Vector{GeometryBasics.LineFace{Int}})
             @test length(Fem_G) == size(Fem,1)
         end
 
         Ftm_G = tofaces(Ftm)
         @testset "TriangleFace" begin        
-            @test isa(Ftm_G,Vector{GeometryBasics.TriangleFace{Int64}})
+            @test isa(Ftm_G,Vector{GeometryBasics.TriangleFace{Int}})
             @test length(Ftm_G) == size(Ftm,1)
         end
 
         Fqm_G = tofaces(Fqm)
         @testset "QuadFace" begin        
-            @test isa(Fqm_G,Vector{GeometryBasics.QuadFace{Int64}})
+            @test isa(Fqm_G,Vector{GeometryBasics.QuadFace{Int}})
             @test length(Fqm_G) == size(Fqm,1)
         end
 
         Fnm_G = tofaces(Fnm)
         @testset "NgonFace" begin        
-            @test isa(Fnm_G,Vector{GeometryBasics.NgonFace{5,Int64}})
+            @test isa(Fnm_G,Vector{GeometryBasics.NgonFace{5,Int}})
             @test length(Fnm_G) == size(Fnm,1)
         end        
     end
@@ -1030,55 +1030,55 @@ end
     @testset "vector input" verbose = true begin        
         Fev_G = tofaces([Fev[1]])        
         @testset "1 LineFace" begin        
-            @test isa(Fev_G,Vector{GeometryBasics.LineFace{Int64}})
+            @test isa(Fev_G,Vector{GeometryBasics.LineFace{Int}})
             @test length(Fev_G) == 1
         end
 
         Ftv_G = tofaces([Ftv[1]])        
         @testset "1 TriangleFace" begin        
-            @test isa(Ftv_G,Vector{GeometryBasics.TriangleFace{Int64}})
+            @test isa(Ftv_G,Vector{GeometryBasics.TriangleFace{Int}})
             @test length(Ftv_G) == 1
         end
 
         Fqv_G = tofaces([Fqv[1]])
         @testset "1 QuadFace" begin        
-            @test isa(Fqv_G,Vector{GeometryBasics.QuadFace{Int64}})
+            @test isa(Fqv_G,Vector{GeometryBasics.QuadFace{Int}})
             @test length(Fqv_G) == 1
         end
 
         Fnv_G = tofaces([Fnv[1]])
         @testset "1 NgonFace" begin        
-            @test isa(Fnv_G,Vector{GeometryBasics.NgonFace{5,Int64}})
+            @test isa(Fnv_G,Vector{GeometryBasics.NgonFace{5,Int}})
             @test length(Fnv_G) == 1
         end  
 
         Fev_G = tofaces(Fev)        
         @testset "LineFace" begin        
-            @test isa(Fev_G,Vector{GeometryBasics.LineFace{Int64}})
+            @test isa(Fev_G,Vector{GeometryBasics.LineFace{Int}})
             @test length(Fev_G) == length(Fev)
         end
 
         Ftv_G = tofaces(Ftv)
         @testset "TriangleFace" begin        
-            @test isa(Ftv_G,Vector{GeometryBasics.TriangleFace{Int64}})
+            @test isa(Ftv_G,Vector{GeometryBasics.TriangleFace{Int}})
             @test length(Ftv_G) == length(Ftv)
         end
 
         Fqv_G = tofaces(Fqv)
         @testset "QuadFace" begin        
-            @test isa(Fqv_G,Vector{GeometryBasics.QuadFace{Int64}})
+            @test isa(Fqv_G,Vector{GeometryBasics.QuadFace{Int}})
             @test length(Fqv_G) == length(Fqv)
         end
 
         Fnv_G = tofaces(Fnv)
         @testset "NgonFace" begin        
-            @test isa(Fnv_G,Vector{GeometryBasics.NgonFace{5,Int64}})
+            @test isa(Fnv_G,Vector{GeometryBasics.NgonFace{5,Int}})
             @test length(Fnv_G) == length(Fnv)
         end    
         
         Fnv_G2 = tofaces(Fnv_G)
         @testset "NgonFace no change" begin        
-            @test isa(Fnv_G2,Vector{GeometryBasics.NgonFace{5,Int64}})
+            @test isa(Fnv_G2,Vector{GeometryBasics.NgonFace{5,Int}})
             @test length(Fnv_G2) == length(Fnv_G)
         end    
 
@@ -1097,28 +1097,28 @@ end
 
             @testset "edges" begin
                 F = tofaces(Fme)
-                @test isa(F,Vector{GeometryBasics.LineFace{Int64}})
+                @test isa(F,Vector{GeometryBasics.LineFace{Int}})
                 @test length(F) == length(Fme)
                 @test Fme[1] == F[1]
             end  
 
             @testset "Triangles" begin
                 F = tofaces(Fmt)
-                @test isa(F,Vector{GeometryBasics.TriangleFace{Int64}})
+                @test isa(F,Vector{GeometryBasics.TriangleFace{Int}})
                 @test length(F) == length(Fmt)
                 @test Fmt[1] == F[1]
             end
 
             @testset "Quads" begin
                 F = tofaces(Fmq)
-                @test isa(F,Vector{GeometryBasics.QuadFace{Int64}})
+                @test isa(F,Vector{GeometryBasics.QuadFace{Int}})
                 @test length(F) == length(Fmq)
                 @test Fmq[1] == F[1]
             end
 
             @testset "NgonFace" begin
                 F = tofaces(Fmn)
-                @test isa(F,Vector{GeometryBasics.NgonFace{5,Int64}})
+                @test isa(F,Vector{GeometryBasics.NgonFace{5,Int}})
                 @test length(F) == length(Fmn)
                 @test Fmn[1] == F[1]
             end
@@ -1239,7 +1239,7 @@ end
 
 @testset "edgecrossproduct" verbose = true begin
     @testset "Single triangle" begin
-        F = [TriangleFace{Int64}(1, 2, 3)]
+        F = [TriangleFace{Int}(1, 2, 3)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,3)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1248,7 +1248,7 @@ end
         @test C == [Vec3{Float64}(0.0,0.0,0.5)]
     end
     @testset "Single quad" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4)]
+        F = [QuadFace{Int}(1, 2, 3, 4)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1258,7 +1258,7 @@ end
         @test C == [Vec3{Float64}(0.0,0.0,1.0)]
     end
     @testset "Triangles" begin
-        F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(1, 4, 3)]
+        F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1268,7 +1268,7 @@ end
         @test C == [Vec3{Float64}(0.0,0.0,0.5),Vec3{Float64}(0.0,0.0,-0.5)]
     end
     @testset "Quads" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4),QuadFace{Int64}(6, 5, 4, 3)]
+        F = [QuadFace{Int}(1, 2, 3, 4),QuadFace{Int}(6, 5, 4, 3)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,6)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1291,7 +1291,7 @@ end
 
 @testset "facenormal" verbose = true begin
     @testset "Single triangle" begin
-        F = [TriangleFace{Int64}(1, 2, 3)]
+        F = [TriangleFace{Int}(1, 2, 3)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,3)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1300,7 +1300,7 @@ end
         @test N == [Vec3{Float64}(0.0,0.0,1.0)]
     end
     @testset "Single quad" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4)]
+        F = [QuadFace{Int}(1, 2, 3, 4)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1310,7 +1310,7 @@ end
         @test N == [Vec3{Float64}(0.0,0.0,1.0)]
     end
     @testset "Triangles" begin
-        F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(1, 4, 3)]
+        F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1320,7 +1320,7 @@ end
         @test N == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,-1.0)]
     end
     @testset "Quads" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4),QuadFace{Int64}(6, 5, 4, 3)]
+        F = [QuadFace{Int}(1, 2, 3, 4),QuadFace{Int}(6, 5, 4, 3)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,6)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1339,7 +1339,7 @@ end
 
 @testset "facearea" verbose = true begin
     @testset "Single triangle" begin
-        F = [TriangleFace{Int64}(1, 2, 3)]
+        F = [TriangleFace{Int}(1, 2, 3)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,3)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1348,7 +1348,7 @@ end
         @test A == [0.5]
     end
     @testset "Single quad" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4)]
+        F = [QuadFace{Int}(1, 2, 3, 4)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1358,7 +1358,7 @@ end
         @test A == [1.0]
     end
     @testset "Triangles" begin
-        F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(1, 4, 3)]
+        F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1368,7 +1368,7 @@ end
         @test A == [0.5,0.5]
     end
     @testset "Quads" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4),QuadFace{Int64}(6, 5, 4, 3)]
+        F = [QuadFace{Int}(1, 2, 3, 4),QuadFace{Int}(6, 5, 4, 3)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,6)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1387,7 +1387,7 @@ end
 
 @testset "vertexnormal" verbose = true begin
     @testset "Single triangle" begin
-        F = [TriangleFace{Int64}(1, 2, 3)]
+        F = [TriangleFace{Int}(1, 2, 3)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,3)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1396,7 +1396,7 @@ end
         @test N == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0)]
     end
     @testset "Single quad" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4)]
+        F = [QuadFace{Int}(1, 2, 3, 4)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1406,7 +1406,7 @@ end
         @test N == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0)]
     end
     @testset "Triangles" begin
-        F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(1, 4, 3)]
+        F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1416,7 +1416,7 @@ end
         @test N == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0)]
     end
     @testset "Quads" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4),QuadFace{Int64}(3,4,5,6)]
+        F = [QuadFace{Int}(1, 2, 3, 4),QuadFace{Int}(3,4,5,6)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,6)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1435,7 +1435,7 @@ end
 
 @testset "edgelengths" begin
     @testset "GeometryBasics faces, vertices" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4)]
+        F = [QuadFace{Int}(1, 2, 3, 4)]
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
@@ -1447,7 +1447,7 @@ end
     end
 
     @testset "GeometryBasics LineFace edges" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4)]
+        F = [QuadFace{Int}(1, 2, 3, 4)]
         E = meshedges(F)
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
@@ -1483,7 +1483,7 @@ end
         @test Vn == V
 
         Fn, Vn = subtri(F, V, n; method=:linear)
-        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+        ind = round.(Int,range(1,length(Vn),6)) # Sample indices
 
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
@@ -1500,7 +1500,7 @@ end
         @test Vn == V
 
         Fn, Vn = subtri(F, V, n; method=:Loop)
-        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+        ind = round.(Int,range(1,length(Vn),6)) # Sample indices
 
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
@@ -1524,7 +1524,7 @@ end
         @test Vn == V
 
         Fn, Vn = subtri(F, V, n; method=:Loop, constrain_boundary=false)
-        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+        ind = round.(Int,range(1,length(Vn),6)) # Sample indices
 
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
@@ -1547,7 +1547,7 @@ end
         @test Vn == V
 
         Fn, Vn = subtri(F, V, n; method=:Loop, constrain_boundary=true)
-        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+        ind = round.(Int,range(1,length(Vn),6)) # Sample indices
 
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
@@ -1595,7 +1595,7 @@ end
         @test Vn == V
 
         Fn, Vn = subquad(F, V, n; method=:linear)        
-        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+        ind = round.(Int,range(1,length(Vn),6)) # Sample indices
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)  
@@ -1611,7 +1611,7 @@ end
         @test Vn == V
 
         Fn, Vn = subquad(F, V, n; method=:Catmull_Clark)
-        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+        ind = round.(Int,range(1,length(Vn),6)) # Sample indices
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)  
@@ -1634,7 +1634,7 @@ end
         @test Vn == V
 
         Fn, Vn = subquad(F, V, n; method=:Catmull_Clark, constrain_boundary=false)
-        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+        ind = round.(Int,range(1,length(Vn),6)) # Sample indices
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)  
@@ -1656,7 +1656,7 @@ end
         @test Vn == V
 
         Fn, Vn = subquad(F, V, n; method=:Catmull_Clark, constrain_boundary=true)
-        ind = round.(Int64,range(1,length(Vn),6)) # Sample indices
+        ind = round.(Int,range(1,length(Vn),6)) # Sample indices
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)  
@@ -1682,8 +1682,8 @@ end
     
     n = 3
     F, V = geosphere(n, r)    
-    ind = round.(Int64,range(1,length(V),6)) # Sample indices
-    @test F isa Vector{TriangleFace{Int64}}
+    ind = round.(Int,range(1,length(V),6)) # Sample indices
+    @test F isa Vector{TriangleFace{Int}}
     @test length(F) == 4^n*20    # 20 since the icosahedron is the start geometry
     @test V isa Vector{Point{3,Float64}}    
     @test isapprox(V[ind],GeometryBasics.Point{3, Float64}[[0.0, -0.5257311121191336, -0.85065080835204], 
@@ -1699,8 +1699,8 @@ end
         E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[1,1,1])
         @test E == [[1, 2, 4, 3, 5, 6, 8, 7]] 
         @test V == Point3{Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
-        @test F == QuadFace{Int64}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [5, 7, 3, 1]]
-        @test Fb == QuadFace{Int64}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [5, 7, 3, 1]]
+        @test F == QuadFace{Int}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [5, 7, 3, 1]]
+        @test Fb == QuadFace{Int}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [5, 7, 3, 1]]
         @test CFb_type == [1, 2, 3, 4, 5, 6]
     end
     @testset "2x2x2 hex box" begin
@@ -1718,7 +1718,7 @@ end
 
 @testset "con_face_edge" verbose = true begin    
     @testset "Single triangle" begin
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
 
@@ -1730,7 +1730,7 @@ end
     end
 
     @testset "Single quad" begin
-        F = QuadFace{Int64}[[1,2,3,4]]
+        F = QuadFace{Int}[[1,2,3,4]]
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
 
@@ -1742,13 +1742,13 @@ end
     end
 
     @testset "Triangles" begin
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]        
+        F = TriangleFace{Int}[[1,2,3],[2,3,4]]        
         con_F2E = con_face_edge(F)
         @test con_F2E == [[1,2,4],[2,3,5]]        
     end
 
     @testset "Quads" begin
-        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        F = QuadFace{Int}[[1,2,3,4],[3,4,5,6]]        
         con_F2E = con_face_edge(F)
         @test con_F2E == [[1,3,2,6],[2,4,5,7]]        
     end
@@ -1757,7 +1757,7 @@ end
 
 @testset "con_edge_face" verbose = true begin    
     @testset "Single triangle" begin
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
 
@@ -1769,7 +1769,7 @@ end
     end
 
     @testset "Single quad" begin
-        F = QuadFace{Int64}[[1,2,3,4]]
+        F = QuadFace{Int}[[1,2,3,4]]
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
 
@@ -1781,13 +1781,13 @@ end
     end
 
     @testset "Triangles" begin
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]        
+        F = TriangleFace{Int}[[1,2,3],[2,3,4]]        
         con_E2F = con_edge_face(F)
         @test con_E2F == [[1], [1, 2], [2], [1], [2]]       
     end
 
     @testset "Quads" begin
-        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        F = QuadFace{Int}[[1,2,3,4],[3,4,5,6]]        
         con_E2F = con_edge_face(F)
         @test con_E2F == [[1], [1, 2], [1], [2], [2], [1], [2]]       
     end
@@ -1796,7 +1796,7 @@ end
 
 @testset "con_face_face" verbose = true begin    
     @testset "Single triangle" begin
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
         con_E2F = con_edge_face(F)
@@ -1811,7 +1811,7 @@ end
     end
 
     @testset "Single quad" begin
-        F = QuadFace{Int64}[[1,2,3,4]]
+        F = QuadFace{Int}[[1,2,3,4]]
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
         con_E2F = con_edge_face(F)
@@ -1825,13 +1825,13 @@ end
     end
 
     @testset "Triangles" begin
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]        
+        F = TriangleFace{Int}[[1,2,3],[2,3,4]]        
         con_F2F = con_face_face(F)
         @test con_F2F == [[2], [1]]       
     end
 
     @testset "Quads" begin
-        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        F = QuadFace{Int}[[1,2,3,4],[3,4,5,6]]        
         con_F2F = con_face_face(F)
         @test con_F2F == [[2], [1]]       
     end
@@ -1840,7 +1840,7 @@ end
 
 @testset "con_face_face_v" verbose = true begin    
     @testset "Single triangle" begin
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         V = [Point3{Float64}(rand(3)) for _ in 1:3]        
         con_V2F = con_vertex_face(F,V) 
 
@@ -1852,7 +1852,7 @@ end
     end
 
     @testset "Single quad" begin
-        F = QuadFace{Int64}[[1,2,3,4]]
+        F = QuadFace{Int}[[1,2,3,4]]
         V = [Point3{Float64}(rand(4)) for _ in 1:4]        
         con_V2F = con_vertex_face(F,V)
 
@@ -1864,13 +1864,13 @@ end
     end
 
     @testset "Triangles" begin
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]        
+        F = TriangleFace{Int}[[1,2,3],[2,3,4]]        
         con_F2F = con_face_face_v(F)
         @test con_F2F == [[2], [1]]       
     end
 
     @testset "Quads" begin
-        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        F = QuadFace{Int}[[1,2,3,4],[3,4,5,6]]        
         con_F2F = con_face_face_v(F)
         @test con_F2F == [[2], [1]]       
     end
@@ -1879,7 +1879,7 @@ end
 
 @testset "con_vertex_simplex" verbose = true begin    
     @testset "Single triangle" begin
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         V = [Point3{Float64}(rand(3)) for _ in 1:3]        
 
         con_V2F = con_vertex_simplex(F)
@@ -1890,7 +1890,7 @@ end
     end
 
     @testset "Single quad" begin
-        F = QuadFace{Int64}[[1,2,3,4]]
+        F = QuadFace{Int}[[1,2,3,4]]
         V = [Point3{Float64}(rand(4)) for _ in 1:4]        
 
         con_V2F = con_vertex_simplex(F)
@@ -1901,13 +1901,13 @@ end
     end
 
     @testset "Triangles" begin
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]        
+        F = TriangleFace{Int}[[1,2,3],[2,3,4]]        
         con_V2F = con_vertex_simplex(F)
         @test con_V2F == [[1], [1, 2], [1, 2], [2]]      
     end
 
     @testset "Quads" begin
-        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        F = QuadFace{Int}[[1,2,3,4],[3,4,5,6]]        
         con_V2F = con_vertex_simplex(F)
         @test con_V2F == [[1], [1], [1, 2], [1, 2], [2], [2]]  
     end
@@ -1916,7 +1916,7 @@ end
 
 @testset "con_vertex_face" verbose = true begin    
     @testset "Single triangle" begin
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         V = [Point3{Float64}(rand(3)) for _ in 1:3]        
 
         con_V2F = con_vertex_face(F)
@@ -1927,7 +1927,7 @@ end
     end
 
     @testset "Single quad" begin
-        F = QuadFace{Int64}[[1,2,3,4]]
+        F = QuadFace{Int}[[1,2,3,4]]
         V = [Point3{Float64}(rand(4)) for _ in 1:4]        
 
         con_V2F = con_vertex_face(F)
@@ -1938,13 +1938,13 @@ end
     end
 
     @testset "Triangles" begin
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]        
+        F = TriangleFace{Int}[[1,2,3],[2,3,4]]        
         con_V2F = con_vertex_face(F)
         @test con_V2F == [[1], [1, 2], [1, 2], [2]]      
     end
 
     @testset "Quads" begin
-        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        F = QuadFace{Int}[[1,2,3,4],[3,4,5,6]]        
         con_V2F = con_vertex_face(F)
         @test con_V2F == [[1], [1], [1, 2], [1, 2], [2], [2]]  
     end
@@ -1953,7 +1953,7 @@ end
 
 @testset "con_vertex_edge" verbose = true begin    
     @testset "Single triangle" begin
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         E = meshedges(F)
         V = [Point3{Float64}(rand(3)) for _ in 1:3]        
 
@@ -1965,7 +1965,7 @@ end
     end
 
     @testset "Single quad" begin
-        F = QuadFace{Int64}[[1,2,3,4]]
+        F = QuadFace{Int}[[1,2,3,4]]
         E = meshedges(F)
         V = [Point3{Float64}(rand(4)) for _ in 1:4]        
 
@@ -1977,14 +1977,14 @@ end
     end
 
     @testset "Triangles" begin
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]     
+        F = TriangleFace{Int}[[1,2,3],[2,3,4]]     
         E = meshedges(F)  
         con_V2E = con_vertex_edge(E)
         @test con_V2E == [[1, 5], [1, 2, 3, 6], [2, 3, 4, 5], [4, 6]]    
     end
 
     @testset "Quads" begin
-        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]        
+        F = QuadFace{Int}[[1,2,3,4],[3,4,5,6]]        
         E = meshedges(F)
         con_V2E = con_vertex_edge(E)
         @test con_V2E == [[1, 7], [1, 3], [2, 3, 5, 8], [2, 4, 5, 7], [4, 6], [6, 8]]
@@ -1994,7 +1994,7 @@ end
 
 @testset "con_edge_edge" verbose = true begin    
     @testset "Single triangle" begin
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
         con_V2E = con_vertex_edge(E_uni) 
@@ -2007,7 +2007,7 @@ end
     end
 
     @testset "Single quad" begin
-        F = QuadFace{Int64}[[1,2,3,4]]
+        F = QuadFace{Int}[[1,2,3,4]]
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
         con_V2E = con_vertex_edge(E_uni) 
@@ -2020,7 +2020,7 @@ end
     end
 
     @testset "Triangles" begin
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]       
+        F = TriangleFace{Int}[[1,2,3],[2,3,4]]       
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
         con_E2E = con_edge_edge(E_uni)
@@ -2028,7 +2028,7 @@ end
     end
 
     @testset "Quads" begin
-        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]      
+        F = QuadFace{Int}[[1,2,3,4],[3,4,5,6]]      
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)      
         con_E2E = con_edge_edge(E_uni)
@@ -2039,7 +2039,7 @@ end
 
 @testset "con_vertex_vertex_f" verbose = true begin    
     @testset "Single triangle" begin
-        F = TriangleFace{Int64}[[1,2,3]]        
+        F = TriangleFace{Int}[[1,2,3]]        
         V = [Point3{Float64}(rand(3)) for _ in 1:3]        
         con_V2F = con_vertex_face(F)
 
@@ -2051,7 +2051,7 @@ end
     end
 
     @testset "Single quad" begin
-        F = QuadFace{Int64}[[1,2,3,4]]        
+        F = QuadFace{Int}[[1,2,3,4]]        
         V = [Point3{Float64}(rand(4)) for _ in 1:4]        
         con_V2F = con_vertex_face(F)
 
@@ -2063,13 +2063,13 @@ end
     end
 
     @testset "Triangles" begin
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]             
+        F = TriangleFace{Int}[[1,2,3],[2,3,4]]             
         con_V2V = con_vertex_vertex_f(F)
         @test con_V2V == [[2, 3], [1, 3, 4], [1, 2, 4], [2, 3]]   
     end
 
     @testset "Quads" begin
-        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]                
+        F = QuadFace{Int}[[1,2,3,4],[3,4,5,6]]                
         con_V2V = con_vertex_vertex_f(F)
         @test con_V2V == [[2, 3, 4], [1, 3, 4], [1, 2, 4, 5, 6], [1, 2, 3, 5, 6], [3, 4, 6], [3, 4, 5]]
     end
@@ -2078,7 +2078,7 @@ end
 
 @testset "con_vertex_vertex" verbose = true begin    
     @testset "Single triangle" begin
-        F = TriangleFace{Int64}[[1,2,3]]        
+        F = TriangleFace{Int}[[1,2,3]]        
         V = [Point3{Float64}(rand(3)) for _ in 1:3]        
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
@@ -2092,7 +2092,7 @@ end
     end
 
     @testset "Single quad" begin
-        F = QuadFace{Int64}[[1,2,3,4]]        
+        F = QuadFace{Int}[[1,2,3,4]]        
         V = [Point3{Float64}(rand(4)) for _ in 1:4]        
         E = meshedges(F;unique_only=false)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
@@ -2106,14 +2106,14 @@ end
     end
 
     @testset "Triangles" begin
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]      
+        F = TriangleFace{Int}[[1,2,3],[2,3,4]]      
         E = meshedges(F;unique_only=false)       
         con_V2V = con_vertex_vertex(E)
         @test con_V2V == [[2, 3], [1, 3, 4], [2, 4, 1], [3, 2]]
     end
 
     @testset "Quads" begin
-        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]                
+        F = QuadFace{Int}[[1,2,3,4],[3,4,5,6]]                
         E = meshedges(F;unique_only=false)
         con_V2V = con_vertex_vertex(E)
         @test con_V2V == [[2, 4], [1, 3], [4, 2, 6], [3, 5, 1], [4, 6], [5, 3]]
@@ -2123,7 +2123,7 @@ end
 
 @testset "meshconnectivity" verbose = true begin    
     @testset "Single triangle" begin
-        F = TriangleFace{Int64}[[1,2,3]]        
+        F = TriangleFace{Int}[[1,2,3]]        
         V = [Point3{Float64}(rand(3)) for _ in 1:3]        
 
         # EDGE-VERTEX connectivity
@@ -2173,7 +2173,7 @@ end
     end
 
     @testset "Single quad" begin
-        F = QuadFace{Int64}[[1,2,3,4]]        
+        F = QuadFace{Int}[[1,2,3,4]]        
         V = [Point3{Float64}(rand(4)) for _ in 1:4]   
 
         # EDGE-VERTEX connectivity
@@ -2223,7 +2223,7 @@ end
     end
 
     @testset "Triangles" begin
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]      
+        F = TriangleFace{Int}[[1,2,3],[2,3,4]]      
         V = [Point3{Float64}(rand(4)) for _ in 1:4]   
 
         # EDGE-VERTEX connectivity
@@ -2273,7 +2273,7 @@ end
     end
 
     @testset "Quads" begin
-        F = QuadFace{Int64}[[1,2,3,4],[3,4,5,6]]                
+        F = QuadFace{Int}[[1,2,3,4],[3,4,5,6]]                
         V = [Point3{Float64}(rand(4)) for _ in 1:6]   
         
         # EDGE-VERTEX connectivity
@@ -2336,7 +2336,7 @@ end
     @test length(Vm) == length(V)
     @test isapprox(Vm[1], [-1.0, -1.0, -1.0], atol=eps_level)
     @test [indReverse[f] for f in Fm] == Fs # Reverse mapping 
-    @test Fm isa Vector{QuadFace{Int64}} # Face type unaltered 
+    @test Fm isa Vector{QuadFace{Int}} # Face type unaltered 
     @test length(Fm) == length(F) # Length is correct
     @test Fm[1] == [1, 2, 3, 4]
 
@@ -2346,7 +2346,7 @@ end
     @test length(Vm) == length(V)
     @test isapprox(Vm[1], [-1.0, -1.0, -1.0], atol=eps_level)
     @test [indReverse[f] for f in Fm] == Fs # Reverse mapping 
-    @test Fm isa Vector{QuadFace{Int64}} # Face type unaltered 
+    @test Fm isa Vector{QuadFace{Int}} # Face type unaltered 
     @test length(Fm) == length(F) # Length is correct
     @test Fm[1] == [1, 2, 3, 4]
 end
@@ -2360,7 +2360,7 @@ end
     V = coordinates(M)
     F,V = subtri(F,V,3)
 
-    ind = round.(Int64,range(1,length(V),5))
+    ind = round.(Int,range(1,length(V),5))
 
     @testset "errors" begin
         λ = -0.5 # Laplacian smoothing parameter
@@ -2416,7 +2416,7 @@ end
     V = coordinates(M)
     F,V = subtri(F,V,3)
 
-    ind = round.(Int64,range(1,length(V),5))
+    ind = round.(Int,range(1,length(V),5))
 
     @testset "errors" begin
         n=10
@@ -2500,7 +2500,7 @@ end
     @test V isa Vector{Point3{Float64}}
     @test length(V) == prod(plateElem.+1)
     @test isapprox(V, Point3{Float64}[[-2.5, -2.5, 0.0], [-1.25, -2.5, 0.0], [0.0, -2.5, 0.0], [1.25, -2.5, 0.0], [2.5, -2.5, 0.0], [-2.5, -0.8333333333333334, 0.0], [-1.25, -0.8333333333333334, 0.0], [0.0, -0.8333333333333334, 0.0], [1.25, -0.8333333333333334, 0.0], [2.5, -0.8333333333333334, 0.0], [-2.5, 0.8333333333333334, 0.0], [-1.25, 0.8333333333333334, 0.0], [0.0, 0.8333333333333334, 0.0], [1.25, 0.8333333333333334, 0.0], [2.5, 0.8333333333333334, 0.0], [-2.5, 2.5, 0.0], [-1.25, 2.5, 0.0], [0.0, 2.5, 0.0], [1.25, 2.5, 0.0], [2.5, 2.5, 0.0]], atol=eps_level)
-    @test F isa Vector{QuadFace{Int64}}
+    @test F isa Vector{QuadFace{Int}}
     @test length(F) == prod(plateElem)
     @test F[1] == [1, 2, 7, 6]
 end
@@ -2515,7 +2515,7 @@ end
     @test V isa Vector{Point3{Float64}}
     @test length(V) == 386
     @test isapprox(V[1], [-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], atol=eps_level)
-    @test F isa Vector{QuadFace{Int64}}
+    @test F isa Vector{QuadFace{Int}}
     @test length(F) == 384
     @test F[1] == [1, 99, 291, 187]
 end
@@ -2524,7 +2524,7 @@ end
     eps_level = 1e-4
 
     # Single face/element
-    F1 = QuadFace{Int64}[[1,2,3,4]]
+    F1 = QuadFace{Int}[[1,2,3,4]]
     V1 = [GeometryBasics.Point3(rand(3)) for _=1:length(F1[1])]
 
     # A quad mesh featuring a variation in terms of face areas and vertex connectivity 
@@ -2739,7 +2739,7 @@ end
     @testset "Triangles" begin
         F, V = geosphere(2, 1.0)
         VC = simplexcenter(F, V)
-        ind = round.(Int64,range(1,length(VC),5))
+        ind = round.(Int,range(1,length(VC),5))
 
         @test VC isa typeof(V)
         @test length(VC) == length(F)
@@ -2749,7 +2749,7 @@ end
     @testset "Quadrilaterals" begin
         F, V = quadsphere(2, 1.0)
         VC = simplexcenter(F, V)
-        ind = round.(Int64,range(1,length(VC),5))
+        ind = round.(Int,range(1,length(VC),5))
         @test VC isa typeof(V)
         @test length(VC) == length(F)
         @test isapprox(VC[ind], Point3{Float64}[[-0.4802860138667546, -0.4802860138667546, -0.6949720954766154], [-0.4802860138667546, 0.4802860138667546, 0.6949720954766154], [-0.7899092719339054, -0.16747661189958585, -0.5326696383253359], [0.7899092719339054, -0.16747661189958585, 0.5326696383253359], [0.16747661189958585, -0.7899092719339054, -0.5326696383253359]], atol=eps_level)
@@ -2804,7 +2804,7 @@ end
         r = 2.0
         n = 40
         V = circlepoints(r, n; dir=:acw)
-        ind = round.(Int64,range(1,length(V),5))
+        ind = round.(Int,range(1,length(V),5))
         d = [sqrt(sum(v.^2)) for v in V]
         @test V isa Vector{Point3{Float64}}
         @test length(V) == n
@@ -2815,7 +2815,7 @@ end
         [1.9753766811902753, -0.31286893008046224, 0.0]], atol=eps_level)
    
         V = circlepoints(r, n; dir=:cw)
-        ind = round.(Int64,range(1,length(V),5))
+        ind = round.(Int,range(1,length(V),5))
         d = [sqrt(sum(v.^2)) for v in V]
         @test V isa Vector{Point3{Float64}}
         @test length(V) == n
@@ -2830,7 +2830,7 @@ end
         n = 40
         rFun(t) = r + 0.5 .* sin(3 * t)
         V = circlepoints(rFun, n)
-        ind = round.(Int64,range(1,length(V),5))
+        ind = round.(Int,range(1,length(V),5))
 
         @test V isa Vector{Point3{Float64}}
         @test length(V) == n
@@ -2839,7 +2839,7 @@ end
         [0.7634877789282826, -0.12092458456017953, 0.0]], atol=eps_level)
        
         V = circlepoints(rFun, n; dir=:cw)
-        ind = round.(Int64,range(1,length(V),5))
+        ind = round.(Int,range(1,length(V),5))
 
         @test V isa Vector{Point3{Float64}}
         @test length(V) == n
@@ -2867,9 +2867,9 @@ end
 
     @testset "quad" begin
         F,V = loftlinear(V1,V2;num_steps=num_steps,close_loop=true,face_type=:quad)
-        ind = round.(Int64,range(1,length(V),5))
+        ind = round.(Int,range(1,length(V),5))
 
-        @test F isa Vector{QuadFace{Int64}}
+        @test F isa Vector{QuadFace{Int}}
         @test length(F) == nc*(num_steps-1)
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -2877,15 +2877,15 @@ end
 
         # Providing "nothing" for the number of steps should create point spacing based number of steps
         F,V = loftlinear(V1,V2;num_steps=nothing,close_loop=true,face_type=:quad)
-        @test length(V)/nc == ceil(Int64,norm(n)/(0.5*(pointspacingmean(V1)+pointspacingmean(V2))))
+        @test length(V)/nc == ceil(Int,norm(n)/(0.5*(pointspacingmean(V1)+pointspacingmean(V2))))
 
     end
 
     @testset "tri" begin
         F,V = loftlinear(V1,V2;num_steps=num_steps,close_loop=true,face_type=:tri)
-        ind = round.(Int64,range(1,length(V),5))
+        ind = round.(Int,range(1,length(V),5))
 
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc*(num_steps-1))*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -2894,9 +2894,9 @@ end
 
     @testset "tri_slash" begin
         F,V = loftlinear(V1,V2;num_steps=num_steps,close_loop=true,face_type=:tri_slash)
-        ind = round.(Int64,range(1,length(V),5))
+        ind = round.(Int,range(1,length(V),5))
 
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc*(num_steps-1))*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -2905,9 +2905,9 @@ end
 
     @testset "quad2tri" begin
         F,V = loftlinear(V1,V2;num_steps=num_steps,close_loop=true,face_type=:quad2tri)
-        ind = round.(Int64,range(1,length(V),5))
+        ind = round.(Int,range(1,length(V),5))
 
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc*(num_steps-1))*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -2934,7 +2934,7 @@ end
         #Non-closed loop
         num_steps = 2
         F,V = loftpoints2surf(Vp2,num_steps; close_loop=false,face_type=:quad)
-        @test F isa Vector{QuadFace{Int64}}
+        @test F isa Vector{QuadFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -2943,7 +2943,7 @@ end
         # Closed loop
         num_steps = 2
         F,V = loftpoints2surf(Vp2,num_steps; close_loop=true,face_type=:quad)
-        @test F isa Vector{QuadFace{Int64}}
+        @test F isa Vector{QuadFace{Int}}
         @test length(F) == nc*(num_steps-1)
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -2952,7 +2952,7 @@ end
         # 3 layers
         num_steps = 3
         F,V = loftpoints2surf(Vp3,num_steps; close_loop=true,face_type=:quad)
-        @test F isa Vector{QuadFace{Int64}}
+        @test F isa Vector{QuadFace{Int}}
         @test length(F) == nc*(num_steps-1)
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -2963,7 +2963,7 @@ end
         #Non-closed loop
         num_steps = 2
         F,V = loftpoints2surf(Vp2,num_steps; close_loop=false,face_type=:tri_slash)
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -2972,7 +2972,7 @@ end
         # Closed loop
         num_steps = 2
         F,V = loftpoints2surf(Vp2,num_steps; close_loop=true,face_type=:tri_slash)
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -2981,7 +2981,7 @@ end
         # 3 layers
         num_steps = 3
         F,V = loftpoints2surf(Vp3,num_steps; close_loop=true,face_type=:tri_slash)
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -2992,7 +2992,7 @@ end
         #Non-closed loop
         num_steps = 2
         F,V = loftpoints2surf(Vp2,num_steps; close_loop=false,face_type=:tri)
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -3001,7 +3001,7 @@ end
         # Closed loop
         num_steps = 2
         F,V = loftpoints2surf(Vp2,num_steps; close_loop=true,face_type=:tri)
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -3010,7 +3010,7 @@ end
         # 3 layers
         num_steps = 3
         F,V = loftpoints2surf(Vp3,num_steps; close_loop=true,face_type=:tri)
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -3021,7 +3021,7 @@ end
         #Non-closed loop
         num_steps = 2
         F,V = loftpoints2surf(Vp2,num_steps; close_loop=false,face_type=:quad2tri)
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -3030,7 +3030,7 @@ end
         # Closed loop
         num_steps = 2
         F,V = loftpoints2surf(Vp2,num_steps; close_loop=true,face_type=:quad2tri)
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -3039,7 +3039,7 @@ end
         # 3 layers
         num_steps = 3
         F,V = loftpoints2surf(Vp3,num_steps; close_loop=true,face_type=:quad2tri)
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -3068,9 +3068,9 @@ end
     end
 
     @testset "Styles" begin
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
-        @test typeof(hp2) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
-        @test typeof(hp3) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}        
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
+        @test typeof(hp2) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
+        @test typeof(hp3) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}        
         @test length(faces(Mp)) == length(V)
     end
 end
@@ -3093,17 +3093,17 @@ end
     @testset "type_flag options" begin
         hp1 =  normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
         @test length(faces(Mp)) == length(F)
 
         hp1 =  normalplot(ax,M; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
         @test length(faces(Mp)) == length(V)
 
         hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
         @test length(faces(Mp)) == length(V)
 
         fileName_mesh = joinpath(comododir(),"assets","obj","spot_control_mesh.obj")
@@ -3113,18 +3113,18 @@ end
 
         hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float32, Line{3, Float32}, SimpleFaceView{3, Float32, 2, Int64, Point3{Float32}, LineFace{Int64}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float32, Line{3, Float32}, SimpleFaceView{3, Float32, 2, Int, Point3{Float32}, LineFace{Int}}}}}
         @test length(faces(Mp)) == length(V)
 
         hp1 =  normalplot(ax,Mn; type_flag=:face)
         Mp = hp1[1].val
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float32, Line{3, Float32}, SimpleFaceView{3, Float32, 2, Int64, Point3{Float32}, LineFace{Int64}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float32, Line{3, Float32}, SimpleFaceView{3, Float32, 2, Int, Point3{Float32}, LineFace{Int}}}}}
         @test length(faces(Mp)) == length(F)
 
         # Not supported yet
         # hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
         # Mp = hp1[1].val
-        # @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point3{Float64}, LineFace{Int64}}}}}
+        # @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
         # @test length(faces(Mp)) == length(V)
 
     end
@@ -3185,19 +3185,19 @@ end
 
     @testset "convert_method variations" begin
         Ft = quad2tri(F,V; convert_method = :forward)
-        @test Ft ==TriangleFace{Int64}[TriangleFace(1, 2, 3), TriangleFace(3, 4, 1), 
+        @test Ft ==TriangleFace{Int}[TriangleFace(1, 2, 3), TriangleFace(3, 4, 1), 
         TriangleFace(8, 7, 6), TriangleFace(6, 5, 8), TriangleFace(5, 6, 2), 
         TriangleFace(2, 1, 5), TriangleFace(6, 7, 3), TriangleFace(3, 2, 6), 
         TriangleFace(7, 8, 4), TriangleFace(4, 3, 7), TriangleFace(8, 5, 1), TriangleFace(1, 4, 8)]
         
         Ft = quad2tri(F,V; convert_method = :backward)
-        @test Ft == TriangleFace{Int64}[TriangleFace(1, 2, 4), TriangleFace(2, 3, 4), 
+        @test Ft == TriangleFace{Int}[TriangleFace(1, 2, 4), TriangleFace(2, 3, 4), 
         TriangleFace(8, 7, 5), TriangleFace(7, 6, 5), TriangleFace(5, 6, 1), 
         TriangleFace(6, 2, 1), TriangleFace(6, 7, 2), TriangleFace(7, 3, 2), 
         TriangleFace(7, 8, 3), TriangleFace(8, 4, 3), TriangleFace(8, 5, 4), TriangleFace(5, 1, 4)]
 
         Ft = quad2tri(F,V; convert_method = :angle)
-        @test Ft == TriangleFace{Int64}[TriangleFace(1, 2, 4), TriangleFace(2, 3, 4), 
+        @test Ft == TriangleFace{Int}[TriangleFace(1, 2, 4), TriangleFace(2, 3, 4), 
         TriangleFace(8, 7, 6), TriangleFace(6, 5, 8), TriangleFace(5, 6, 2), 
         TriangleFace(2, 1, 5), TriangleFace(6, 7, 3), TriangleFace(3, 2, 6), 
         TriangleFace(7, 8, 3), TriangleFace(8, 4, 3), TriangleFace(8, 5, 4), TriangleFace(5, 1, 4)]
@@ -3211,13 +3211,13 @@ end
     F = [F[i] for i in findall(map(v -> v[3] > 0, VC))] # Remove some faces
     Fn, Vn = remove_unused_vertices(F, V)
 
-    @test Fn isa Vector{TriangleFace{Int64}}
+    @test Fn isa Vector{TriangleFace{Int}}
     @test Vn isa Vector{Point3{Float64}}
     @test length(F) == length(Fn)
     @test length(Vn) ==  maximum(reduce(vcat,Fn))
     
     # Check empty results
-    Fn, Vn = remove_unused_vertices(Vector{TriangleFace{Int64}}(), V)
+    Fn, Vn = remove_unused_vertices(Vector{TriangleFace{Int}}(), V)
     @test isempty(Fn)
     @test isempty(Vn)
 
@@ -3281,7 +3281,7 @@ end
 
     
     @testset "Single triangle" begin
-        F = [TriangleFace{Int64}(1, 2, 3)]       
+        F = [TriangleFace{Int}(1, 2, 3)]       
         E = meshedges(F)
         Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
         count_E2F = count_edge_face(F,Eu,indReverse)
@@ -3294,7 +3294,7 @@ end
     end
 
     @testset "Single quad" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4)]       
+        F = [QuadFace{Int}(1, 2, 3, 4)]       
         E = meshedges(F)
         Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
         count_E2F = count_edge_face(F,Eu,indReverse)
@@ -3302,7 +3302,7 @@ end
     end
 
     @testset "Triangles" begin
-        F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(1, 4, 3)]
+        F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
         E = meshedges(F)
         Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
         count_E2F = count_edge_face(F,Eu,indReverse)
@@ -3310,7 +3310,7 @@ end
     end
 
     @testset "Quads" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4),QuadFace{Int64}(6, 5, 4, 3)]
+        F = [QuadFace{Int}(1, 2, 3, 4),QuadFace{Int}(6, 5, 4, 3)]
         E = meshedges(F)
         Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
         count_E2F = count_edge_face(F,Eu,indReverse)
@@ -3323,33 +3323,33 @@ end
 @testset "boundaryedges" verbose = true begin
 
     @testset "Set of edges" begin
-        E = LineFace{Int64}[[1,2],[2,1],[3,1],[4,2],[2,4]]
+        E = LineFace{Int}[[1,2],[2,1],[3,1],[4,2],[2,4]]
         Eb = boundaryedges(E)
-        @test Eb == LineFace{Int64}[[3, 1]]
+        @test Eb == LineFace{Int}[[3, 1]]
     end
 
     @testset "Single triangle" begin
-        F = [TriangleFace{Int64}(1, 2, 3)]       
+        F = [TriangleFace{Int}(1, 2, 3)]       
         Eb = boundaryedges(F)
-        @test Eb == LineFace{Int64}[[1, 2], [2, 3], [3, 1]]
+        @test Eb == LineFace{Int}[[1, 2], [2, 3], [3, 1]]
     end
 
     @testset "Single quad" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4)]       
+        F = [QuadFace{Int}(1, 2, 3, 4)]       
         Eb = boundaryedges(F)
-        @test Eb == LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 1]]
+        @test Eb == LineFace{Int}[[1, 2], [2, 3], [3, 4], [4, 1]]
     end
 
     @testset "Triangles" begin
-        F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(1, 4, 3)]
+        F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
         Eb = boundaryedges(F)
-        @test Eb == LineFace{Int64}[[1, 2], [1, 4], [2, 3], [4, 3]]
+        @test Eb == LineFace{Int}[[1, 2], [1, 4], [2, 3], [4, 3]]
     end
 
     @testset "Quads" begin
-        F = [QuadFace{Int64}(1, 2, 3, 4),QuadFace{Int64}(6, 5, 4, 3)]
+        F = [QuadFace{Int}(1, 2, 3, 4),QuadFace{Int}(6, 5, 4, 3)]
         Eb = boundaryedges(F)
-        @test Eb == LineFace{Int64}[[1, 2], [6, 5], [2, 3], [5, 4], [4, 1], [3, 6]]
+        @test Eb == LineFace{Int}[[1, 2], [6, 5], [2, 3], [5, 4], [4, 1], [3, 6]]
     end
 
 end
@@ -3390,7 +3390,7 @@ end
         sampleSize = 10
         pointSpacing = 2
         boxDim = sampleSize.*[1,1,1] # Dimensionsions for the box in each direction
-        boxEl = ceil.(Int64,boxDim./pointSpacing) # Number of elements to use in each direction 
+        boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
         E,V,F,Fbq,CFb_type = hexbox(boxDim,boxEl)   
         F = element2faces(E)
 
@@ -3411,14 +3411,14 @@ end
         F = faces(M)        
         indB = boundaryfaceindices(F)
         @test sort(indB) == collect(1:length(F))
-        @test typeof(indB) == Vector{Int64}
+        @test typeof(indB) == Vector{Int}
     end
 
     @testset "Sphere mesh (all boundary faces)" begin
         F,V = geosphere(2,1.0)        
         indB = boundaryfaceindices(F)
         @test sort(indB) == collect(1:length(F))
-        @test typeof(indB) == Vector{Int64}
+        @test typeof(indB) == Vector{Int}
     end
 
     @testset "Tetrahedral mesh of a sphere" begin        
@@ -3435,7 +3435,7 @@ end
         sampleSize = 10
         pointSpacing = 2
         boxDim = sampleSize.*[1,1,1] # Dimensionsions for the box in each direction
-        boxEl = ceil.(Int64,boxDim./pointSpacing) # Number of elements to use in each direction 
+        boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
         E,V,F,Fbq,CFb_type = hexbox(boxDim,boxEl)   
         F = element2faces(E)
 
@@ -3448,29 +3448,29 @@ end
 @testset "edges2curve" begin
 
     # Empty input
-    E = LineFace{Int64}[]
+    E = LineFace{Int}[]
     ind = edges2curve(E)
     @test isempty(ind)
 
     # Open curve
-    E = LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 5]]
+    E = LineFace{Int}[[1, 2], [2, 3], [3, 4], [4, 5]]
     ind = edges2curve(E)
     @test ind == [1,2,3,4,5]
 
     # Closed curve
-    E = LineFace{Int64}[[1, 2], [2, 3], [3, 1]]
+    E = LineFace{Int}[[1, 2], [2, 3], [3, 1]]
     ind = edges2curve(E)
     @test ind == [1,2,3,1]
 
     # Disconnected edges
-    E = LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 5],[7,8]]
+    E = LineFace{Int}[[1, 2], [2, 3], [3, 4], [4, 5],[7,8]]
     @test_throws Exception edges2curve(E)
     
     # Invalid curve with branch
-    E = LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 5],[5,3]]
+    E = LineFace{Int}[[1, 2], [2, 3], [3, 4], [4, 5],[5,3]]
     @test_throws Exception edges2curve(E)
 
-    E = LineFace{Int64}[[1, 2], [2, 3], [3, 4], [4, 5],[5,3]]
+    E = LineFace{Int}[[1, 2], [2, 3], [3, 4], [4, 5],[5,3]]
     @test_throws Exception edges2curve(E)
 end
 
@@ -3485,14 +3485,14 @@ end
 
     @testset "Edges" begin
         V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.75,0.0,0.0],[1.75,0.0,0.0]]
-        E = LineFace{Int64}[[1,2],[2,3],[3,4]]
+        E = LineFace{Int}[[1,2],[2,3],[3,4]]
         r = pointspacingmean(E,V)
         @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_level)
     end
 
     @testset "Faces" begin
         V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.25,0.5,0.0],[0,0.5,0.0],[0.0,0.0,0.0]]
-        F = QuadFace{Int64}[[1,2,3,4]]
+        F = QuadFace{Int}[[1,2,3,4]]
         r = pointspacingmean(F,V)
         @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_level)
     end
@@ -3579,10 +3579,10 @@ end
         zMax = maximum(z)
         zMin = minimum(z)
 
-        @test F isa Vector{QuadFace{Int64}}
+        @test F isa Vector{QuadFace{Int}}
         @test length(F) == nc*(num_steps-1)
 
-        ind = round.(Int64,range(1,length(V),5))
+        ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
         @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-1.8369701987210297e-16, 1.0, 0.75], 
@@ -3596,10 +3596,10 @@ end
         zMax = maximum(z)
         zMin = minimum(z)
 
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc*(num_steps-1))*2
 
-        ind = round.(Int64,range(1,length(V),5))
+        ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
         @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-0.19134171618254525, 0.9619397662556433, 0.75], 
@@ -3613,10 +3613,10 @@ end
         zMax = maximum(z)
         zMin = minimum(z)
 
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc*(num_steps-1))*2
 
-        ind = round.(Int64,range(1,length(V),5))
+        ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
         @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-1.8369701987210297e-16, 1.0, 0.75], 
@@ -3630,10 +3630,10 @@ end
         zMax = maximum(z)
         zMin = minimum(z)
 
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc*(num_steps-1))*2
 
-        ind = round.(Int64,range(1,length(V),5))
+        ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
         @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-1.8369701987210297e-16, 1.0, 0.75], 
@@ -3647,53 +3647,53 @@ end
 @testset "meshgroup" verbose = true begin
 
     @testset "Errors" begin
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         @test_throws ArgumentError meshgroup(F; con_type=:wrong)
     end
 
     @testset "Single face" begin
         # Single triangle
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         C = meshgroup(F)
         @test C == [1]
 
         # Single triangle, edge connectivity
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         C = meshgroup(F; con_type=:e)
         @test C == [1]
         
         # Single quad
-        F = QuadFace{Int64}[[1,2,3,4]]
+        F = QuadFace{Int}[[1,2,3,4]]
         C = meshgroup(F)
         @test C == [1]
     end
 
     @testset "Two separate faces" begin
         # Two triangles separate
-        F = TriangleFace{Int64}[[1,2,3],[4,5,6]]
+        F = TriangleFace{Int}[[1,2,3],[4,5,6]]
         C = meshgroup(F)
         @test C == [1,2]
 
          # Two triangles, edge sharing 
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]
+        F = TriangleFace{Int}[[1,2,3],[2,3,4]]
         C = meshgroup(F; con_type=:e)
         @test C == [1,1]
         
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4]]
+        F = TriangleFace{Int}[[1,2,3],[2,3,4]]
         C = meshgroup(F; con_type=:v)
         @test C == [1,1]
 
         # Two bow-tie triangles, node sharing 
-        F = TriangleFace{Int64}[[1,2,3],[3,4,5]]
+        F = TriangleFace{Int}[[1,2,3],[3,4,5]]
         C = meshgroup(F; con_type=:e)
         @test C == [1,2]
 
-        F = TriangleFace{Int64}[[1,2,3],[3,4,5]]
+        F = TriangleFace{Int}[[1,2,3],[3,4,5]]
         C = meshgroup(F; con_type=:v)
         @test C == [1,1]
         
         # Two quads
-        F = QuadFace{Int64}[[1,2,3,4],[5,6,7,8]]
+        F = QuadFace{Int}[[1,2,3,4],[5,6,7,8]]
         C = meshgroup(F)
         @test C == [1,2]
     end
@@ -3714,7 +3714,7 @@ end
 
     @testset "Two groups" begin
         # Three triangles two joined, one separate
-        F = TriangleFace{Int64}[[1,2,3],[2,3,4],[5,6,7]]
+        F = TriangleFace{Int}[[1,2,3],[2,3,4],[5,6,7]]
         C = meshgroup(F)
         @test C == [1,1,2]
         
@@ -3752,13 +3752,13 @@ end
 
     @testset "Single face" begin
         # Single triangle
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0]]
         d,dd,l = distmarch(F,V,[1])
         @test isapprox(d,[0.0,1.0,sqrt(2)],atol=eps_level)
 
         # Single triangle, un-used nodes
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],
                             [1.0,0.0,0.0],[1.0,1.0,0.0]]
         d,dd,l = distmarch(F,V,[1])
@@ -3768,7 +3768,7 @@ end
         @test all(isnan.(d[.!b])) # Now check NaNs
 
         # Single quad
-        F = QuadFace{Int64}[[1,2,3,4]]
+        F = QuadFace{Int}[[1,2,3,4]]
         V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],[0.0,1.0,0.0]]
         d,dd,l = distmarch(F,V,[1])
         @test isapprox(d,[0.0,1.0,sqrt(2),1.0],atol=eps_level)
@@ -3778,14 +3778,14 @@ end
         # Bowtie triangle set
         V = Point3{Float64}[[0.0, 1.0, 0.0], [0.0, -1.0, 0.0], [1.0, 0.0, 0.0], 
                             [2.0, 1.0, 0.0], [2.0, -1.0, 0.0]]
-        F = TriangleFace{Int64}[TriangleFace(1, 2, 3), TriangleFace(5, 4, 3)]
+        F = TriangleFace{Int}[TriangleFace(1, 2, 3), TriangleFace(5, 4, 3)]
         d,dd,l = distmarch(F,V,[1])
         @test isapprox(d,[0.0,2.0,sqrt(2),2*sqrt(2),2*sqrt(2)],atol=eps_level)
         
         # Two disconnected triangles
         V = Point3{Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], 
                             [0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [1.0, 1.0, 1.0]]
-        F = TriangleFace{Int64}[TriangleFace(1, 2, 3), TriangleFace(4, 5, 6)]
+        F = TriangleFace{Int}[TriangleFace(1, 2, 3), TriangleFace(4, 5, 6)]
         d,dd,l = distmarch(F,V,[1])
         r = [0.0,1.0,sqrt(2),NaN,NaN,NaN]
         b = .!isnan.(r)
@@ -3795,7 +3795,7 @@ end
         # Two disconnected quads
         V = Point3{Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0,1.0,0.0],
                             [0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [1.0, 1.0, 1.0], [0.0,1.0,1.0]]
-        F = QuadFace{Int64}[QuadFace(1, 2, 3, 4), QuadFace(5, 6, 7, 8)]
+        F = QuadFace{Int}[QuadFace(1, 2, 3, 4), QuadFace(5, 6, 7, 8)]
         d,dd,l = distmarch(F,V,[1])
         r = [0.0,1.0,sqrt(2),1.0,NaN,NaN,NaN,NaN]
         b = .!isnan.(r)
@@ -3850,22 +3850,22 @@ end
 
         P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 1)
         @test isapprox(P,Point3{Float64}[[0.25, 0.0, 1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int64}) # indIntersect == 3
+        @test isa(indIntersect,Vector{Int}) # indIntersect == 3
 
         P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 0)
         @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0], [0.25, 0.0, 1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int64})
+        @test isa(indIntersect,Vector{Int})
 
         P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = -1)
         @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int64})
+        @test isa(indIntersect,Vector{Int})
 
         ray_origin = GeometryBasics.Point3{Float64}(0.0,0.0,1.5) # At centre so hits an edge between two triangles
         ray_vector = Vec3{Float64}(0.0,0.0,-1)
         P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 0, tolEps = 1e-3)
         @test isapprox(P,Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, -1.0], 
                                          [0.0, 0.0,  1.0], [0.0, 0.0,  1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int64})
+        @test isa(indIntersect,Vector{Int})
     end
 
     @testset "line type" begin 
@@ -3874,27 +3874,27 @@ end
 
         P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 1)
         @test isapprox(P,Point3{Float64}[[0.25, 0.0, 1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int64}) # indIntersect == 3
+        @test isa(indIntersect,Vector{Int}) # indIntersect == 3
 
         ray_vector = Vec3{Float64}(0.0,0.0,-3) # Long so two hits potentially
 
         P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 1)
         @test isapprox(P,Point3{Float64}[[0.25, 0.0, 1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int64}) # indIntersect == 3
+        @test isa(indIntersect,Vector{Int}) # indIntersect == 3
 
         P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 0)
         @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0], [0.25, 0.0, 1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int64})
+        @test isa(indIntersect,Vector{Int})
 
         P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = -1)
         @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int64})
+        @test isa(indIntersect,Vector{Int})
 
         ray_origin = GeometryBasics.Point3{Float64}(0.0,0.0,1.5) # At centre so hits an edge between two triangles
         P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 0, tolEps = 1e-3)
         @test isapprox(P,Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, -1.0], 
                                          [0.0, 0.0,  1.0], [0.0, 0.0,  1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int64})
+        @test isa(indIntersect,Vector{Int})
     end
 end
 
@@ -3948,11 +3948,11 @@ end
     @testset "Cylinder" begin
         r = 25
         s = r/10
-        nc = round(Int64,(2*pi*r)/s)
+        nc = round(Int,(2*pi*r)/s)
         d = r*2
         Vc = circlepoints(r, nc; dir=:acw)
-        num_steps = round(Int64,d/s)
-        num_steps = num_steps + Int64(iseven(num_steps))
+        num_steps = round(Int,d/s)
+        num_steps = num_steps + Int(iseven(num_steps))
         F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
         K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V)
         @test isapprox(mean(K1),1.0/r,atol=tol_level)
@@ -3968,7 +3968,7 @@ end
     
     @testset "Single face" begin
         # Single triangle
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0]]
         Fn, Vn = separate_vertices(F, V)    
         @test Vn isa Vector{Point3{Float64}}
@@ -3977,7 +3977,7 @@ end
         @test length(Vn) == length(F)*length(F[1])
 
         # Single triangle, un-used nodes
-        F = TriangleFace{Int64}[[1,2,3]]
+        F = TriangleFace{Int}[[1,2,3]]
         V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],
                             [1.0,0.0,0.0],[1.0,1.0,0.0]]
         Fn, Vn = separate_vertices(F, V)    
@@ -3987,7 +3987,7 @@ end
         @test length(Vn) == length(F)*length(F[1])
 
         # Single quad
-        F = QuadFace{Int64}[[1,2,3,4]]
+        F = QuadFace{Int}[[1,2,3,4]]
         V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],[0.0,1.0,0.0]]
         Fn, Vn = separate_vertices(F, V)    
         @test Vn isa Vector{Point3{Float64}}
@@ -4139,13 +4139,13 @@ end
 
 @testset "invert_faces" begin
     # Single face
-    F = TriangleFace{Int64}[[1,2,3]]
-    F_inv = TriangleFace{Int64}[[3,2,1]]
+    F = TriangleFace{Int}[[1,2,3]]
+    F_inv = TriangleFace{Int}[[3,2,1]]
     @test invert_faces(F)==F_inv
 
     # Two face
-    F = [TriangleFace{Int64}(1, 2, 3),TriangleFace{Int64}(4, 5, 6)]   
-    F_inv = [TriangleFace{Int64}(3, 2, 1),TriangleFace{Int64}(6, 5, 4)]   
+    F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(4, 5, 6)]   
+    F_inv = [TriangleFace{Int}(3, 2, 1),TriangleFace{Int}(6, 5, 4)]   
     @test invert_faces(F)==F_inv    
 end
 
@@ -4193,7 +4193,7 @@ end
         Fr,Vr = sweeploft(Vc,reverse(V1),reverse(V2); face_type=:quad, num_twist=0, close_loop=true)
 
         @test F == Fr
-        @test isa(F,Vector{QuadFace{Int64}})
+        @test isa(F,Vector{QuadFace{Int}})
         @test length(Vr) == nc*np
         @test length(Vr) == length(V)
         @test isa(V,Vector{Point3{Float64}})  
@@ -4202,13 +4202,13 @@ end
     @testset "quad" begin
         F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist=0, close_loop=true)
         @test length(F) == (nc-1)*np
-        @test isa(F,Vector{QuadFace{Int64}})
+        @test isa(F,Vector{QuadFace{Int}})
         @test length(V) == nc*np
         @test isa(V,Vector{Point3{Float64}})
 
         F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist=1, close_loop=false)
         @test length(F) == (nc-1)*(np-1)
-        @test isa(F,Vector{QuadFace{Int64}})
+        @test isa(F,Vector{QuadFace{Int}})
         @test length(V) == nc*np
         @test isa(V,Vector{Point3{Float64}})        
     end
@@ -4216,13 +4216,13 @@ end
     @testset "tri_slash" begin
         F,V = sweeploft(Vc,V1,V2; face_type=:tri_slash, num_twist=0, close_loop=true)
         @test length(F) == (nc-1)*np*2
-        @test isa(F,Vector{TriangleFace{Int64}})
+        @test isa(F,Vector{TriangleFace{Int}})
         @test length(V) == nc*np
         @test isa(V,Vector{Point3{Float64}})
 
         F,V = sweeploft(Vc,V1,V2; face_type=:tri_slash, num_twist=1, close_loop=false)
         @test length(F) == (nc-1)*(np-1)*2
-        @test isa(F,Vector{TriangleFace{Int64}})
+        @test isa(F,Vector{TriangleFace{Int}})
         @test length(V) == nc*np
         @test isa(V,Vector{Point3{Float64}})        
     end
@@ -4230,13 +4230,13 @@ end
     @testset "tri" begin
         F,V = sweeploft(Vc,V1,V2; face_type=:tri, num_twist=0, close_loop=true)
         @test length(F) == (nc-1)*np*2
-        @test isa(F,Vector{TriangleFace{Int64}})
+        @test isa(F,Vector{TriangleFace{Int}})
         @test length(V) == nc*np
         @test isa(V,Vector{Point3{Float64}})
 
         F,V = sweeploft(Vc,V1,V2; face_type=:tri, num_twist=1, close_loop=false)
         @test length(F) == (nc-1)*(np-1)*2
-        @test isa(F,Vector{TriangleFace{Int64}})
+        @test isa(F,Vector{TriangleFace{Int}})
         @test length(V) == nc*np
         @test isa(V,Vector{Point3{Float64}})        
     end
@@ -4244,13 +4244,13 @@ end
     @testset "quad2tri" begin
         F,V = sweeploft(Vc,V1,V2; face_type=:quad2tri, num_twist=0, close_loop=true)
         @test length(F) == (nc-1)*np*2
-        @test isa(F,Vector{TriangleFace{Int64}})
+        @test isa(F,Vector{TriangleFace{Int}})
         @test length(V) == nc*np
         @test isa(V,Vector{Point3{Float64}})
 
         F,V = sweeploft(Vc,V1,V2; face_type=:quad2tri, num_twist=1, close_loop=false)
         @test length(F) == (nc-1)*(np-1)*2
-        @test isa(F,Vector{TriangleFace{Int64}})
+        @test isa(F,Vector{TriangleFace{Int}})
         @test length(V) == nc*np
         @test isa(V,Vector{Point3{Float64}})        
     end
@@ -4280,7 +4280,7 @@ end
     num_steps = 6
     close_loop = false
 
-    ind = round.(Int64,range(1,nc*num_steps,5))
+    ind = round.(Int,range(1,nc*num_steps,5))
 
     θ = 1.0*π
 
@@ -4325,7 +4325,7 @@ end
         face_type =:quad
         close_loop = true
         F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=n,num_steps=nothing,close_loop=close_loop,face_type=face_type)
-        @test length(V)/nc == ceil(Int64,(2*θ)/pointspacingmean(Vc))
+        @test length(V)/nc == ceil(Int,(2*θ)/pointspacingmean(Vc))
     end
 
     m = [-0.7838430424199713, 0.08108629344330351, -0.6156420208736807]
@@ -4334,7 +4334,7 @@ end
         close_loop = true
         F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
-        @test F isa Vector{QuadFace{Int64}}
+        @test F isa Vector{QuadFace{Int}}
         @test length(F) == nc*(num_steps-1)
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -4346,7 +4346,7 @@ end
         close_loop = false
         F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
-        @test F isa Vector{QuadFace{Int64}}
+        @test F isa Vector{QuadFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -4360,7 +4360,7 @@ end
         close_loop = true
         F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -4372,7 +4372,7 @@ end
         close_loop = false
         F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -4386,7 +4386,7 @@ end
         close_loop = true
         F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -4398,7 +4398,7 @@ end
         close_loop = false
         F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -4412,7 +4412,7 @@ end
         close_loop = true
         F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -4424,7 +4424,7 @@ end
         close_loop = false
         F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 
-        @test F isa Vector{TriangleFace{Int64}}
+        @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
@@ -4446,7 +4446,7 @@ end
 
     n = 50 # Number of points, first testing an even number
     V = batman(n)
-    ind = round.(Int64,range(1,length(V),5))
+    ind = round.(Int,range(1,length(V),5))
 
     @test length(V) == n # Correct length
     @test isa(V,Vector{Point{3,Float64}}) # Correct type
@@ -4488,14 +4488,14 @@ end
     # Test for unrefined hexagon triangulation 
     n = 0 
     F,V = tridisc(r,n)
-    @test isa(F,Vector{TriangleFace{Int64}})
+    @test isa(F,Vector{TriangleFace{Int}})
     @test isa(V,Vector{Point{3,Float64}})
     @test length(V) == 7
     @test isapprox(maximum(norm.(V)),r,atol=eps_level)
 
     # Test for defaults    
     F,V = tridisc()
-    @test isa(F,Vector{TriangleFace{Int64}})
+    @test isa(F,Vector{TriangleFace{Int}})
     @test isa(V,Vector{Point{3,Float64}})
     @test length(V) == 7
     @test isapprox(maximum(norm.(V)),1.0,atol=eps_level)
@@ -4503,7 +4503,7 @@ end
     # Test for refined hexagon triangulation 
     n = 1 
     F,V = tridisc(r,n)
-    @test isa(F,Vector{TriangleFace{Int64}})
+    @test isa(F,Vector{TriangleFace{Int}})
     @test isa(V,Vector{Point{3,Float64}})
     @test length(V) == 19
     @test isapprox(maximum(norm.(V)),r,atol=eps_level)
@@ -4541,7 +4541,7 @@ end
 
     F,V,C = regiontrimesh(VT,R,P)
 
-    @test isa(F,Vector{TriangleFace{Int64}})
+    @test isa(F,Vector{TriangleFace{Int}})
     @test isa(V,Vector{Point{3,Float64}})
     @test isa(C,Vector{Float64})
     @test length(F) == length(C) # Color length matches faces
@@ -4556,7 +4556,7 @@ end
     R = ([1],)
     P = (pointSpacing)
     F,V,C = regiontrimesh(VT,R,P)
-    @test isa(F,Vector{TriangleFace{Int64}})
+    @test isa(F,Vector{TriangleFace{Int}})
     @test isa(V,Vector{Point{3,Float64}})
     @test isa(C,Vector{Float64})
     @test length(F) == length(C)
@@ -4821,7 +4821,7 @@ end
         Eb = boundaryedges(F)
 
         Fs,Fsq,Vs = dualclad(F,V,0.5; connectivity=:face)
-        ind = round.(Int64,range(1,length(Vs),6)) # Sample indices
+        ind = round.(Int,range(1,length(Vs),6)) # Sample indices
 
         @test length(Fs) == length(F)
         @test length(Fsq) == length(E)
@@ -4833,7 +4833,7 @@ end
 
 
         Fs,Fsq,Vs = dualclad(F,V,0.5; connectivity=:edge)
-        ind = round.(Int64,range(1,length(Vs),6)) # Sample indices
+        ind = round.(Int,range(1,length(Vs),6)) # Sample indices
 
         @test length(Fs) == length(F)
         @test length(Fsq) == length(F)*length(F[1])
@@ -4851,7 +4851,7 @@ end
 @testset "tet2hex" verbose=true begin
     eps_level = 1e-6
 
-    E = [Tet4{Int64}(1,2,3,4),Tet4{Int64}(2,3,4,5),Tet4{Int64}(6,7,8,9)]
+    E = [Tet4{Int}(1,2,3,4),Tet4{Int}(2,3,4,5),Tet4{Int}(6,7,8,9)]
     V = [Point{3,Float64}(-1.0,0.0,0.0),
          Point{3,Float64}( 1.0,0.0,0.0),
          Point{3,Float64}( 0.0,1.0,0.0),
@@ -4864,7 +4864,7 @@ end
          ]
          
     Eh,Vh = tet2hex(E,V)
-    ind = round.(Int64,range(1,length(Vh),10))
+    ind = round.(Int,range(1,length(Vh),10))
 
    
     @test length(Eh) == length(E)*4
@@ -4873,7 +4873,7 @@ end
     [3.3333333333333335, 0.5, 0.3333333333333333], [-0.5, 0.5, 0.0], [1.0, 0.5, 0.5], 
     [3.5, 0.5, 0.0], [3.0, 0.75, 0.5]],atol=eps_level)
 
-    @test isa(Eh,Vector{Hex8{Int64}})
+    @test isa(Eh,Vector{Hex8{Int}})
     @test isa(Vh,Vector{eltype(V)})
 
 end
@@ -4886,7 +4886,7 @@ end
         E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
         F = element2faces(E)
         @test length(F) == length(E)*6
-        @test isa(F,Vector{QuadFace{Int64}})
+        @test isa(F,Vector{QuadFace{Int}})
         @test F[1] == [3,4,2,1]
 
         boxDim = [1.0,2.0,3.0] # Dimensions for the box in each direction
@@ -4894,46 +4894,46 @@ end
         E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
         F = element2faces(E)
         @test length(F) == length(E)*6
-        @test isa(F,Vector{QuadFace{Int64}})
+        @test isa(F,Vector{QuadFace{Int}})
         @test F[1] == [3,4,2,1]
     end
 
     @testset "tetrahedra" begin
-        E = [Tet4{Int64}(1,2,3,4)]
+        E = [Tet4{Int}(1,2,3,4)]
         F = element2faces(E)
         @test length(F) == length(E)*4
-        @test isa(F,Vector{TriangleFace{Int64}})
+        @test isa(F,Vector{TriangleFace{Int}})
         @test F[1] == [3,2,1]
 
-        E = [Tet4{Int64}(1,2,3,4),Tet4{Int64}(2,3,4,5),Tet4{Int64}(6,7,8,9)]
+        E = [Tet4{Int}(1,2,3,4),Tet4{Int}(2,3,4,5),Tet4{Int}(6,7,8,9)]
         F = element2faces(E)
         @test length(F) == length(E)*4
-        @test isa(F,Vector{TriangleFace{Int64}})
+        @test isa(F,Vector{TriangleFace{Int}})
         @test F[1] == [3,2,1]
     end
 
     @testset "pentahedra" begin
-        E = [Penta6{Int64}(1,2,3,4,5,6)]
+        E = [Penta6{Int}(1,2,3,4,5,6)]
         F = element2faces(E)
         @test isa(F,Tuple)
         @test length(F[1]) == length(E)*2
         @test length(F[2]) == length(E)*3
-        @test isa(F[1],Vector{TriangleFace{Int64}})
-        @test isa(F[2],Vector{QuadFace{Int64}})
+        @test isa(F[1],Vector{TriangleFace{Int}})
+        @test isa(F[2],Vector{QuadFace{Int}})
         @test F[1][1] == [3,2,1]
 
-        E = [Penta6{Int64}(1,2,3,4,5,6),Penta6{Int64}(1,2,3,7,8,9),Penta6{Int64}(7,8,9,4,5,6)]
+        E = [Penta6{Int}(1,2,3,4,5,6),Penta6{Int}(1,2,3,7,8,9),Penta6{Int}(7,8,9,4,5,6)]
         F = element2faces(E)
         @test isa(F,Tuple)
         @test length(F[1]) == length(E)*2
         @test length(F[2]) == length(E)*3
-        @test isa(F[1],Vector{TriangleFace{Int64}})
-        @test isa(F[2],Vector{QuadFace{Int64}})
+        @test isa(F[1],Vector{TriangleFace{Int}})
+        @test isa(F[2],Vector{QuadFace{Int}})
         @test F[1][1] == [3,2,1]
     end
 
     @testset "errors" begin
-        E = [Tet10{Int64}(1,2,3,4,5,6,7,8,9,10)]                
+        E = [Tet10{Int}(1,2,3,4,5,6,7,8,9,10)]                
         @test_throws Exception element2faces(E)
     end
 
@@ -4964,7 +4964,7 @@ end
 
     Eh0,Vh0 = subhex(E,V,2;direction=0)
     @test length(Eh0) == length(E)*8*8
-    @test isa(Eh0,Vector{Hex8{Int64}})
+    @test isa(Eh0,Vector{Hex8{Int}})
     @test isa(Vh0,Vector{eltype(V)})
 
     # Check when n=0 (no refinement)
@@ -4987,7 +4987,7 @@ end
     [-1.0, -0.0, 0.0], [0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, -0.0, -1.0], 
     [0.0, -0.0, 1.0]]
 
-    @test F == QuadFace{Int64}[[1, 10, 5, 9], [2, 11, 6, 10], [3, 12, 7, 11], [4, 9, 8, 12], 
+    @test F == QuadFace{Int}[[1, 10, 5, 9], [2, 11, 6, 10], [3, 12, 7, 11], [4, 9, 8, 12], 
     [5, 10, 6, 14], [6, 11, 7, 14], [7, 12, 8, 14], [8, 9, 5, 14], [1, 13, 2, 10], [2, 13, 3, 11], 
     [3, 13, 4, 12], [4, 13, 1, 9]]
 
@@ -5005,14 +5005,14 @@ end
 
     @testset "tri2quad, split" verbose=true begin
         @testset "Single triangle" begin
-            F = [TriangleFace{Int64}(1,2,3)]
+            F = [TriangleFace{Int}(1,2,3)]
             V = [Point{3,Float64}(0.0,0.0,0.0),Point{3,Float64}(1.0,0.0,0.0),Point{3,Float64}(1.0,1.0,0.0)]
             
             E = meshedges(F; unique_only=true)
             Fq,Vq = tri2quad(F,V; method=:split)
             @test length(Fq) == length(F)*3
             @test length(Vq) == length(V)+length(F)+length(E)
-            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Fq,Vector{QuadFace{Int}})
             @test isa(Vq,typeof(V))
             @test isapprox(Vq,Point{3, Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], 
             [0.6666666666666666, 0.3333333333333333, 0.0], [0.5, 0.0, 0.0], [1.0, 0.5, 0.0], 
@@ -5028,11 +5028,11 @@ end
             E = meshedges(F; unique_only=true)
             Fq,Vq = tri2quad(F,V; method=:split)
 
-            ind = round.(Int64,range(1,length(Vq),6))
+            ind = round.(Int,range(1,length(Vq),6))
 
             @test length(Fq) == length(F)*3
             @test length(Vq) == length(V)+length(F)+length(E)
-            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Fq,Vector{QuadFace{Int}})
             @test isa(Vq,typeof(V))
             @test isapprox(Vq[ind],Point{3, Float64}[[-0.8164965809277261, -0.47140452079103173, -0.3333333333333333], 
             [0.0, 0.9428090415820635, -0.3333333333333333], [0.0, 0.0, -0.3333333333333333], 
@@ -5049,11 +5049,11 @@ end
             E = meshedges(F; unique_only=true)
             Fq,Vq = tri2quad(F,V; method=:split)
 
-            ind = round.(Int64,range(1,length(Vq),6))
+            ind = round.(Int,range(1,length(Vq),6))
 
             @test length(Fq) == length(F)*3
             @test length(Vq) == length(V)+length(F)+length(E)
-            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Fq,Vector{QuadFace{Int}})
             @test isa(Vq,typeof(V))
             @test isapprox(Vq[ind],Point{3, Float64}[[0.0, -0.5257311121191336, -0.85065080835204], 
             [-0.28355026945068, 0.0, -0.7423442429410713], [0.4587939734903912, -0.4587939734903912, 0.4587939734903912], 
@@ -5064,21 +5064,21 @@ end
 
     @testset "tri2quad, rhombic" verbose=true begin
         @testset "Single triangle" begin
-            F = [TriangleFace{Int64}(1,2,3)]
+            F = [TriangleFace{Int}(1,2,3)]
             V = [Point{3,Float64}(0.0,0.0,0.0),Point{3,Float64}(1.0,0.0,0.0),Point{3,Float64}(1.0,1.0,0.0)]
             
             E = meshedges(F; unique_only=true)
             Fq,Vq = tri2quad(F,V; method=:rhombic)
             @test isempty(Fq)
             @test length(Vq) == length(V)+length(F)
-            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Fq,Vector{QuadFace{Int}})
             @test isa(Vq,typeof(V))
             @test isapprox(Vq,Point{3, Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], 
             [1.0, 1.0, 0.0], [0.0, 0.0, 0.0]],atol=eps_level)
         end
         
         @testset "Single triangle, refined once" begin
-            F = [TriangleFace{Int64}(1,2,3)]
+            F = [TriangleFace{Int}(1,2,3)]
             V = [Point{3,Float64}(0.0,0.0,0.0),Point{3,Float64}(1.0,0.0,0.0),Point{3,Float64}(1.0,1.0,0.0)]
             F,V = subtri(F,V,1)
 
@@ -5086,7 +5086,7 @@ end
             Fq,Vq = tri2quad(F,V; method=:rhombic)
             @test length(Fq) == 3
             @test length(Vq) == length(V)+length(F)
-            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Fq,Vector{QuadFace{Int}})
             @test isa(Vq,typeof(V))
             @test isapprox(Vq,Point{3, Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], 
             [1.0, 1.0, 0.0], [0.5, 0.0, 0.0], [1.0, 0.5, 0.0], [0.5, 0.5, 0.0], 
@@ -5103,11 +5103,11 @@ end
             E = meshedges(F; unique_only=true)
             Fq,Vq = tri2quad(F,V; method=:rhombic)
 
-            ind = round.(Int64,range(1,length(Vq),6))
+            ind = round.(Int,range(1,length(Vq),6))
 
             @test length(Fq) == length(E)
             @test length(Vq) == length(V)+length(F)
-            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Fq,Vector{QuadFace{Int}})
             @test isa(Vq,typeof(V))
             @test isapprox(Vq,Point{3, Float64}[[-0.8164965809277261, -0.47140452079103173, -0.3333333333333333], 
             [0.8164965809277261, -0.47140452079103173, -0.3333333333333333], 
@@ -5126,11 +5126,11 @@ end
             E = meshedges(F; unique_only=true)
             Fq,Vq = tri2quad(F,V; method=:rhombic)
 
-            ind = round.(Int64,range(1,length(Vq),6))
+            ind = round.(Int,range(1,length(Vq),6))
 
             @test length(Fq) == length(E)
             @test length(Vq) == length(V)+length(F)
-            @test isa(Fq,Vector{QuadFace{Int64}})
+            @test isa(Fq,Vector{QuadFace{Int}})
             @test isa(Vq,typeof(V))
             @test isapprox(Vq[ind],Point{3, Float64}[[0.0, -0.5257311121191336, -0.85065080835204], 
             [0.5257311121191336, 0.85065080835204, 0.0], [-0.28355026945068, 0.0, -0.7423442429410713], 
@@ -5278,7 +5278,7 @@ end
     eps_level = 1e-6
 
     @testset "Vector with single QuadFace" begin        
-        F = QuadFace{Int64}[ [1,2,3,4] ]
+        F = QuadFace{Int}[ [1,2,3,4] ]
         V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [0.0,1.0,0.0] ]
 
         d = 2.0
@@ -5287,15 +5287,15 @@ end
         for direction in directionSet
             E, VE = extrudefaces(F,V; extent=d, direction=direction, num_steps=num_steps)
             E_ind = reduce(vcat,E)            
-            @test isa(E, Vector{Hex8{Int64}})
+            @test isa(E, Vector{Hex8{Int}})
             @test isa(VE, Vector{eltype(V)})
             @test length(VE) == num_steps * length(V)
             @test length(E) == (num_steps-1) * length(F)
             @test minimum(E_ind) == 1
             @test maximum(E_ind) == length(VE)
-            @test E == Hex8{Int64}[[1, 2, 3, 4, 5, 6, 7, 8], [5, 6, 7, 8, 9, 10, 11, 12], [9, 10, 11, 12, 13, 14, 15, 16]]
+            @test E == Hex8{Int}[[1, 2, 3, 4, 5, 6, 7, 8], [5, 6, 7, 8, 9, 10, 11, 12], [9, 10, 11, 12, 13, 14, 15, 16]]
         end
-        ind = round.(Int64,range(1,length(VE),6))
+        ind = round.(Int,range(1,length(VE),6))
         E, VE = extrudefaces(F,V; extent=d, direction=:positive, num_steps=num_steps)
         @test isapprox(VE[ind],Point{3, Float64}[[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], 
         [1.0, 1.0, 0.6666666666666666], [1.0, 0.0, 1.3333333333333333], 
@@ -5303,7 +5303,7 @@ end
     end
     
     @testset "Vector of QuadFaces" begin        
-        F = QuadFace{Int64}[ [1,2,3,4], [5,6,3,2] ]
+        F = QuadFace{Int}[ [1,2,3,4], [5,6,3,2] ]
         V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [0.0,1.0,0.0], [2.0,0.0,0.0], [2.0,1.0,0.0] ]
 
         d =  2.0
@@ -5312,17 +5312,17 @@ end
         for direction in directionSet
             E, VE = extrudefaces(F,V; extent=d, direction=direction, num_steps=num_steps)
             E_ind = reduce(vcat,E)            
-            @test isa(E, Vector{Hex8{Int64}})
+            @test isa(E, Vector{Hex8{Int}})
             @test isa(VE, Vector{eltype(V)})
             @test length(VE) == num_steps * length(V)
             @test length(E) == (num_steps-1) * length(F)
             @test minimum(E_ind) == 1
             @test maximum(E_ind) == length(VE)
-            @test E == Hex8{Int64}[[1, 2, 3, 4, 7, 8, 9, 10], [5, 6, 3, 2, 11, 12, 9, 8], 
+            @test E == Hex8{Int}[[1, 2, 3, 4, 7, 8, 9, 10], [5, 6, 3, 2, 11, 12, 9, 8], 
             [7, 8, 9, 10, 13, 14, 15, 16], [11, 12, 9, 8, 17, 18, 15, 14], 
             [13, 14, 15, 16, 19, 20, 21, 22], [17, 18, 15, 14, 23, 24, 21, 20]]
         end
-        ind = round.(Int64,range(1,length(VE),6))
+        ind = round.(Int,range(1,length(VE),6))
         E, VE = extrudefaces(F,V; extent=d, direction=:positive, num_steps=num_steps)
         @test isapprox(VE[ind],Point{3, Float64}[[0.0, 0.0, 0.0], [2.0, 1.0, 0.0], 
         [0.0, 1.0, 0.6666666666666666], [1.0, 1.0, 1.3333333333333333], 
@@ -5356,7 +5356,7 @@ end
     end
 
     @testset "Vector of TriangeFaces" begin       
-        F = TriangleFace{Int64}[ [1,2,3], [2,4,3] ]
+        F = TriangleFace{Int}[ [1,2,3], [2,4,3] ]
         V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [2.0,0.0,0.0]]
 
         d = 2.0
@@ -5365,17 +5365,17 @@ end
         for direction in directionSet
             E, VE = extrudefaces(F,V; extent=d, direction=direction, num_steps=num_steps)
             E_ind = reduce(vcat,E)
-            @test isa(E, Vector{Penta6{Int64}})
+            @test isa(E, Vector{Penta6{Int}})
             @test isa(VE, Vector{eltype(V)})
             @test length(VE) == num_steps * length(V)
             @test length(E) == (num_steps-1) * length(F)
             @test minimum(E_ind) == 1
             @test maximum(E_ind) == length(VE)
-            @test E == Penta6{Int64}[[1, 2, 3, 5, 6, 7], [2, 4, 3, 6, 8, 7], 
+            @test E == Penta6{Int}[[1, 2, 3, 5, 6, 7], [2, 4, 3, 6, 8, 7], 
             [5, 6, 7, 9, 10, 11], [6, 8, 7, 10, 12, 11], [9, 10, 11, 13, 14, 15], 
             [10, 12, 11, 14, 16, 15]]
         end
-        ind = round.(Int64,range(1,length(VE),6))
+        ind = round.(Int,range(1,length(VE),6))
         E, VE = extrudefaces(F,V; extent=d, direction=:positive, num_steps=num_steps)
         @test isapprox(VE[ind],Point{3, Float64}[[0.0, 0.0, 0.0], [2.0, 0.0, 0.0], 
         [1.0, 1.0, 0.6666666666666666], [1.0, 0.0, 1.3333333333333333], 
@@ -5383,7 +5383,7 @@ end
     end
 
     @testset "errors" begin
-        F = TriangleFace{Int64}[ [1,2,3], [2,4,3] ]
+        F = TriangleFace{Int}[ [1,2,3], [2,4,3] ]
         V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [2.0,0.0,0.0]]
 
         d = 2.0
@@ -5398,7 +5398,7 @@ end
 
         d = 2.0
         num_steps = 5        
-        F = LineFace{Int64}[ [1,2], [3,4] ]
+        F = LineFace{Int}[ [1,2], [3,4] ]
         V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [2.0,0.0,0.0]]
         @test_throws Exception extrudefaces(F,V; extent=d, direction=:positive, num_steps=num_steps)        
     end

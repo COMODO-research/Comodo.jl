@@ -14,8 +14,8 @@ if testCase == 1
     V[2 ] = GeometryBasics.Point{3, Float64}( 0.0,   -s, 0.0)
     V[3 ] = GeometryBasics.Point{3, Float64}(   s,  0.0, 0.0)
 
-    F = Vector{TriangleFace{Int64}}(undef,1)
-    F[1 ] = TriangleFace{Int64}(1,2,3)
+    F = Vector{TriangleFace{Int}}(undef,1)
+    F[1 ] = TriangleFace{Int}(1,2,3)
     # F,V=subtri(F,V,2)
 elseif testCase==2
     # Bowtie mesh
@@ -27,9 +27,9 @@ elseif testCase==2
     V[4 ] = GeometryBasics.Point{3, Float64}( 2*s,    s, 0.0)
     V[5 ] = GeometryBasics.Point{3, Float64}( 2*s,    -s, 0.0)
 
-    F = Vector{TriangleFace{Int64}}(undef,2)
-    F[1 ] = TriangleFace{Int64}(1,2,3)
-    F[2 ] = TriangleFace{Int64}(5,4,3)
+    F = Vector{TriangleFace{Int}}(undef,2)
+    F[1 ] = TriangleFace{Int}(1,2,3)
+    F[2 ] = TriangleFace{Int}(5,4,3)
     # F,V=subtri(F,V,2)
 elseif testCase==3
     r = 1.0

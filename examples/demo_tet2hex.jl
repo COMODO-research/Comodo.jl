@@ -10,7 +10,7 @@ domain.
 testCase = 1
 
 if testCase == 1
-    E = [Tet4{Int64}(1,2,3,4),Tet4{Int64}(2,3,4,5),Tet4{Int64}(6,7,8,9)]
+    E = [Tet4{Int}(1,2,3,4),Tet4{Int}(2,3,4,5),Tet4{Int}(6,7,8,9)]
     V = [Point{3,Float64}(-1.0,0.0,0.0),
          Point{3,Float64}( 1.0,0.0,0.0),
          Point{3,Float64}( 0.0,1.0,0.0),
@@ -22,7 +22,7 @@ if testCase == 1
          Point{3,Float64}( 3.0,0.5,1.0),
          ]
 elseif testCase == 2
-    E = [hex8{Int64}(1,2,3,4,5,6,7,8)]
+    E = [hex8{Int}(1,2,3,4,5,6,7,8)]
     V = [Point{3,Float64}(0.0,0.0,0.0),
          Point{3,Float64}(1.0,0.0,0.0),
          Point{3,Float64}(1.0,1.0,0.0),

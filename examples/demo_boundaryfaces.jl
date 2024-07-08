@@ -12,7 +12,7 @@ if testCase == 1
     sampleSize = 10
     pointSpacing = 2
     boxDim = sampleSize.*[1,1,1] # Dimensionsions for the box in each direction
-    boxEl = ceil.(Int64,boxDim./pointSpacing) # Number of elements to use in each direction 
+    boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
     E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)    
 elseif testCase == 2
     F1,V1 = geosphere(3,1.0)

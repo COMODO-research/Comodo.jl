@@ -21,11 +21,11 @@ elseif testCase==3
 elseif testCase==4   
     r = 25
     s = r/10
-    nc = round(Int64,(2*pi*r)/s)
+    nc = round(Int,(2*pi*r)/s)
     d = r*2
     Vc = circlepoints(r, nc; dir=:cw)
-    num_steps = round(Int64,d/s)
-    num_steps = num_steps + Int64(iseven(num_steps))
+    num_steps = round(Int,d/s)
+    num_steps = num_steps + Int(iseven(num_steps))
     F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
 elseif testCase==5 # Merged STL for single object
     # Loading a mesh
