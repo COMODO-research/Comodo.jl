@@ -14,10 +14,10 @@ connecting the original vertices to new mid-edge and mid-face vertices.
 testCase = 3
 if testCase == 1 # Single triangle
     V = [Point{3,Float64}(0.0,0.0,0.0),Point{3,Float64}(1.0,0.0,0.0),Point{3,Float64}(1.0,1.0,0.0)]
-    F = [TriangleFace{Int64}(1,2,3)]
+    F = [TriangleFace{Int}(1,2,3)]
 elseif testCase == 2 # Single triangle refined once, so 4 triangles
     V = [Point{3,Float64}(0.0,0.0,0.0),Point{3,Float64}(1.0,0.0,0.0),Point{3,Float64}(0.0,1.0,0.0),Point{3,Float64}(1.0,1.0,0.0)]
-    F = [TriangleFace{Int64}(1,2,3),TriangleFace{Int64}(2,4,3)]
+    F = [TriangleFace{Int}(1,2,3),TriangleFace{Int}(2,4,3)]
     F,V = subtri(F,V,1)
 elseif testCase == 3 # tetrahedron
     r = 0.5 #radius
@@ -41,7 +41,7 @@ end
 
 Fq,Vq = tri2quad(F,V; method=:split)
 Fr,Vr = tri2quad(F,V; method=:rhombic)
-# Fr = [QuadFace{Int64}(f[2],f[3],f[4],f[1]) for f in Fr]
+# Fr = [QuadFace{Int}(f[2],f[3],f[4],f[1]) for f in Fr]
 
 ## Visualization
 

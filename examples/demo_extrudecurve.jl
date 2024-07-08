@@ -14,7 +14,7 @@ d = 3.0 # Extrusion distance (extent)
 n = normalizevector(Vec{3, Float64}(0.0,0.0,1.0)) # Extrusion direction
 direction = :positive
 
-#   num_steps = ceil(Int64,d/pointSpacing)
+#   num_steps = ceil(Int,d/pointSpacing)
 
 F1,V1 = extrudecurve(Vc; extent=d, direction=:positive, n=n, close_loop=true,face_type=:quad)
 F2,V2 = extrudecurve(Vc; extent=d, direction=:both, n=n, close_loop=true,face_type=:tri_slash)
