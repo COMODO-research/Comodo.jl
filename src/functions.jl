@@ -3884,7 +3884,7 @@ function regiontrimesh(VT,R,P)
         # Initial triangulation 
         constrained_segments_ori = deepcopy(constrained_segments) # Clone since triangulate can add new constraint points
         TRn = triangulate(Vn; boundary_nodes=constrained_segments, delete_ghosts=true)
-        Fn = [TriangleFace{Int64}(tr) for tr in TRn.triangles] 
+        Fn = [TriangleFace{Int64}(tr) for tr in each_solid_triangle(TRn)] 
 
         # Check if new boundary points were introduced and remove if needed 
         Eb = boundaryedges(Fn)
@@ -3899,8 +3899,8 @@ function regiontrimesh(VT,R,P)
             Vn = Vn[indKeep]
             constrained_segments = [[indFix[c[1]]] for c in constrained_segments_ori] # Fix indices after point removal                
             TRn = triangulate(Vn; boundary_nodes=constrained_segments,delete_ghosts=true)
-            Fn = [TriangleFace{Int64}(tr) for tr in TRn.triangles] 
-            Vn = TRn.points
+            Fn = [TriangleFace{Int64}(tr) for tr in each_solid_triangle(TRn)] 
+            Vn = get_points(TRn)
         end
 
         # Remove unused points (e.g. outside region)
@@ -3928,8 +3928,8 @@ function regiontrimesh(VT,R,P)
 
         # Redo triangulation after points have been removed
         TRn = triangulate(Vn; boundary_nodes=constrained_segments,delete_ghosts=true)
-        Fn = [TriangleFace{Int64}(tr) for tr in TRn.triangles] 
-        Vn = TRn.points
+        Fn = [TriangleFace{Int64}(tr) for tr in each_solid_triangle(TRn)] 
+        Vn = get_points(TRn)
 
         Fn,Vn,indFix = remove_unused_vertices(Fn,Vn)
 
