@@ -4,24 +4,36 @@ using GLMakie
 
 # This demo shows how to evenly sample a curve using spline interpolations.
 
-testCase = 2
+testCase = 3
 
 # Define input curve
 if testCase == 1
     n = 5
     t = range(0,2π-2π/n,n)
     V = [GeometryBasics.Point{3, Float64}(3.0*cos(tt),3.0*sin(tt),0.0) for tt ∈ t]
+
+    # Evenly sample curve
+    n = 50; # Number of points for spline 
+    Vi1 = evenly_sample(V, n; spline_order=4, close_loop = false) # Returns points and spline interpolation object
+    Vi2 = evenly_sample(V, n; close_loop = true) # Returns points and spline interpolation object
 elseif testCase == 2
     n = 4*7+4
     rFun(t) = sin(4*t)+2
     V = circlepoints(rFun,n)
+
+    # Evenly sample curve
+    n = 75; # Number of points for spline 
+    Vi1 = evenly_sample(V, n; spline_order=4, close_loop = false, niter = 10) # Returns points and spline interpolation object
+    Vi2 = evenly_sample(V, n; spline_order=4, close_loop = true, niter = 10) # Returns points and spline interpolation object
+elseif testCase == 3
+    V = batman(25; symmetric = true, dir=:acw)
+
+    # Evenly sample curve
+    n = 50; # Number of points for spline 
+    Vi1 = evenly_sample(V, n; niter = 10, spline_order=4, close_loop = false) # Returns points and spline interpolation object
+    Vi2 = evenly_sample(V, n; niter = 10, spline_order=4, close_loop = true) # Returns points and spline interpolation object
 end
 
-# Evenly sample curve
-n = 50; # Number of points for spline 
-Vi1, S = evenly_sample(V, n; niter = 10, close_loop = false) # Returns points and spline interpolation object
-
-Vi2, S = evenly_sample(V, n; niter = 10, close_loop = true) # Returns points and spline interpolation object
 
 
 # Visualization

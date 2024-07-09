@@ -13,7 +13,7 @@ if testCase == 1
     nc = 15
     t = range(0,2*π,nc)
     Vc = [Point3{Float64}(2.0+tt,0.0,sin(tt)) for tt ∈ t]
-    Vc,_ = evenly_sample(Vc, nc)
+    Vc = evenly_sample(Vc, nc)
     n = Vec{3, Float64}(0.0,0.0,1.0)
     num_steps = 31
     close_loop = false
@@ -22,7 +22,7 @@ elseif testCase == 2
         nc = 15
         t = range(0,2*π,nc)
         Vc = [Point3{Float64}(2.0+tt,0.0,sin(tt)) for tt ∈ t]
-        Vc,_ = evenly_sample(Vc, nc)
+        Vc = evenly_sample(Vc, nc)
         n = normalizevector(Vec{3, Float64}(0.0,-1.0,1.0))
         num_steps = 31
         close_loop = false
@@ -31,7 +31,7 @@ elseif testCase == 3
     nc = 16
     t = range(2.0*π-(2.0*π/nc),0,nc)
     Vc = [Point3{Float64}(2.0+cos(tt),0.0,sin(tt)) for tt ∈ t]
-    Vc,_ = evenly_sample(Vc, nc)
+    Vc = evenly_sample(Vc, nc)
     n = Vec{3, Float64}(0.0,0.0,1.0)
     num_steps = 25
     close_loop = true

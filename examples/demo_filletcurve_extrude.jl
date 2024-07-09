@@ -31,7 +31,7 @@ rMax = 0.5 #collect(range(0.5,5,length(V)))
 n = 20
 h =2.0
 VC = filletcurve(V; rMax=rMax,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
-VC,_ = evenly_sample(VC,50; spline_order = 2)
+VC = evenly_sample(VC,50; spline_order = 2)
 
 Fe,Ve = extrudecurve(VC; extent=h, direction=:both, close_loop=false,face_type=:quad)
  
@@ -59,7 +59,7 @@ hSlider1 = Slider(fig[2, 1], range = stepRange1, startvalue = 0,linewidth=30)
 
 on(hSlider1.value) do stepIndex1
     VC = filletcurve(V; rMax=stepIndex1,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
-    VC,_ = evenly_sample(VC,53; spline_order = 2)
+    VC = evenly_sample(VC,53; spline_order = 2)
     indPlot = collect(1:length(VC))
     if close_loop == true
         push!(indPlot,1)

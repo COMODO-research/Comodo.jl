@@ -17,19 +17,19 @@ if testCase == 1
     P[4 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 1.0)
     Vc = nbezier(P,nc) # Get Bezier fit points
     Vc = [vc.*10 for vc in Vc]
-    Vc,Sc = evenly_sample(Vc, nc)
+    Vc = evenly_sample(Vc, nc)
 
     # Define section curves
     np = 50 # Number of section points
     cFun(t) = 2.0 + 0.5.*sin(3*t)
     V1 = circlepoints(cFun,np; dir=:acw)
-    V1,_ = evenly_sample(V1, np)
+    V1 = evenly_sample(V1, np)
     Q = RotXYZ(0.0,0.5*π,0.0) # Define a rotation tensor using Euler angles
     V1 = [Q*v for v ∈ V1] # Rotate the coordinates
 
     cFun(t) = 2.0 + 0.5*sin(3*t)
     V2 = circlepoints(cFun,np; dir=:acw)
-    V2,_ = evenly_sample(V2, np)
+    V2 = evenly_sample(V2, np)
     V2 = [v2 .+ Vc[end] for v2 ∈ V2] 
 elseif testCase == 2
         # Define guide curve
@@ -41,19 +41,19 @@ elseif testCase == 2
         P[4 ] = GeometryBasics.Point{3, Float64}( 3.0, 0.0, 0.0)
         Vc = nbezier(P,nc) # Get Bezier fit points
         Vc = [vc.*10 for vc in Vc]
-        Vc,Sc = evenly_sample(Vc, nc)
+        Vc = evenly_sample(Vc, nc)
     
         # Define section curves
         np = 35 # Number of section points
         cFun(t) = 2.0 + 0.5.*sin(3*t)
         V1 = circlepoints(cFun,np; dir=:acw)
-        V1,_ = evenly_sample(V1, np)
+        V1 = evenly_sample(V1, np)
         Q = RotXYZ(0.0,0.5*π,0.0) # Define a rotation tensor using Euler angles
         V1 = [(Q*v) .+ Vc[1] for v ∈ V1] # Rotate the coordinates
     
         cFun(t) = 2.0 + 0.5*sin(3*t)
         V2 = circlepoints(cFun,np; dir=:acw)
-        V2,_ = evenly_sample(V2, np)
+        V2 = evenly_sample(V2, np)
         Q = RotXYZ(0.0,0.5*π,0.0) # Define a rotation tensor using Euler angles
         V2 = [(Q*v) .+ Vc[end] for v ∈ V2] 
 elseif testCase == 3
@@ -68,7 +68,7 @@ elseif testCase == 3
     # Section 1
     cFun(t) = 1.5 + 0.5.*sin(3*t)
     V1 = circlepoints(cFun,np; dir=:cw)
-    V1,_ = evenly_sample(V1, np)
+    V1 = evenly_sample(V1, np)
     Q = RotXYZ(0.5*π,0.0,0.0) # Define a rotation tensor using Euler angles
     V1 = [Q*v for v ∈ V1] # Rotate the coordinates
 
@@ -90,7 +90,7 @@ elseif testCase == 3
     # Section 2
     cFun(t) = 4 + 1.5*sin(5*t)
     V2 = circlepoints(cFun,np; dir=:cw)
-    V2,_ = evenly_sample(V2, np)
+    V2 = evenly_sample(V2, np)
     Q1 = RotXYZ(0.5*π,0.0,0.0) # Define a rotation tensor using Euler angles
     Q2 = RotXYZ(0.0,-0.25*π,0.0) # Define a rotation tensor using Euler angles
     Q = Q2*Q1
@@ -119,7 +119,7 @@ elseif testCase == 4
     rc = rb/3   
     r = [rb + rc*sin(ff*tt) for tt in t]    
     Vc = [GeometryBasics.Point{3, Float64}(r[i]*cos(t[i]),r[i]*sin(t[i]),t[i]+rc*cos(ff*t[i])) for i in eachindex(t)]
-    Vc,_ = evenly_sample(Vc, nc)
+    Vc = evenly_sample(Vc, nc)
 
     # Define section curves
     np = 150 # Number of section points
@@ -127,7 +127,7 @@ elseif testCase == 4
     # Section 1
     cFun(t) = rc/3 + rc/5 .* sin(3*t)
     V1 = circlepoints(cFun,np; dir=:cw)
-    V1,_ = evenly_sample(V1, np)
+    V1 = evenly_sample(V1, np)
     Q = RotXYZ(0.5*π,0.0,0.0) # Define a rotation tensor using Euler angles
     V1 = [Q*v for v ∈ V1] # Rotate the coordinates
 
@@ -149,7 +149,7 @@ elseif testCase == 4
     # Section 2
     cFun(t) = rc/4 + rc/6*sin(5*t)
     V2 = circlepoints(cFun,np; dir=:cw)
-    V2,_ = evenly_sample(V2, np)
+    V2 = evenly_sample(V2, np)
     Q1 = RotXYZ(0.5*π,0.0,0.0) # Define a rotation tensor using Euler angles
     Q2 = RotXYZ(0.0,-0.25*π,0.0) # Define a rotation tensor using Euler angles
     Q = Q2*Q1
@@ -181,7 +181,7 @@ elseif testCase ==5
     # Section 1
     cFun(t) = 3 + 0.25.*sin(3*t)
     V1 = circlepoints(cFun,np; dir=:cw)
-    V1,_ = evenly_sample(V1, np)
+    V1 = evenly_sample(V1, np)
     V1_ori = deepcopy(V1)
 
     # Ensure section is orthogonal to guide curve
@@ -203,7 +203,7 @@ elseif testCase ==5
     # Section 2
     cFun(t) = 5 + 0.5*sin(5*t)
     V2 = circlepoints(cFun,np; dir=:cw)
-    V2,_ = evenly_sample(V2, np)    
+    V2 = evenly_sample(V2, np)    
     V2_ori = deepcopy(V2)
 
     # Q1 = RotXYZ(0.5*π,0.0,0.0) # Define a rotation tensor using Euler angles

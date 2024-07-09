@@ -4065,7 +4065,7 @@ end
         Vt = [GeometryBasics.Point{3,Float64}(x, 2.0*x, 0.0) for x in Xt]
 
         # Resample using evenly_sample
-        Vi, S = evenly_sample(V, n; niter=5)
+        Vi = evenly_sample(V, n; niter=5)
 
         @test sum(norm.(Vi-Vt)) < tol_level # Correct and even spacing
         @test typeof(V) == typeof(Vi) # Did not manipulate input type
@@ -4084,7 +4084,7 @@ end
         Vt = [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t in range(0.0,2.0*π,n)]
         
         # Resample using evenly_sample
-        Vi, S = evenly_sample(V, n; niter=5)
+        Vi = evenly_sample(V, n; niter=5)
 
         @test sum(norm.(Vi-Vt)) < tol_level # Correct and even spacing
         @test typeof(V) == typeof(Vi) # Did not manipulate input type
@@ -4096,7 +4096,7 @@ end
         nc = 6
         V = circlepoints(r,nc)
         n = 25
-        Vi, S = evenly_sample(V, n; niter=5,close_loop = true)
+        Vi = evenly_sample(V, n; niter=5,close_loop = true)
         @test typeof(V) == typeof(Vi) # Did not manipulate input type
         @test length(Vi) == n # Correct length
     end
@@ -4108,24 +4108,51 @@ end
     r = 3.25
     nc = 1000
     V = circlepoints(r,nc)
-    Vi, S = evenly_sample(V, nc; niter=5,close_loop = true)
-    dS = Derivative() * S  # spline derivative
-    L = Comodo.integrate_segment_(dS,0,1,1e-8)
+    S,_,D = Comodo.make_geospline(V; rtol=1e-8, niter=10, spline_order=4, close_loop=true)
+    dS = BSplineKit.Derivative() * S  # spline derivative
+    L = Comodo.integrate_segment_(dS,0,D,1e-8)
     @test isapprox(L,2*pi*r,atol=eps_level)
 end
 
-@testset "evenly_space" verbose = true begin
-    eps_level = 1e-3
-    np = 10
-    t = range(0.0,2.0*π,np) # Parameterisation metric
-    V = [GeometryBasics.Point{3, Float64}(cos(t[i]),sin(t[i]),0.0) for i in eachindex(t)] 
+@testset "Comodo.make_geospline" begin
+    eps_level = 1e-6
+    r = 3.25
+    nc = 10
+    V = circlepoints(r,nc)
+    S,L,D = Comodo.make_geospline(V; rtol=1e-8, niter=10, spline_order=4, close_loop=true)
     
-    Vn = evenly_space(V)
-    @test isapprox(pointspacingmean(Vn),pointspacingmean(V),atol=eps_level)
+    @test isa(S,SplineInterpolation)
+    @test isapprox(V,S.(L),atol=eps_level)
 
-    pointSpacing = pointspacingmean(V)
-    Vn = evenly_space(V,pointSpacing)
+    S,L,D = Comodo.make_geospline(V; rtol=1e-8, niter=10, spline_order=4, close_loop=false)
+    
+    @test isa(S,SplineInterpolation)
+    @test isapprox(V,S.(L),atol=eps_level)
+end
+
+@testset "evenly_space" verbose = true begin
+    eps_level = 1e-1
+    eps_level2 = 1e-6
+
+    pointSpacing=0.05
+
+    n = 5
+    r = 3.0
+    t = range(0,2π-2π/n,n)
+    V = [GeometryBasics.Point{3, Float64}(r*cos(tt),r*sin(tt),0.0) for tt ∈ t]
+
+    Vn = evenly_space(V, pointSpacing; close_loop = false, spline_order = 4) 
     @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
+
+    must_points = [1] # This tests and empty must_points vector
+    Vn = evenly_space(V, pointSpacing; close_loop = true, spline_order = 4, must_points = must_points) # Returns points and spline interpolation object
+    @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
+
+    must_points = [1,2,3]
+    Vn = evenly_space(V, pointSpacing; close_loop = true, spline_order = 4, must_points = must_points) # Returns points and spline interpolation object
+    @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
+    d = mindist(V,Vn)
+    @test isapprox(sum(d[must_points]),0.0,atol=eps_level)
 
     r = 1000
     nc = 1000
@@ -4133,7 +4160,7 @@ end
     pointSpacing = 1
     Vn = evenly_space(V,pointSpacing; close_loop = true)    
     @test isapprox(pointspacingmean(Vn),pointSpacing, atol=eps_level)
-    @test length(Vn) == ceil(2*pi*r/pointSpacing)
+    @test length(Vn) == ceil(2*pi*r/pointSpacing)+1
 
 end
 
@@ -4175,17 +4202,17 @@ end
     P[4 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 1.0)
     Vc = nbezier(P,nc) # Get Bezier fit points
     Vc = [vc.*10 for vc in Vc]
-    Vc,Sc = evenly_sample(Vc, nc)
+    Vc = evenly_sample(Vc, nc)
 
     # Define section curves
     np = 20 # Number of section points    
     V1 = circlepoints(2.0,np; dir=:acw)
-    V1,_ = evenly_sample(V1, np)
+    V1 = evenly_sample(V1, np)
     Q = RotXYZ(0.0,0.5*π,0.0) # Define a rotation tensor using Euler angles
     V1 = [Q*v for v in V1] # Rotate the coordinates
 
     V2 = circlepoints(2.0,np; dir=:acw)
-    V2,_ = evenly_sample(V2, np)
+    V2 = evenly_sample(V2, np)
     V2 = [v2 .+ Vc[end] for v2 in V2] 
 
     @testset "reversed" begin

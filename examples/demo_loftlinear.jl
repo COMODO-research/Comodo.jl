@@ -12,7 +12,7 @@ height = 2.5
 rFun(t) = r + 0.5.* sin(4.0*t)
 V2 = circlepoints(rFun,nc;dir=:acw)
 V2 = [GeometryBasics.Point{3, Float64}(v[1],v[2],height) for v ∈ V2]
-V2,_ = evenly_sample(V2,nc)
+V2 = evenly_sample(V2,nc)
 ## Loft from curve 1 to curve 2
 num_steps = 11 # Uneven works best for "tri" face type
 close_loop = true

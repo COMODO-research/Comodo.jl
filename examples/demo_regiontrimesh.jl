@@ -31,7 +31,7 @@ elseif testCase == 3
     r = 1.0
     rFun(t) = r + 0.5.*sin(6*t)
     V = circlepoints(rFun,n; dir=:acw)    
-    V,_ = evenly_sample(V, n)
+    V = evenly_sample(V, n)
     pointSpacing = pointspacingmean(V)
 
     VT = (V,)
@@ -41,17 +41,17 @@ elseif testCase == 4
     rFun1(t) = 12.0 + 3.0.*sin(5*t)
     n1 = 120
     V1 = circlepoints(rFun1,n1)
-    V1,_ = evenly_sample(V1,n1)
+    V1 = evenly_sample(V1,n1)
 
     rFun2(t) = 10.0 + 2.0.*sin(5*t)
     n2 = 100
     V2 = circlepoints(rFun2,n2)
-    V2,_ = evenly_sample(V2,n2)
+    V2 = evenly_sample(V2,n2)
 
     rFun3(t) = 2.0 + 0.5 *sin(5*t)
     n3 = 50
     Vp = circlepoints(rFun3,n3)
-    Vp,_ = evenly_sample(Vp,n3)
+    Vp = evenly_sample(Vp,n3)
 
     V3 = [Point{3,Float64}(v[1],v[2]+6,v[3]) for v in Vp]
     V4 = [Point{3,Float64}(v[1]-5,v[2]+1,v[3]) for v in Vp]

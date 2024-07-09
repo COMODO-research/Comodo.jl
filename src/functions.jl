@@ -3482,41 +3482,51 @@ curvature exists for the B-spline between two adjacent data points then the
 spacing between points in the output may be non-uniform (despite the allong 
 B-spline distance being uniform). 
 """
-function evenly_sample(V::Vector{Point{ND,TV}}, n::Int; rtol = 1e-8, niter = 1,spline_order=4, close_loop=false) where ND where TV<:Real
+function evenly_sample(V::Vector{Point{ND,TV}}, n::Int; rtol=1e-8, niter=1, spline_order=4, close_loop=false) where ND where TV<:Real
+
+    S,_,D = make_geospline(V; rtol=rtol, niter=niter, spline_order=spline_order, close_loop=close_loop)
+
+    # Even range for curve distance 
+    if close_loop == true        
+        l_end = D - D/n
+    else
+        l_end = D
+    end
+    l = range(0.0, l_end, n)     
+
+    return S.(l) # Evaluate interpolator at even distance increments
+end
+
+function make_geospline(V::Vector{Point{ND,TV}}; rtol = 1e-8, niter = 10, spline_order=4, close_loop=false) where ND where TV<:Real
     LL = curve_length(V) # Initialise as along curve (multi-linear) distance
 
     if close_loop == true
-        LL ./= (last(LL)+ norm(V[1]-V[end]))  # Normalise 
-        bc = BSplineKit.Periodic(1.0) # Use periodic bc for closed curves
+        D = last(LL)+ norm(V[1]-V[end])
+        bc = BSplineKit.Periodic(D) # Use periodic bc for closed curves
     else
-        LL ./= last(LL) # Normalise  
+        D = last(LL) # Normalise  
         bc = BSplineKit.Natural() # Otherwise use natural
     end
     S = BSplineKit.interpolate(LL, deepcopy(V), BSplineOrder(spline_order), bc) # Create interpolator
 
+    L = zeros(eltype(LL),length(LL)) # Initialise spline length vector
     @inbounds for _ in 1:niter
-        dS = Derivative() * S  # spline derivative
-        L = zeros(eltype(LL),length(LL)) # Initialise spline length vector
+        dS = BSplineKit.Derivative() * S  # spline derivative        
         @inbounds for i in 2:lastindex(LL) 
             # Compute length of segment [i-1, i]   
             L[i] = L[i - 1] + integrate_segment_(dS,LL[i-1], LL[i],rtol)    
         end
-
-        # Normalise
+        
         if close_loop == true
-            L ./= (last(L) + integrate_segment_(dS,LL[end], 1.0,rtol))
+            D = last(L) + integrate_segment_(dS,LL[end], D,rtol)              
+            bc = BSplineKit.Periodic(D)     
         else
-            L ./= last(L)
-        end
+            D = last(L)
+        end      
         S = BSplineKit.interpolate(L, deepcopy(V), BSplineOrder(spline_order), bc) # Create interpolator
+        LL = L
     end
-    # Even range for curve distance 
-    if close_loop == true
-        l = range(0.0, 1.0 - 1.0/n, n) 
-    else
-        l = range(0.0, 1.0, n) 
-    end
-    return S.(l), S # Evaluate interpolator at even distance increments
+    return S,L,D
 end
 
 function integrate_segment_(dS,l1,l2,rtol)
@@ -3526,12 +3536,55 @@ function integrate_segment_(dS,l1,l2,rtol)
     return segment_length
 end
 
-function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8, niter = 1, close_loop=false) where ND where TV<:Real
+function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8, niter = 1, spline_order=4, close_loop=false, must_points=nothing) where ND where TV<:Real
     if isnothing(pointSpacing)
         pointSpacing = pointspacingmean(V)
+    end    
+
+    if !isnothing(must_points)
+        sort!(must_points) # sort the indices
+        if first(must_points)==1 # Check if first is 1
+            popfirst!(must_points) # remove start, is already a must point
+        end
     end
-    n = ceil(Int,maximum(curve_length(V; close_loop=close_loop))/pointSpacing)
-    Vn,_ = evenly_sample(V,n; rtol=rtol, niter=niter, close_loop=close_loop)
+
+    if isnothing(must_points) || isempty(must_points)
+        n = 1 + ceil(Int,last(curve_length(V; close_loop=close_loop))/pointSpacing)
+        Vn = evenly_sample(V,n; rtol=rtol, niter=niter, spline_order=spline_order, close_loop=close_loop)
+    else
+        # Check must point set
+        m = length(V)        
+        if close_loop == false && last(must_points)!=m # Check if last needs to be added 
+            push!(must_points,m)
+        else
+            push!(must_points,1) # Add first to close over curve
+        end    
+
+        # Construct length parameterised spline
+        S,L,D = make_geospline(V; rtol=rtol, niter=niter, spline_order=spline_order, close_loop=close_loop)
+
+        Vn = Vector{eltype(V)}()
+        l1 = 0.0 # Effectively makes first point a must point
+        for i in eachindex(must_points)          
+            j = must_points[i]          
+            if j==1 # i.e. last step when close_loop == true
+                l2 = D  
+            else
+                l2 = L[j]
+            end              
+            n = 1 + ceil(Int,(l2-l1)/pointSpacing)
+            l = range(l1,l2,n)
+            Vn_now = S.(l)                
+                        
+            if j==1 # i.e. last step when close_loop == true         
+                append!(Vn,Vn_now[1:end-1])
+            else
+                append!(Vn,Vn_now)  
+            end
+            
+            l1 = deepcopy(l2)
+        end
+    end
     return Vn
 end
 
@@ -3782,14 +3835,14 @@ function batman(n::Int; symmetric = false, dir=:acw)
         else
             m = ceil(Int,n/2)+1 
         end
-        V,_ = evenly_sample([Point{3, Float64}(x[i]/22,y[i]/22,0.0) for i in eachindex(x)],m)
+        V = evenly_sample([Point{3, Float64}(x[i]/22,y[i]/22,0.0) for i in eachindex(x)],m)
         V2 = [Point{3, Float64}(-V[i][1],V[i][2],0.0) for i in length(V)-1:-1:2]
         append!(V,V2)    
     else
         V = [Point{3, Float64}(x[i]/22,y[i]/22,0.0) for i in eachindex(x)]    
         V2 = [Point{3, Float64}(-V[i][1],V[i][2],0.0) for i in length(V)-1:-1:2]
         append!(V,V2) 
-        V,_ = evenly_sample(V,n)
+        V = evenly_sample(V,n)
     end
     if dir==:cw
         reverse!(V)   
