@@ -4141,9 +4141,22 @@ end
     t = range(0,2π-2π/n,n)
     V = [GeometryBasics.Point{3, Float64}(r*cos(tt),r*sin(tt),0.0) for tt ∈ t]
 
+    # Nothing for point spacing
+    Vn = evenly_space(V, nothing; close_loop = false, spline_order = 4) 
+    @test isapprox(pointspacingmean(Vn),pointspacingmean(V),atol=eps_level)
+
+    # Specified point spacing 
     Vn = evenly_space(V, pointSpacing; close_loop = false, spline_order = 4) 
     @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
 
+    # Must poins in open curve
+    must_points = [2]
+    Vn = evenly_space(V, pointSpacing; close_loop = false, spline_order = 4, must_points = must_points) 
+    @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
+    d = mindist(V,Vn)
+    @test isapprox(sum(d[must_points]),0.0,atol=eps_level)
+
+    # Using a single must point
     must_points = [1] # This tests and empty must_points vector
     Vn = evenly_space(V, pointSpacing; close_loop = true, spline_order = 4, must_points = must_points) # Returns points and spline interpolation object
     @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
@@ -5528,6 +5541,11 @@ end
         n = 15
         r = nothing
         VC = filletcurve(V; rMax=r,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
+        @test eltype(VC) == eltype(V) # Same type
+        @test length(VC) == (n*length(V))-length(V)        
+        @test all(isapprox.(norm.(VC),d*cos(π/nc),atol=eps_level))  
+
+        VC = filletcurve(V; rMax=r,  constrain_method = :mid, n=n, close_loop = close_loop, eps_level = 1e-6)
         @test eltype(VC) == eltype(V) # Same type
         @test length(VC) == (n*length(V))-length(V)        
         @test all(isapprox.(norm.(VC),d*cos(π/nc),atol=eps_level))  
