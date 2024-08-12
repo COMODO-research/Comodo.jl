@@ -5462,6 +5462,22 @@ end
         @test VC == V # Unchanged input 
     end
 
+    @testset "5 points straight (no round) then 90 degree" begin
+        # Forms quarter of a circle when rMax=nothing
+        d = 10.0 # This should become radius of circle segment 
+        V = Point{3,Float32}[ [0.0,0.0,0.0], [d,0.0,0.0], [2*d,0.0,0.0], [2*d,d,0.0], [3*d,d,0.0]]
+        close_loop = false
+        n = 25
+        r = d/3
+        VC = filletcurve(V; rMax=r,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
+        @test eltype(VC) == eltype(V) # Same type
+        @test length(VC) == length(V)+2*n-2 
+        
+        VC = filletcurve(V; rMax=0.0,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
+        @test eltype(VC) == eltype(V) # Same type
+        @test VC == V # Unchanged input 
+    end
+
     @testset "Zero radius requested" begin
         # Forms quarter of a circle when rMax=nothing
         d = 10.0 # This should become radius of circle segment 
@@ -5606,14 +5622,26 @@ end
         @test a isa StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
         @test length(a) == n
         @test isapprox(collect(a),[0.0, 1.0471975511965979, 2.0943951023931957, 3.141592653589793, 4.188790204786391, 5.235987755982989], atol=eps_level)        
+
+        n = 6
+        a = circlerange(n; dir=:cw, deg=false)
+        @test a isa StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
+        @test length(a) == n
+        @test isapprox(collect(a),[0.0, -1.0471975511965979, -2.0943951023931957, -3.141592653589793, -4.188790204786391, -5.235987755982989], atol=eps_level)        
     end
 
     @testset "Degrees" begin
         n = 6
+        a = circlerange(n; dir=:acw, deg=true)
+        @test a isa StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
+        @test length(a) == n
+        @test isapprox(collect(a),[0.0, 60.0, 120.0, 180.0, 240.0, 300.0], atol=eps_level)        
+
+        n = 6
         a = circlerange(n; dir=:cw, deg=true)
         @test a isa StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
         @test length(a) == n
-        @test isapprox(collect(a),[0.0, -60.0, -120.0, -180.0, -240.0, -300.0], atol=eps_level)        
+        @test isapprox(collect(a),[0.0, -60.0, -120.0, -180.0, -240.0, -300.0], atol=eps_level)     
     end
 
 end
