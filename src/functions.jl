@@ -1702,7 +1702,7 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
             # Create complete point set
             Vn = [Vv;Vm] # Updated orignals and new "mid-edge-ish" points
         else
-            throw(ArgumentError("Incorrect method :$method. Use :linear or :loop"))
+            throw(ArgumentError("Incorrect method :$method. Use :linear or :Loop"))
         end
 
         return Fn,Vn    
@@ -2272,7 +2272,7 @@ function meshconnectivity(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) whe
     con_V2V = con_vertex_vertex(E_uni,V,con_V2E)
 
     # VERTEX-VERTEX connectivity wrt faces
-    con_V2V_f = con_vertex_vertex_f(E_uni,V,con_V2E)
+    con_V2V_f = con_vertex_vertex_f(F,V,con_V2F)
 
     # FACE-FACE connectivity wrt vertices
     con_F2F_v = con_face_face_v(F,con_V2F)
@@ -2548,21 +2548,11 @@ function normalizevector(A::Union{Point{ND,TV},Vec{ND,TV}}) where ND where TV<:R
 end
 
 function circlepoints(r::T,n::Int; dir=:acw) where T <: Real
-    if dir==:acw
-        return [Point{3, Float64}(r*cos(t),r*sin(t),0) for t in range(0.0,2.0*π-(2.0*π)/n,n)]
-    elseif dir==:cw
-        return [Point{3, Float64}(r*cos(t),r*sin(t),0) for t in range(0.0,(2.0*π)/n-2.0*π,n)]
-    else
-        throw(ArgumentError("Invalid dir specified :$dir, use :acw or :cw"))
-    end
+    return [Point{3, Float64}(r*cos(t),r*sin(t),0) for t in circlerange(n;dir=dir)]
 end
 
 function circlepoints(f::FunctionType,n::Int; dir=:acw) where {FunctionType <: Function}
-    if dir==:acw
-        return [Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t in range(0,2*π-(2*π)/n,n)]
-    elseif dir==:cw
-        return [Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t in range(0,(2*π)/n-2*π,n)]
-    end
+    return [Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t in circlerange(n;dir=dir)]
 end
 
 """
@@ -3360,14 +3350,30 @@ which features a nice overview of the theory/steps involved in this algorithm.
 # References 
 1. [F. Cazals and M. Pouget, _Estimating differential quantities using polynomial fitting of osculating jets_, Computer Aided Geometric Design, vol. 22, no. 2, pp. 121-146, Feb. 2005, doi: 10.1016/j.cagd.2004.09.004](https://doi.org/10.1016/j.cagd.2004.09.004)
 """
-function mesh_curvature_polynomial(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
-    # Get the unique mesh edges
-    E_uni = meshedges(F;unique_only=true) 
+function mesh_curvature_polynomial(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; growsteps = 2) where N where TF<:Integer where ND where TV<:Real
 
-    # Get the vertex-to-vertex connectivity, i.e. the "Laplacian umbrellas"
-    con_V2V = con_vertex_vertex(E_uni,V)
+    if N>3 # e.g. Quads and up, which need face connectivity
+        # Get the vertex-to-vertex connectivity form connected faces, i.e. similar to the "Laplacian umbrellas"
+        con_V2V = con_vertex_vertex_f(F,V)        
+    else # e.g. Triangles, which can use simple nodal connectivity
+         # Get the unique mesh edges
+         E_uni = meshedges(F;unique_only=true) 
 
-    
+         # Get the vertex-to-vertex connectivity, i.e. the "Laplacian umbrellas"
+         con_V2V = con_vertex_vertex(E_uni,V)
+    end
+
+    if isnothing(growsteps)
+        growsteps = 2
+    end
+
+    # Eb = boundaryedges(F)
+    # if !isempty(Eb)
+    #     indBoundary = unique(reduce(vcat,Eb))
+    # else
+    #     indBoundary = nothing
+    # end
+
     NV = vertexnormal(F,V) # The vertex normal directions
     nz = Vec{3,Float64}(0.0,0.0,1.0) # A z-axis vector
 
@@ -3378,34 +3384,63 @@ function mesh_curvature_polynomial(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,
     for q in eachindex(V)
         n = NV[q] # The current vertex normal
         Q = rotation_between(n,nz) # The rotation between the current normal and the z-axis
-        ind = con_V2V[q] # The indices for the current Laplacian umbrella       
+        ind = con_V2V[q]        
+        # ind = push!(ind,q)
+
+        # println(q,ind)
+        if growsteps>1            
+            for _ in 1:(growsteps-1)
+                ind = unique(reduce(vcat,con_V2V[ind]))
+                ind = ind[ind.!=q]
+            end
+        end        
+        
         vr = [Q*(v-V[q]) for v in V[ind]] # Rotate point set to a 2D problem
+                
+        # if !isnothing(indBoundary)        
+        #     if in(q,indBoundary)
+        #         # println("wow")
+        #         push!(vr,normalizevector(mean(-vr)))
+        #     end
+        # end
 
         # Set up polynomial fit
         T = Matrix{Float64}(undef,(length(ind),5))
-        w = Matrix{Float64}(undef,(length(ind),1))
+        w = Vector{Float64}(undef,length(ind))
         for i = 1:length(ind)
             T[i,:] = [vr[i][1],vr[i][2],vr[i][1]^2,vr[i][1]*vr[i][2],vr[i][2]^2]
             w[i] = vr[i][3]
         end     
-        a = T\w  # x = A\B solves the system of linear equations A*x = B
 
-        E = 1.0 + a[1]^2
-        F = a[1]*a[2]
-        G = 1.0 + a[2]^2
-        d = sqrt(a[1]^2+1.0+a[2]^2)
-        e = (2.0*a[3]) / d
-        f =       a[4] / d
-        g = (2.0*a[5]) / d
+        try
+            a = T\w  # x = A\B solves the system of linear equations A*x = B
 
-        S = -[e f; f g] * inv([E F; F G])
-        k,u = eigen(S) # Eigen decomposition to get first/second eigenvalue and vectors
-        
-        # Store derived quantities
-        K1[q] = k[2]
-        K2[q] = k[1]
-        U1[q] = Q'*Vec3{Float64}(u[1,2],u[2,2],0.0)
-        U2[q] = Q'*Vec3{Float64}(u[1,1],u[2,1],0.0)    
+            E = 1.0 + a[1]^2
+            F = a[1]*a[2]
+            G = 1.0 + a[2]^2
+            d = sqrt(a[1]^2+1.0+a[2]^2)
+            e = (2.0*a[3]) / d
+            f =       a[4] / d
+            g = (2.0*a[5]) / d
+    
+            S = -[e f; f g]/[E F; F G]
+            k,u = eigen(S) # Eigen decomposition to get first/second eigenvalue and vectors
+       
+            # Store derived quantities
+            K1[q] = k[2]
+            K2[q] = k[1]
+            U1[q] = Q'*Vec3{Float64}(u[1,2],u[2,2],0.0)
+            U2[q] = Q'*Vec3{Float64}(u[1,1],u[2,1],0.0)             
+        catch
+            @warn "SINGULAR"
+            K1[q] = NaN
+            K2[q] = NaN
+            U1[q] = Vec3{Float64}(NaN,NaN,NaN)
+            U2[q] = Vec3{Float64}(NaN,NaN,NaN)
+        end
+       
+
+   
     end
 
     H = 0.5 * (K1.+K2) # Mean curvature
@@ -4844,5 +4879,77 @@ function filletcurve(V::Vector{Point{NV,TV}}; rMax::Union{Vector{T},T,Nothing}=n
         return VC
     else
         return VP
+    end
+end
+
+"""
+    squircle(r::T,n::Int,τ=0.5; atol=1e-6, dir=:acw) where T <: Real
+
+Creates the squircle curve
+
+# Description
+This function returns `n` points on a squircle. The squircle curve is defined 
+using the radius `r`, and the parameter `τ`. The latter controls the morphing 
+between a circle (`τ=0`) and square (`τ=1`).
+"""
+function squircle(r::T,n::Int,τ=0.5; atol=1e-6, dir=:acw) where T <: Real
+    if isapprox(τ,0.0,atol=atol)
+        V = circlepoints(r,n, dir=dir)
+    else 
+        p = circlerange(n;dir=dir)
+
+        # Compute s from τ
+        st = r^2*((sqrt(2.0)/2.0*(1.0-τ))+τ)^2
+        s = (r/st)*sqrt(2.0*st-r^2)
+
+        V = Vector{Point{3,Float64}}(undef,n)
+        V[1] = [r,0.0,0.0]    
+        for i in 2:1:n
+            if isapprox(p[i],0.5*π,atol=atol)
+                V[i] = [0.0,r,0.0]
+            elseif isapprox(p[i],π,atol=atol)
+                V[i] = [-r,0.0,0.0]
+            elseif isapprox(p[i],1.5*π,atol=atol)
+                V[i] = [0.0,-r,0.0]
+            else
+                cos_p = cos(p[i])
+                sin_p = sin(p[i])                
+                q = (r/(s*sqrt(2.0))) *  sqrt(1.0 - sqrt.(1.0 - s^2 * max(0.0,min(1.0,(2.0 * sin_p * cos_p)^2))))
+                x = sign(cos_p) / abs(sin_p)*q
+                y = sign(sin_p) / abs(cos_p)*q            
+                V[i] = [x,y,0]
+            end
+        end        
+    end
+    return V
+end
+
+"""
+    circlerange(n::Int; dir=:acw, deg=false)
+
+Creates circular angles
+
+# Description
+This function returns `n` angles for an even circular distribution of points. 
+The optional input `dir` can be set to `:acw` (default) resulting in an 
+anti-clockwise set of angles, and can be set to `:cw` for a clockwise set of 
+angles. Angles are returned in radians since `deg` is `false` by default. 
+Using `deg=true` results in angles in degrees. 
+"""
+function circlerange(n::Int; dir=:acw, deg=false)
+    if dir==:acw
+        if deg == true
+            return range(0.0, 360 - 360/n, n)
+        else
+            return range(0.0, 2.0*π - (2.0*π)/n, n)
+        end
+    elseif dir==:cw
+        if deg == true
+            return range(0.0, 360/n - 360, n)
+        else
+            return range(0.0, (2.0*π)/n - 2.0*π, n)
+        end
+    else
+        throw(ArgumentError("Invalid dir specified :$dir, use :acw or :cw"))
     end
 end

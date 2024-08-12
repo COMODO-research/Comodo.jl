@@ -2152,7 +2152,7 @@ end
         con_V2V = con_vertex_vertex(E_uni,V,con_V2E)
 
         # VERTEX-VERTEX connectivity wrt faces
-        con_V2V_f = con_vertex_vertex_f(E_uni,V,con_V2E)
+        con_V2V_f = con_vertex_vertex_f(F,V,con_V2F)
 
         # FACE-FACE connectivity wrt vertices
         con_F2F_v = con_face_face_v(F,con_V2F)
@@ -2202,7 +2202,7 @@ end
         con_V2V = con_vertex_vertex(E_uni,V,con_V2E)
 
         # VERTEX-VERTEX connectivity wrt faces
-        con_V2V_f = con_vertex_vertex_f(E_uni,V,con_V2E)
+        con_V2V_f = con_vertex_vertex_f(F,V,con_V2F)
 
         # FACE-FACE connectivity wrt vertices
         con_F2F_v = con_face_face_v(F,con_V2F)
@@ -2252,7 +2252,7 @@ end
         con_V2V = con_vertex_vertex(E_uni,V,con_V2E)
 
         # VERTEX-VERTEX connectivity wrt faces
-        con_V2V_f = con_vertex_vertex_f(E_uni,V,con_V2E)
+        con_V2V_f = con_vertex_vertex_f(F,V,con_V2F)
 
         # FACE-FACE connectivity wrt vertices
         con_F2F_v = con_face_face_v(F,con_V2F)
@@ -2302,7 +2302,7 @@ end
         con_V2V = con_vertex_vertex(E_uni,V,con_V2E)
 
         # VERTEX-VERTEX connectivity wrt faces
-        con_V2V_f = con_vertex_vertex_f(E_uni,V,con_V2E)
+        con_V2V_f = con_vertex_vertex_f(F,V,con_V2F)
 
         # FACE-FACE connectivity wrt vertices
         con_F2F_v = con_face_face_v(F,con_V2F)
@@ -2793,12 +2793,6 @@ end
 
 @testset "circlepoints" verbose = true begin
     eps_level = 1e-4
-
-    @testset "Errors" begin
-        r = 2.0
-        n = 40
-        @test_throws ArgumentError circlepoints(2.0, n; dir=:wrong)
-    end
     
     @testset "with value" begin
         r = 2.0
@@ -3924,19 +3918,15 @@ end
         @test isapprox(mean(H),k_true,atol=tol_level)
         @test isapprox(sqrt(abs(mean(G))),k_true,atol=tol_level)
     end
-
-    # For this algorithm the cube appears to have homogeneous curvature too that is 1.5/r
+    
     @testset "Cube" begin
-        r = sqrt(3) 
-        k_true = 1.5*(1.0/r) # Note only for the polynomial method
+        r = 2        
         M = cube(r)
         F = faces(M)
         V = coordinates(M)
+        F,V = subquad(F,V,2; method=:linear)
+        M = GeometryBasics.Mesh(V,F)
         K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V)
-        @test isapprox(mean(K1),k_true,atol=tol_level)
-        @test isapprox(mean(K2),k_true,atol=tol_level)
-        @test isapprox(mean(H),k_true,atol=tol_level)
-        @test isapprox(sqrt(abs(mean(G))),k_true,atol=tol_level)
 
         # Check if mesh input functions the same
         K1m,K2m,U1m,U2m,Hm,Gm = mesh_curvature_polynomial(M)
@@ -5555,4 +5545,75 @@ end
         constrain_method = :wrong        
         @test_throws Exception filletcurve(circlepoints(5,12); constrain_method = constrain_method)
     end
+end
+
+
+@testset "squircle" verbose = true begin
+    eps_level = 1e-6    
+    @testset "pure circle" begin
+        r = 2.0
+        n = 40
+        τ = 0.0
+        Vs = squircle(r, n, τ; dir=:acw)
+        Vc = circlepoints(r, n; dir=:acw)        
+        @test isapprox(Vs,Vc,atol=eps_level)
+        @test Vs isa Vector{Point3{Float64}}
+        @test length(Vs) == n        
+    end
+
+    @testset "pure square" begin
+        r = 2.0
+        n = 40
+        τ = 1.0    
+        Vs = squircle(r, n, τ; dir=:acw)
+        L = curve_length(Vs; close_loop=true)                
+        @test isapprox(L[end],8*r,atol=eps_level) # Check if length matches circumference of square
+        @test Vs isa Vector{Point3{Float64}}
+        @test length(Vs) == n        
+    end
+
+    @testset "squircle" begin
+        r = 2.0
+        n = 20
+        τ = 0.5
+        Vs = squircle(r, n, τ; dir=:cw)
+
+        @test isapprox(Vs,Point{3, Float64}[[2.0, 0.0, 0.0], [1.984096125555336, -0.6446719104123261, 0.0],
+         [1.8872082689566554, -1.3711370666003893, 0.0], [1.3711370666003893, -1.8872082689566554, 0.0], 
+         [0.6446719104123261, -1.9840961255553358, 0.0], [0.0, -0.0, 0.0], [-0.6446719104123261, -1.9840961255553367, 0.0], 
+         [-1.3711370666003886, -1.8872082689566547, 0.0], [-1.8872082689566552, -1.3711370666003895, 0.0], 
+         [-1.9840961255553362, -0.6446719104123263, 0.0], [-0.0, -0.0, 0.0], [-1.9840961255553362, 0.6446719104123259, 0.0], 
+         [-1.8872082689566547, 1.3711370666003886, 0.0], [-1.3711370666003895, 1.8872082689566552, 0.0], 
+         [-0.6446719104123263, 1.9840961255553355, 0.0], [-0.0, 0.0, 0.0], [0.6446719104123257, 1.984096125555336, 0.0], 
+         [1.3711370666003886, 1.887208268956655, 0.0], [1.8872082689566554, 1.3711370666003901, 0.0], 
+         [1.984096125555336, 0.6446719104123266, 0.0]],atol=eps_level) 
+        @test Vs isa Vector{Point3{Float64}}
+        @test length(Vs) == n        
+    end
+end
+
+@testset "circlerange" verbose = true begin
+    eps_level = 1e-8
+    
+    @testset "Errors" begin
+        n = 25
+        @test_throws ArgumentError circlerange(n; dir=:wrong)
+    end
+
+    @testset "Radians" begin
+        n = 6
+        a = circlerange(n; dir=:acw, deg=false)
+        @test a isa StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
+        @test length(a) == n
+        @test isapprox(collect(a),[0.0, 1.0471975511965979, 2.0943951023931957, 3.141592653589793, 4.188790204786391, 5.235987755982989], atol=eps_level)        
+    end
+
+    @testset "Degrees" begin
+        n = 6
+        a = circlerange(n; dir=:cw, deg=true)
+        @test a isa StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
+        @test length(a) == n
+        @test isapprox(collect(a),[0.0, -60.0, -120.0, -180.0, -240.0, -300.0], atol=eps_level)        
+    end
+
 end

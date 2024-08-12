@@ -2,9 +2,11 @@ using Comodo
 using GLMakie
 using GeometryBasics
 using FileIO
+using Rotations
+using Statistics
 
-# Example geometry
-testCase = 7
+# Example geometry0
+testCase = 4
 if testCase == 1
     r = 25.25
     F,V = geosphere(5,r)  
@@ -26,7 +28,9 @@ elseif testCase==4
     Vc = circlepoints(r, nc; dir=:cw)
     num_steps = round(Int,d/s)
     num_steps = num_steps + Int(iseven(num_steps))
-    F, V = extrudecurve(Vc, d; s=1, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
+    F, V = extrudecurve(Vc; extent=d, n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:tri)
+    R = rand(RotXYZ)
+    V = [R* v for v in V]
 elseif testCase==5 # Merged STL for single object
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
@@ -36,7 +40,7 @@ elseif testCase==5 # Merged STL for single object
     F = tofaces(faces(M))
     V = topoints(coordinates(M))
     F,V,_ = mergevertices(F,V)
-    F,V = subtri(F,V,2; method = :loop)
+    # F,V = subtri(F,V,2; method = :Loop)
 elseif testCase==6 # Merged STL for single object
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")
@@ -54,36 +58,45 @@ elseif testCase==7
     # Obtain mesh faces and vertices
     F = tofaces(faces(M))
     V = topoints(coordinates(M))
+elseif testCase == 8
+    nSub = 4 # Number of refinement steps of the geodesic sphere
+    r = 2.5 # Sphere radius
+    F,V = geosphere(nSub,r) # Creating the faces and vertices of a full sphere
+    VC = simplexcenter(F,V) # Finding triangle centre coordiantes
+    F = [F[i] for i in findall(map(v-> v[3]>0,VC))] # Remove some faces using z of central coordinates
+    F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
 end
     
 M = GeometryBasics.Mesh(V,F)
 
-K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V)
+K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V; growsteps=2)
 
 ## Visualization
 s = pointspacingmean(F,V)
-cMap = :Spectral
+cMap = Makie.Reverse(:Spectral)
+f = 0.1
+
 fig = Figure(size=(800,800))
 
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "1st principal curvature")
-hp1 = mesh!(ax1,M, color=K1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(K1)).*0.1.*(-1,1))
-# hp1 = poly!(ax1,M, color=K1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(K1)).*0.1.*(-1,1),strokecolor=:black,strokewidth=2)
-# normalplot(ax1,M)
+hp1 = poly!(ax1,M, color=K1, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,K1))).*f.*(-1,1))
 hpn1 = dirplot(ax1,V,U1; color=:black,linewidth=2,scaleval=s,style=:through)
+# scatter!(ax1,V,color=K1,colormap=cMap,colorrange = maximum(abs.(K1)).*0.1.*(-1,1),markersize=10);
 Colorbar(fig[1, 2],hp1)
 
 ax1 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "2nd principal curvature")
-hp2 = mesh!(ax1,M, color=K2, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(K2)).*0.1.*(-1,1))
+hp2 = poly!(ax1,M, color=K2, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,K2))).*f.*(-1,1))
 hpn2 = dirplot(ax1,V,U2; color=:black,linewidth=2,scaleval=s,style=:through)
-Colorbar(fig[1, 4],hp1)
+# scatter!(ax1,V,color=K2,colormap=cMap,colorrange = maximum(abs.(K2)).*0.1.*(-1,1),markersize=10);
+Colorbar(fig[1, 4],hp2)
 
 ax1 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Mean curvature")
-hp2 = mesh!(ax1,M, color=H, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(H)).*0.1.*(-1,1))
-Colorbar(fig[2, 2],hp1)
+hp3 = poly!(ax1,M, color=H, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,H))).*f.*(-1,1))
+Colorbar(fig[2, 2],hp3)
 
 ax1 = Axis3(fig[2, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Gaussian curvature")
-hp2 = mesh!(ax1,M, color=G, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(G)).*0.025.*(-1,1))
-Colorbar(fig[2, 4],hp1)
+hp4 = poly!(ax1,M, color=G, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,G))).*f.*(-1,1))
+Colorbar(fig[2, 4],hp4)
 
 fig
 

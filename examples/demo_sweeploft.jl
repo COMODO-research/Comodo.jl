@@ -169,7 +169,7 @@ elseif testCase == 4
     R = RotMatrix3{Float64}(S22\S21)    
     V2 = [R*v for v ∈ V2] # Rotate the coordinates
     V2 = [v .+ Vc[end] for v ∈ V2] 
-elseif testCase ==5 
+elseif testCase == 5 
     nc = 75 # Number of points on guide curve
     r = 8
     a = 1.5*π
