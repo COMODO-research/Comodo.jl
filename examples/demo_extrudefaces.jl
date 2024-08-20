@@ -5,7 +5,7 @@ using Rotations
 using Statistics
 using LinearAlgebra
 
-testCase = 1
+testCase = 3
 
 if testCase ==1 
     plateDim = [10.0,10.0]
@@ -36,7 +36,7 @@ elseif testCase == 3
     # Section 1
     f(t) = 3 + 0.25.*sin(3*t)
     V1 = circlepoints(f,np; dir=:cw)
-    V1,_ = evenly_sample(V1, np)
+    V1 = evenly_sample(V1, np)
     V1_ori = deepcopy(V1)
 
     # Ensure section is orthogonal to guide curve
@@ -58,7 +58,7 @@ elseif testCase == 3
     # Section 2
     f(t) = 5 + 0.5*sin(5*t)
     V2 = circlepoints(f,np; dir=:cw)
-    V2,_ = evenly_sample(V2, np)    
+    V2 = evenly_sample(V2, np)    
     V2_ori = deepcopy(V2)
 
     # Q1 = RotXYZ(0.5*π,0.0,0.0) # Define a rotation tensor using Euler angles

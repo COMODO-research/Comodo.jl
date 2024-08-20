@@ -62,7 +62,6 @@ end
 rMax = nothing
 
 VC = filletcurve(V; rMax=rMax,  constrain_method = :max, n=25, close_loop = close_loop, eps_level = 1e-6)
-# VC2,_ = evenly_sample(VC,100)
 
 # Visualisation
 fig = Figure(size=(1000,1000))
