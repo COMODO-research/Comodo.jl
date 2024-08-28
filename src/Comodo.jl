@@ -48,7 +48,7 @@ export invert_faces, kabsch_rot, sweeploft, loftpoints2surf, revolvecurve
 export batman, tridisc, triplate, regiontrimesh, scalesimplex, subcurve, dualclad
 export tet2hex, element2faces, subhex, rhombicdodecahedron, tri2quad
 export tetgenmesh, surfacevolume, tetvolume, extrudefaces, filletcurve
-export squircle, circlerange
+export squircle, circlerange, edgefaceangles,faceanglesegment
 
 # Export functions: Visualization related
 export slidercontrol, slider2anim, dirplot, normalplot

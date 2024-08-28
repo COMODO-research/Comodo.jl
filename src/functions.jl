@@ -1479,7 +1479,6 @@ This function computes the so-called edge-cross-product for a input mesh that is
 either defined by the faces `F` and vertices `V` or the mesh `M`. 
 """
 function edgecrossproduct(F::Union{Vector{NgonFace{NF,TF}},Vector{Vector{TF}}},V::Vector{Point{ND,TV}}) where NF where TF<:Integer where ND where TV<:Real
-    
     if isa(F,Vector{Vector{TF}})
         N = length(F[1])
     else
@@ -1487,20 +1486,33 @@ function edgecrossproduct(F::Union{Vector{NgonFace{NF,TF}},Vector{Vector{TF}}},V
     end
 
     C = Vector{GeometryBasics.Vec{ND, TV}}(undef,length(F)) # Allocate array cross-product vectors      
-    for (q,f) in enumerate(F) # Loop over all faces
-        c  = cross(V[f[N]],V[f[1]]) # Initialise as cross product of last and first vertex position vector
-        @inbounds for qe in 1:(N-1) # Loop from first to end-1            
-            c  += cross(V[f[qe]],V[f[qe+1]]) # Add next edge contribution          
+    @inbounds for (q,f) in enumerate(F) # Loop over all faces
+        c = zeros(Vec{3,Float64})
+        @inbounds for q in 1:N # Loop from first to end-1            
+            c  += cross(V[f[q]],V[f[mod1(q+1,N)]]) # Add next edge contribution          
         end
         C[q] = c./2 # Length = face area, direction is along normal vector
     end
     return C
 end
 
+function edgecrossproduct(f::Union{NgonFace{NF,TF},Vector{TF}},V::Vector{Point{ND,TV}}) where NF where TF<:Integer where ND where TV<:Real    
+    if isa(f,Vector{TF})
+        N = length(f)
+    else
+        N = NF
+    end
+
+    c = zeros(Vec{3,TV})
+    @inbounds for q in 1:N # Loop from first to end-1            
+        c += cross(V[f[q]],V[f[mod1(q+1,N)]]) # Add next edge contribution          
+    end
+    return c./2 # Length = face area, direction is along normal vector
+end
+
 function edgecrossproduct(M::GeometryBasics.Mesh) 
     return edgecrossproduct(faces(M),coordinates(M))
 end
-
 
 """
     facenormal(F,V; weighting=:area)
@@ -1512,9 +1524,14 @@ Returns the normal directions for each face.
 This function computes the per face normal directions for the input mesh defined 
 either by the faces `F` and vertices `V` or by the GeometryBasics mesh `M`. 
 """
-function facenormal(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
+function facenormal(F::Union{Vector{NgonFace{NF,TF}},Vector{Vector{TF}}},V::Vector{Point{ND,TV}}) where NF where TF<:Integer where ND where TV<:Real
     C = edgecrossproduct(F,V)
     return C./norm.(C)
+end
+
+function facenormal(f::Union{NgonFace{NF,TF},Vector{TF}},V::Vector{Point{ND,TV}}) where NF where TF<:Integer where ND where TV<:Real    
+    c = edgecrossproduct(f,V)
+    return c./norm(c)
 end
 
 function facenormal(M::GeometryBasics.Mesh) 
@@ -2006,14 +2023,15 @@ function con_face_face(F,E_uni=nothing,indReverse=nothing,con_E2F=nothing,con_F2
         if isnothing(con_F2E)
             con_F2E = con_face_edge(F,E_uni,indReverse)                 
         end
-        con_F2F = [Vector{Int}() for _ in 1:length(F)]
+        
+        con_F2F = [Vector{Int}() for _ in 1:length(F)]        
         for i_f in eachindex(F)
             for i in reduce(vcat,con_E2F[con_F2E[i_f]])    
                 if i!=i_f     
                     push!(con_F2F[i_f],i)
                 end 
             end
-        end
+        end        
         return con_F2F
     else # Just one face, so return empty
         return [Vector{Int}() ]
@@ -2586,6 +2604,10 @@ function loftlinear(V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}};num_steps=
         num_steps = ceil(Int,d/dp)        
     end
 
+    if num_steps == 1
+        num_steps = 2
+    end
+
     # Linearly blending points from first to last
     V = Vector{eltype(V1)}()
     for q in range(0,num_steps,num_steps)
@@ -3107,7 +3129,11 @@ function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive,
         p = extent.*n
     elseif direction == :negative # Against n from V1
         p = -extent.*n
-        V1 = circshift(reverse(V1),1)
+        if close_loop == true
+            circshift!(reverse!(V1),1)
+        else
+            reverse!(V1)
+        end
     elseif direction == :both # Extrude both ways from V1
         p = extent.*n
         V1 = [(eltype(V1))(v.-p./2) for v in V1] #Shift V1 in negative direction
@@ -3143,7 +3169,7 @@ function meshgroup(F; con_type = :v)
     if all(isempty.(con_F2F)) # Completely disconnected face set (e.g. raw STL import)
         C = collect(1:length(F))
     else
-        C = fill(0,length(F))
+        C = fill(0,length(F)) # Initialise group label vector
         i = 1
         c = 1
         C[i] = c 
@@ -3168,8 +3194,9 @@ function meshgroup(F; con_type = :v)
                 end
             end
             if np == length(seen) # Group full
-                c += 1 # Increment group counter
-                i = findfirst(iszero.(C))
+                c += 1 # Increment group counter                
+                i = findfirst(iszero.(C))                
+                C[i] = c
             end
         end
     end
@@ -4952,4 +4979,130 @@ function circlerange(n::Int; dir=:acw, deg=false)
     else
         throw(ArgumentError("Invalid dir specified :$dir, use :acw or :cw"))
     end
+end
+
+
+"""
+    edgefaceangles(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=false) where NF where TF<:Integer where ND where TV<:Real 
+
+Computed angles between faces
+
+# Description
+This function computes the angle between two faces for each unique edge in the 
+mesh specified by `F` and the vertices `V`. If the input mesh consists of n 
+unique edges then the output features n angles. For boundary edges, where no
+pair of faces exists, the angle returned is NaN. The default behaviour results
+in angles being computed in radians. However by specifying `deg=true` the user
+can request degrees instead. Finally two additional outputs are created, namely
+the unique edge vector `E_uni` as well as the edge-to-face connectivity vector
+`,con_E2F`. 
+"""
+function edgefaceangles(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=false) where NF where TF<:Integer where ND where TV<:Real 
+    if length(F)>1 # More than one face so compute connectivity
+        E = meshedges(F) # The non-unique mesh edges 
+        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true) # Unique mesh edges and inverse indices
+        con_E2F = con_edge_face(F,E_uni,indReverse) # The edge-to-face connectivity
+
+        A = fill(TV(NaN),length(E_uni)) # Vector for storing angles for each edge
+        for i_e in eachindex(E_uni) # Looping over all unique edges (e.g. 1-2 is the same as 2-1)
+            if length(con_E2F[i_e])==2 # If the edge is not a boundary edge it touches 2 faces and angles can be computed           
+                e = E_uni[i_e] # The current edge
+                i_f1 = con_E2F[i_e][1] # The index of the first face sharing the current edge
+                i1 = findfirst(F[i_f1].==e[1]) # The index of the first edge point
+                i2 = findfirst(F[i_f1].==e[2]) # The index of the second edge point                           
+                n1 = facenormal(F[con_E2F[i_e][1]],V) # The normal direction for the first face 
+                n2 = facenormal(F[con_E2F[i_e][2]],V)  # The normal direction for the second face         
+                ne = V[E_uni[i_e][2]]-V[E_uni[i_e][1]] # Current edge vector                     
+                if i2==mod1(i1+1,length(F[1])) # If the second point is "next" for the current edge
+                    s = sign(dot(cross(n2,n1),ne))    
+                else # Inverse situation
+                    s = sign(dot(cross(n1,n2),ne))
+                end
+                
+                # Compute the face angles 
+                if deg == true # Compute angles in degrees                       
+                    a = s*acosd(clamp(dot(n1,n2),-1.0,1.0))
+                    if a>180
+                        a = a-360
+                    end
+                    A[i_e] = a
+                else # Compute angles in radians
+                    a = s*acos(clamp(dot(n1,n2),-1.0,1.0))                        
+                    if a>pi
+                        a = a-2*pi                        
+                    end
+                    A[i_e] = a # Replace NaN by the current angle 
+                end                 
+            end
+        end
+        return A,E_uni,con_E2F
+    else # Just one face, so return NaN
+        return [fill(NaN,length(F[1]))]
+    end
+end
+
+"""
+    faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV; deg=false, angleThreshold = pi/8, indStart = 1)  where NF where TF<:Integer where ND where TV<:Real 
+
+Segments surfaces using face angles
+
+# Description
+This function takes in a surface mesh defined by the faces `F` and the vertices 
+`V`, and segments the surface mesh based on face angles. The output consists of 
+a "feature label" vector `G` (a Vector{Int}, with the same length of `F`) 
+whereby adjacent faces whosee angle is smaller or equal to the `angleThreshold` 
+(default is pi/8) receive the same label. Hence this function allows one to find 
+all faces with a similar orientation, for instance all top or side faces of some 
+mesh. The function uses radians by default. However, buy specifying the optional 
+parameter `deg=true` the user request that angles and the `angleThreshold` are
+in degrees.  
+"""
+function faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=false, angleThreshold = pi/8, indStart = 1)  where NF where TF<:Integer where ND where TV<:Real 
+
+    A,_,con_E2F = edgefaceangles(F,V; deg=deg)
+    indToCheck = [indStart]
+    indToCheckNew = Vector{Int}()
+    G = zeros(Int,length(F)) # Group labels
+    G[indStart] = 1 
+    g = 1
+
+    while true 
+        while true 
+            for indFaceNow in indToCheck # Loop over all indices of faces to check on 
+                while true # While we are finding unvisited edges attached to the current face
+                    indEdgeFound = findfirst(x -> in(indFaceNow,x),con_E2F) # index of edge attached to face. check empty
+                    if !isnothing(indEdgeFound) # If we found an edge 
+                        if abs(A[indEdgeFound])<=angleThreshold # Is angle at this edge low enough
+                            for indFace in con_E2F[indEdgeFound] # then add the other face
+                                if indFace!=indFaceNow # If other face
+                                    # println(indFace)
+                                    push!(indToCheckNew,indFace) # Add to check for next round
+                                    G[indFace] = g # Assign group label
+                                end
+                            end
+                        end
+                        con_E2F[indEdgeFound] = [] # Empty visited edge
+                    else
+                        break
+                    end
+                end
+            end
+
+            if isempty(indToCheckNew)
+                g+=1
+                indToCheck = findfirst(x -> x==0,G)
+                break
+            else
+                indToCheck = deepcopy(indToCheckNew) # Create new set to check up on 
+                indToCheckNew = Vector{Int}() # Create new set empty again
+            end
+        end        
+
+        if isnothing(indToCheck)
+            break
+        else
+            G[indToCheck] = g # Assign group label
+        end
+    end
+    return G
 end

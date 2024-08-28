@@ -3,7 +3,7 @@ using GLMakie
 using GeometryBasics
 
 # Example geometry
-testCase = 3
+testCase = 4
 if testCase == 1
     s=1.0
     V=Vector{GeometryBasics.Point{3, Float64}}(undef,5)
@@ -30,6 +30,9 @@ elseif testCase==2
 elseif testCase==3
     r = 1.0
     F,V = geosphere(2,r)
+elseif testCase==4
+    r = 1.0
+    F,V = geosphere(2,r)
     for i = 0:1:2
         for j = 0:1:2
             for k = 0:1:2
@@ -43,7 +46,7 @@ elseif testCase==3
             end
         end
     end
-elseif testCase==4
+elseif testCase==5
     r = 1.0
     F,V = quadsphere(2,r)
     for i = 0:1:2
@@ -59,7 +62,7 @@ elseif testCase==4
             end
         end
     end
-elseif testCase==5 # Unmerged STL, each triangle is seperate group
+elseif testCase==6 # Unmerged STL, each triangle is seperate group
     # Loading a mesh
     using FileIO
     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
@@ -68,7 +71,7 @@ elseif testCase==5 # Unmerged STL, each triangle is seperate group
     # Obtain mesh faces and vertices
     F = tofaces(faces(M))
     V = topoints(coordinates(M))
-elseif testCase==6 # Merged STL for single object
+elseif testCase==7 # Merged STL for single object
     # Loading a mesh
     using FileIO
     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
@@ -78,7 +81,7 @@ elseif testCase==6 # Merged STL for single object
     F = tofaces(faces(M))
     V = topoints(coordinates(M))
     F,V,_ = mergevertices(F,V)
-elseif testCase==7 # Merged STL for single object
+elseif testCase==8 # Merged STL for single object
     # Loading a mesh
     using FileIO
     fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")
@@ -105,16 +108,16 @@ Cn = simplex2vertexdata(Fn,C,Vn)
 
 # Visualization
 
-fig = Figure(size=(800,800))
+fig = Figure(size=(1200,1200))
 
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A multi-object mesh")
 hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
 
-ax2 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Grouping")
-hp2 = poly!(ax2,GeometryBasics.Mesh(Vn,Fn), strokewidth=1,color=Cn, strokecolor=:black, shading = FastShading, transparency=false,colormap=Makie.Categorical(:viridis))
+ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Grouping")
+hp2 = poly!(ax2,GeometryBasics.Mesh(Vn,Fn), strokewidth=1,color=Cn, strokecolor=:black, shading = FastShading, transparency=false,colormap=c)
 
-Legend(fig[1, 2],[hp1,hp2],["Mesh object","Grouped mesh"])
-Colorbar(fig[2, 2],hp2, label = "Group labelling")
+Legend(fig[1, 3],[hp1,hp2],["Mesh object","Grouped mesh"])
+Colorbar(fig[1, 4],hp2, label = "Group labelling")
 
 fig
 
