@@ -4,7 +4,7 @@ using GeometryBasics
 using FileIO
 using LinearAlgebra
 
-testCase = 2
+testCase = 1
 
 if testCase==1 
     # A "zig-zag" curve with known angles for testing

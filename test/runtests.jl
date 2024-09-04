@@ -5699,3 +5699,41 @@ end
     end
 end
 
+
+@testset "faceanglesegment" verbose = true begin
+    eps_level = 1e-8
+
+    @testset "Single triangle face" begin
+        F = [TriangleFace{Int}(1, 2, 3)]
+        V = [Point{3,Float64}(x,0.0,0.0) for x in range(0.0,1.0,3)]
+        G = faceanglesegment(F,V; deg=true, angleThreshold = 22.5, indStart = 1)
+        @test G == [1]
+        @test length(G) == length(F)
+    end
+
+    @testset "Single quad face" begin
+        F = [QuadFace{Int}(1, 2, 3, 4)]
+        V = [Point{3,Float64}(x,0.0,0.0) for x in range(0.0,1.0,4)]
+        G = faceanglesegment(F,V; deg=true, angleThreshold = 22.5, indStart = 1)
+        @test G == [1]
+        @test length(G) == length(F)
+    end
+
+    @testset "Degrees" begin
+        B = [170.0,150.0,135.0,90.0,75.0,60.0,45.0,-45.0,-60.0,-75,-90.0,-135.0,-150.0,-170.0]
+        F,V = createAngleTestMesh(B;face_type=:quad)
+        G = faceanglesegment(F,V; deg=true, angleThreshold = 22.5, indStart = 1)
+        m = 1+length(B)*2
+        @test isapprox(G,collect(1:m),atol=eps_level)
+        @test length(G) == m
+    end
+
+    @testset "Radians" begin
+        B = [170.0,150.0,135.0,90.0,75.0,60.0,45.0,-45.0,-60.0,-75,-90.0,-135.0,-150.0,-170.0]
+        F,V = createAngleTestMesh(B;face_type=:quad)
+        G = faceanglesegment(F,V; deg=false, angleThreshold = 22.5*(pi/180), indStart = 1)
+        m = 1+length(B)*2
+        @test isapprox(G,collect(1:m),atol=eps_level)
+        @test length(G) == m
+    end
+end
