@@ -5680,6 +5680,51 @@ end
         @test length(A) == length(E)
     end
 
+    @testset "Cube" begin
+        M = cube(sqrt(3))
+        F = faces(M)
+        V = coordinates(M)
+        A,E,con_E2F = edgefaceangles(F,V; deg=true)
+        @test all(A.==-90.0)
+        @test length(A) == length(E)
+    end
+
+    @testset "Tetrahedron" begin
+        M = tetrahedron(1.0)
+        F = faces(M)
+        V = coordinates(M)
+        A,E,con_E2F = edgefaceangles(F,V; deg=true)
+        @test all( isapprox.(A,-109.47122063449069,atol=eps_level))
+        @test length(A) == length(E)
+    end
+
+    @testset "Icosahedron" begin
+        M = icosahedron(1.0)
+        F = faces(M)
+        V = coordinates(M)
+        A,E,con_E2F = edgefaceangles(F,V; deg=true)
+        @test all( isapprox.(A,-41.81031489577861,atol=eps_level))
+        @test length(A) == length(E)
+    end
+
+    @testset "Geosphere" begin
+        nRefine = 1
+        r = 1.0
+        F,V = geosphere(nRefine,r)
+        A,E,con_E2F = edgefaceangles(F,V; deg=true)
+        @test isapprox(minimum(A),-22.4589239152745,atol=eps_level)
+        @test isapprox(maximum(A),-18.0291021111694,atol=eps_level)
+        @test length(A) == length(E)
+
+        nRefine = 1
+        r = 1.0
+        F,V = geosphere(nRefine,r)
+        A,E,con_E2F = edgefaceangles(F,V; deg=false)
+        @test isapprox(minimum(A),-0.391982168776436,atol=eps_level)
+        @test isapprox(maximum(A),-0.31466719301816676,atol=eps_level)
+        @test length(A) == length(E)
+    end
+
     @testset "Degrees" begin
         B = [170.0,150.0,135.0,90.0,75.0,60.0,45.0,-45.0,-60.0,-75,-90.0,-135.0,-150.0,-170.0]
         F,V = createAngleTestMesh(B;face_type=:quad)
@@ -5719,13 +5764,67 @@ end
         @test length(G) == length(F)
     end
 
+    @testset "Cube" begin
+        M = cube(sqrt(3))
+        F = faces(M)
+        V = coordinates(M)
+
+        # Each face should have own group label
+        angleThreshold = 22.5
+        G = faceanglesegment(F,V; deg=true, angleThreshold = angleThreshold, indStart = 1)
+        @test isapprox(G,collect(1:length(F)),atol=eps_level)
+        @test length(G) == length(F)
+
+        # Should be single group
+        angleThreshold = 110
+        G = faceanglesegment(F,V; deg=true, angleThreshold = angleThreshold, indStart = 1)
+        @test isapprox(G,ones(length(F)),atol=eps_level)
+        @test length(G) == length(F)
+    end
+
+    @testset "Tetrahedron" begin
+        M = tetrahedron(1.0)
+        F = faces(M)
+        V = coordinates(M)
+ 
+        # Each face should have own group label
+        angleThreshold = 22.5
+        G = faceanglesegment(F,V; deg=true, angleThreshold = angleThreshold, indStart = 1)
+        @test isapprox(G,collect(1:length(F)),atol=eps_level)
+        @test length(G) == length(F)
+
+        # Should be single group
+        angleThreshold = 110
+        G = faceanglesegment(F,V; deg=true, angleThreshold = angleThreshold, indStart = 1)
+        @test isapprox(G,ones(length(F)),atol=eps_level)
+        @test length(G) == length(F)
+    end
+
+    @testset "Icosahedron" begin
+        M = icosahedron(1.0)
+        F = faces(M)
+        V = coordinates(M)
+
+        # Each face should have own group label
+        angleThreshold = 22.5
+        G = faceanglesegment(F,V; deg=true, angleThreshold = angleThreshold, indStart = 1)
+        @test isapprox(G,collect(1:length(F)),atol=eps_level)
+        @test length(G) == length(F)
+
+        # Should be single group
+        angleThreshold = 110
+        G = faceanglesegment(F,V; deg=true, angleThreshold = angleThreshold, indStart = 1)
+        @test isapprox(G,ones(length(F)),atol=eps_level)
+        @test length(G) == length(F)
+    end
+
     @testset "Degrees" begin
         B = [170.0,150.0,135.0,90.0,75.0,60.0,45.0,-45.0,-60.0,-75,-90.0,-135.0,-150.0,-170.0]
         F,V = createAngleTestMesh(B;face_type=:quad)
         G = faceanglesegment(F,V; deg=true, angleThreshold = 22.5, indStart = 1)
         m = 1+length(B)*2
         @test isapprox(G,collect(1:m),atol=eps_level)
-        @test length(G) == m
+        @test length(G) == length(F)
     end
 
     @testset "Radians" begin
@@ -5734,6 +5833,6 @@ end
         G = faceanglesegment(F,V; deg=false, angleThreshold = 22.5*(pi/180), indStart = 1)
         m = 1+length(B)*2
         @test isapprox(G,collect(1:m),atol=eps_level)
-        @test length(G) == m
+        @test length(G) == length(F)
     end
 end
