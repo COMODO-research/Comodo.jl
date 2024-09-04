@@ -365,3 +365,78 @@ Comodo.scalesimplex
 ```@docs 
 Comodo.subcurve
 ```
+
+## `dualclad`
+```@docs 
+Comodo.dualclad
+```
+
+## `tet2hex`
+```@docs 
+Comodo.tet2hex
+```
+
+## `element2faces`
+```@docs 
+Comodo.element2faces
+```
+
+## `subhex`
+```@docs 
+Comodo.subhex
+```
+
+## `rhombicdodecahedron`
+```@docs 
+Comodo.rhombicdodecahedron
+```
+
+## `tri2quad`
+```@docs 
+Comodo.tri2quad
+```
+
+## `tetgenmesh`
+```@docs 
+Comodo.tetgenmesh
+```
+
+## `surfacevolume`
+```@docs 
+Comodo.surfacevolume
+```
+
+## `tetvolume`
+```@docs 
+Comodo.tetvolume
+```
+
+## `extrudefaces`
+```@docs 
+Comodo.extrudefaces
+```
+
+## `filletcurve`
+```@docs 
+Comodo.filletcurve
+```
+
+## `squircle`
+```@docs 
+Comodo.squircle
+```
+
+## `circlerange`
+```@docs 
+Comodo.circlerange
+```
+
+## `edgefaceangles`
+```@docs 
+Comodo.edgefaceangles
+```
+
+## `faceanglesegment`
+```@docs 
+Comodo.faceanglesegment
+```

@@ -4493,6 +4493,15 @@ function subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int; direction=0) 
     end
 end
 
+"""
+    rhombicdodecahedron(r = 1.0)
+
+Creates mesh for rhombicdodecahedron
+
+# Description
+This function creates the faces `F` and vertices `V` for a rhombicdodecahedron. 
+The radius of the shape is set using the input radius `r`. 
+"""
 function rhombicdodecahedron(r = 1.0)
     F = Vector{QuadFace{Int}}(undef,12)
     F[ 1] = [ 1, 10,  5,  9]
@@ -4532,7 +4541,18 @@ function rhombicdodecahedron(r = 1.0)
     return F,V
 end
 
+"""
+    tri2quad(F,V; method=:split)
 
+Converts triangles to quads
+
+# Description
+This function converts the input triangular mesh, defined by the faces `F` and 
+vertices `V`, to a quadrangulation. The method for this conversion is set using
+the attribute `method` which can be set to `:split`, splitting each triangle 
+into 3 quads by introducing a new central node, or `:rhombic`. whereby each 
+triangle edge is used to construct a rhombic quadrilateral face. 
+"""
 function tri2quad(F,V; method=:split)
     # Get mesh edges 
     E = meshedges(F) # Non-unique edges
@@ -4767,6 +4787,19 @@ function extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; extent
     return E, VE
 end
 
+
+"""
+    filletcurve(V::Vector{Point{NV,TV}}; rMax::Union{Vector{T},T,Nothing}=nothing, constrain_method = :max, n=25, close_loop = false, eps_level = 1e-6) where TV<:Real where NV where T<:Real
+
+Fillets/rounds curves
+
+# Description
+The function takes in a curve defined by the points `V` and applies filleting
+(or rounding) to each "corner" (i.e. a point between two neighbouring points). 
+The maximum radius `rMax` is used as the largest possible radius to use. If this, 
+radius is not possible (e.g. if input points are too close), then a lower Radius
+is used. 
+"""
 function filletcurve(V::Vector{Point{NV,TV}}; rMax::Union{Vector{T},T,Nothing}=nothing, constrain_method = :max, n=25, close_loop = false, eps_level = 1e-6) where TV<:Real where NV where T<:Real
     VP = deepcopy(V)
     if length(VP)>2
