@@ -66,7 +66,7 @@ linewidth = 3
 
 fig = Figure(size=(800,800))
 
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Edge angles")
+ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Imported mesh")
 hp1 = poly!(ax1,GeometryBasics.Mesh(Vn,Fn), color=:white, shading = FastShading, transparency=false,strokecolor=:black,strokewidth=0.25)
 # normalplot(ax1,F,V)
 # hp_A = wireframe!(ax1,GeometryBasics.Mesh(Vn_E,En),linewidth=linewidth, transparency=false, color=An,colormap=:Spectral,colorrange = (-120, 120))

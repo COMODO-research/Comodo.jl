@@ -4998,11 +4998,11 @@ the unique edge vector `E_uni` as well as the edge-to-face connectivity vector
 `,con_E2F`. 
 """
 function edgefaceangles(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=false) where NF where TF<:Integer where ND where TV<:Real 
-    if length(F)>1 # More than one face so compute connectivity
-        E = meshedges(F) # The non-unique mesh edges 
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true) # Unique mesh edges and inverse indices
-        con_E2F = con_edge_face(F,E_uni,indReverse) # The edge-to-face connectivity
+    E = meshedges(F) # The non-unique mesh edges 
+    E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true) # Unique mesh edges and inverse indices
+    con_E2F = con_edge_face(F,E_uni,indReverse) # The edge-to-face connectivity
 
+    if length(F)>1 # More than one face so compute connectivity
         A = fill(TV(NaN),length(E_uni)) # Vector for storing angles for each edge
         for i_e in eachindex(E_uni) # Looping over all unique edges (e.g. 1-2 is the same as 2-1)
             if length(con_E2F[i_e])==2 # If the edge is not a boundary edge it touches 2 faces and angles can be computed           
@@ -5036,8 +5036,8 @@ function edgefaceangles(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=
             end
         end
         return A,E_uni,con_E2F
-    else # Just one face, so return NaN
-        return [fill(NaN,length(F[1]))]
+    else # Just one face, so return NaNs for the angles
+        return fill(NaN,length(E)), E_uni,con_E2F
     end
 end
 

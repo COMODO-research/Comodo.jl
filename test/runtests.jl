@@ -5645,3 +5645,57 @@ end
     end
 
 end
+
+# Function to create a "zig-zag" curve with known angles for testing
+function createAngleTestMesh(B;face_type=:quad)
+    r = 1.0
+    V = Vector{Point{3, Float64}}()
+    push!(V,[0.0, 0.0, 0.0])
+    for b in B
+        push!(V,V[end]+[r, 0.0, 0.0])
+        push!(V,V[end]+[r*cosd(b),r*sind(b), 0.0])
+    end
+    push!(V,V[end]+[r, 0.0, 0.0])
+
+    F,V = extrudecurve(V; extent=1, direction=:positive, n=Vec{3, Float64}(0.0,0.0,-1.0), close_loop=false,face_type=face_type)
+    return F,V 
+end
+
+@testset "edgefaceangles" verbose = true begin
+    eps_level = 1e-8
+
+    @testset "Single triangle face" begin
+        F = [TriangleFace{Int}(1, 2, 3)]
+        V = [Point{3,Float64}(x,0.0,0.0) for x in range(0.0,1.0,3)]
+        A,E,con_E2F = edgefaceangles(F,V; deg=true)
+        @test all(isnan.(A))
+        @test length(A) == length(E)
+    end
+
+    @testset "Single quad face" begin
+        F = [QuadFace{Int}(1, 2, 3, 4)]
+        V = [Point{3,Float64}(x,0.0,0.0) for x in range(0.0,1.0,4)]
+        A,E,con_E2F = edgefaceangles(F,V; deg=true)
+        @test all(isnan.(A))
+        @test length(A) == length(E)
+    end
+
+    @testset "Degrees" begin
+        B = [170.0,150.0,135.0,90.0,75.0,60.0,45.0,-45.0,-60.0,-75,-90.0,-135.0,-150.0,-170.0]
+        F,V = createAngleTestMesh(B;face_type=:quad)
+        A,E,con_E2F = edgefaceangles(F,V; deg=true)
+        A_not_nan = A[.~isnan.(A)]    
+        @test isapprox(A_not_nan,[170, -170, 150, -150, 135, -135, 90, -90, 75, -75, 60, -60, 45, -45, -45, 45, -60, 60, -75, 75, -90, 90, -135, 135, -150, 150, -170, 170], atol=eps_level)
+        @test length(A) == length(E)
+    end
+
+    @testset "Radians" begin
+        B = [170.0,150.0,135.0,90.0,75.0,60.0,45.0,-45.0,-60.0,-75,-90.0,-135.0,-150.0,-170.0]
+        F,V = createAngleTestMesh(B;face_type=:quad)
+        A,E,con_E2F = edgefaceangles(F,V; deg=false)
+        A_not_nan = A[.~isnan.(A)]    
+        @test isapprox(A_not_nan,[2.9670597283903604, -2.9670597283903604, 2.6179938779914944, -2.6179938779914944, 2.356194490192345, -2.356194490192345, 1.5707963267948966, -1.5707963267948966, 1.3089969389957472, -1.3089969389957472, 1.0471975511965976, -1.0471975511965976, 0.7853981633974483, -0.7853981633974483, -0.7853981633974483, 0.7853981633974483, -1.0471975511965976, 1.0471975511965976, -1.3089969389957472, 1.3089969389957472, -1.5707963267948966, 1.5707963267948966, -2.356194490192345, 2.356194490192345, -2.6179938779914944, 2.6179938779914944, -2.9670597283903604, 2.9670597283903604], atol=eps_level)
+        @test length(A) == length(E)
+    end
+end
+
