@@ -6,7 +6,7 @@ using Statistics
 using LinearAlgebra
 
 
-# Build Hemis_sphere
+# Demo for building a  hemissphere from a isosaheddron .
 
 # Example geometry for a sphere that is cut so some edges are boundary edges
 n = 1# Number of refinement steps of the geodesic sphere
