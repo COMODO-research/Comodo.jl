@@ -31,7 +31,7 @@ export gridpoints, gridpoints_equilateral
 export interp_biharmonic_spline, interp_biharmonic, nbezier
 export ind2sub, sub2ind, meshedges, edgelengths 
 export gunique, unique_simplices, unique_dict, occursonce
-export subtri, subquad, geosphere, quad2tri 
+export subtri, subquad, geosphere,hemisphere,quad2tri 
 export icosahedron, tetrahedron, cube, dodecahedron, octahedron, platonicsolid
 export tofaces, topoints, togeometrybasics_mesh
 export quadplate, quadsphere, smoothmesh_laplacian, smoothmesh_hc
