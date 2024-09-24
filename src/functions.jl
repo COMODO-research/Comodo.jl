@@ -1847,6 +1847,11 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
 end
 
 
+function pushtoradius_(v,r=1.0)    
+    return v.*(r/sqrt(sum(v.^2))) # Push to sphere       
+end
+
+
 """
     geosphere(n::Int,r::T) where T <: Real
 
@@ -1865,13 +1870,70 @@ function geosphere(n::Int,r::T) where T <: Real
     M = platonicsolid(4,r)
     V = coordinates(M)
     F = faces(M)
-    for _ = 1:n
+    for _ = 1:n        
+        numPointsNow = length(V)
         F,V = subtri(F,V,1)
-        for q in eachindex(V)
-            v = V[q]
-            rn = sqrt(sum(v.^2))
-            V[q] = v .* (r/rn)
+        @inbounds for i in numPointsNow+1:length(V)
+            V[i] = pushtoradius_(V[i],r) # Overwrite points
         end
+    end
+    return F,V
+end
+
+"""
+    geosphere(n::Int,r::T) where T <: Real
+
+Returns a geodesic sphere triangulation
+
+# Description
+
+This function returns a geodesic hemispherephere triangulation based on the number of
+refinement iterations `n` and the radius `r`. Geodesic spheres (aka Buckminster-Fuller
+ spheres) are triangulations of a sphere that have near uniform edge lenghts. 
+The algorithm starts with a regular icosahedron that is adjusted to generate a half icosahedron. 
+Next this icosahedron is refined  `n` times, while nodes are pushed to a sphere surface with radius `r` at each
+iteration. 
+"""
+function hemisphere(n::Int,r::T) where T <: Real
+    if n == 0 #creates a half a isosaheddron
+        F,V = geosphere(0,r) # Creating the faces and vertices of a full sphere
+
+        VC = simplexcenter(F,V) # Finding triangle centre coordiantes
+        F = [F[i] for i in findall(map(v-> v[3]>=0,VC))] # Remove some faces using z of central coordinates
+        F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
+
+        for (i,v) in enumerate(V)
+            if v[3]<0
+                v = Point3([v[1],v[2],0.0]) # Make z zero
+                V[i] = pushtoradius_(v,r) # Overwrite point        
+            end
+        end
+    elseif n>0
+        F,V = geosphere(1,r) # Creating the faces and vertices of a full sphere
+
+        ϕ = Base.MathConstants.golden # (1.0+sqrt(5.0))/2.0, Golden ratio
+        s = r/sqrt(ϕ + 2.0)
+        t = ϕ*s
+        α = atan(t/s) # angle needed for roating the sphere to 90 deg
+        Q = RotXYZ(0.0,α,0.0)
+        V = [GeometryBasics.Point{3, Float64}(Q*v) for v in V] 
+
+        VC = simplexcenter(F,V) # Finding triangle centre coordiantes
+        F = [F[i] for i in findall(map(v-> v[3]>=0,VC))] # Remove some faces at central coordinates z=0
+        F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
+
+        if n>1
+            for _ = 1:n-1
+                numPointsNow = length(V)
+                F,V = subtri(F,V,1)
+                @inbounds for i in numPointsNow+1:length(V)
+                    V[i] = pushtoradius_(V[i],r) # Overwrite points
+                end
+            end
+        end
+
+    else
+        # error message here
     end
     return F,V
 end
