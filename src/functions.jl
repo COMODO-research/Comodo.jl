@@ -1829,12 +1829,12 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
         Fn = Vector{QuadFace{TF}}(undef,length(F)*4)        
         nv = length(V)
         ne = length(Eu)
-        for q in eachindex(F)
-            i = 1 + (q-1)*4
+        for q in eachindex(F)            
             for ii = 0:3
-                Fn[i+ii] = QuadFace{TF}([F[q][ii+1], con_F2E[q][ii+1]+nv, q+nv+ne, con_F2E[q][1+mod(3+ii,4)]+nv])                
+                Fn[q+ii*length(F)] = QuadFace{TF}([F[q][ii+1], con_F2E[q][ii+1]+nv, q+nv+ne, con_F2E[q][1+mod(3+ii,4)]+nv])                
             end            
         end
+
         return Fn,Vn
     elseif n>1
         for _ =1:n
@@ -1853,7 +1853,7 @@ end
 
 
 """
-    geosphere(n::Int,r::T) where T <: Real
+    geosphere(n::Int,r::T; method=:linear) where T <: Real
 
 Returns a geodesic sphere triangulation
 
@@ -1864,17 +1864,28 @@ refinement iterations `n` and the radius `r`. Geodesic spheres (aka Buckminster-
  spheres) are triangulations of a sphere that have near uniform edge lenghts. 
 The algorithm starts with a regular icosahedron. Next this icosahedron is refined 
 `n` times, while nodes are pushed to a sphere surface with radius `r` at each
-iteration. 
+iteration. Two methods are available, i.e. `:linear` (default) and `:Loop` 
+(see also `subtri`). The former features simply linear splitting while the latter
+features the Loop method which may produce a smoother result.
 """
-function geosphere(n::Int,r::T) where T <: Real
+function geosphere(n::Int,r::T; method=:linear) where T <: Real
     M = platonicsolid(4,r)
     V = coordinates(M)
-    F = faces(M)
-    for _ = 1:n        
-        numPointsNow = length(V)
-        F,V = subtri(F,V,1)
-        @inbounds for i in numPointsNow+1:length(V)
-            V[i] = pushtoradius_(V[i],r) # Overwrite points
+    F = faces(M)    
+    for _ = 1:n                
+        # Set push start
+        if method == :linear 
+            s = length(V) # push from here as linear leaves original in place 
+        elseif method == :Loop 
+            s = 1 # push all as Loop alters coordinates
+        end
+
+        # Sub-divide sphere
+        F,V = subtri(F,V,1; method=method)
+
+        # Push altered/new points to sphere
+        @inbounds for i in s:length(V) 
+            V[i] = pushtoradius_(V[i],r) 
         end
     end
     return F,V
@@ -1894,7 +1905,7 @@ The algorithm starts with a regular icosahedron that is adjusted to generate a h
 Next this icosahedron is refined  `n` times, while nodes are pushed to a sphere surface with radius `r` at each
 iteration. 
 """
-function hemisphere(n::Int,r::T; face_type=:tri) where T <: Real    
+function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real    
     if n<0
         throw(ArgumentError("n should be >= 0"))
     end
@@ -1904,7 +1915,7 @@ function hemisphere(n::Int,r::T; face_type=:tri) where T <: Real
         F,V = geosphere(1,r) # A once refined icosahedron has an "equator" line
 
         # Rotating sphere so a vertex "points north" and equator is in xy-plane            
-        Q = RotXYZ(0.0,atan(Base.MathConstants.golden),0.0) # Rotation matrix
+        Q = RotXYZ(0.0,atan(Base.MathConstants.golden),0.0) # Rotation matrix        
         V = [Point{3, Float64}(Q*v) for v in V] # Rotate vertices        
     elseif face_type == :quad        
         F,V = quadsphere(1,r) # A once refined cube has an "equator" line        
@@ -1917,18 +1928,51 @@ function hemisphere(n::Int,r::T; face_type=:tri) where T <: Real
     F = [F[i] for i in findall(map(f-> mean([V[j][3] for j in f])>=-searchTol,F))] # Remove faces below equator
     F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
 
+    if closed==true 
+        if face_type == :tri           
+            Fb,Vb = tridisc(r,1; ngon=5, method=:linear, orientation=:down)
+            Q = RotXYZ(0.0,0.0,pi/2.0) # Rotation matrix
+            Vb = [Point{3, Float64}(Q*v) for v in Vb] # Rotate vertices   
+        elseif face_type == :quad  
+            Fb,Vb = quaddisc(r,0; method=:linear, orientation=:down)                   
+        end
+        
+        # Add base and merge nodes 
+        indTopFaces = 1:length(F) # Indices of top
+        append!(F, [f .+ length(V) for f in Fb])
+        append!(V,Vb)
+        F,V,_,_ = mergevertices(F,V)        
+    end
+
     # Refine sphere if needed 
     if n>0 # If larger then refining is needed       
-        for _ = 1:n # Refine once n times
-            numPointsNow = length(V) # Number of points prior to refining
-            # Change refine behaviour based on face_type
-            if face_type == :tri        
-                F,V = subtri(F,V,1)
+        @inbounds for _ = 1:n # Refine once n times
+            nv = length(V) # Number of points prior to refining
+            nf = length(F)
+
+            # Change refine behaviour based on face_type            
+            if face_type == :tri                        
+                F,V = subtri(F,V,1)            
             elseif face_type == :quad        
-                F,V = subquad(F,V,1)
+                F,V = subquad(F,V,1)                
             end
+                        
+            if closed == true
+                indTopFaces = [j .+ i*nf  for i = 0:3 for j in indTopFaces]
+                indPush = Vector{Int64}()
+                for f in F[indTopFaces]
+                    for i in f
+                        if i>nv
+                            push!(indPush,i)
+                        end
+                    end
+                end                 
+            else
+                indPush = nv+1:length(V)
+            end
+
             # Now push newly introduced points to the sphere
-            @inbounds for i in numPointsNow+1:length(V)
+            @inbounds for i in indPush
                 V[i] = pushtoradius_(V[i],r) # Overwrite points
             end
         end        
@@ -2372,16 +2416,17 @@ point set.
 function mergevertices(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; roundVertices = true, numDigitsMerge=nothing) where N where TF<:Integer where ND where TV<:Real
 
     m = length(V)
-    if roundVertices
+    if roundVertices == true
         if isnothing(numDigitsMerge)
             E = meshedges(F)
             d = [sqrt( sum((V[e[1]] .- V[e[2]]).^2) ) for e in E]
             pointSpacing = mean(d)            
             numDigitsMerge = 6-round(Int,log10(pointSpacing))
         end
-
+        
         # Create rounded coordinates to help obtain unique set
-        VR = [round.(v,digits = numDigitsMerge) for v in V]
+        # Note -0.0+0.0 = 0.0 so addition of zero points helps avoid 0.0 and -0.0 being seen as unique
+        VR = [round.(v,digits = numDigitsMerge)+Point{ND,TV}(0.0,0.0,0.0) for v in V]
 
         # Get unique indices and reverse for rounded vertices
         _,ind1,ind2 = gunique(VR; return_index=true, return_inverse=true,sort_entries=false)
@@ -2392,8 +2437,8 @@ function mergevertices(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; roundV
     
     if length(V) != m # If the length has changed
         # Correct indices for faces
-        for q in eachindex(F)
-            F[q] = ind2[F[q]]
+        for i in eachindex(F)
+            F[i] = ind2[F[i]]
         end
     end
 
@@ -2416,7 +2461,7 @@ in the range (0,1). If `λ=0` then no smoothing occurs. If `λ=1` then pure
 Laplacian mean based smoothing occurs. For intermediate values a linear blending
 between the two occurs.  
 """
-function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, λ=0.5; con_V2V=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
+function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, λ=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
     
     if λ>1.0 || λ<0.0
         throw(ArgumentError("λ should be in the range 0-1"))
@@ -2431,7 +2476,9 @@ function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}},
                 E_uni = meshedges(F;unique_only=true)
                 con_V2V = con_vertex_vertex(E_uni)
             end        
-            for _ = 1:n
+            c = 0
+            while c<n 
+            # for _ = 1:n
                 Vs = deepcopy(V)
                 for q in eachindex(V)                
                     Vs[q] = (1.0-λ).*Vs[q] .+ λ*mean(V[con_V2V[q]]) # Linear blend between original and pure Laplacian
@@ -2439,8 +2486,19 @@ function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}},
                 if !isnothing(constrained_points)
                     Vs[constrained_points] = V[constrained_points] # Put back constrained points
                 end
+                if !isnothing(tolDist) # Include tolerance based termination
+                    d = 0.0
+                    for i in eachindex(V)
+                        d+=sqrt(sum((V[i].-Vs[i]).^2)) # Sum of distances
+                    end
+                    if d<tolDist # Sum of distance smaller than tolerance?
+                        break
+                    end            
+                end
+                c+=1 
                 V = Vs
-            end
+                
+            end            
         else #n<0
             throw(ArgumentError("n should be greater or equal to 0"))
         end
@@ -2450,7 +2508,7 @@ end
 
 
 """
-    smoothmesh_hc(F,V, con_V2V=nothing; n=1, α=0.1, β=0.5, tolDist=nothing)
+    smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, α=0.1, β=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
 
 # Description 
 
@@ -2496,13 +2554,17 @@ function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, �
                 # point and Q (which is P before laplacian)
                 B[i] = P[i] .- (α.*V[i] .+ (1.0-α).*Q[i])
             end
-            d = 0.0        
+            
             for i in eachindex(V)      
                 # Push points back based on blending between pure difference vector
                 # B and the Laplacian mean of these      
                 P[i] = P[i] .- (β.*B[i] .+ (1.0-β).* mean(B[con_V2V[i]]))
             end   
-            c+=1 
+            
+            if !isnothing(constrained_points)
+                P[constrained_points] = V[constrained_points] # Put back constrained points
+            end
+
             if !isnothing(tolDist) # Include tolerance based termination
                 d = 0.0
                 for i in eachindex(V)
@@ -2512,9 +2574,7 @@ function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, �
                     break
                 end            
             end
-            if !isnothing(constrained_points)
-                P[constrained_points] = V[constrained_points] # Put back constrained points
-            end
+            c+=1 
         end
         return P
     end
@@ -2522,7 +2582,7 @@ end
 
 
 """
-    quadplate(plateDim,plateElem)
+    quadplate(plateDim,plateElem; orientation=:up)
 
 Returns a quad mesh for a plate
 
@@ -2532,27 +2592,31 @@ plate. The dimensions in the x-, and y-direction are specified in the input vect
 `plateDim`, and the number of elements to use in each direction in the input 
 vector `plateElem`. 
 """
-function quadplate(plateDim,plateElem)
+function quadplate(plateDim,plateElem; orientation=:up)
+
+    if  !in(orientation,(:up,:down))        
+        throw(ArgumentError("Orientation not supported. Use :up or :down"))
+    end 
+    
     num_x = plateElem[1]+1
     num_y = plateElem[2]+1
     V = gridpoints(range(-plateDim[1]/2,plateDim[1]/2,num_x),range(-plateDim[2]/2,plateDim[2]/2,num_y),0.0)
-    # V = Vector{Point{3, Float64}}()
-    # for y = range(-plateDim[2]/2,plateDim[2]/2,num_y)
-    #     for x = range(-plateDim[1]/2,plateDim[1]/2,num_x)
-    #         push!(V,Point{3, Float64}(x,y,0.0))
-    #     end
-    # end
-
+    
     F = Vector{QuadFace{Int}}(undef,prod(plateElem))
     ij2ind(i,j) = i + ((j-1)*num_x) # function to convert subscript to linear indices    
     c = 1
-    for i = 1:plateElem[1]
-        for j = 1:plateElem[2]        
+    @inbounds for i = 1:plateElem[1]
+        @inbounds for j = 1:plateElem[2]        
             F[c] = QuadFace{Int}([ij2ind(i,j),ij2ind(i+1,j),ij2ind(i+1,j+1),ij2ind(i,j+1)])
             c += 1
         end
     end
-    return F, V
+    
+    if orientation == :up
+        return F, V
+    else#if orientation == :down
+        return invert_faces(F), V    
+    end    
 end
 
 """
@@ -3476,9 +3540,7 @@ function mesh_curvature_polynomial(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,
         n = NV[q] # The current vertex normal
         Q = rotation_between(n,nz) # The rotation between the current normal and the z-axis
         ind = con_V2V[q]        
-        # ind = push!(ind,q)
-
-        # println(q,ind)
+  
         if growsteps>1            
             for _ in 1:(growsteps-1)
                 ind = unique(reduce(vcat,con_V2V[ind]))
@@ -3487,14 +3549,7 @@ function mesh_curvature_polynomial(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,
         end        
         
         vr = [Q*(v-V[q]) for v in V[ind]] # Rotate point set to a 2D problem
-                
-        # if !isnothing(indBoundary)        
-        #     if in(q,indBoundary)
-        #         # println("wow")
-        #         push!(vr,normalizevector(mean(-vr)))
-        #     end
-        # end
-
+  
         # Set up polynomial fit
         T = Matrix{Float64}(undef,(length(ind),5))
         w = Vector{Float64}(undef,length(ind))
@@ -3529,9 +3584,6 @@ function mesh_curvature_polynomial(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,
             U1[q] = Vec3{Float64}(NaN,NaN,NaN)
             U2[q] = Vec3{Float64}(NaN,NaN,NaN)
         end
-       
-
-   
     end
 
     H = 0.5 * (K1.+K2) # Mean curvature
@@ -3979,42 +4031,123 @@ function batman(n::Int; symmetric = false, dir=:acw)
 end
 
 """
-    tridisc(r=1.0,n=0)
+    tridisc(r=1.0,n=0; ngon=6, method = :linear, orientation=:up)
 
 # Description
 
 Generates the faces `F` and vertices `V` for a triangulated disc (circle). The 
 algorithm starts with a triangulated hexagon (obtained if `n=0`) and uses 
-iterative subtriangulation circular coordinate correction to obtain the final 
-mesh. 
+iterative subtriangulation, and uses iterative subdivision (and pushing of 
+boundary points to circular boundary) to obtain the final mesh. The subdivision
+`method` is an optional input, and is either `:Loop` (default) or `:linear`. 
+Lastly the optional input `orientation`, which can be `:up` or `:down` sets the 
+face normal direction. 
 """
-function tridisc(r=1.0,n=0)
+function tridisc(r=1.0,n=0; ngon=6, method=:Loop, orientation=:up)
+    if  !in(orientation,(:up,:down))        
+        throw(ArgumentError("Orientation not supported. Use :up or :down"))
+    end 
+
     # Create a triangulated hexagon
-    V = circlepoints(r,6)
+    V = circlepoints(r,ngon)
     push!(V,Point{3,Float64}(0.0,0.0,0.0))
-    F = [TriangleFace{Int}(1,2,7), TriangleFace{Int}(2,3,7), TriangleFace{Int}(3,4,7), TriangleFace{Int}(4,5,7), TriangleFace{Int}(5,6,7), TriangleFace{Int}(6,1,7)]
+    if orientation==:up
+        F = [TriangleFace{Int64}(i,mod1(i+1,ngon),ngon+1) for i in 1:ngon]
+    else#if orientation==:down
+        F = [TriangleFace{Int64}(i,ngon+1,mod1(i+1,ngon)) for i in 1:ngon]    
+    end
 
     # Refine mesh n times
     if n>0
         @inbounds for _ = 1:n            
-            F,V = subtri(F,V,1; method = :linear)
-            indB = elements2indices(boundaryedges(F))
-            V[indB] = r.*V[indB]./norm.(V[indB]) # Push to conform to circle 
-        end
-        indB = elements2indices(boundaryedges(F))
+            nv = length(V)             
+            F,V = subtri(F,V,1; method = method)
+            indBoundary = unique(reduce(vcat,boundaryedges(F)))
+            @inbounds for i in indBoundary
+                if i>nv || method == :Loop
+                    V[i] *= r/norm(V[i])
+                end
+            end            
+        end        
     end
     return F,V
 end
 
-# """
-#     triplate(xSpan,ySpan,pointSpacing::T) where T <: Real    
+"""
+    triplate(xSpan,ySpan,pointSpacing::T) where T <: Real    
 
-# # Description
-# Generates a triangulated mesh for a plate.
-# """
-# function triplate(xSpan,ySpan,pointSpacing::T) where T <: Real    
-#     return gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = true, rectangular=true)
-# end
+# Description
+Generates a triangulated mesh for a plate.
+"""
+function triplate(plateDim,pointSpacing::T; orientation=:up) where T <: Real 
+    if  !in(orientation,(:up,:down))        
+        throw(ArgumentError("Orientation not supported. Use :up or :down"))
+    end 
+
+    F, V = gridpoints_equilateral((-plateDim[1]/2,plateDim[1]/2),(-plateDim[2]/2,plateDim[2]/2),pointSpacing; return_faces = true, rectangular=true)
+    if orientation == :down
+        return invert_faces(F), V
+    else
+        return F,V
+    end
+end
+
+"""
+    quaddisc(r,n; method = :Catmull_Clark, orientation=:up)
+
+# Description
+
+Generates the faces `F` and vertices `V` for a quadrangulated (circle). The 
+algorithm starts with 12 quadrilateral faces and an octagon boundary  
+(obtained if `n=0`), and uses iterative subdivision (and pushing of boundary 
+points to circular boundary) to obtain the final mesh. The subdivision
+`method` is an optional input, and is either `:Catmull_Clark` (default) or 
+`:linear`. Lastly the optional input `orientation`, which can be `:up` or 
+`:down` sets the face normal direction. 
+"""
+function quaddisc(r,n; method = :Catmull_Clark, orientation=:up)
+
+    if  !in(orientation,(:up,:down))        
+        throw(ArgumentError("Orientation not supported. Use :up or :down"))
+    end 
+
+    # Create disc mesh 
+    V = circlepoints(r,8)
+    V = append!(V, circlepoints(r/2,8)) 
+    V = push!(V, Point{3,Float64}(0.0,0.0,0.0))
+    F = Vector{QuadFace{Int64}}(undef,12)
+
+    # Add outer ring
+    for i = 1:8
+        F[i] = QuadFace{Int64}(i, mod1(i+1,8), mod1(i+1+8,8)+8, mod1(i+8,16))
+    end
+
+    # Add core
+    for i = 1:4
+        j = 9 + (i-1)*2
+        F[i+8] = QuadFace{Int64}(j, mod1(j+1+8,8)+8, mod1(j+2+8,8)+8, 17)
+    end
+    
+    # Invert if needed
+    if orientation==:down
+        F = invert_faces(F)    
+    end
+    
+    # Refine
+    for _ = 1:1:n
+        nv = length(V)             
+        F,V = subquad(F,V,1; method=method) 
+        indBoundary = unique(reduce(vcat,boundaryedges(F)))
+        @inbounds for i in indBoundary
+            if i>nv || method == :Catmull_Clark
+                V[i] *= r/norm(V[i])
+            end
+        end
+        # e = (2.0 .* pi .* r) / length(indBoundary)#(8.0 .* 2.0 .^(n.-1))        
+        # V = smoothmesh_laplacian(F,V, 1e3; constrained_points=indBoundary, tolDist=e/100)
+    end
+    return F,V
+end
 
 
 """
@@ -5171,8 +5304,7 @@ function faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; de
                     if !isnothing(indEdgeFound) # If we found an edge 
                         if abs(A[indEdgeFound])<=angleThreshold # Is angle at this edge low enough
                             for indFace in con_E2F[indEdgeFound] # then add the other face
-                                if indFace!=indFaceNow # If other face
-                                    # println(indFace)
+                                if indFace!=indFaceNow # If other face                                    
                                     push!(indToCheckNew,indFace) # Add to check for next round
                                     G[indFace] = g # Assign group label
                                 end

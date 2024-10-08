@@ -34,7 +34,7 @@ export gunique, unique_simplices, unique_dict, occursonce
 export subtri, subquad, geosphere,hemisphere,quad2tri 
 export icosahedron, tetrahedron, cube, dodecahedron, octahedron, platonicsolid
 export tofaces, topoints, togeometrybasics_mesh
-export quadplate, quadsphere, smoothmesh_laplacian, smoothmesh_hc
+export triplate, quadplate, quadsphere, smoothmesh_laplacian, smoothmesh_hc
 export mergevertices, separate_vertices, remove_unused_vertices
 export edgecrossproduct, facearea, facenormal, vertexnormal, normalizevector
 export con_edge_face, con_edge_edge, con_face_edge, con_face_face, con_face_face_v, con_vertex_edge, con_vertex_vertex_f
@@ -45,7 +45,7 @@ export edgeangles, count_edge_face, boundaryedges, boundaryfaces, boundaryfacein
 export pointspacingmean, extrudecurve, meshgroup, ray_triangle_intersect
 export distmarch, mesh_curvature_polynomial, curve_length, evenly_sample, evenly_space
 export invert_faces, kabsch_rot, sweeploft, loftpoints2surf, revolvecurve
-export batman, tridisc, triplate, regiontrimesh, scalesimplex, subcurve, dualclad
+export batman, tridisc, quaddisc, regiontrimesh, scalesimplex, subcurve, dualclad
 export tet2hex, element2faces, subhex, rhombicdodecahedron, tri2quad
 export tetgenmesh, surfacevolume, tetvolume, extrudefaces, filletcurve
 export squircle, circlerange, edgefaceangles,faceanglesegment

@@ -51,11 +51,11 @@ ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z",
 wireframe!(ax1,M, linewidth=lineWidth,color=:red, overdraw=false)
 poly!(ax1,GeometryBasics.Mesh(Vn1,Fn1), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
 
-ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Linearly, n=2")
+ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Linear, n=2")
 wireframe!(ax2,M, linewidth=lineWidth,color=:red, overdraw=false)
 poly!(ax2,GeometryBasics.Mesh(Vn2,Fn2), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
 
-ax3 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Linearly, n=3")
+ax3 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Linear, n=3")
 hp1 = wireframe!(ax3,M, linewidth=lineWidth,color=:red, overdraw=false)
 hp2 = poly!(ax3,GeometryBasics.Mesh(Vn3,Fn3), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
 Legend(fig[1, 4],[hp1,hp2],["Initial","Refined"])
