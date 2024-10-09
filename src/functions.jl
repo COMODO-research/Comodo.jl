@@ -3518,17 +3518,6 @@ function mesh_curvature_polynomial(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,
          con_V2V = con_vertex_vertex(E_uni,V)
     end
 
-    if isnothing(growsteps)
-        growsteps = 2
-    end
-
-    # Eb = boundaryedges(F)
-    # if !isempty(Eb)
-    #     indBoundary = unique(reduce(vcat,Eb))
-    # else
-    #     indBoundary = nothing
-    # end
-
     NV = vertexnormal(F,V) # The vertex normal directions
     nz = Vec{3,Float64}(0.0,0.0,1.0) # A z-axis vector
 
@@ -4142,9 +4131,7 @@ function quaddisc(r,n; method = :Catmull_Clark, orientation=:up)
             if i>nv || method == :Catmull_Clark
                 V[i] *= r/norm(V[i])
             end
-        end
-        # e = (2.0 .* pi .* r) / length(indBoundary)#(8.0 .* 2.0 .^(n.-1))        
-        # V = smoothmesh_laplacian(F,V, 1e3; constrained_points=indBoundary, tolDist=e/100)
+        end        
     end
     return F,V
 end

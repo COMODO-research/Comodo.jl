@@ -1694,6 +1694,89 @@ end
     @test isapprox(norm.(V),fill(r,length(V))) # Test radii
 end
 
+@testset "hemisphere" begin    
+    eps_level = 1e-4
+    r = 2.5
+    
+    @testset "errors" begin
+        @test_throws Exception hemisphere(0,r; face_type=:wrong)
+        @test_throws Exception hemisphere(-1,r)
+    end
+    
+    @testset "triangles" begin
+        # Smallest unrefined open
+        n = 0
+        F,V = hemisphere(n,r; face_type=:tri)
+        @test F isa Vector{TriangleFace{Int}}
+        @test V isa Vector{Point{3,Float64}}
+        @test length(F) == 40
+        @test length(boundaryedges(F)) == 10
+        ind = round.(Int,range(1,length(V),6)) # Sample indices
+        V_true = Point{3, Float64}[[-1.4694631307311825, -2.0225424859373686, 1.1102230246251565e-16], [-0.406149620291133, -1.2499999999999998, 2.1266270208801], [-1.720477400588967, 1.2499999999999998, 1.314327780297834], [1.4694631307311825, -2.0225424859373686, -1.1102230246251565e-16], [-2.23606797749979, 0.0, 1.118033988749895], [-0.6909830056250527, 2.1266270208801, 1.118033988749895]]
+        @test isapprox(V[ind],V_true, atol=eps_level)
+
+        # Smallest unrefined closed
+        F,V = hemisphere(n,r; face_type=:tri, closed=true)
+        @test F isa Vector{TriangleFace{Int}}
+        @test V isa Vector{Point{3,Float64}}
+        @test length(F) == 60
+        @test length(boundaryedges(F)) == 0
+
+        # Linear refinement open
+        n = 2
+        F,V = hemisphere(n,r; face_type=:tri)
+        @test F isa Vector{TriangleFace{Int}}
+        @test V isa Vector{Point{3,Float64}}
+        @test length(F) == 640
+        @test length(boundaryedges(F)) == 40
+        
+        # Linear refinement closed
+        n = 3
+        F,V = hemisphere(n,r; face_type=:tri, closed=true)
+        @test F isa Vector{TriangleFace{Int}}
+        @test V isa Vector{Point{3,Float64}}
+        @test length(F) == 3840
+        @test length(boundaryedges(F)) == 0
+    end
+    
+    @testset "quads" begin
+        # Smallest unrefined open
+        n = 0
+        F,V = hemisphere(n,r; face_type=:quad)
+        @test F isa Vector{QuadFace{Int}}
+        @test V isa Vector{Point{3,Float64}}
+        @test length(F) == 12
+        @test length(boundaryedges(F)) == 8
+        ind = round.(Int,range(1,length(V),6)) # Sample indices
+        V_true = Point{3, Float64}[[1.4433756729740645, -1.4433756729740645, 1.4433756729740645], [0.0, -1.7677669529663689, 1.7677669529663689], [-2.5, 0.0, 0.0], [0.0, 2.5, 0.0], [2.5, 0.0, 0.0], [1.7677669529663689, -1.7677669529663689, 0.0]]
+        @test isapprox(V[ind],V_true, atol=eps_level)
+
+        # Smallest unrefined closed
+        F,V = hemisphere(n,r; face_type=:quad, closed=true)
+        @test F isa Vector{QuadFace{Int}}
+        @test V isa Vector{Point{3,Float64}}
+        @test length(F) == 24
+        @test length(boundaryedges(F)) == 0
+
+        # Linear refinement open
+        n = 2
+        F,V = hemisphere(n,r; face_type=:quad)
+        @test F isa Vector{QuadFace{Int}}
+        @test V isa Vector{Point{3,Float64}}
+        @test length(F) == 192
+        @test length(boundaryedges(F)) == 32
+        
+        # Linear refinement closed
+        n = 3
+        F,V = hemisphere(n,r; face_type=:quad, closed=true)
+        @test F isa Vector{QuadFace{Int}}
+        @test V isa Vector{Point{3,Float64}}
+        @test length(F) == 1536
+        @test length(boundaryedges(F)) == 0
+    end
+    
+end
+
 
 @testset "hexbox" verbose = true begin
     @testset "Single hex box" begin
@@ -2407,6 +2490,21 @@ end
         [-0.022334842065796563, -0.012895869445908863, 0.6087143769500261]], atol=eps_level)
     end
 
+    @testset "Distance threshold termination" begin     
+        r = pi   
+        F,V = tridisc(r,3)
+        E = boundaryedges(F)
+        indBoundary = unique(reduce(vcat,E))
+
+        λ = 0.5 # Laplacian smoothing parameter
+        n = 5000 # Max number of iterations         
+        tolDist = 0.1 # Distance tolerance for stopping
+        Vs = smoothmesh_laplacian(F,V,n,λ; tolDist=tolDist, constrained_points = indBoundary)
+        ind = round.(Int,range(1,length(Vs),5))
+        V_true = Point{3, Float64}[[3.141592653589793, 2.9513536059977776e-17, 0.0], [0.8533580190669456, 5.815655877836405e-19, 0.0], [0.8562507552169287, -0.7406980787974596, 0.0], [1.9354916522831087, -0.3812138821440204, 0.0], [1.9124804331626213, -2.492393025559867, 0.0]]
+        @test length(V) == length(Vs)
+        @test isapprox(Vs[ind],V_true,atol=eps_level)
+    end
 end
 
 
@@ -2504,6 +2602,61 @@ end
     @test F isa Vector{QuadFace{Int}}
     @test length(F) == prod(plateElem)
     @test F[1] == [1, 2, 7, 6]
+end
+
+@testset "triplate" begin
+    eps_level = 1e-4
+
+    plateDim = [15.0,10.0]
+    pointSpacing = 2.5
+
+    F,V = triplate(plateDim,pointSpacing; orientation=:up)    
+    ind = round.(Int,range(1,length(V),6))
+    V_true = Point{3, Float64}[[-7.5, -5.0, 0.0], [-7.5, -2.8349364905389036, 0.0], [-7.5, -0.6698729810778072, 0.0], [7.5, -0.6698729810778072, 0.0], [7.5, 1.4951905283832891, 0.0], [7.5, 3.6602540378443855, 0.0]]
+
+    @test V isa Vector{Point3{Float64}}    
+    @test isapprox(V[ind], V_true, atol=eps_level)
+    @test F isa Vector{TriangleFace{Int}}        
+
+    # Check orientation 
+    F,V = triplate(plateDim,pointSpacing; orientation=:up)    
+    @test isapprox(sum(facenormal(F,V).-Vec{3,Float64}(0.0,0.0,1.0)),Vec{3,Float64}(0.0,0.0,0.0),atol=eps_level)
+    F,V = triplate(plateDim,pointSpacing; orientation=:down)    
+    @test isapprox(sum(facenormal(F,V).-Vec{3,Float64}(0.0,0.0,-1.0)),Vec{3,Float64}(0.0,0.0,0.0),atol=eps_level)
+
+    # Check errors
+    @test_throws Exception triplate(plateDim,pointSpacing; orientation=:wrong) 
+end
+
+@testset "quaddisc" begin
+
+    eps_level = 1e-4
+
+    r = 2.5
+
+    # Unrefined
+    n = 0
+    F,V = quaddisc(r,n; method = :linear, orientation=:up)
+    V_true = Point{3, Float64}[[2.5, 0.0, 0.0], [1.7677669529663689, 1.7677669529663687, 0.0], [1.5308084989341916e-16, 2.5, 0.0], [-1.7677669529663687, 1.7677669529663689, 0.0], [-2.5, 3.061616997868383e-16, 0.0], [-1.7677669529663693, -1.7677669529663687, 0.0], [-4.592425496802574e-16, -2.5, 0.0], [1.7677669529663684, -1.7677669529663693, 0.0], [1.25, 0.0, 0.0], [0.8838834764831844, 0.8838834764831843, 0.0], [7.654042494670958e-17, 1.25, 0.0], [-0.8838834764831843, 0.8838834764831844, 0.0], [-1.25, 1.5308084989341916e-16, 0.0], [-0.8838834764831847, -0.8838834764831843, 0.0], [-2.296212748401287e-16, -1.25, 0.0], [0.8838834764831842, -0.8838834764831847, 0.0], [0.0, 0.0, 0.0]]
+    nf_zero = length(F)
+    @test V isa Vector{Point3{Float64}}        
+    @test F isa Vector{QuadFace{Int}}  
+    @test isapprox(V, V_true, atol=eps_level)
+    @test isapprox(r,maximum(norm.(V)),atol = eps_level)
+
+    # Refined 
+    n = 3
+    F,V = quaddisc(r,n; method = :linear, orientation=:up)
+    @test length(F) == nf_zero*4^n
+
+    # Orientation 
+    F,V = quaddisc(r,n; method = :Catmull_Clark, orientation=:up)
+    @test isapprox(sum(facenormal(F,V).-Vec{3,Float64}(0.0,0.0,1.0)),Vec{3,Float64}(0.0,0.0,0.0),atol=eps_level)
+    F,V = quaddisc(r,n; method = :Catmull_Clark, orientation=:down)
+    @test isapprox(sum(facenormal(F,V).-Vec{3,Float64}(0.0,0.0,-1.0)),Vec{3,Float64}(0.0,0.0,0.0),atol=eps_level)
+
+    # Check errors
+    @test_throws Exception quaddisc(r,n; method = :Catmull_Clark, orientation=:wrong)
 end
 
 
@@ -3259,7 +3412,7 @@ end
 
 
 @testset "trisurfslice" begin
-    tol_level = 1e-2
+    eps_level = 1e-2
 
     r = 2.5 # Sphere radius
     F,V = geosphere(3,r)
@@ -3279,7 +3432,7 @@ end
     En_below = boundaryedges(Fn_below)
     ind_below = unique(reduce(vcat,En_below))
     d = [norm(v) for v in Vn[ind_below]]
-    @test isapprox(sum((d.-r).^2),0.0,atol=tol_level) # Should 
+    @test isapprox(sum((d.-r).^2),0.0,atol=eps_level) # Should 
 
     p = [0.0,0.0,0.0]; # Point on cutting plane
     n = normalizevector(Vec{3, Float64}(0.0,1.0,1.0))# Cutting plane normal
@@ -3293,7 +3446,7 @@ end
     En_below = boundaryedges(Fn_below)
     ind_below = unique(reduce(vcat,En_below))
     d = [norm(v) for v in Vn[ind_below]]
-    @test isapprox(sum((d.-r).^2),0.0,atol=tol_level) # Should 
+    @test isapprox(sum((d.-r).^2),0.0,atol=eps_level) # Should 
 
     p = [0.0,0.0,0.0]; # Point on cutting plane
     n = normalizevector(Vec{3, Float64}(1.0,1.0,1.0))# Cutting plane normal
@@ -3307,7 +3460,7 @@ end
     En_below = boundaryedges(Fn_below)
     ind_below = unique(reduce(vcat,En_below))
     d = [norm(v) for v in Vn[ind_below]]
-    @test isapprox(sum((d.-r).^2),0.0,atol=tol_level) # Should 
+    @test isapprox(sum((d.-r).^2),0.0,atol=eps_level) # Should 
 end
 
 
@@ -3934,7 +4087,7 @@ end
 
 
 @testset "mesh_curvature_polynomial" verbose = true begin
-    tol_level = 0.01
+    eps_level = 0.01
 
     # A sphere has constant curvature. Both K1 and K2 are equivalent. curvature is 1/r 
     @testset "Triangulated sphere" begin
@@ -3942,10 +4095,10 @@ end
         k_true = 1.0/r
         F,V = geosphere(3,r) 
         K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V)
-        @test isapprox(mean(K1),k_true,atol=tol_level)
-        @test isapprox(mean(K2),k_true,atol=tol_level)
-        @test isapprox(mean(H),k_true,atol=tol_level)
-        @test isapprox(sqrt(abs(mean(G))),k_true,atol=tol_level)
+        @test isapprox(mean(K1),k_true,atol=eps_level)
+        @test isapprox(mean(K2),k_true,atol=eps_level)
+        @test isapprox(mean(H),k_true,atol=eps_level)
+        @test isapprox(sqrt(abs(mean(G))),k_true,atol=eps_level)
     end
 
     @testset "Quadrangulated sphere" begin
@@ -3953,10 +4106,10 @@ end
         k_true = 1.0/r
         F,V = quadsphere(4,r) 
         K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V)
-        @test isapprox(mean(K1),k_true,atol=tol_level)
-        @test isapprox(mean(K2),k_true,atol=tol_level)
-        @test isapprox(mean(H),k_true,atol=tol_level)
-        @test isapprox(sqrt(abs(mean(G))),k_true,atol=tol_level)
+        @test isapprox(mean(K1),k_true,atol=eps_level)
+        @test isapprox(mean(K2),k_true,atol=eps_level)
+        @test isapprox(mean(H),k_true,atol=eps_level)
+        @test isapprox(sqrt(abs(mean(G))),k_true,atol=eps_level)
     end
     
     @testset "Cube" begin
@@ -3985,10 +4138,10 @@ end
         num_steps = num_steps + Int(iseven(num_steps))
         F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=[0.0,0.0,1.0], num_steps=num_steps, close_loop=true, face_type=:quad)
         K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V)
-        @test isapprox(mean(K1),1.0/r,atol=tol_level)
-        @test isapprox(mean(K2),0.0,atol=tol_level)
-        @test isapprox(mean(H),1.0/(2*r),atol=tol_level)
-        @test isapprox(sqrt(abs(mean(G))),0.0,atol=tol_level)
+        @test isapprox(mean(K1),1.0/r,atol=eps_level)
+        @test isapprox(mean(K2),0.0,atol=eps_level)
+        @test isapprox(mean(H),1.0/(2*r),atol=eps_level)
+        @test isapprox(sqrt(abs(mean(G))),0.0,atol=eps_level)
     end
 end
 
@@ -4065,23 +4218,23 @@ end
 
 
 @testset "curve_length" verbose = true begin
-    tol_level = 1e-6
+    eps_level = 1e-6
     r = 2.25
     nc = 10    
     V = circlepoints(r, nc; dir=:cw)    
     length_true  = collect(range(0,(nc*2.0*r*sin(0.5*((2.0*pi)/nc))),nc+1))    
     L = curve_length(V; close_loop=false)
-    @test isapprox(L,length_true[1:end-1],atol=tol_level)    
+    @test isapprox(L,length_true[1:end-1],atol=eps_level)    
 
     L = curve_length(V; close_loop=true)
-    @test isapprox(L,length_true,atol=tol_level)    
+    @test isapprox(L,length_true,atol=eps_level)    
     @test L isa Vector{Float64}
 end
 
 
 @testset "evenly_sample" begin
     
-    tol_level = 1e-4
+    eps_level = 1e-4
 
     # Even sampling should be nearly perfect for a linear curve 
     @testset "Evenly upsampling linear curve" begin
@@ -4097,7 +4250,7 @@ end
         # Resample using evenly_sample
         Vi = evenly_sample(V, n; niter=5)
 
-        @test sum(norm.(Vi-Vt)) < tol_level # Correct and even spacing
+        @test sum(norm.(Vi-Vt)) < eps_level # Correct and even spacing
         @test typeof(V) == typeof(Vi) # Did not manipulate input type
         @test length(Vi) == n # Correct length
     end
@@ -4116,7 +4269,7 @@ end
         # Resample using evenly_sample
         Vi = evenly_sample(V, n; niter=5)
 
-        @test sum(norm.(Vi-Vt)) < tol_level # Correct and even spacing
+        @test sum(norm.(Vi-Vt)) < eps_level # Correct and even spacing
         @test typeof(V) == typeof(Vi) # Did not manipulate input type
         @test length(Vi) == n # Correct length
     end
@@ -4220,7 +4373,7 @@ end
 end
 
 @testset "kabsch_rot" begin
-    tol_level = 1e-6
+    eps_level = 1e-6
 
     M = cube(sqrt(3))
     V1 = coordinates(M)
@@ -4229,12 +4382,12 @@ end
     R_kabsch_forward = kabsch_rot(V1,V2)
     R_kabsch_backward = kabsch_rot(V2,V1)
     V1r = [R_kabsch_backward*v for v in V2]
-    @test isapprox(R_kabsch_forward,R_true,atol=tol_level) # Able to retrieve forward rotation
-    @test isapprox(V1r,V1,atol=tol_level) # Check if backward rotation is succesful   
+    @test isapprox(R_kabsch_forward,R_true,atol=eps_level) # Able to retrieve forward rotation
+    @test isapprox(V1r,V1,atol=eps_level) # Check if backward rotation is succesful   
 end
 
 @testset "sweeploft" verbose = true begin
-    tol_level = 1e-6
+    eps_level = 1e-6
 
     # Define guide curve
     nc = 25 # Number of points on guide curve
@@ -4328,7 +4481,7 @@ end
 
 
 @testset "revolvecurve" verbose = true begin
-    tol_level = 1e-6
+    eps_level = 1e-6
     nc = 5
     t = range(1.0,2.0,nc)
     Vc = [Point3(tt,0.0,0.0) for tt in t]
@@ -4365,7 +4518,7 @@ end
             F1,V1 = revolvecurve([Q*v for v in Vc]; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=:quad)
             
             d = sum([dot(m,v) for v in V1])
-            b[i]=isapprox(d,0.0,atol=tol_level)
+            b[i]=isapprox(d,0.0,atol=eps_level)
         end
         @test all(b)
     end
@@ -4376,19 +4529,19 @@ end
 
         F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
         ϕ = [atan(v[2],v[1]) for v in V]
-        @test isapprox(minimum(ϕ),0.0,atol=tol_level)
-        @test isapprox(maximum(ϕ),π,atol=tol_level)
+        @test isapprox(minimum(ϕ),0.0,atol=eps_level)
+        @test isapprox(maximum(ϕ),π,atol=eps_level)
 
         F,V = revolvecurve(Vc; extent=θ,  direction=:both, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
         ϕ = [atan(v[2],v[1]) for v in V]
-        @test isapprox(minimum(ϕ),-π/2,atol=tol_level)
-        @test isapprox(maximum(ϕ),π/2,atol=tol_level)
+        @test isapprox(minimum(ϕ),-π/2,atol=eps_level)
+        @test isapprox(maximum(ϕ),π/2,atol=eps_level)
 
         
         F,V = revolvecurve(Vc; extent=θ,  direction=:negative, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
         ϕ = [atan(v[2],v[1]) for v in V]
-        @test isapprox(minimum(ϕ),-π,atol=tol_level)
-        @test isapprox(maximum(ϕ),0.0,atol=tol_level)
+        @test isapprox(minimum(ϕ),-π,atol=eps_level)
+        @test isapprox(maximum(ϕ),0.0,atol=eps_level)
     end
     
     @testset "Nothing for num_steps" begin        
@@ -4410,7 +4563,7 @@ end
         @test length(V) == nc*num_steps
         @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
         [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=eps_level)
 
         face_type =:quad
         close_loop = false
@@ -4422,7 +4575,7 @@ end
         @test length(V) == nc*num_steps
         @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
         [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=eps_level)
     end
 
     @testset "tri_slash" begin        
@@ -4436,7 +4589,7 @@ end
         @test length(V) == nc*num_steps
         @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
         [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=eps_level)
 
         face_type =:tri_slash
         close_loop = false
@@ -4448,7 +4601,7 @@ end
         @test length(V) == nc*num_steps
         @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
         [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=eps_level)
     end
 
     @testset "quad2tri" begin        
@@ -4462,7 +4615,7 @@ end
         @test length(V) == nc*num_steps
         @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
         [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=eps_level)
 
         face_type =:quad2tri
         close_loop = false
@@ -4474,7 +4627,7 @@ end
         @test length(V) == nc*num_steps
         @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.3895382699842485, -0.5610059631967796, 0.06675107120365813], 
         [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=eps_level)
     end
 
     @testset "tri" begin        
@@ -4488,7 +4641,7 @@ end
         @test length(V) == nc*num_steps
         @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.5053331258162692, -0.6077564601298446, 0.07231366047062965], 
         [0.5571630293277714, -0.7522988300778739, 0.6238916805133436], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=eps_level)
 
         face_type =:tri
         close_loop = false
@@ -4500,7 +4653,7 @@ end
         @test length(V) == nc*num_steps
         @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.5053331258162692, -0.6077564601298446, 0.07231366047062965], 
         [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=tol_level)
+        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=eps_level)
     end
 
     @testset "errors" begin
@@ -4577,6 +4730,36 @@ end
     @test isa(V,Vector{Point{3,Float64}})
     @test length(V) == 19
     @test isapprox(maximum(norm.(V)),r,atol=eps_level)
+
+    # Test behaviour with optional input parameters
+    n = 2 
+    F,V = tridisc(r,n; ngon=5, method = :linear, orientation=:up)
+    @test isa(F,Vector{TriangleFace{Int}})
+    @test isa(V,Vector{Point{3,Float64}})
+    @test length(V) == 51
+    @test isapprox(maximum(norm.(V)),r,atol=eps_level)
+
+    F,V = tridisc(r,n; ngon=6, method = :linear, orientation=:up)
+    @test isa(F,Vector{TriangleFace{Int}})
+    @test isa(V,Vector{Point{3,Float64}})
+    @test length(V) == 61
+    @test isapprox(maximum(norm.(V)),r,atol=eps_level)
+
+    F,V = tridisc(r,n; ngon=6, method = :Loop, orientation=:up)
+    @test isa(F,Vector{TriangleFace{Int}})
+    @test isa(V,Vector{Point{3,Float64}})
+    @test length(V) == 61
+    @test isapprox(maximum(norm.(V)),r,atol=eps_level)
+
+    F,V = tridisc(r,n; ngon=6, method = :linear, orientation=:up)        
+    @test isapprox(sum(facenormal(F,V).-Vec{3,Float64}(0.0,0.0,1.0)),Vec{3,Float64}(0.0,0.0,0.0),atol=eps_level)
+    
+    F,V = tridisc(r,n; ngon=6, method = :linear, orientation=:down)        
+    @test isapprox(sum(facenormal(F,V).-Vec{3,Float64}(0.0,0.0,-1.0)),Vec{3,Float64}(0.0,0.0,0.0),atol=eps_level)
+
+    # Check errors
+    @test_throws Exception tridisc(r,n; ngon=6, method = :linear, orientation=:wrong) 
+    
 end
 
 
