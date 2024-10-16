@@ -44,11 +44,13 @@ F1,V1 = revolvecurve(Vc; extent=θ, direction=:positive, n=n ,num_steps=num_step
 F2,V2 = revolvecurve(Vc; extent=θ, direction=:both,     n=n, num_steps=num_steps, close_loop=close_loop,face_type=:tri_slash)
 F3,V3 = revolvecurve(Vc; extent=θ, direction=:negative, n=n, num_steps=num_steps, close_loop=close_loop,face_type=:tri)
 F4,V4 = revolvecurve(Vc; extent=θ, direction=:negative, n=n, num_steps=num_steps, close_loop=close_loop,face_type=:quad2tri)
+F5,V5 = revolvecurve(Vc; extent=2*pi, direction=:negative, n=n, num_steps=num_steps, close_loop=close_loop,face_type=:quad)
 
 M1 = GeometryBasics.Mesh(V1,F1)
 M2 = GeometryBasics.Mesh(V2,F2)
 M3 = GeometryBasics.Mesh(V3,F3)
 M4 = GeometryBasics.Mesh(V4,F4)
+M5 = GeometryBasics.Mesh(V5,F5)
 
 ## Visualization
 markersize = 8 
@@ -66,15 +68,21 @@ hp1 = lines!(ax2,Vc,color=:red,linewidth=4, transparency=true, depth_shift=-1.0f
 hp2 = scatter!(ax2,Vc,markersize=markersize,color=:red)
 hp3 = poly!(ax2,M2, strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
 
-ax3 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = """Revolved s=-1, close_loop=$close_loop, face_type=:tri""")
+ax3 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = """Revolved s=-1, close_loop=$close_loop, face_type=:tri""")
 hp1 = lines!(ax3,Vc,color=:red,linewidth=4, transparency=true, depth_shift=-1.0f-3)
 hp2 = scatter!(ax3,Vc,markersize=markersize,color=:red)
 hp3 = poly!(ax3,M3, strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
 
-ax4 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = """Revolved s=-1, close_loop=$close_loop, face_type=:quad2tri""")
+ax4 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = """Revolved s=-1, close_loop=$close_loop, face_type=:quad2tri""")
 hp1 = lines!(ax4,Vc,color=:red,linewidth=4, transparency=true, depth_shift=-1.0f-3)
 hp2 = scatter!(ax4,Vc,markersize=markersize,color=:red)
 hp3 = poly!(ax4,M4, strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
+
+ax5 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = """Revolved s=-1, close_loop=$close_loop, face_type=:quad2tri""")
+hp1 = lines!(ax5,Vc,color=:red,linewidth=4, transparency=true, depth_shift=-1.0f-3)
+hp2 = scatter!(ax5,Vc,markersize=markersize,color=:red)
+hp3 = poly!(ax5,M5, strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
+
 
 # normalplot(ax1,M1)
 # normalplot(ax2,M2)

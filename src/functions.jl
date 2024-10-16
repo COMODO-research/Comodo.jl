@@ -1515,7 +1515,7 @@ function edgecrossproduct(M::GeometryBasics.Mesh)
 end
 
 """
-    facenormal(F,V; weighting=:area)
+    facenormal(F,V)
 
 Returns the normal directions for each face.
 
@@ -2471,24 +2471,29 @@ function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}},
         if n==0
             return V
         elseif n>0
+            indSmooth = elements2indices(F) # Indices of points involved in smoothing
+
+            if maximum(indSmooth)>length(V) || minimum(indSmooth)<1
+                throw(ErrorException("Out of range indices detected"))
+            end
+            
             # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if nothing
             if isnothing(con_V2V)
                 E_uni = meshedges(F;unique_only=true)
                 con_V2V = con_vertex_vertex(E_uni)
             end        
             c = 0
-            while c<n 
-            # for _ = 1:n
+            while c<n             
                 Vs = deepcopy(V)
-                for q in eachindex(V)                
-                    Vs[q] = (1.0-λ).*Vs[q] .+ λ*mean(V[con_V2V[q]]) # Linear blend between original and pure Laplacian
+                @inbounds for i in indSmooth # eachindex(V)
+                    Vs[i] = (1.0-λ).*Vs[i] .+ λ*mean(V[con_V2V[i]]) # Linear blend between original and pure Laplacian
                 end
                 if !isnothing(constrained_points)
                     Vs[constrained_points] = V[constrained_points] # Put back constrained points
                 end
                 if !isnothing(tolDist) # Include tolerance based termination
                     d = 0.0
-                    for i in eachindex(V)
+                    @inbounds for i in indSmooth # eachindex(V)
                         d+=sqrt(sum((V[i].-Vs[i]).^2)) # Sum of distances
                     end
                     if d<tolDist # Sum of distance smaller than tolerance?
@@ -2536,6 +2541,11 @@ function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, �
     if n == 0 
         return V
     else
+        indSmooth = elements2indices(F) # Indices of points involved in smoothing
+        if maximum(indSmooth)>length(V) || minimum(indSmooth)<1
+            throw(ErrorException("Out of range indices detected"))
+        end
+
         # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if nothing
         if isnothing(con_V2V)
             E = meshedges(F)
@@ -2548,14 +2558,14 @@ function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, �
         c = 0
         while c<n       
             Q = deepcopy(P) # Reset Q as P for this iteration
-            for i in eachindex(V)
+            @inbounds for i in indSmooth # eachindex(V)
                 P[i] = mean(Q[con_V2V[i]]) # Laplacian 
                 # Compute different vector between P and a point between original 
                 # point and Q (which is P before laplacian)
                 B[i] = P[i] .- (α.*V[i] .+ (1.0-α).*Q[i])
             end
             
-            for i in eachindex(V)      
+            @inbounds for i in indSmooth # eachindex(V)      
                 # Push points back based on blending between pure difference vector
                 # B and the Laplacian mean of these      
                 P[i] = P[i] .- (β.*B[i] .+ (1.0-β).* mean(B[con_V2V[i]]))
@@ -2567,7 +2577,7 @@ function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, �
 
             if !isnothing(tolDist) # Include tolerance based termination
                 d = 0.0
-                for i in eachindex(V)
+                @inbounds for i in indSmooth #eachindex(V)
                     d+=sqrt(sum((P[i].-Q[i]).^2)) # Sum of distances
                 end
                 if d<tolDist # Sum of distance smaller than tolerance?
