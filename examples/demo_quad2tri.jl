@@ -23,10 +23,8 @@ elseif testCase ==2
         end
     end
 elseif testCase ==3
-    M = cube(1.0)
-    F = faces(M)
-    V = coordinates(M)
-
+    F,V = cube(1.0)
+    
     # Build deformation gradient tensor to induce shear with known angles
     fd = zeros(3,3)
     for i=1:3

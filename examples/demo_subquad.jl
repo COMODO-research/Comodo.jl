@@ -8,9 +8,7 @@ testCase = 2
 ## Define example input
 if testCase == 1 # cube
     r = 1.0 #radius
-    M = platonicsolid(2,r) # Get an example quadrilateral mesh (for a cube in this case)
-    V = coordinates(M)
-    F = faces(M)
+    F,V = platonicsolid(2,r) # Get an example quadrilateral mesh (for a cube in this case)
 elseif testCase == 2 # Extruded prism/cylinder with nc points
     r = 1.0
     nc = 3

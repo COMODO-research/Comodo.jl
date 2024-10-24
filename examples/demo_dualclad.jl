@@ -23,11 +23,7 @@ elseif testCase == 2
     F = F[BF]
     F,V = remove_unused_vertices(F,V)
 elseif testCase == 3
-    M = tetrahedron(√3)
-    F = faces(M)
-    V = coordinates(M)
-    # n = 2
-    # F,V = subquad(F,V,n; method=:Catmull_Clark)
+    F,V = tetrahedron(√3)        
 elseif testCase == 4
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")

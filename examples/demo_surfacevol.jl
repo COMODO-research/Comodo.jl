@@ -17,15 +17,11 @@ elseif testCase==2 # quad sphere
     println("Theoretical volume: " * string(4/3*pi*r^3))    
 elseif testCase==3 # quad cube
     r=2*sqrt(3)/2
-    M = cube(r)
-    F=faces(M)
-    V=coordinates(M)
+    F,V = cube(r)    
     println("Theoretical volume: " * string((2*(r./(sqrt(3))))^3))
 elseif testCase==4 # triangulated cube
     r=2*sqrt(3)/2
-    M = cube(r)
-    F=faces(M)
-    V=coordinates(M)
+    F,V = cube(r)    
     F = quad2tri(F,V; convert_method = :angle)
     println("Theoretical volume: " * string((2*(r./(sqrt(3))))^3))
 elseif testCase==5 # Merged STL for single object

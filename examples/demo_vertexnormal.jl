@@ -14,19 +14,13 @@ fig = Figure(size=(1600,800))
 
 for q=1:1:4
     if q==1
-        M=icosahedron()
-        F = faces(M)
-        V = coordinates(M)
+        F,V = icosahedron()
         titleString="triangles"        
     elseif q==2
-        M=cube()
-        F = faces(M)
-        V = coordinates(M)
+        F,V = cube()
         titleString="quadrilaterals"        
     elseif q==3
-        M=dodecahedron()
-        F = faces(M)
-        V = coordinates(M)
+        F,V = dodecahedron()        
         titleString="pentagons"        
     elseif q==4
         # Loading a mesh
@@ -45,7 +39,7 @@ for q=1:1:4
     NV = vertexnormal(F,V; weighting=:area)
     
     ax1 = Axis3(fig[1, q], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
-    hp1 = poly!(ax1,M, strokewidth=1,shading=FastShading,color=:white, transparency=false, overdraw=false)    
+    hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,shading=FastShading,color=:white, transparency=false, overdraw=false)    
     # hpa = normalplot(ax1,M,color=:red,linewidth=2)
     # hpa = arrows!(ax1,V,NV,color=:blue)
     hpa = dirplot(ax1,V,NV.*mean(edgelengths(F,V)); color=:blue,linewidth=3,scaleval=1.0,style=:from)

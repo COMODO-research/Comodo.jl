@@ -2,9 +2,7 @@ using Comodo
 using GLMakie
 using GeometryBasics
 
-M = cube(1.0)
-F = faces(M)
-V = coordinates(M)
+F,V = cube(1.0)
 
 # Build deformation gradient tensor to induce shear with known angles
 f = zeros(3,3)

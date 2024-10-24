@@ -21,9 +21,7 @@ elseif testCase == 2 # Single triangle refined once, so 4 triangles
     F,V = subtri(F,V,1)
 elseif testCase == 3 # tetrahedron
     r = 0.5 #radius
-    M = platonicsolid(1,r) 
-    F = faces(M)
-    V = coordinates(M)
+    F,V = platonicsolid(1,r)     
 elseif testCase == 4 # geosphere
     r = 0.5 #radius
     F,V = geosphere(1,r) 

@@ -6,9 +6,7 @@ using LinearAlgebra
 
 ## Define example input
 r = 1.0 #radius
-M = platonicsolid(2,r) # Get an example quadrilateral mesh (for a cube in this case)
-V = coordinates(M)
-F = faces(M)
+F,V = platonicsolid(2,r) # Get an example quadrilateral mesh (for a cube in this case)
 
 ## Refine mesh using `subquad` and the Catmull-Clark method
 Fn1,Vn1 = subquad(F,V,1; method = :Catmull_Clark) # Refined once 
@@ -23,15 +21,15 @@ d3 = Rn3.-rs3
 fig = Figure(size=(800,800))
 
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=1")
-wireframe!(ax1,M, linewidth=8,color=:red, overdraw=false)
+wireframe!(ax1,GeometryBasics.Mesh(V,F), linewidth=8,color=:red, overdraw=false)
 poly!(ax1,GeometryBasics.Mesh(Vn1,Fn1), strokewidth=3,color=:white,shading=FastShading,transparency=false)
 
 ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=2")
-wireframe!(ax2,M, linewidth=8,color=:red, overdraw=false)
+wireframe!(ax2,GeometryBasics.Mesh(V,F), linewidth=8,color=:red, overdraw=false)
 poly!(ax2,GeometryBasics.Mesh(Vn2,Fn2), strokewidth=3,color=:white,shading=FastShading,transparency=false)
 
 ax3 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=3")
-hp1 = wireframe!(ax3,M, linewidth=8,color=:red, overdraw=false)
+hp1 = wireframe!(ax3,GeometryBasics.Mesh(V,F), linewidth=8,color=:red, overdraw=false)
 hp2 = poly!(ax3,GeometryBasics.Mesh(Vn3,Fn3), strokewidth=3,color=:white,shading=FastShading,transparency=false)
 Legend(fig[2, 1][1,2],[hp1,hp2],["Initial","Refined"])
 

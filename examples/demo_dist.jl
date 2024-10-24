@@ -14,9 +14,7 @@ r = 1 # radius of icosahedron
 n = 2 # Number of refinement steps
 
 # Define an icosahedron
-M = platonicsolid(4,r) # GeometryBasics mesh description of icosahedron
-V = coordinates(M) # Get the mesh coordinates
-F = faces(M) # Get the mesh faces
+F,V = platonicsolid(4,r) # GeometryBasics mesh description of icosahedron
 
 # Created refined version
 Fn,Vn = subtri(F,V,n) # Subdevide/refine the mesh linearly 

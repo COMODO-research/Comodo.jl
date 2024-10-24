@@ -2,19 +2,15 @@ using Comodo
 using GeometryBasics
 using GLMakie
 
-testCase = 2
+testCase = 1
 if testCase==1
     r = 1 
-    M = platonicsolid(4,r) # Get icosahedron
-    V = coordinates(M) # Get vertices
-    F = faces(M) # Get faces
+    F,V = platonicsolid(4,r) # Get icosahedron    
     F = F[2:end-1]
     F,V = subtri(F,V,1)
 elseif testCase ==2
     r = 1 
-    M = platonicsolid(2,r) # Get icosahedron
-    V = coordinates(M) # Get vertices
-    F = faces(M) # Get faces    
+    F,V = platonicsolid(2,r) # Get icosahedron    
     F,V = subquad(F,V,2)
 end
 

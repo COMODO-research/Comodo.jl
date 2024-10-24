@@ -857,8 +857,8 @@ end
     end
 
     @testset "Mesh" begin
-        M = cube(1.0)
-        E = meshedges(M,unique_only=true)
+        F, V = cube(1.0)
+        E = meshedges(F,unique_only=true)
         @test E == LineFace{Int}[[1, 2], [7, 8], [5, 6], [6, 7], [5, 8], [2, 3], 
         [2, 6], [3, 7], [4, 8], [1, 5], [3, 4], [1, 4]]
     end
@@ -871,10 +871,9 @@ end
     ϕ = Base.MathConstants.golden # (1.0+sqrt(5.0))/2.0, Golden ratio
     s = r/sqrt(ϕ + 2.0)
     t = ϕ*s
-    M = icosahedron(r)
-    F = faces(M)
-    V = coordinates(M)
-    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int,Point3{Float64},TriangleFace{Int}}}
+    F, V = icosahedron(r)    
+    @test isa(F,Vector{TriangleFace{Int}})
+    @test isa(V,Vector{Point{3,Float64}})
     @test length(F) == 20
     @test isapprox(V[1], [0.0, -s, -t], atol=eps_level)
 end
@@ -884,10 +883,9 @@ end
     eps_level = 1e-4
     r = 1.0
     s = r/sqrt(2.0)
-    M = octahedron(1.0) 
-    F = faces(M)
-    V = coordinates(M)
-    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int,Point3{Float64},TriangleFace{Int}}}
+    F,V = octahedron(1.0) 
+    @test isa(F,Vector{TriangleFace{Int}})
+    @test isa(V,Vector{Point{3,Float64}})
     @test length(F) == 8
     @test isapprox(V[1], [-s,  -s, 0.0], atol=eps_level)
 end
@@ -900,10 +898,9 @@ end
     s = r/sqrt(3.0)
     t = ϕ*s    
     w = (ϕ-1.0)*s
-    M = dodecahedron(r)
-    F = faces(M)
-    V = coordinates(M)
-    @test M isa GeometryBasics.Mesh{3, Float64, GeometryBasics.Ngon{3, Float64, 5, Point3{Float64}}, SimpleFaceView{3, Float64, 5, Int, Point3{Float64}, NgonFace{5, Int}}}
+    F,V = dodecahedron(r)
+    @test isa(F,Vector{NgonFace{5,Int}})
+    @test isa(V,Vector{Point{3,Float64}})
     @test length(F) == 12
     @test isapprox(V[1], [s,s,s], atol=eps_level)
 end
@@ -913,10 +910,9 @@ end
     eps_level = 1e-4
     r = 1.0
     s = r/sqrt(3.0)
-    M = cube(1.0) 
-    F = faces(M)
-    V = coordinates(M)
-    @test M isa GeometryBasics.Mesh{3, Float64, GeometryBasics.Ngon{3, Float64, 4, Point3{Float64}}, SimpleFaceView{3, Float64, 4, Int, Point3{Float64}, QuadFace{Int}}}
+    F,V = cube(1.0)
+    @test isa(F,Vector{QuadFace{Int}})
+    @test isa(V,Vector{Point{3,Float64}})
     @test length(F) == 6
     @test isapprox(V[1], [-s,  -s, -s], atol=eps_level)
 end
@@ -928,10 +924,9 @@ end
     a = r*sqrt(2.0)/sqrt(3.0)
     b = -r*sqrt(2.0)/3.0
     c = -r/3.0    
-    M = tetrahedron(1.0) 
-    F = faces(M)
-    V = coordinates(M)
-    @test M isa GeometryBasics.Mesh{3,Float64,GeometryBasics.Ngon{3,Float64,3,Point3{Float64}},SimpleFaceView{3,Float64,3,Int,Point3{Float64},TriangleFace{Int}}}
+    F,V = tetrahedron(1.0)     
+    @test isa(F,Vector{TriangleFace{Int}})
+    @test isa(V,Vector{Point{3,Float64}})
     @test length(F) == 4
     @test isapprox(V[1], [-a,  b, c], atol=eps_level)
 end
@@ -945,10 +940,8 @@ end
     lf = [4,6,8,20,12] # Correct vertex numbers
 
     for q=1:5
-        M = platonicsolid(q, r) # icosahedron
-        F = faces(M)
-        V = coordinates(M)
-        @test isa(M,GeometryBasics.Mesh)
+        F,V = platonicsolid(q, r) # icosahedron
+        @test isa(F,Vector{NgonFace{m, TF}}  where m where TF <: Integer)        
         @test length(F) == lf[q]
         @test length(V) == lv[q]
         @test isapprox(mean(norm.(V)), r, atol=eps_level)
@@ -1280,8 +1273,8 @@ end
         @test C == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,-1.0)]
     end
     @testset "Mesh" begin
-        M = cube(1.0)
-        C = edgecrossproduct(M) 
+        F,V = cube(1.0)
+        C = edgecrossproduct(F,V) 
         @test C == Vec3{Float64}[[0.0, 0.0, -1.3333333333333337], 
         [0.0, 0.0, 1.3333333333333337], [-1.3333333333333337, 0.0, 0.0], 
         [0.0, 1.3333333333333337, 0.0], [1.3333333333333337, 0.0, 0.0], 
@@ -1332,8 +1325,8 @@ end
         @test N == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,-1.0)]
     end
     @testset "Mesh" begin
-        M = cube(1)
-        @test facenormal(M) == Vec3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, 1.0], [-1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
+        F,V = cube(1)        
+        @test facenormal(GeometryBasics.Mesh(V,F)) == Vec3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, 1.0], [-1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, -1.0, 0.0]]
     end
 end
 
@@ -1380,8 +1373,8 @@ end
         @test A == [1.0,1.0]
     end
     @testset "Mesh" begin
-        M = cube(1)
-        @test facearea(M) == [1.3333333333333337, 1.3333333333333337, 1.3333333333333337, 1.3333333333333337, 1.3333333333333337, 1.3333333333333337]
+        F,V = cube(1)
+        @test facearea(GeometryBasics.Mesh(V,F)) == [1.3333333333333337, 1.3333333333333337, 1.3333333333333337, 1.3333333333333337, 1.3333333333333337, 1.3333333333333337]
     end
 end
 
@@ -1428,8 +1421,8 @@ end
         @test N == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0)]
     end
     @testset "Mesh" begin
-        M = cube(1)
-        @test vertexnormal(M) == Vec3{Float64}[[-0.5773502691896257, -0.5773502691896257, -0.5773502691896257], [-0.5773502691896257, 0.5773502691896257, -0.5773502691896257], [0.5773502691896257, 0.5773502691896257, -0.5773502691896257], [0.5773502691896257, -0.5773502691896257, -0.5773502691896257], [-0.5773502691896257, -0.5773502691896257, 0.5773502691896257], [-0.5773502691896257, 0.5773502691896257, 0.5773502691896257], [0.5773502691896257, 0.5773502691896257, 0.5773502691896257], [0.5773502691896257, -0.5773502691896257, 0.5773502691896257]]
+        F,V = cube(1)
+        @test vertexnormal(GeometryBasics.Mesh(V,F)) == Vec3{Float64}[[-0.5773502691896257, -0.5773502691896257, -0.5773502691896257], [-0.5773502691896257, 0.5773502691896257, -0.5773502691896257], [0.5773502691896257, 0.5773502691896257, -0.5773502691896257], [0.5773502691896257, -0.5773502691896257, -0.5773502691896257], [-0.5773502691896257, -0.5773502691896257, 0.5773502691896257], [-0.5773502691896257, 0.5773502691896257, 0.5773502691896257], [0.5773502691896257, 0.5773502691896257, 0.5773502691896257], [0.5773502691896257, -0.5773502691896257, 0.5773502691896257]]
     end
 end
 
@@ -1459,17 +1452,15 @@ end
     end
 
     @testset "Mesh" begin
-        M = cube(sqrt(3))
-        @test edgelengths(M) == 2.0*ones(12)
+        F,V = cube(sqrt(3))
+        @test edgelengths(GeometryBasics.Mesh(V,F)) == 2.0*ones(12)
     end
 end
 
 
 @testset "subtri" verbose = true begin
     eps_level = 1e-4
-    M = platonicsolid(4, 1.0) # icosahedron with radius 1.0 
-    V = coordinates(M)
-    F = faces(M)
+    F,V = platonicsolid(4, 1.0) # icosahedron with radius 1.0     
     n = 2
 
     @testset "Errors" begin
@@ -1579,9 +1570,7 @@ end
 
 @testset "subquad" verbose = true begin
     eps_level = 1e-4
-    M = cube(1.0)
-    F = faces(M)
-    V = coordinates(M)    
+    F,V = cube(1.0)    
     n = 3
 
     @testset "Errors" begin
@@ -2410,9 +2399,7 @@ end
 @testset "mergevertices" begin
     eps_level = 1e-4
     r = sqrt(3)    
-    M = cube(r)
-    F = faces(M)
-    V = coordinates(M)
+    F,V = cube(r)    
     Fs,Vs = separate_vertices(F,V)
     Fm, Vm, indReverse = mergevertices(Fs, Vs; roundVertices = true)
 
@@ -2439,9 +2426,7 @@ end
 @testset "smoothmesh_laplacian" verbose = true begin
 
     eps_level = 1e-4
-    M = tetrahedron(1.0)
-    F = faces(M)
-    V = coordinates(M)
+    F,V = tetrahedron(1.0)    
     F,V = subtri(F,V,3)
 
     ind = round.(Int,range(1,length(V),5))
@@ -2510,9 +2495,7 @@ end
 
 @testset "smoothmesh_hc" verbose = true begin
     eps_level = 1e-4
-    M = tetrahedron(1.0)
-    F = faces(M)
-    V = coordinates(M)
+    F,V = tetrahedron(1.0)    
     F,V = subtri(F,V,3)
 
     ind = round.(Int,range(1,length(V),5))
@@ -2682,15 +2665,11 @@ end
     V1 = [GeometryBasics.Point3(rand(3)) for _=1:length(F1[1])]
 
     # A quad mesh featuring a variation in terms of face areas and vertex connectivity 
-    Mq = cube(1.0)
-    Fq = faces(Mq)
-    Vq = coordinates(Mq)
+    Fq,Vq = cube(1.0)    
     Fq,Vq = subquad(Fq,Vq,1; method=:Catmull_Clark)
 
     # A triangle mesh featuring a variation in terms of face areas and vertex connectivity 
-    Mt = tetrahedron(1.0)
-    Ft = faces(Mt)
-    Vt = coordinates(Mt)
+    Ft,Vt = tetrahedron(1.0)    
     Ft,Vt = subtri(Ft,Vt,1; method=:Loop)
 
     # A hexahedral mesh 
@@ -2810,15 +2789,11 @@ end
     V1 = [GeometryBasics.Point3(rand(3)) for _=1:length(F1[1])]
 
     # A quad mesh featuring a variation in terms of face areas and vertex connectivity 
-    Mq = cube(1.0)
-    Fq = faces(Mq)
-    Vq = coordinates(Mq)
+    Fq,Vq = cube(1.0)    
     Fq,Vq = subquad(Fq,Vq,1; method=:Catmull_Clark)
 
     # A triangle mesh featuring a variation in terms of face areas and vertex connectivity 
-    Mt = tetrahedron(1.0)
-    Ft = faces(Mt)
-    Vt = coordinates(Mt)
+    Ft,Vt = tetrahedron(1.0)    
     Ft,Vt = subtri(Ft,Vt,1; method=:Loop)
 
     # A hexahedral mesh 
@@ -2971,9 +2946,7 @@ end
     end
 
     @testset "Vector set" begin
-        M = cube(1.0)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = cube(1.0)        
         N = facenormal(F,V)
         U = [Vec{3,Float64}(n./(1.0.+rand(1))) for n in N]
         NN = normalizevector(U)
@@ -3236,14 +3209,12 @@ end
 
 
 @testset "dirplot" verbose = true begin
-    M = cube(1.0)
-    F = faces(M)
-    V = coordinates(M)
+    F,V = cube(1.0)    
     U = vertexnormal(F,V)
 
     fig = Figure(size=(800,800))
     ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Direction data plot")
-    hp = poly!(ax,M, strokewidth=3,color=:white, shading = FastShading)
+    hp = poly!(ax,GeometryBasics.Mesh(V,F), strokewidth=3,color=:white, shading = FastShading)
     hp1 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:from)
     hp2 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:to)
     hp3 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:through)
@@ -3264,26 +3235,24 @@ end
 
 
 @testset "normalplot" verbose = true begin
-    M = cube(1.0)
-    F = faces(M)
-    V = coordinates(M)
+    F,V = cube(1.0)    
 
     fig = Figure(size=(800,800))
     ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Direction data plot")
-    hp = poly!(ax,M, strokewidth=3,color=:white, shading = FastShading)
+    hp = poly!(ax,GeometryBasics.Mesh(V,F), strokewidth=3,color=:white, shading = FastShading)
 
 
     @testset "Errors" begin
-        @test_throws ArgumentError normalplot(ax,M; type_flag=:wrong, color=:black,linewidth=3,scaleval=nothing)
+        @test_throws ArgumentError normalplot(ax,GeometryBasics.Mesh(V,F); type_flag=:wrong, color=:black,linewidth=3,scaleval=nothing)
     end
 
     @testset "type_flag options" begin
-        hp1 =  normalplot(ax,M; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
+        hp1 =  normalplot(ax,F,V; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
         @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
         @test length(faces(Mp)) == length(F)
 
-        hp1 =  normalplot(ax,M; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
+        hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
         @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
         @test length(faces(Mp)) == length(V)
@@ -3321,9 +3290,7 @@ end
 @testset "edgeangles" begin
     eps_level = 1e-4
     # Regular cube
-    M = cube(1.0)
-    F = faces(M)
-    V = coordinates(M)
+    F,V = cube(1.0)
 
     # Build deformation gradient tensor to induce shear with known angles
     fDef = zeros(3,3)
@@ -3344,9 +3311,7 @@ end
 
 
 @testset "quad2tri" begin
-    M = cube(1.0)
-    F = faces(M)
-    V = coordinates(M)
+    F,V = cube(1.0)    
 
     # Build deformation gradient tensor to induce shear with known angles
     f = zeros(3,3)
@@ -3544,15 +3509,14 @@ end
 
 @testset "boundaryfaces" verbose = true begin
     @testset "Tetrahedron (all boundary faces)" begin
-        M = platonicsolid(1)
-        F = faces(M)        
+        F,_ = platonicsolid(1)
         Fb = boundaryfaces(F)        
         @test F == Fb
         @test typeof(F) == typeof(Fb)
     end
 
     @testset "Sphere mesh (all boundary faces)" begin
-        F,V = geosphere(2,1.0)
+        F,_ = geosphere(2,1.0)
         Fb = boundaryfaces(F)        
         @test F == Fb
         @test typeof(F) == typeof(Fb)
@@ -3594,15 +3558,14 @@ end
 
 @testset "boundaryfaceindices" verbose = true begin
     @testset "Tetrahedron (all boundary faces)" begin
-        M = platonicsolid(1)
-        F = faces(M)        
+        F,_ = platonicsolid(1)        
         indB = boundaryfaceindices(F)
         @test sort(indB) == collect(1:length(F))
         @test typeof(indB) == Vector{Int}
     end
 
     @testset "Sphere mesh (all boundary faces)" begin
-        F,V = geosphere(2,1.0)        
+        F,_ = geosphere(2,1.0)        
         indB = boundaryfaceindices(F)
         @test sort(indB) == collect(1:length(F))
         @test typeof(indB) == Vector{Int}
@@ -3685,11 +3648,9 @@ end
     end
 
     @testset "Mesh" begin        
-        M = cube(sqrt(3))
-        F = faces(M)
-        V = coordinates(M)
+        F,V = cube(sqrt(3))        
         @test pointspacingmean(F,V)==2.0
-        @test pointspacingmean(M)==2.0
+        @test pointspacingmean(GeometryBasics.Mesh(V,F))==2.0
     end
 end
 
@@ -3887,14 +3848,12 @@ end
 
     @testset "Single group" begin
         # Single tetrahedron
-        M = tetrahedron(1.0)
-        F = faces(M)
+        F,V = tetrahedron(1.0)        
         C = meshgroup(F)
         @test C == ones(length(F))
 
         # Single cube
-        M = cube(1.0)
-        F = faces(M)
+        F,V = cube(1.0)        
         C = meshgroup(F)
         @test C == ones(length(F))
     end
@@ -3906,9 +3865,7 @@ end
         @test C == [1,1,2]
         
         # Two tetrahedrons
-        M = tetrahedron(1.0)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = tetrahedron(1.0)        
         n = length(F)
         F2 = map(f-> f.+length(V),F)
         V2 = map(v-> Point{3, Float64}(2.0+v[1],v[2],v[3]),V)
@@ -3918,9 +3875,7 @@ end
         @test C == repeat(1:2,inner=n)
 
         # Two tetrahedrons
-        M = cube(1.0)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = cube(1.0)        
         n = length(F)
         F2 = map(f-> f.+length(V),F)
         V2 = map(v-> Point{3, Float64}(2.0+v[1],v[2],v[3]),V)
@@ -3991,9 +3946,7 @@ end
 
         # Single cube
         r = sqrt(3)
-        M = cube(r)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = cube(r)        
         d,dd,l = distmarch(F,V,[1])
         @test isapprox(d,[0.0, 2.0, 2.8284271247461903, 2.0, 2.0,
                          2.8284271247461903, 4.82842712474619, 2.8284271247461903],atol=eps_level) 
@@ -4027,9 +3980,7 @@ end
 
     # Single cube
     r = sqrt(3)
-    M = cube(r)
-    F = faces(M)
-    V = coordinates(M)
+    F,V = cube(r)    
     F = quad2tri(F,V,convert_method = :forward)
     @testset "ray" begin 
         ray_origin = GeometryBasics.Point3{Float64}(0.25,0.0,1.5) # Slight off so we hit one triangle, not two at the edge
@@ -4114,15 +4065,12 @@ end
     
     @testset "Cube" begin
         r = 2        
-        M = cube(r)
-        F = faces(M)
-        V = coordinates(M)
-        F,V = subquad(F,V,2; method=:linear)
-        M = GeometryBasics.Mesh(V,F)
+        F,V = cube(r)        
+        F,V = subquad(F,V,2; method=:linear)        
         K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V)
 
-        # Check if mesh input functions the same
-        K1m,K2m,U1m,U2m,Hm,Gm = mesh_curvature_polynomial(M)
+        # Check if mesh input functions the same        
+        K1m,K2m,U1m,U2m,Hm,Gm = mesh_curvature_polynomial(GeometryBasics.Mesh(V,F))
         @test K1==K1m
         @test K2==K2m       
     end
@@ -4180,9 +4128,7 @@ end
     end
 
     @testset "Quadrilateral face mesh" begin
-        M = cube(1.0)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = cube(1.0)        
         Fn, Vn = separate_vertices(F, V)    
         @test Vn isa Vector{Point3{Float64}}
         @test typeof(Fn) == typeof(F)
@@ -4191,9 +4137,7 @@ end
     end
 
     @testset "Triangulated mesh" begin
-        M = tetrahedron(1.0)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = tetrahedron(1.0)
         Fn, Vn = separate_vertices(F, V)    
         @test Vn isa Vector{Point3{Float64}}
         @test typeof(Fn) == typeof(F)
@@ -4202,9 +4146,8 @@ end
     end
 
     @testset "Mesh" begin
-        M = tetrahedron(1.0)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = tetrahedron(1.0)
+        M = GeometryBasics.Mesh(V,F)
         Mn = separate_vertices(M)    
         Fn = faces(Mn)
         Vn = coordinates(Mn)
@@ -4375,8 +4318,7 @@ end
 @testset "kabsch_rot" begin
     eps_level = 1e-6
 
-    M = cube(sqrt(3))
-    V1 = coordinates(M)
+    _,V1 = cube(sqrt(3))    
     R_true = RotXYZ(0.25*π,0.25*π,0.25*π)
     V2 = [R_true*v for v in V1]
     R_kabsch_forward = kabsch_rot(V1,V2)
@@ -4820,13 +4762,9 @@ end
 @testset "scalesimplex" verbose=true begin
     eps_level = 1e-6
 
-    M = cube(sqrt(3))
-    Fq = faces(M)
-    Vq = coordinates(M)
-
-    M = tetrahedron(1.0)
-    Ft = faces(M)
-    Vt = coordinates(M)
+    Fq,Vq = cube(sqrt(3))
+    
+    Ft,Vt = tetrahedron(1.0)    
 
     @testset "Single scaling value applied to quads" begin
         Fs,Vs = scalesimplex(Fq,Vq,0.5)
@@ -4928,9 +4866,7 @@ end
     eps_level = 1e-6
 
     @testset "Triangles, single scale" begin
-        M = tetrahedron(1.0)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = tetrahedron(1.0)
         E = meshedges(F; unique_only = true)
         Fs,Fsq,Vs = dualclad(F,V,0.5; connectivity=:face)
         @test length(Fs) == length(F)
@@ -4978,9 +4914,7 @@ end
     end    
 
     @testset "Triangles, per face and per edge scale" begin
-        M = tetrahedron(1.0)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = tetrahedron(1.0)
         E = meshedges(F; unique_only = true)
         Fs,Fsq,Vs = dualclad(F,V,0.5*ones(length(F)); connectivity=:face)
         @test length(Fs) == length(F)
@@ -5028,9 +4962,7 @@ end
     end    
     
     @testset "Quads, single scale" begin
-        M = cube(√3)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = cube(sqrt(3))        
         E = meshedges(F; unique_only = true)
         Fs,Fsq,Vs = dualclad(F,V,0.5; connectivity=:face)
         @test length(Fs) == length(F)
@@ -5274,9 +5206,7 @@ end
         
         @testset "4 triangle tetrahedron mesh" begin
             r = 1.0 #radius
-            M = platonicsolid(1,r) 
-            F = faces(M)
-            V = coordinates(M)
+            F,V = platonicsolid(1,r)             
 
             E = meshedges(F; unique_only=true)
             Fq,Vq = tri2quad(F,V; method=:split)
@@ -5295,9 +5225,7 @@ end
 
         @testset "icosahedron" begin
             r = 1.0 #radius
-            M = platonicsolid(4,r) 
-            F = faces(M)
-            V = coordinates(M)
+            F,V = platonicsolid(4,r)             
 
             E = meshedges(F; unique_only=true)
             Fq,Vq = tri2quad(F,V; method=:split)
@@ -5349,9 +5277,7 @@ end
 
         @testset "4 triangle tetrahedron mesh" begin
             r = 1.0 #radius
-            M = platonicsolid(1,r) 
-            F = faces(M)
-            V = coordinates(M)
+            F,V = platonicsolid(1,r) 
 
             E = meshedges(F; unique_only=true)
             Fq,Vq = tri2quad(F,V; method=:rhombic)
@@ -5372,9 +5298,7 @@ end
 
         @testset "icosahedron" begin
             r = 1.0 #radius
-            M = platonicsolid(4,r) 
-            F = faces(M)
-            V = coordinates(M)
+            F,V = platonicsolid(4,r)             
 
             E = meshedges(F; unique_only=true)
             Fq,Vq = tri2quad(F,V; method=:rhombic)
@@ -5904,27 +5828,21 @@ end
     end
 
     @testset "Cube" begin
-        M = cube(sqrt(3))
-        F = faces(M)
-        V = coordinates(M)
+        F,V = cube(sqrt(3))        
         A,E,con_E2F = edgefaceangles(F,V; deg=true)
         @test all(A.==-90.0)
         @test length(A) == length(E)
     end
 
     @testset "Tetrahedron" begin
-        M = tetrahedron(1.0)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = tetrahedron(1.0)
         A,E,con_E2F = edgefaceangles(F,V; deg=true)
         @test all( isapprox.(A,-109.47122063449069,atol=eps_level))
         @test length(A) == length(E)
     end
 
     @testset "Icosahedron" begin
-        M = icosahedron(1.0)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = icosahedron(1.0)        
         A,E,con_E2F = edgefaceangles(F,V; deg=true)
         @test all( isapprox.(A,-41.81031489577861,atol=eps_level))
         @test length(A) == length(E)
@@ -5988,9 +5906,7 @@ end
     end
 
     @testset "Cube" begin
-        M = cube(sqrt(3))
-        F = faces(M)
-        V = coordinates(M)
+        F,V = cube(sqrt(3))
 
         # Each face should have own group label
         angleThreshold = 22.5
@@ -6006,9 +5922,7 @@ end
     end
 
     @testset "Tetrahedron" begin
-        M = tetrahedron(1.0)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = tetrahedron(1.0)
  
         # Each face should have own group label
         angleThreshold = 22.5
@@ -6024,9 +5938,7 @@ end
     end
 
     @testset "Icosahedron" begin
-        M = icosahedron(1.0)
-        F = faces(M)
-        V = coordinates(M)
+        F,V = icosahedron(1.0)        
 
         # Each face should have own group label
         angleThreshold = 22.5

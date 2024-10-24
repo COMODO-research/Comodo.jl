@@ -16,9 +16,7 @@ elseif testCase==2
     F,V = quadsphere(3,r)    
 elseif testCase==3
     r = sqrt(3)
-    M = cube(r)
-    F = faces(M)
-    V = coordinates(M)
+    F,V = cube(r)    
     # F = quad2tri(F,V; convert_method = "angle")
 elseif testCase==4   
     r = 25

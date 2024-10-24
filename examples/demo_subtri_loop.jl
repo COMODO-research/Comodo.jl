@@ -1,9 +1,7 @@
 using Comodo, GLMakie, GeometryBasics
 
 r = 1.0 #radius
-M = platonicsolid(4,r)
-V = coordinates(M)
-F = faces(M)
+F,V = platonicsolid(4,r)
 
 # Fn,Vn = subTri(F,V,1; method=:loop)
 
@@ -26,7 +24,7 @@ end
 ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
 slidercontrol(hSlider,ax)
 
-hp1=wireframe!(ax,M,linewidth=3,color=:red, overdraw=false)
+hp1=wireframe!(ax,GeometryBasics.Mesh(V,F),linewidth=3,color=:red, overdraw=false)
 hp2=poly!(ax,Mn,strokewidth=1,color=:white, shading = FastShading)
 
 # hp2=poly!(scene,M,strokewidth=1,color=:white, shading = FastShading)

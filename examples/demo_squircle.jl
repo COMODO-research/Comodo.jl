@@ -9,7 +9,6 @@ r = 1.0
 a_tol = 1e-6
 
 
-
 V = squircle(r,n,τ; atol=a_tol)
 
 # Visualization

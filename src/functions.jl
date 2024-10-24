@@ -1128,7 +1128,7 @@ function icosahedron(r=1.0)
     F[19] = TriangleFace{Int}(6,7,4)
     F[20] = TriangleFace{Int}(6,4,9)
     
-    return GeometryBasics.Mesh(V,F)
+    return F, V
 end
 
 
@@ -1166,7 +1166,7 @@ function octahedron(r=1.0)
     F[7 ] = TriangleFace{Int}(6,3,4)
     F[8 ] = TriangleFace{Int}(6,4,1)
     
-    return GeometryBasics.Mesh(V,F)
+    return F, V
 end
 
 
@@ -1225,7 +1225,7 @@ function dodecahedron(r=1.0)
     F[11] = NgonFace{5,Int}( 1, 4,19,15,20)
     F[12] = NgonFace{5,Int}(12,18, 5,15,19)
     
-    return GeometryBasics.Mesh(V,F)
+    return F, V
 end
 
 
@@ -1263,7 +1263,7 @@ function cube(r=1.0)
     F[5 ] = QuadFace{Int}(7,8,4,3)    
     F[6 ] = QuadFace{Int}(8,5,1,4)    
 
-    return GeometryBasics.Mesh(V,F)
+    return F, V
 end
 
 
@@ -1297,7 +1297,7 @@ function tetrahedron(r=1.0)
     F[3 ] = TriangleFace{Int}(4,3,2)
     F[4 ] = TriangleFace{Int}(4,1,3)
     
-    return GeometryBasics.Mesh(V,F)
+    return F,V
 end
 
 
@@ -1328,17 +1328,17 @@ r::Float64, defining circumsphere radius
 """
 function platonicsolid(n::Integer,r=1.0)
     if isone(n)
-        M = tetrahedron(r)
+        F,V = tetrahedron(r)
     elseif n==2
-        M = cube(r)
+        F,V = cube(r)
     elseif n==3
-        M = octahedron(r)
+        F,V = octahedron(r)
     elseif n==4 
-        M = icosahedron(r)
+        F,V = icosahedron(r)
     elseif n==5
-        M = dodecahedron(r)
+        F,V = dodecahedron(r)
     end
-    return M
+    return F,V
 end
 
 """
@@ -1869,9 +1869,7 @@ iteration. Two methods are available, i.e. `:linear` (default) and `:Loop`
 features the Loop method which may produce a smoother result.
 """
 function geosphere(n::Int,r::T; method=:linear) where T <: Real
-    M = platonicsolid(4,r)
-    V = coordinates(M)
-    F = faces(M)    
+    F,V = platonicsolid(4,r)    
     for _ = 1:n                
         # Set push start
         if method == :linear 
@@ -2642,9 +2640,7 @@ whereby `n` sets the number of splitting iterations to use. Using `n=0` therefor
 returns a cube.
 """
 function quadsphere(n::Int,r::T) where T <: Real
-    M = platonicsolid(2,r)
-    F = faces(M)
-    V = coordinates(M)
+    F,V = platonicsolid(2,r)    
     if n > 0
         for _ in 1:n
             numPointsNow = length(V)
@@ -2669,14 +2665,19 @@ function simplex2vertexdata(F::Union{Vector{NgonFace{NF,TF}},Vector{Element{NE,T
             A = facearea(F,V)
         end
     end    
+    
     DV = (typeof(DF))(undef,length(con_V2F))
     T = eltype(DV)
     for q in eachindex(DV)
-        if weighting==:none
-            DV[q] = mean(T,DF[con_V2F[q]])
-        elseif weighting==:area            
-            a = A[con_V2F[q]]
-            DV[q] = sum(T,DF[con_V2F[q]].*a)./sum(a)
+        if !isempty(con_V2F[q])
+            if weighting==:none || length(con_V2F[q])==1 
+                DV[q] = mean(T,DF[con_V2F[q]])
+            elseif weighting==:area            
+                a = A[con_V2F[q]]                
+                DV[q] = sum(T,DF[con_V2F[q]].*a)./sum(a)
+            end
+        else
+            DV[q] = T(NaN)
         end
     end
     return DV
@@ -4929,8 +4930,12 @@ vertex normals are used.
 * `num_steps` (default is 2) is the number of nodes in the extrude direction, the 
 number of elements in the extrude direction is therefore `num_steps-1`. 
 """
-function extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; extent=1.0, direction=:positive, num_steps=2, N::Union{Vector{Point{ND,TN}},Vector{Vec{ND, TN}},Nothing}=nothing) where NF where TF<:Integer where ND where TV<:Real where TN<:Real
+function extrudefaces(F::Union{NgonFace{NF,TF},Vector{NgonFace{NF,TF}}},V::Vector{Point{ND,TV}}; extent=1.0, direction=:positive, num_steps=2, N::Union{Vector{Point{ND,TN}},Vector{Vec{ND, TN}},Nothing}=nothing) where NF where TF<:Integer where ND where TV<:Real where TN<:Real
     
+    if isa(F,NgonFace{NF,TF})
+        F = [F] 
+    end
+
     # Compute normal directions if not provided
     if isnothing(N)
         N = vertexnormal(F,V; weighting=:area)
@@ -4980,7 +4985,6 @@ function extrudefaces(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; extent
 
     return E, VE
 end
-
 
 """
     filletcurve(V::Vector{Point{NV,TV}}; rMax::Union{Vector{T},T,Nothing}=nothing, constrain_method = :max, n=25, close_loop = false, eps_level = 1e-6) where TV<:Real where NV where T<:Real
@@ -5331,4 +5335,18 @@ function faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; de
         end
     end
     return G
+end
+
+
+function eulerchar(F,V=nothing; E=nothing)
+    nf = length(F)
+    if isnothing(V)
+        nv = maximum(reduce(vcat,F1)) # Use largest index (assumes all points used in mesh)
+    else
+        nv = length(V)
+    end
+    if isnothing(E)
+        ne = length(meshedges(F; unique_only=true))
+    end    
+    return nv-ne+nf
 end
