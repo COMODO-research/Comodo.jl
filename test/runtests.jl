@@ -858,7 +858,8 @@ end
 
     @testset "Mesh" begin
         F, V = cube(1.0)
-        E = meshedges(F,unique_only=true)
+        M = GeometryBasics.Mesh(V,F)
+        E = meshedges(M,unique_only=true)
         @test E == LineFace{Int}[[1, 2], [7, 8], [5, 6], [6, 7], [5, 8], [2, 3], 
         [2, 6], [3, 7], [4, 8], [1, 5], [3, 4], [1, 4]]
     end
@@ -2404,6 +2405,8 @@ end
     Fs,Vs = separate_vertices(F,V)
     Fm, Vm, indReverse = mergevertices(Fs, Vs; roundVertices = true)
 
+    @test_throws UndefVarError mergevertices(Vs)
+
     @test V isa Vector{Point3{Float64}}
     @test length(Vm) == length(V)
     @test isapprox(Vm[1], [-1.0, -1.0, -1.0], atol=eps_level)
@@ -2424,6 +2427,19 @@ end
 end
 
 
+@testset "indexmap and indexmap!" verbose = true begin
+    F,V = geosphere(1,1)
+    p = pointspacingmean(F,V)
+    Fs,V = separate_vertices(F,V)
+    Vm,indUni,indMap = mergevertices(V; pointSpacing=p)
+    Fm = indexmap(Fs,indMap)
+    indexmap!(Fs,indMap)
+    @test Fm == Fs
+    @test length(Vm) == maximum(reduce(vcat,Fm))
+    @test length(Vm) == maximum(reduce(vcat,Fs))
+end
+
+
 @testset "smoothmesh_laplacian" verbose = true begin
 
     eps_level = 1e-4
@@ -2440,6 +2456,9 @@ end
         λ = 0.5 # Laplacian smoothing parameter
         n = -3 # Number of iterations 
         @test_throws ArgumentError smoothmesh_laplacian(F,V,n,λ)
+
+        # Out of range indices in F
+        @test_throws ErrorException smoothmesh_laplacian([TriangleFace{Int}(-1,100,200)],V)
     end
 
     @testset "n=0" begin
@@ -2516,6 +2535,10 @@ end
         α=0.1
         β=0.5
         @test_throws ArgumentError smoothmesh_hc(F,V,n,α,β)
+
+        # Out of range indices in F
+        @test_throws ErrorException smoothmesh_hc([TriangleFace{Int}(-1,100,200)],V)
+
     end
 
     @testset "n=0" begin
@@ -2580,12 +2603,21 @@ end
     plateElem = [4,3]
     F,V = quadplate(plateDim,plateElem)
 
+    @testset "Errors" begin
+        @test_throws ArgumentError quadplate(plateDim,plateElem; orientation=:wrong)
+    end
+
     @test V isa Vector{Point3{Float64}}
     @test length(V) == prod(plateElem.+1)
     @test isapprox(V, Point3{Float64}[[-2.5, -2.5, 0.0], [-1.25, -2.5, 0.0], [0.0, -2.5, 0.0], [1.25, -2.5, 0.0], [2.5, -2.5, 0.0], [-2.5, -0.8333333333333334, 0.0], [-1.25, -0.8333333333333334, 0.0], [0.0, -0.8333333333333334, 0.0], [1.25, -0.8333333333333334, 0.0], [2.5, -0.8333333333333334, 0.0], [-2.5, 0.8333333333333334, 0.0], [-1.25, 0.8333333333333334, 0.0], [0.0, 0.8333333333333334, 0.0], [1.25, 0.8333333333333334, 0.0], [2.5, 0.8333333333333334, 0.0], [-2.5, 2.5, 0.0], [-1.25, 2.5, 0.0], [0.0, 2.5, 0.0], [1.25, 2.5, 0.0], [2.5, 2.5, 0.0]], atol=eps_level)
     @test F isa Vector{QuadFace{Int}}
     @test length(F) == prod(plateElem)
     @test F[1] == [1, 2, 7, 6]
+
+    F,V = quadplate(plateDim,plateElem; orientation=:down)
+    @test F[1] == [6,7,2,1]
+
+
 end
 
 @testset "triplate" begin
@@ -2687,6 +2719,14 @@ end
         DV = simplex2vertexdata(F1,DF,V1; weighting=:none)
         @test isapprox(DV,ones(Float64,length(F1[1])), atol=eps_level)
 
+        # Single element extra point
+        DF = [1.0] # Face data 
+        V1_extra = deepcopy(V1)
+        push!(V1_extra,V1[1]) # add additional point
+        DV = simplex2vertexdata(F1,DF,V1_extra; weighting=:none)
+        @test isapprox(DV[1:4],ones(Float64,length(F1[1])), atol=eps_level)
+        @test isnan(DV[end])
+        
         # Quads
         DF = collect(Float64,1:length(Fq)) # Face data (here face numbers)
         DV = simplex2vertexdata(Fq,DF,Vq; weighting=:none)
@@ -2704,6 +2744,7 @@ end
         DV = simplex2vertexdata(Eh,DF,Vh; weighting=:none)
         D_true = [1.0, 1.5, 2.0, 2.0, 2.5, 3.0, 3.0, 3.5, 4.0, 3.0, 3.5, 4.0, 4.0, 4.5, 5.0, 5.0, 5.5, 6.0, 5.0, 5.5, 6.0, 6.0, 6.5, 7.0, 7.0, 7.5, 8.0]
         @test isapprox(DV,D_true, atol=eps_level)
+        
     end
     
     @testset "Vector Float64 data, weighting=:area" begin
@@ -3024,6 +3065,7 @@ end
 
     @testset "Errors" begin
         @test_throws ArgumentError loftlinear(V1,V2;num_steps=num_steps,close_loop=true,face_type=:wrong)
+        @test_throws ArgumentError loftlinear(V1,V2;num_steps=1,close_loop=true)
     end
 
     @testset "quad" begin
@@ -3693,6 +3735,13 @@ end
         @test isapprox(zMax,d/2,atol = eps_level) && isapprox(zMin,-d/2,atol = eps_level)
 
         F, V = extrudecurve(Vc; extent=d, direction=:negative, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)            
+        @test isapprox(zMax,0.0,atol = eps_level) && isapprox(zMin,-d,atol = eps_level)
+
+        close_loop = false
+        F, V = extrudecurve(Vc; extent=d, direction=:negative, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=close_loop, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            

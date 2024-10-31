@@ -2782,8 +2782,8 @@ function loftlinear(V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}};num_steps=
         num_steps = ceil(Int,d/dp)        
     end
 
-    if num_steps == 1
-        num_steps = 2
+    if num_steps < 2
+        throw(ArgumentError("num_steps should be >=2"))
     end
 
     # Linearly blending points from first to last
@@ -5364,17 +5364,9 @@ function edgefaceangles(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=
                 
                 # Compute the face angles 
                 if deg == true # Compute angles in degrees                       
-                    a = s*acosd(clamp(dot(n1,n2),-1.0,1.0))
-                    if a>180
-                        a = a-360
-                    end
-                    A[i_e] = a
+                    A[i_e] = s*acosd(clamp(dot(n1,n2),-1.0,1.0))
                 else # Compute angles in radians
-                    a = s*acos(clamp(dot(n1,n2),-1.0,1.0))                        
-                    if a>pi
-                        a = a-2*pi                        
-                    end
-                    A[i_e] = a # Replace NaN by the current angle 
+                    A[i_e] = s*acos(clamp(dot(n1,n2),-1.0,1.0))                         
                 end                 
             end
         end
