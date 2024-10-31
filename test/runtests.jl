@@ -3783,9 +3783,7 @@ end
         ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-1.8369701987210297e-16, 1.0, 0.75], 
-        [-0.923879532511287, 0.3826834323650892, 1.5], [-0.3826834323650895, -0.9238795325112868, 2.25], 
-        [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
+        @test isapprox(V[ind],Point{3, Float64}[[0.9238795325112865, 0.3826834323650904, 0.0], [-0.38268343236509034, 0.9238795325112865, 0.75], [-1.0, -5.66553889764798e-16, 1.5], [2.83276944882399e-16, -1.0, 2.25], [1.0, 0.0, 3.0]],atol = eps_level)
     end
 
     @testset "face_type=:tri" begin
@@ -3800,9 +3798,7 @@ end
         ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-0.19134171618254525, 0.9619397662556433, 0.75], 
-        [-0.923879532511287, 0.3826834323650892, 1.5], [-0.1913417161825446, -0.9619397662556435, 2.25], 
-        [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
+        @test isapprox(V[ind],Point{3, Float64}[[0.9238795325112865, 0.3826834323650904, 0.0], [-0.5448951067758191, 0.8154931568489168, 0.75], [-1.0, -5.66553889764798e-16, 1.5], [0.19134171618254506, -0.9619397662556434, 2.25], [1.0, 0.0, 3.0]],atol = eps_level)
     end
 
     @testset "face_type=:tri_slash" begin
@@ -3817,9 +3813,7 @@ end
         ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-1.8369701987210297e-16, 1.0, 0.75], 
-        [-0.923879532511287, 0.3826834323650892, 1.5], [-0.3826834323650895, -0.9238795325112868, 2.25], 
-        [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
+        @test isapprox(V[ind],Point{3, Float64}[[0.9238795325112865, 0.3826834323650904, 0.0], [-0.38268343236509034, 0.9238795325112865, 0.75], [-1.0, -5.66553889764798e-16, 1.5], [2.83276944882399e-16, -1.0, 2.25], [1.0, 0.0, 3.0]],atol = eps_level)
     end
 
     @testset "face_type=:quad2tri" begin
@@ -3834,9 +3828,7 @@ end
         ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-1.8369701987210297e-16, 1.0, 0.75], 
-        [-0.923879532511287, 0.3826834323650892, 1.5], [-0.3826834323650895, -0.9238795325112868, 2.25], 
-        [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
+        @test isapprox(V[ind],Point{3, Float64}[[0.9238795325112865, 0.3826834323650904, 0.0], [-0.38268343236509034, 0.9238795325112865, 0.75], [-1.0, -5.66553889764798e-16, 1.5], [2.83276944882399e-16, -1.0, 2.25], [1.0, 0.0, 3.0]],atol = eps_level)
     end
 
 end
