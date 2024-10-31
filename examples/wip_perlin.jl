@@ -1,6 +1,8 @@
 using GLMakie
 using Random
 
+Random.seed!(1)
+
 function randangle(siz)
     A = Matrix{Float64}(undef,siz)    
     for i in eachindex(A)
@@ -9,7 +11,6 @@ function randangle(siz)
     return A
 end
 
-Random.seed!(1)
 
 # Define grid
 size_grid = (25,25) # grid size

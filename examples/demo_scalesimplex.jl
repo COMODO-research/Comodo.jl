@@ -9,24 +9,20 @@ This demo shows the use of the `scalesimplex` function.
 =#
 
 # Loading a mesh
-
-# fileName_mesh = joinpath(comododir(),"assets","obj","spot_control_mesh_texture.obj")
-# M = load(fileName_mesh)
-
 fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
 M = load(fileName_mesh)
 
 # Obtain mesh faces and vertices
 F = tofaces(faces(M))
 V = topoints(coordinates(M))
-F,V = mergevertices(F,V)
+V,_,indMap = mergevertices(V; pointSpacing=pointspacingmean(F,V))
+indexmap!(F,indMap)
 
 # n = 1
 # F,V = subtri(F,V,n; method=:Loop)
 
 s = 0.5
 Fs,Vs = scalesimplex(F,V,s)
-
 
 ## Visualisation
 

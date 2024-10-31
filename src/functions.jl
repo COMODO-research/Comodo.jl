@@ -22,6 +22,10 @@ const Tet10{T} = Element{10,T} where T<:Integer
 const Hex8{T} = Element{8,T} where T<:Integer
 const Hex20{T} = Element{20,T} where T<:Integer
 const Penta6{T} = Element{6,T} where T<:Integer
+const Rhombicdodeca14{T} = Element{14,T} where T<:Integer
+const Truncatedocta24{T} = Element{24,T} where T<:Integer
+# const Truncatedocta24{T} = Element{24,T} where T<:Integer
+
 
 """
     ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v)
@@ -76,7 +80,7 @@ left arrow keys, however, rather than stopping at the slider extrema, the
 sliders position will "wrap" back to the start when advancing beyond the end 
 position, and vice versa. 
 """
-function slidercontrol(hSlider::Slider,ax::Union{Axis3, Figure})    
+function slidercontrol(hSlider::Slider,ax::Union{Axis3, Figure, LScene})    
     sliderRange = hSlider.range[] # Get slider range
     rangeLength = length(sliderRange) # Number of possible steps 
     sliderIndex = hSlider.selected_index[] # Current slider index
@@ -585,11 +589,9 @@ function unique_dict_index(X::Union{Array{T},Tuple{T}}; sort_entries=false) wher
     d = Dict{T,Nothing}() # Use dict to keep track of used values
     xUni = Vector{T}()
     indUnique = Vector{Int}() 
-    for i in eachindex(X)        
-        if sort_entries && length(X[1])>1
-            x = sort(X[i])
-        else
-            x = X[i]
+    for (i,x) in enumerate(X)        
+        if sort_entries && length(x)>1
+            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
         end
         if !haskey(d, x)
             d[x] = nothing
@@ -623,11 +625,9 @@ function unique_dict_index_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=fal
     indUnique = Vector{Int}() 
     indInverse = Vector{Int}(undef,length(X)) 
     j=0
-    for i in eachindex(X)         
-        if sort_entries && length(X[1])>1
-            x = sort(X[i])        
-        else
-            x = X[i]
+    for (i,x) in enumerate(X)         
+        if sort_entries && length(x)>1
+            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
         end
         if !haskey(d, x)
             j+=1 # Increment counter
@@ -667,12 +667,10 @@ function unique_dict_index_count(X::Union{Array{T},Tuple{T}}; sort_entries=false
     c =  Vector{Int}() 
 
     j=0
-    for i in eachindex(X)      
-        if sort_entries && length(X[1])>1
-            x = sort(X[i])        
-        else
-            x = X[i]
-        end  
+    for (i,x) in enumerate(X)         
+        if sort_entries && length(x)>1
+            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
+        end
         if !haskey(d, x)
             j+=1 # Increment counter
             d[x] = j # inverse index in dict
@@ -712,12 +710,10 @@ function unique_dict_index_inverse_count(X::Union{Array{T},Tuple{T}}; sort_entri
     c =  Vector{Int}() 
 
     j=0
-    for i in eachindex(X)      
-        if sort_entries && length(X[1])>1
-            x = sort(X[i])        
-        else
-            x = X[i]
-        end  
+    for (i,x) in enumerate(X)         
+        if sort_entries && length(x)>1
+            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
+        end 
         if !haskey(d, x)
             j+=1 # Increment counter
             d[x] = j # inverse index in dict
@@ -755,11 +751,9 @@ function unique_dict_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) wher
     xUni = Vector{T}()
     c = Vector{Int}()
     j = 0
-    for i in eachindex(X)      
-        if sort_entries && length(X[1])>1
-            x = sort(X[i])        
-        else
-            x = X[i]
+    for (i,x) in enumerate(X)         
+        if sort_entries && length(x)>1
+            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
         end  
         if !haskey(d, x)
             j += 1 # Index in unique array
@@ -796,12 +790,10 @@ function unique_dict_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) wh
     indInverse = Vector{Int}(undef,length(X)) 
 
     j=0
-    for i in eachindex(X)      
-        if sort_entries && length(X[1])>1
-            x = sort(X[i])        
-        else
-            x = X[i]
-        end  
+    for (i,x) in enumerate(X)         
+        if sort_entries && length(x)>1
+            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
+        end
         if !haskey(d, x)
             j+=1 # Increment counter
             d[x] = j # inverse index in dict
@@ -830,14 +822,14 @@ function unique_dict(X::AbstractVector{T}) where T <: Real
     indUnique = Vector{Int}()
     indReverse = Vector{Int}(undef,length(X))
     j=0
-    for i in eachindex(X)        
-        if !haskey(d, X[i])                                          
+    for (i,x) in enumerate(X)        
+        if !haskey(d, x)                                          
             j+=1
-            d[X[i]] = j # reverse index in dict            
+            d[x] = j # reverse index in dict            
             push!(indUnique, i)                     
             indReverse[i] = j 
         else
-            indReverse[i] = d[X[i]]            
+            indReverse[i] = d[x]            
         end        
     end
     return collect(keys(d)), indUnique, indReverse
@@ -858,18 +850,16 @@ sorted, in this case and entry [3,1,2] is viewed as the same as [1,3,2] and
 """
 function occursonce(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any    
     d = Dict{T,Int}() # Use dict to keep track of used values    
-    B = fill(false,length(X))
-    for i in eachindex(X)      
-        if sort_entries && length(X[1])>1
-            x = sort(X[i])        
-        else
-            x = X[i]
-        end  
+    B = Vector{Bool}(undef,length(X)) 
+    for (i,x) in enumerate(X)         
+        if sort_entries && length(x)>1
+            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
+        end
         if !haskey(d, x)            
             d[x] = i # index in dict            
             B[i] = true             
         else
-            B[i] = false # Set urrent to false
+            B[i] = false # Set current to false
             B[d[x]] = false # And also one found earlier           
         end
     end
@@ -1143,10 +1133,8 @@ Creates a GeometryBasics.Mesh for an octahedron with radius `r`. The default
 radius, when not supplied, is `1.0`. 
 """
 function octahedron(r=1.0)
-
-    s = r/sqrt(2.0)
-
     # Create vertices    
+    s = r/sqrt(2.0)
     V=Vector{Point{3, Float64}}(undef,6)
     V[1 ] = Point{3, Float64}(   -s,    -s,  0.0)
     V[2 ] = Point{3, Float64}(    s,    -s,  0.0)
@@ -1180,50 +1168,52 @@ Creates a dodecahedron mesh.
 Creates a GeometryBasics.Mesh for an dodecahedron with radius `r`. The default 
 radius, when not supplied, is `1.0`. 
 """
-function dodecahedron(r=1.0)
+function dodecahedron(r=1.0; h=1.0/Base.MathConstants.golden)
+    # Setting up coordinate parameters
+    # The h-factor is for the general pyritohedron with 1/ϕ being default for a
+    # regular dodecahedron.
 
-    ϕ = Base.MathConstants.golden # (1.0+sqrt(5.0))/2.0, Golden ratio
-    s = r/sqrt(3.0)
-    t = ϕ*s    
-    w = (ϕ-1.0)*s
+    s = r/sqrt(3.0) # Scaling factor
+    t = s * (1.0 + h)
+    w = s * (1.0 - h^2)
 
     # Create vertices    
-    V=Vector{Point{3, Float64}}(undef,20)
-    V[1 ] = Point{3, Float64}(   s,   s,   s)
-    V[2 ] = Point{3, Float64}(   w, 0.0,   t)
-    V[3 ] = Point{3, Float64}(  -t,  -w, 0.0)
-    V[4 ] = Point{3, Float64}(   t,   w, 0.0)
-    V[5 ] = Point{3, Float64}(  -s,   s,  -s)
-    V[6 ] = Point{3, Float64}( 0.0,  -t,  -w)
-    V[7 ] = Point{3, Float64}(  -t,   w, 0.0)
-    V[8 ] = Point{3, Float64}(   s,  -s,   s)
-    V[9 ] = Point{3, Float64}(  -s,   s,   s)
-    V[10] = Point{3, Float64}(  -s,  -s,   s)
-    V[11] = Point{3, Float64}(   s,  -s,  -s)
-    V[12] = Point{3, Float64}(   w, 0.0,  -t)
-    V[13] = Point{3, Float64}(  -s,  -s,  -s)
-    V[14] = Point{3, Float64}( 0.0,  -t,   w)
-    V[15] = Point{3, Float64}( 0.0,   t,  -w)
-    V[16] = Point{3, Float64}(  -w, 0.0,   t)
-    V[17] = Point{3, Float64}(   t,  -w, 0.0)
-    V[18] = Point{3, Float64}(  -w, 0.0,  -t)
-    V[19] = Point{3, Float64}(   s,   s,  -s)
-    V[20] = Point{3, Float64}( 0.0,   t,   w)
+    V = Vector{Point{3, Float64}}(undef,20)
+    V[ 1] = Point{3, Float64}([ -s,  -s,  -s])
+    V[ 2] = Point{3, Float64}([  s,  -s,  -s])
+    V[ 3] = Point{3, Float64}([  s,   s,  -s])
+    V[ 4] = Point{3, Float64}([ -s,   s,  -s])
+    V[ 5] = Point{3, Float64}([ -s,  -s,   s])
+    V[ 6] = Point{3, Float64}([  s,  -s,   s])
+    V[ 7] = Point{3, Float64}([  s,   s,   s])
+    V[ 8] = Point{3, Float64}([ -s,   s,   s])
+    V[ 9] = Point{3, Float64}([ -w, 0.0,  -t])
+    V[10] = Point{3, Float64}([  w, 0.0,  -t])
+    V[11] = Point{3, Float64}([ -w, 0.0,   t])
+    V[12] = Point{3, Float64}([  w, 0.0,   t])
+    V[13] = Point{3, Float64}([0.0,  -t,  -w])
+    V[14] = Point{3, Float64}([0.0,  -t,   w])
+    V[15] = Point{3, Float64}([  t,   w, 0.0])
+    V[16] = Point{3, Float64}([  t,  -w, 0.0])
+    V[17] = Point{3, Float64}([0.0,   t,  -w])
+    V[18] = Point{3, Float64}([0.0,   t,   w])
+    V[19] = Point{3, Float64}([ -t,  -w, 0.0])
+    V[20] = Point{3, Float64}([ -t,   w, 0.0])
 
     # Create faces
     F = Vector{NgonFace{5,Int}}(undef,12)
-    F[1 ] = NgonFace{5,Int}(20, 9,16, 2, 1)
-    F[2 ] = NgonFace{5,Int}( 2,16,10,14, 8)
-    F[3 ] = NgonFace{5,Int}(16, 9, 7, 3,10)
-    F[4 ] = NgonFace{5,Int}( 7, 9,20,15, 5)
-    F[5 ] = NgonFace{5,Int}(18,13, 3, 7, 5)
-    F[6 ] = NgonFace{5,Int}( 3,13, 6,14,10)
-    F[7 ] = NgonFace{5,Int}( 6,13,18,12,11)
-    F[8 ] = NgonFace{5,Int}( 6,11,17, 8,14)
-    F[9 ] = NgonFace{5,Int}(11,12,19, 4,17)
-    F[10] = NgonFace{5,Int}( 1, 2, 8,17, 4)
-    F[11] = NgonFace{5,Int}( 1, 4,19,15,20)
-    F[12] = NgonFace{5,Int}(12,18, 5,15,19)
+    F[ 1] = NgonFace{5,Int}([18,  8, 11, 12,  7])
+    F[ 2] = NgonFace{5,Int}([12, 11,  5, 14,  6])
+    F[ 3] = NgonFace{5,Int}([11,  8, 20, 19,  5])
+    F[ 4] = NgonFace{5,Int}([20,  8, 18, 17,  4])
+    F[ 5] = NgonFace{5,Int}([ 9,  1, 19, 20,  4])
+    F[ 6] = NgonFace{5,Int}([19,  1, 13, 14,  5])
+    F[ 7] = NgonFace{5,Int}([13,  1,  9, 10,  2])
+    F[ 8] = NgonFace{5,Int}([13,  2, 16,  6, 14])
+    F[ 9] = NgonFace{5,Int}([ 2, 10,  3, 15, 16])
+    F[10] = NgonFace{5,Int}([ 7, 12,  6, 16, 15])
+    F[11] = NgonFace{5,Int}([ 7, 15,  3, 17, 18])
+    F[12] = NgonFace{5,Int}([10,  9,  4, 17,  3])
     
     return F, V
 end
@@ -1240,7 +1230,6 @@ Creates a GeometryBasics.Mesh for an cube with radius `r`. The default
 radius, when not supplied, is `1.0`. 
 """
 function cube(r=1.0)
-
     # Create vertices       
     s = r/sqrt(3.0)
 
@@ -1278,7 +1267,6 @@ Creates a GeometryBasics.Mesh for an tetrahedron with radius `r`. The default
 radius, when not supplied, is `1.0`. 
 """
 function tetrahedron(r=1.0)
-
     # Create vertices    
     a = r*sqrt(2.0)/sqrt(3.0)
     b = -r*sqrt(2.0)/3.0
@@ -1675,35 +1663,35 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
         elseif method == :Loop #Loop subdivision 
             # New mid-edge like vertices
             Vm = Vector{Point{ND,TV}}(undef,length(Eu)) 
-            for q in eachindex(Eu) # For each edge index       
-                if treatBoundary && B_boundary[q]              
-                    Vm[q] = 1/2 .*(V[Eu[q][1]] .+ V[Eu[q][2]]) # Normal mid-edge point
+            for i in eachindex(Eu) # For each edge index       
+                if treatBoundary && B_boundary[i]              
+                    Vm[i] = 1/2 .*(V[Eu[i][1]] .+ V[Eu[i][2]]) # Normal mid-edge point
                 else
-                    F_touch = F[con_E2F[q]] 
+                    F_touch = F[con_E2F[i]] 
                     indVerticesTouch = Vector{TF}() 
                     for f in F_touch        
-                        b = f.!=Eu[q][1] .&& f.!=Eu[q][2]      
+                        b = f.!=Eu[i][1] .&& f.!=Eu[i][2]      
                         if any(b)  
                             append!(indVerticesTouch,f[b])           
                         end
                     end                   
-                    Vm[q] = 3/8 .*(V[Eu[q][1]] .+ V[Eu[q][2]])  .+ 1/8 .* (V[indVerticesTouch[1]] .+ V[indVerticesTouch[2]])
+                    Vm[i] = 3/8 .*(V[Eu[i][1]] .+ V[Eu[i][2]])  .+ 1/8 .* (V[indVerticesTouch[1]] .+ V[indVerticesTouch[2]])
                 end
             end
     
             # Modified vertices for original vertices
             Vv = deepcopy(V)
-            for q in eachindex(V)            
-                if treatBoundary && in(q,indB)
+            for i in eachindex(V)            
+                if treatBoundary && in(i,indB)
                     if !constrain_boundary
-                        Vv[q] = 6/8*V[q] + 1/8*(V[con_V2V[q][1]]+V[con_V2V[q][2]]) 
+                        Vv[i] = 6/8*V[i] + 1/8*(V[con_V2V[i][1]]+V[con_V2V[i][2]]) 
                     end
                 else
-                    B_vert_face = [any(f.==q) for f in F]
+                    B_vert_face = [any(f.==i) for f in F]
                     F_touch = F[B_vert_face] 
                     indVerticesTouch = Vector{TF}()
                     for f in F_touch                
-                        indTouch = f[f.!=q]        
+                        indTouch = f[f.!=i]        
                         for i in indTouch 
                             if i ∉ indVerticesTouch 
                                 push!(indVerticesTouch,i)
@@ -1713,7 +1701,7 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
                     N = length(indVerticesTouch)                
                     v_sum = sum(V[indVerticesTouch],dims=1)[1]                
                     β = 1/N * (5/8-(3/8 +1/4*cos((2*π)/N))^2)        
-                    Vv[q] = (1-N*β) .* V[q] .+ β*v_sum                
+                    Vv[i] = (1-N*β) .* V[i] .+ β*v_sum                
                 end
             end    
             # Create complete point set
@@ -1935,11 +1923,14 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
             Fb,Vb = quaddisc(r,0; method=:linear, orientation=:down)                   
         end
         
-        # Add base and merge nodes 
+        # Add base
         indTopFaces = 1:length(F) # Indices of top
         append!(F, [f .+ length(V) for f in Fb])
         append!(V,Vb)
-        F,V,_,_ = mergevertices(F,V)        
+        
+        # Merge nodes
+        V,_,indMap = mergevertices(V; pointSpacing = ((pi/2)*r)/(1+2^n))
+        indexmap!(F,indMap)
     end
 
     # Refine sphere if needed 
@@ -2411,40 +2402,90 @@ This function take the faces `F` and vertices `V` and merges points that are suf
 similar. Once points are merged the indices in `F` are corrected for the new reduced
 point set. 
 """
-function mergevertices(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; roundVertices = true, numDigitsMerge=nothing) where N where TF<:Integer where ND where TV<:Real
-
-    m = length(V)
-    if roundVertices == true
-        if isnothing(numDigitsMerge)
-            E = meshedges(F)
-            d = [sqrt( sum((V[e[1]] .- V[e[2]]).^2) ) for e in E]
-            pointSpacing = mean(d)            
-            numDigitsMerge = 6-round(Int,log10(pointSpacing))
+function mergevertices(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; roundVertices = true, pointSpacing=nothing, numDigitsMerge=nothing) where N where TF<:Integer where ND where TV<:Real
+    if isnothing(numDigitsMerge)         
+        if isnothing(pointSpacing)
+            pointSpacing = pointspacingmean(F,V)
         end
-        
+    end
+    V,indUnique,indMap = mergevertices(V; roundVertices = roundVertices, pointSpacing=pointSpacing, numDigitsMerge=numDigitsMerge)
+    indexmap!(F,indMap)
+    return F,V,indUnique,indMap
+end
+
+function mergevertices(V::Vector{Point{ND,TV}}; roundVertices = true, pointSpacing=nothing, numDigitsMerge=nothing) where ND where TV<:Real
+    if roundVertices == true
+        if isnothing(numDigitsMerge) 
+            # Compute numDigitsMerge from point spacing
+            if isnothing(pointSpacing)
+                # pointSpacing = norm(maxp(V)-minp(V))/length(V)
+                 throw(UndefVarError("Specify either numDigitsMerge or pointSpacing"))
+            else
+                numDigitsMerge = 6-mag(pointSpacing)
+            end            
+        end        
         # Create rounded coordinates to help obtain unique set
         # Note -0.0+0.0 = 0.0 so addition of zero points helps avoid 0.0 and -0.0 being seen as unique
         VR = [round.(v,digits = numDigitsMerge)+Point{ND,TV}(0.0,0.0,0.0) for v in V]
 
         # Get unique indices and reverse for rounded vertices
-        _,ind1,ind2 = gunique(VR; return_index=true, return_inverse=true,sort_entries=false)
-        V = V[ind1] # The unique node set
+        _,indUnique,indMap = gunique(VR; return_index=true, return_inverse=true,sort_entries=false)
+        V = V[indUnique] # The unique node set
     else
-        V,ind1,ind2 = gunique(V; return_index=true, return_inverse=true,sort_entries=false)
+        V,indUnique,indMap = gunique(V; return_index=true, return_inverse=true,sort_entries=false)
     end
-    
-    if length(V) != m # If the length has changed
-        # Correct indices for faces
-        for i in eachindex(F)
-            F[i] = ind2[F[i]]
-        end
-    end
+    return V,indUnique,indMap
+end
 
-    return F,V,ind1,ind2
+""" 
+    indexmap!(F,indMap::Union{Vector{T},AbstractRange{T}}) where T<:Integer
+
+Updates indices using map
+
+# Description
+This function assumes the first inputs `F` is a vector (or vector of vectors) 
+containing integers such as indices. Next each i-th entry in `F`, denoted `f` is
+updated using `F[i] = indMap[f]`. An example of the use of this function is 
+in combination with mergevertices, which removed duplicated vertices. Once 
+duplicates are removed the indices in a face array `F` may need to be updated. 
+For instance nodes 2 and 5 in a list of 6 vertices is the same then 
+`indMap = [1,2,3,4,2,5]`. Such that if F was `F=[[1,2,3],[4,5,6]]` it is mapped
+to be: `F=[[1,2,3],[4,2,5]]`. 
+"""
+function indexmap!(F,indMap::Union{Vector{T},AbstractRange{T}}) where T<:Integer
+    @inbounds for (i,f) in enumerate(F)
+        F[i] = indMap[f] 
+    end        
+end
+
+function indexmap(F,indMap::Union{Vector{T},AbstractRange{T}}) where T<:Integer
+    FF = deepcopy(F)    
+    indexmap!(FF,indMap)
+    return FF    
+end
+
+
+"""
+    mag(n::T) where T <: Real
+
+Returns order of magnitude
+
+# Description
+This function returns the "order of magnitude" of the input number n in terms of
+powers of 10. The order of magnitude is here defined as: 
+` floor(Int,log10(abs(n)))`
+Hence the order of the absolute number is returned and non-integer numbers are 
+supported. 
+Here is an example: 
+`mag.([1, pi, 9.9, 10, 99, 100, 999.9, 1000])`
+returns:  
+     `[0,  0,   0, 1,   1,   2,     2,    3]`
+"""
+function mag(n::T) where T <: Real
+    return floor(Int,log10(abs(n)))
 end
 
 """
-
     smoothmesh_laplacian(F,V,con_V2V=nothing; n=1, λ=0.5)
 
 # Description
@@ -2499,8 +2540,7 @@ function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}},
                     end            
                 end
                 c+=1 
-                V = Vs
-                
+                V = Vs                
             end            
         else #n<0
             throw(ArgumentError("n should be greater or equal to 0"))
@@ -2653,8 +2693,7 @@ function quadsphere(n::Int,r::T) where T <: Real
     return F,V
 end
 
-function simplex2vertexdata(F::Union{Vector{NgonFace{NF,TF}},Vector{Element{NE,TE}}},DF,V::Union{Nothing,Vector{Point{ND,TV}}}=nothing; con_V2F=nothing, weighting=:none) where NF where TF<:Integer where NE where TE<:Integer where ND where TV<:Real
-    
+function simplex2vertexdata(F::Union{Vector{NgonFace{NF,TF}},Vector{Element{NE,TE}}},DF,V::Union{Nothing,Vector{Point{ND,TV}}}=nothing; con_V2F=nothing, weighting=:none) where NF where TF<:Integer where NE where TE<:Integer where ND where TV<:Real    
     if isnothing(con_V2F)
         con_V2F = con_vertex_face(F,V)
     end
@@ -2686,8 +2725,8 @@ end
 function vertex2simplexdata(F,DV)
     T = eltype(DV) # Element type of data in DV
     DF =  (typeof(DV))(undef,length(F)) # Allocate data for F
-    for q in eachindex(F)
-        DF[q] = mean(T,DV[F[q]]) # The mean of the vertex data for each entry in F
+    @inbounds for (i,f) in enumerate(F)        
+        DF[i] = mean(view(DV,f)) # The mean of the vertex data for each entry in F
     end
     return DF
 end
@@ -2966,7 +3005,6 @@ function remove_unused_vertices(F,V::Vector{Point{ND,TV}})::Tuple where ND where
 end
 
 function trisurfslice(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}},n = Vec{3, Float64}(0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance = 0.0, output_type=:full) where TF<:Integer where ND where TV<:Real 
-
     if !in(output_type,(:full,:above,:below))
         throw(ArgumentError("Invalid output_type :$output_type provided, use :full,:above, or :below"))
     end
@@ -3181,6 +3219,7 @@ function edges2curve(Eb::Vector{LineFace{T}}) where T <: Integer
     end
 end
 
+
 """
     pointspacingmean(V::Vector{Point3{Float64}})
     pointspacingmean(F::Array{NgonFace{N, Int}, 1},V::Vector{Point3{Float64}}) where N
@@ -3220,6 +3259,7 @@ end
 function pointspacingmean(M::GeometryBasics.Mesh)    
     return pointspacingmean(faces(M),coordinates(M))
 end
+
 
 """
     extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad) where ND where TV<:Real
@@ -3283,7 +3323,16 @@ function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive,
     return loftlinear(V1,V2;num_steps=num_steps,close_loop=close_loop,face_type=face_type)
 end
 
+"""
+   meshgroup(F; con_type = :v)
 
+Groups connected mesh features
+ 
+# Description
+This function uses the connectivity `con_type` to create a group label `C` for
+each entitiy in `F`. E.g. `C.==1` for the first group and `C.==2`` for the 
+second and so on.     
+"""
 function meshgroup(F; con_type = :v)
 
     if con_type == :v # Group based on vertex connectivity 
@@ -3342,6 +3391,15 @@ function meshgroup(F; con_type = :v)
     return C
 end
 
+"""
+    distmarch(F,V::Vector{Point{ND,TV}},indStart; d=nothing, dd=nothing, dist_tol=1e-3,con_V2V=nothing,l=nothing) where ND where TV<:Real
+
+Compute on surface distance
+
+# Description
+This function computes allong mesh-edge distances for the points with the 
+indices contained in `indStart`. 
+"""
 function distmarch(F,V::Vector{Point{ND,TV}},indStart; d=nothing, dd=nothing, dist_tol=1e-3,con_V2V=nothing,l=nothing) where ND where TV<:Real
 
     # Get vertex-vertex connectivity
@@ -4258,7 +4316,9 @@ function regiontrimesh(VT,R,P)
         append!(F,Fn) # Append faces 
         append!(C,fill(q,length(Fn))) # Append color data 
     end
-    F,V,_ = mergevertices(F,V) # merge shared vertices
+    V,_,indMap = mergevertices(V; pointSpacing = mean(P))
+    indexmap!(F,indMap)
+    
     return F,V,C 
 end
 
@@ -4467,18 +4527,17 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
     if element_type <: Tet4{T}
         nf = 4
         F = Vector{TriangleFace{T}}(undef,length(E)*nf)
-        for i in eachindex(E)
+        for (i,e) in enumerate(E)
             ii = 1 + (i-1)*nf
-            F[ii  ] = TriangleFace{T}(E[i][3],E[i][2],E[i][1])
-            F[ii+1] = TriangleFace{T}(E[i][1],E[i][2],E[i][4])
-            F[ii+2] = TriangleFace{T}(E[i][2],E[i][3],E[i][4])
-            F[ii+3] = TriangleFace{T}(E[i][3],E[i][1],E[i][4])
+            F[ii  ] = TriangleFace{T}(e[3],e[2],e[1])
+            F[ii+1] = TriangleFace{T}(e[1],e[2],e[4])
+            F[ii+2] = TriangleFace{T}(e[2],e[3],e[4])
+            F[ii+3] = TriangleFace{T}(e[3],e[1],e[4])
         end
     elseif element_type <: Hex8{T}
         nf = 6
         F = Vector{QuadFace{T}}(undef,length(E)*nf)
-        for i in eachindex(E)
-            e = E[i]
+        for (i,e) in enumerate(E)            
             ii = 1 + (i-1)*nf
             F[ii  ] = QuadFace{T}(e[4],e[3],e[2],e[1]) # Top
             F[ii+1] = QuadFace{T}(e[5],e[6],e[7],e[8]) # Bottom
@@ -4490,8 +4549,7 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
     elseif element_type <: Penta6{T}
         nfq = 3
         Fq = Vector{QuadFace{T}}(undef,length(E)*nfq)
-        for i in eachindex(E)
-            e = E[i]
+        for (i,e) in enumerate(E)
             ii = 1 + (i-1)*nfq
             Fq[ii  ] = QuadFace{T}(e[1],e[2],e[5],e[4]) # Side 1
             Fq[ii+1] = QuadFace{T}(e[2],e[3],e[6],e[5]) # Side 2
@@ -4500,13 +4558,65 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
 
         nft = 2
         Ft = Vector{TriangleFace{T}}(undef,length(E)*nft)
-        for i in eachindex(E)
-            e = E[i]
+        for (i,e) in enumerate(E)
             ii = 1 + (i-1)*nft
             Ft[ii  ] = TriangleFace{T}(e[3],e[2],e[1]) # Bottom
             Ft[ii+1] = TriangleFace{T}(e[4],e[5],e[6]) # Top
         end
-        F = (Ft,Fq)
+        F = (Ft,Fq) # Collect faces in tuple
+    elseif element_type <: Rhombicdodeca14{T}
+        F0 = Vector{QuadFace{Int}}(undef,12)
+        F0[ 1] = QuadFace{Int}( 1, 10, 5,  9)
+        F0[ 2] = QuadFace{Int}( 2, 11, 6, 10)
+        F0[ 3] = QuadFace{Int}( 3, 12, 7, 11)
+        F0[ 4] = QuadFace{Int}( 4,  9, 8, 12)
+        F0[ 5] = QuadFace{Int}( 5, 10, 6, 14)
+        F0[ 6] = QuadFace{Int}( 6, 11, 7, 14)
+        F0[ 7] = QuadFace{Int}( 7, 12, 8, 14)
+        F0[ 8] = QuadFace{Int}( 8,  9, 5, 14)
+        F0[ 9] = QuadFace{Int}( 1, 13, 2, 10)
+        F0[10] = QuadFace{Int}( 2, 13, 3, 11)
+        F0[11] = QuadFace{Int}( 3, 13, 4, 12)
+        F0[12] = QuadFace{Int}( 4, 13, 1,  9)
+
+        F = Vector{QuadFace{Int64}}(undef,length(E)*length(F0))
+        for (i,e) in enumerate(E) 
+            j = 1+(i-1)*length(F0)
+            F[j:j+length(F0)-1] = [QuadFace{Int64}(view(e,f)) for f in F0]    
+        end
+    elseif element_type <: Truncatedocta24{T}
+        # Hexagonal faces
+        F01 = Vector{NgonFace{6,Int}}(undef,8)
+        F01[ 1] = NgonFace{6,Int}( 6, 18,  1, 13,  3, 15)
+        F01[ 2] = NgonFace{6,Int}( 9, 21,  5, 17, 18,  6)
+        F01[ 3] = NgonFace{6,Int}(11, 23,  8, 20, 21,  9)
+        F01[ 4] = NgonFace{6,Int}(15,  3,  2, 14, 23, 11)
+        F01[ 5] = NgonFace{6,Int}(13,  1,  7, 19,  4, 16)
+        F01[ 6] = NgonFace{6,Int}(17,  5, 10, 22, 19,  7)
+        F01[ 7] = NgonFace{6,Int}(20,  8, 12, 24, 22, 10)
+        F01[ 8] = NgonFace{6,Int}(14,  2, 16,  4, 24, 12)
+
+        # Quadrilateral faces
+        F02 = Vector{QuadFace{Int}}(undef,6)
+        F02[ 1] = QuadFace{Int}(2,  3, 13, 16)
+        F02[ 2] = QuadFace{Int}(17,  7,  1, 18)
+        F02[ 3] = QuadFace{Int}(20, 10,  5, 21)
+        F02[ 4] = QuadFace{Int}(14, 12,  8, 23)
+        F02[ 5] = QuadFace{Int}(11,  9,  6, 15)
+        F02[ 6] = QuadFace{Int}(4, 19, 22, 24)
+
+        F1 = Vector{NgonFace{6,Int64}}(undef,length(E)*length(F01))
+        for (i,e) in enumerate(E) 
+            j = 1+(i-1)*length(F01)
+            F1[j:j+length(F01)-1] = [NgonFace{6,Int64}(view(e,f)) for f in F01]    
+        end
+
+        F2 = Vector{QuadFace{Int}}(undef,length(E)*length(F02))
+        for (i,e) in enumerate(E) 
+            j = 1+(i-1)*length(F02)
+            F2[j:j+length(F02)-1] = [QuadFace{Int}(view(e,f)) for f in F02]    
+        end
+        F = (F1,F2) # Collect faces in tuple
     else
         throw(ArgumentError("$element_type not supported. Supported types are Hex8, Tet4, and Penta6."))
     end
@@ -4695,42 +4805,44 @@ Creates mesh for rhombicdodecahedron
 
 # Description
 This function creates the faces `F` and vertices `V` for a rhombicdodecahedron. 
-The radius of the shape is set using the input radius `r`. 
+The size of the shape is set by the width `w` in the xy-plane. 
 """
-function rhombicdodecahedron(r = 1.0)
-    F = Vector{QuadFace{Int}}(undef,12)
-    F[ 1] = [ 1, 10,  5,  9]
-    F[ 2] = [ 2, 11,  6, 10]
-    F[ 3] = [ 3, 12,  7, 11]
-    F[ 4] = [ 4,  9,  8, 12]
-    F[ 5] = [ 5, 10,  6, 14]
-    F[ 6] = [ 6, 11,  7, 14]
-    F[ 7] = [ 7, 12,  8, 14]
-    F[ 8] = [ 8,  9,  5, 14]
-    F[ 9] = [ 1, 13,  2, 10]
-    F[10] = [ 2, 13,  3, 11]
-    F[11] = [ 3, 13,  4, 12]
-    F[12] = [ 4, 13,  1,  9]
+function rhombicdodecahedron(w = 1.0)
 
-
+    a = sqrt(2)/2
+    b = sqrt(2)/4
     V = Vector{Point{3,Float64}}(undef,14)
-    V[ 1] = [-0.5, -0.5, -0.5] 
-    V[ 2] = [ 0.5, -0.5, -0.5] 
-    V[ 3] = [ 0.5,  0.5, -0.5] 
-    V[ 4] = [-0.5,  0.5, -0.5] 
-    V[ 5] = [-0.5, -0.5,  0.5] 
-    V[ 6] = [ 0.5, -0.5,  0.5] 
-    V[ 7] = [ 0.5,  0.5,  0.5] 
-    V[ 8] = [-0.5,  0.5,  0.5] 
-    V[ 9] = [-1.0, -0.0,  0.0]
-    V[10] = [ 0.0, -1.0,  0.0]
-    V[11] = [ 1.0,  0.0,  0.0]
-    V[12] = [ 0.0,  1.0,  0.0]
-    V[13] = [ 0.0, -0.0, -1.0]
-    V[14] = [ 0.0, -0.0,  1.0]
+    V[ 1] = Point{3,Float64}(-0.0, -0.5,  -b)
+    V[ 2] = Point{3,Float64}( 0.5, -0.0,  -b)
+    V[ 3] = Point{3,Float64}( 0.0,  0.5,  -b)
+    V[ 4] = Point{3,Float64}(-0.5,  0.0,  -b)
+    V[ 5] = Point{3,Float64}(-0.0, -0.5,   b)
+    V[ 6] = Point{3,Float64}( 0.5, -0.0,   b)
+    V[ 7] = Point{3,Float64}( 0.0,  0.5,   b)
+    V[ 8] = Point{3,Float64}(-0.5,  0.0,   b)
+    V[ 9] = Point{3,Float64}(-0.5, -0.5, 0.0)
+    V[10] = Point{3,Float64}( 0.5, -0.5, 0.0)
+    V[11] = Point{3,Float64}( 0.5,  0.5, 0.0)
+    V[12] = Point{3,Float64}(-0.5,  0.5, 0.0)
+    V[13] = Point{3,Float64}( 0.0,  0.0,  -a)
+    V[14] = Point{3,Float64}( 0.0,  0.0,   a)
 
-    if !isone(r)
-        V.*=r
+    F = Vector{QuadFace{Int}}(undef,12)
+    F[ 1] = QuadFace{Int}( 1, 10, 5,  9)
+    F[ 2] = QuadFace{Int}( 2, 11, 6, 10)
+    F[ 3] = QuadFace{Int}( 3, 12, 7, 11)
+    F[ 4] = QuadFace{Int}( 4,  9, 8, 12)
+    F[ 5] = QuadFace{Int}( 5, 10, 6, 14)
+    F[ 6] = QuadFace{Int}( 6, 11, 7, 14)
+    F[ 7] = QuadFace{Int}( 7, 12, 8, 14)
+    F[ 8] = QuadFace{Int}( 8,  9, 5, 14)
+    F[ 9] = QuadFace{Int}( 1, 13, 2, 10)
+    F[10] = QuadFace{Int}( 2, 13, 3, 11)
+    F[11] = QuadFace{Int}( 3, 13, 4, 12)
+    F[12] = QuadFace{Int}( 4, 13, 1,  9)
+
+    if !isone(w)
+        V .*= w
     end
 
     return F,V
@@ -5272,6 +5384,7 @@ function edgefaceangles(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=
     end
 end
 
+
 """
     faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV; deg=false, angleThreshold = pi/8, indStart = 1)  where NF where TF<:Integer where ND where TV<:Real 
 
@@ -5337,7 +5450,20 @@ function faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; de
     return G
 end
 
+"""
+    eulerchar(F,V=nothing; E=nothing)
 
+Computes the Euler characteristic
+
+# Description
+This function computes the Euler characteristic for the input surface defined by 
+the faces `F` and vertices `V`. The edges `E` are on optional input. 
+The Euler characteristic is defined as: 
+`X = nV-nE-nF`
+, where `nV`, `nE`, and `nF` define the number of surface vertices, edges, and 
+faces respectively. It is assumed all inputs are set of unique entities, e.g. 
+no vertices, edges, or faces occur multiple times. 
+"""
 function eulerchar(F,V=nothing; E=nothing)
     nf = length(F)
     if isnothing(V)
@@ -5346,7 +5472,459 @@ function eulerchar(F,V=nothing; E=nothing)
         nv = length(V)
     end
     if isnothing(E)
-        ne = length(meshedges(F; unique_only=true))
+        ne = length(meshedges(F; unique_only=true))        
     end    
     return nv-ne+nf
+end
+
+"""
+    rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :allign) where T<:Real
+
+Creates a rhombicdodecahedron foam
+
+# Description
+This function creates a rhombicdodecahedron foam structure with a desired number
+of cells in each direction. The input is the cell width `w` and a 1-by-3 tuple 
+`n` defining the number of cells in each direction. The output consists of the 
+set of rhombic dodecahedron elements `E` and their vertex coordinates `V`. 
+"""
+function rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :allign) where T<:Real
+
+    if orientation == :allign
+        # Create vertices of single rhombic dodecahedron with "radius" 1
+        a = sqrt(2)/2
+        b = sqrt(2)/4
+        
+        V0 = Vector{Point{3,Float64}}(undef,14)
+        V0[ 1] = Point{3,Float64}(-0.0, -0.5,  -b)
+        V0[ 2] = Point{3,Float64}( 0.5, -0.0,  -b)
+        V0[ 3] = Point{3,Float64}( 0.0,  0.5,  -b)
+        V0[ 4] = Point{3,Float64}(-0.5,  0.0,  -b)
+        V0[ 5] = Point{3,Float64}(-0.0, -0.5,   b)
+        V0[ 6] = Point{3,Float64}( 0.5, -0.0,   b)
+        V0[ 7] = Point{3,Float64}( 0.0,  0.5,   b)
+        V0[ 8] = Point{3,Float64}(-0.5,  0.0,   b)
+        V0[ 9] = Point{3,Float64}(-0.5, -0.5, 0.0)
+        V0[10] = Point{3,Float64}( 0.5, -0.5, 0.0)
+        V0[11] = Point{3,Float64}( 0.5,  0.5, 0.0)
+        V0[12] = Point{3,Float64}(-0.5,  0.5, 0.0)
+        V0[13] = Point{3,Float64}( 0.0,  0.0,  -a)
+        V0[14] = Point{3,Float64}( 0.0,  0.0,   a)
+
+        nv = length(V0) # Number of vertices
+
+        # Scale to obtain desired radius if needed
+        if !isone(w)
+            V0.*=w
+        end
+
+        # Create rhombicdodecahedron element set    
+        e0 = Rhombicdodeca14{Int}(1:nv)
+        m = ceil(Int,n[3]/2)    
+        k = m*(n[1]*n[2]) + (n[3]-m)*((n[1]-1)*(n[2]-1))
+        E = Vector{Rhombicdodeca14{Int}}(undef,k)    
+        @inbounds for i in 1:k        
+            E[i] = e0.+(i-1)*nv
+        end       
+
+        # Create coordinates 
+        xRange = range(0.0,(n[1]-1)*w,n[1])
+        yRange = range(0.0,(n[2]-1)*w,n[2])
+        zRange = range(0.0,(n[3]-1)*sqrt(2)*w/2,n[3])    
+        V = Vector{Point{3,Float64}}(undef,k*nv)
+
+        i = 1
+        for (i_z,z) in enumerate(zRange)
+            if iseven(i_z)                  
+                xRange_now = xRange[1:end-1] .+ w/2
+                yRange_now = yRange[1:end-1] .+ w/2            
+            else
+                xRange_now = xRange
+                yRange_now = yRange
+            end
+
+            for x = xRange_now
+                for y = yRange_now                          
+                    V[i:(i+nv-1)] = [v+Point{3,Float64}(x,y,z) for v in V0]                
+                    i += nv
+                end
+            end        
+        end
+    elseif orientation == :diagonal
+        # Create vertices of single rhombic dodecahedron with width 
+        V0 = Vector{Point{3,Float64}}(undef,14)
+        V0[ 1] = Point{3,Float64}(-0.25, -0.25, -0.25) 
+        V0[ 2] = Point{3,Float64}( 0.25, -0.25, -0.25) 
+        V0[ 3] = Point{3,Float64}( 0.25,  0.25, -0.25) 
+        V0[ 4] = Point{3,Float64}(-0.25,  0.25, -0.25) 
+        V0[ 5] = Point{3,Float64}(-0.25, -0.25,  0.25) 
+        V0[ 6] = Point{3,Float64}( 0.25, -0.25,  0.25) 
+        V0[ 7] = Point{3,Float64}( 0.25,  0.25,  0.25) 
+        V0[ 8] = Point{3,Float64}(-0.25,  0.25,  0.25) 
+        V0[ 9] = Point{3,Float64}(-0.50, -0.00,  0.00)
+        V0[10] = Point{3,Float64}( 0.00, -0.50,  0.00)
+        V0[11] = Point{3,Float64}( 0.50,  0.00,  0.00)
+        V0[12] = Point{3,Float64}( 0.00,  0.50,  0.00)
+        V0[13] = Point{3,Float64}( 0.00, -0.00, -0.50)
+        V0[14] = Point{3,Float64}( 0.00, -0.00,  0.50)
+
+        # Scale to obtain desired radius if needed
+        if !isone(w)
+            V0.*=w
+        end
+
+        # Create rhombicdodecahedron element set    
+        e0 = Rhombicdodeca14{Int}(1:14)
+        k = prod(n) + (n[1]-1) * (n[2]-1) * n[3] + (n[1]-1) * n[2] * (n[3]-1) + n[1] * (n[2]-1)  * (n[3]-1)
+        E = Vector{Rhombicdodeca14{Int}}(undef,k)    
+        @inbounds for i in 1:k        
+            E[i] = e0.+(i-1)*14
+        end       
+
+        # Create coordinates 
+        x = range(0.0,(n[1]-1)*w,n[1])
+        y = range(0.0,(n[2]-1)*w,n[2])
+        z = range(0.0,(n[3]-1)*w,n[3])    
+        V = Vector{Point{3,Float64}}(undef,k*14)
+        i = 1
+        for x = x
+            for y = y
+                for z = z
+                    V[i:(i+14-1)] = [v+Point{3,Float64}(x,y,z) for v in V0]                
+                    i += 14
+                end
+            end
+        end
+        for x = x[1:end-1].+w/2
+            for y = y
+                for z = z[1:end-1].+w/2
+                    V[i:(i+14-1)] = [v+Point{3,Float64}(x,y,z) for v in V0]                
+                    i += 14
+                end
+            end
+        end
+        for x = x
+            for y = y[1:end-1].+w/2
+                for z = z[1:end-1].+w/2
+                    V[i:(i+14-1)] = [v+Point{3,Float64}(x,y,z) for v in V0]                
+                    i += 14
+                end
+            end
+        end
+        for x = x[1:end-1].+w/2
+            for y = y[1:end-1].+w/2
+                for z = z
+                    V[i:(i+14-1)] = [v+Point{3,Float64}(x,y,z) for v in V0]                
+                    i += 14
+                end
+            end
+        end
+    end
+    
+    # merge vertices if requested
+    if merge == true
+        V,_,indMap = mergevertices(V; pointSpacing=w)
+        indexmap!(E,indMap)        
+    end
+    return E,V
+end
+
+"""
+    truncatedoctahedron(w=1.0)
+
+Creates a truncated octahedron
+
+# Description
+This function creates a truncated octahedron. The input cell width `w` is used 
+to define the cell faces `F` and vertices `V`. 
+"""
+function truncatedoctahedron(w=1.0)    
+    # Coordinates
+    V = Vector{Point{3,Float64}}(undef,24)
+    V[ 1] = Point{3,Float64}( 0.50, -0.25,  0.00) 
+    V[ 2] = Point{3,Float64}(-0.25, -0.50,  0.00) 
+    V[ 3] = Point{3,Float64}(-0.00, -0.50, -0.25) 
+    V[ 4] = Point{3,Float64}(-0.00, -0.25,  0.50) 
+    V[ 5] = Point{3,Float64}( 0.25,  0.50,  0.00) 
+    V[ 6] = Point{3,Float64}( 0.25, -0.00, -0.50) 
+    V[ 7] = Point{3,Float64}( 0.50, -0.00,  0.25) 
+    V[ 8] = Point{3,Float64}(-0.50,  0.25,  0.00) 
+    V[ 9] = Point{3,Float64}( 0.00,  0.25, -0.50) 
+    V[10] = Point{3,Float64}( 0.00,  0.50,  0.25) 
+    V[11] = Point{3,Float64}(-0.25,  0.00, -0.50) 
+    V[12] = Point{3,Float64}(-0.50,  0.00,  0.25) 
+    V[13] = Point{3,Float64}( 0.25, -0.50,  0.00) 
+    V[14] = Point{3,Float64}(-0.50, -0.25,  0.00) 
+    V[15] = Point{3,Float64}(-0.00, -0.25, -0.50) 
+    V[16] = Point{3,Float64}(-0.00, -0.50,  0.25) 
+    V[17] = Point{3,Float64}( 0.50,  0.25,  0.00) 
+    V[18] = Point{3,Float64}( 0.50, -0.00, -0.25) 
+    V[19] = Point{3,Float64}( 0.25, -0.00,  0.50) 
+    V[20] = Point{3,Float64}(-0.25,  0.50,  0.00) 
+    V[21] = Point{3,Float64}( 0.00,  0.50, -0.25) 
+    V[22] = Point{3,Float64}( 0.00,  0.25,  0.50) 
+    V[23] = Point{3,Float64}(-0.50,  0.00, -0.25) 
+    V[24] = Point{3,Float64}(-0.25,  0.00,  0.50)
+
+    # Scale width if needed
+    if !isone(w)
+        V .*= w
+    end
+
+    # Hexagonal faces
+    F1 = Vector{NgonFace{6,Int}}(undef,8)
+    F1[ 1] = NgonFace{6,Int}( 6, 18,  1, 13,  3, 15)
+    F1[ 2] = NgonFace{6,Int}( 9, 21,  5, 17, 18,  6)
+    F1[ 3] = NgonFace{6,Int}(11, 23,  8, 20, 21,  9)
+    F1[ 4] = NgonFace{6,Int}(15,  3,  2, 14, 23, 11)
+    F1[ 5] = NgonFace{6,Int}(13,  1,  7, 19,  4, 16)
+    F1[ 6] = NgonFace{6,Int}(17,  5, 10, 22, 19,  7)
+    F1[ 7] = NgonFace{6,Int}(20,  8, 12, 24, 22, 10)
+    F1[ 8] = NgonFace{6,Int}(14,  2, 16,  4, 24, 12)
+
+    # Quadrilateral faces
+    F2 = Vector{QuadFace{Int}}(undef,6)
+    F2[ 1] = QuadFace{Int}(2,  3, 13, 16)
+    F2[ 2] = QuadFace{Int}(17,  7,  1, 18)
+    F2[ 3] = QuadFace{Int}(20, 10,  5, 21)
+    F2[ 4] = QuadFace{Int}(14, 12,  8, 23)
+    F2[ 5] = QuadFace{Int}(11,  9,  6, 15)
+    F2[ 6] = QuadFace{Int}(4, 19, 22, 24)
+
+    # Collect faces in tuple
+    F = (F1,F2)
+
+    return F,V
+end
+
+"""
+    kelvinfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true) where T<:Real
+
+Creates a Kelvin foam
+
+# Description
+This function creates a Kelvin foam structure with a desired number of cells in
+each direction. The input is the cell width `w` and a 1-by-3 tuple `n` defining
+the number of cells in each direction. The output consists of the set of 
+truncated octahedron elements `E` and their vertex coordinates `V`. 
+"""
+function kelvinfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true) where T<:Real
+
+    # Create vertices of single rhombic dodecahedron with "radius" 1    
+    V0 = Vector{Point{3,Float64}}(undef,24)
+    V0[ 1] = Point{3,Float64}( 0.50, -0.25,  0.00) 
+    V0[ 2] = Point{3,Float64}(-0.25, -0.50,  0.00) 
+    V0[ 3] = Point{3,Float64}(-0.00, -0.50, -0.25) 
+    V0[ 4] = Point{3,Float64}(-0.00, -0.25,  0.50) 
+    V0[ 5] = Point{3,Float64}( 0.25,  0.50,  0.00) 
+    V0[ 6] = Point{3,Float64}( 0.25, -0.00, -0.50) 
+    V0[ 7] = Point{3,Float64}( 0.50, -0.00,  0.25) 
+    V0[ 8] = Point{3,Float64}(-0.50,  0.25,  0.00) 
+    V0[ 9] = Point{3,Float64}( 0.00,  0.25, -0.50) 
+    V0[10] = Point{3,Float64}( 0.00,  0.50,  0.25) 
+    V0[11] = Point{3,Float64}(-0.25,  0.00, -0.50) 
+    V0[12] = Point{3,Float64}(-0.50,  0.00,  0.25) 
+    V0[13] = Point{3,Float64}( 0.25, -0.50,  0.00) 
+    V0[14] = Point{3,Float64}(-0.50, -0.25,  0.00) 
+    V0[15] = Point{3,Float64}(-0.00, -0.25, -0.50) 
+    V0[16] = Point{3,Float64}(-0.00, -0.50,  0.25) 
+    V0[17] = Point{3,Float64}( 0.50,  0.25,  0.00) 
+    V0[18] = Point{3,Float64}( 0.50, -0.00, -0.25) 
+    V0[19] = Point{3,Float64}( 0.25, -0.00,  0.50) 
+    V0[20] = Point{3,Float64}(-0.25,  0.50,  0.00) 
+    V0[21] = Point{3,Float64}( 0.00,  0.50, -0.25) 
+    V0[22] = Point{3,Float64}( 0.00,  0.25,  0.50) 
+    V0[23] = Point{3,Float64}(-0.50,  0.00, -0.25) 
+    V0[24] = Point{3,Float64}(-0.25,  0.00,  0.50)
+
+    nv = length(V0) # Number of vertices
+
+    # Scale to obtain desired radius if needed
+    if !isone(w)
+        V0.*=w
+    end
+
+    # Create truncated octahedron element set    
+    e0 = Truncatedocta24{Int}(1:nv)
+    m = ceil(Int,n[3]/2)    
+    k = m*(n[1]*n[2]) + (n[3]-m)*((n[1]-1)*(n[2]-1))
+    E = Vector{Truncatedocta24{Int}}(undef,k)    
+    @inbounds for i in 1:k        
+        E[i] = e0.+(i-1)*nv
+    end       
+
+    # Create coordinates 
+    xRange = range(0.0,(n[1]-1)*w,n[1])
+    yRange = range(0.0,(n[2]-1)*w,n[2])
+    zRange = range(0.0,(n[3]-1)*w/2,n[3])    
+    V = Vector{Point{3,Float64}}(undef,k*nv)
+
+    i = 1
+    for (i_z,z) in enumerate(zRange)
+        if iseven(i_z)                  
+            xRange_now = xRange[1:end-1] .+ w/2
+            yRange_now = yRange[1:end-1] .+ w/2            
+        else
+            xRange_now = xRange
+            yRange_now = yRange
+        end
+
+        for x = xRange_now
+            for y = yRange_now                          
+                V[i:(i+nv-1)] = [v+Point{3,Float64}(x,y,z) for v in V0]                
+                i += nv
+            end
+        end        
+    end
+      
+    # merge vertices if requested
+    if merge == true
+        V,_,indMap = mergevertices(V; pointSpacing=w)
+        indexmap!(E,indMap)        
+    end
+    return E,V
+end
+
+"""
+    minp(V::Vector{Point{N,T}}) where N where T <:Real   
+
+Returns minimum coordinates
+
+# Description
+This function computes the minimum coordinates for all points. Points can be 
+N-dimensional and the output is another point of the same dimensionality but 
+with the lowest coordinate value for each direction. 
+"""
+function minp(V::Vector{Point{N,T}}) where N where T <:Real   
+    m = fill(T(Inf),N)
+    @inbounds for v in V
+        @inbounds for j = 1:N            
+            m[j] = min(m[j],v[j])
+        end        
+    end    
+    return Point{N,T}(m)
+end
+
+"""
+    maxp(V::Vector{Point{N,T}}) where N where T <:Real   
+
+Returns maximum coordinates
+
+# Description
+This function computes the maximum coordinates for all points. Points can be 
+N-dimensional and the output is another point of the same dimensionality but 
+with the highest coordinate value for each direction. 
+"""
+function maxp(V::Vector{Point{N,T}}) where N where T <:Real   
+    m = fill(T(-Inf),N)
+    @inbounds for v in V
+        @inbounds for j = 1:N            
+            m[j] = max(m[j],v[j])
+        end        
+    end    
+    return Point{N,T}(m)
+end
+
+"""
+    ntrapezohedron(n,r=1.0)
+    
+Constructs an n-trapezohedron
+
+# Description
+This function creates the faces `F` and vertices `V` for an n-trapezohedron. 
+
+The implementation is based on the equations presented here: 
+https://mathworld.wolfram.com/Trapezohedron.html
+"""
+function ntrapezohedron(n,r=1.0)    
+    m = 2*n # Number of faces
+    R = 0.5*csc(pi/n)*r # Radius scaled to obtain desired midradius
+    zc = r * sqrt(4-sec(pi/m)^2)/(4+8*cos(pi/n)) # z-offset of equatorial points
+    zt = r * 1/4*cos(pi/m)*cot(pi/m)*csc(3*pi/m)*sqrt(4-sec(pi/m)^2) # z-offset of poles
+
+    # Create equatorial points
+    T = circlerange(m; dir=:acw) # Range of angles for points in circle
+    V = Vector{Point{3,Float64}}(undef,m+2)
+    for (i,t) in enumerate(T)
+        if iseven(i)
+            s = 1.0
+        else
+            s = -1.0
+        end
+        V[i] = Point{3, Float64}(R*cos(t),R*sin(t),s*zc) 
+    end
+
+    # Create pole points
+    V[end-1] = Point{3, Float64}(0.0,0.0,-zt) 
+    V[end  ] = Point{3, Float64}(0.0,0.0, zt) 
+
+    # Construct faces
+    F =  Vector{QuadFace{Int}}(undef,m)
+    for i = 1:n # Use n steps to create m=2*n faces
+        j = 1 + 2*(i-1) # First point index for bottom quads       
+        F[i  ] = QuadFace{Int}(mod1(j+2,m),         j+1,           j, m+1)  # Bottom quad 
+        F[i+n] = QuadFace{Int}(        j+1, mod1(j+2,m), mod1(j+3,m), m+2) # Top quad   
+    end
+    
+    return F, V
+end
+
+"""
+    spacing2numvertices(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}},pointSpacing::TP) where TF<:Integer where ND where TV<:Real where TP<:Real 
+
+Point numbers from spacing
+
+# Description 
+This function helps to determine what number of vertices to resample a surface 
+with to obtain a desired point spacing. The input consists of in initial surface
+, defined by the faces `F` and the vertices `V`, and also the desired point 
+spacing `pointSpacing`. Next the function uses the surface Euler characteristic
+as well as knowledge of face area and point spacing changes for homogeneous 
+face splitting (e.g. via `subtri``), to determine the theoretical number of 
+points `NV` a resampled surface should have to present with the desired point
+spacing. 
+"""
+function spacing2numvertices(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}},pointSpacing::TP) where TF<:Integer where ND where TV<:Real where TP<:Real 
+    # The following assumes subtri like splitting whereby each edge spawns new 
+    # point and each face is split into 4 new faces.  
+
+    # Compute desired number of faces using area
+    A_total = sum(facearea(F,V)) # Total surface area estimation
+    A_ideal = (pointSpacing.^2.0*sqrt(3.0))/4.0 # Theoretical area of equilateral triangle
+    nf_desired = (A_total/A_ideal) # Desired number of faces
+    
+    # Determine theoretical number of refinement iterations to use to get the desired number of faces
+    E = meshedges(F; unique_only = true) # The unique mesh edges
+    nf = length(F) # Number of input faces
+    ne = length(E) # Number of input edges
+    nRefineScalar = (log(nf_desired)-log(nf))/log(4) 
+
+    if nRefineScalar<0    
+        n = 0:-1:floor(nRefineScalar)-1
+    else    
+        n = 0:1:ceil(nRefineScalar)+1
+    end
+
+    # Use knowledge of triangle splitting to get corresponding sets of edge and face counts
+    nf_sim = nf .* 4.0 .^n
+    ne_sim = zeros(length(n))
+    ne_sim[1] = ne
+    if nRefineScalar>0.0
+        for i in 2:1:length(n)
+            ne_sim[i] = 2.0 .* ne_sim[i-1] .+ (3.0*nf_sim[i-1])
+        end
+    else
+        for i in 2:1:length(n)
+            ne_sim[i] = 0.5 .* ( ne_sim[i-1] .- (3.0*nf_sim[i]) )
+        end
+    end
+
+    # Use Euler's characteristic to determine theoretical number of vertices
+    nv_sim = eulerchar(F,V) .+ ne_sim .- nf_sim
+
+    # Interpolate at desired number of faces to get desired number of vertices 
+    # return ceil(Int,lerp(nf_sim,nv_sim,nf_desired))
+    
+    # Interpolate at desired number of faces to get desired number of vertices 
+    return ceil(Int,lerp(n,nv_sim,nRefineScalar))
 end

@@ -20,7 +20,7 @@ include("functions.jl")
 export GeometryBasics
 
 # Export types
-export Element, Tet4, Tet10, Hex8, Hex20, Penta6 # Volumetric elements (polyhedra)
+export Element, Tet4, Tet10, Hex8, Hex20, Penta6, Rhombicdodeca14, Truncatedocta24 # Volumetric elements (polyhedra)
 
 # Export types/structs
 export ConnectivitySet
@@ -49,6 +49,8 @@ export batman, tridisc, quaddisc, regiontrimesh, scalesimplex, subcurve, dualcla
 export tet2hex, element2faces, subhex, rhombicdodecahedron, tri2quad
 export tetgenmesh, surfacevolume, tetvolume, extrudefaces, filletcurve
 export squircle, circlerange, edgefaceangles, faceanglesegment, eulerchar
+export rhombicdodecahedronfoam, kelvinfoam, truncatedoctahedron, ntrapezohedron, hexagonaltrapezohedron #, tetrakaidecahedron
+export mag, indexmap!, indexmap, minp, maxp
 
 # Export functions: Visualization related
 export slidercontrol, slider2anim, dirplot, normalplot

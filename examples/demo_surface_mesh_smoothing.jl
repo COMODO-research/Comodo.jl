@@ -11,7 +11,7 @@ if testCase == 1 # Triangle mesh bunny
     V = coordinates(M)    
     V = topoints(V) 
     F = tofaces(F)
-    F,V,ind1,ind2 = mergevertices(F,V; roundVertices=true)
+    F,V,_,_ = mergevertices(F,V)
 elseif testCase == 2 # Quad mesh sphere
     F,V = quadsphere(4,100)
 end

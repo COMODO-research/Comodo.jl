@@ -9,7 +9,7 @@ using Random
 # Set seed so demo performs the same each time
 Random.seed!(1)
 
-testCase = 6
+testCase = 7
 
 if testCase == 1
     V = Point{3,Float64}[ [0.0,0.0,0.0], [10.0,0.0,0.0]]

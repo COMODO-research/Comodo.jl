@@ -92,27 +92,18 @@ elseif testCase == 5
     P = (1,0.75,0.5)  # Point spacings
 end
 
-
 F,V,C = regiontrimesh(VT,R,P)
 
 
 # Visualisation
-fig = Figure(size=(1000,1000))
-
-ax1 = Axis3(fig[1, 1],aspect = :data,title="Multi-region meshing",azimuth=-pi/2,elevation=pi/2)
-# hp1 = lines!(ax1, V,linewidth=4,color=:blue)
-# hp2 = scatter!(ax1, V,markersize=12,color=:black)
-# hp3 = scatter!(ax1, Vg,markersize=8,color=d,colormap=:Spectral)
-
 
 Fp,Vp = separate_vertices(F,V) # Give each face its own point set 
 Cp = simplex2vertexdata(Fp,C) # Convert face color data to vertex color data 
+
+
+fig = Figure(size=(1000,1000))
+ax1 = Axis3(fig[1, 1],aspect = :data,title="Multi-region meshing",azimuth=-pi/2,elevation=pi/2)
+
 hp4 = poly!(ax1,GeometryBasics.Mesh(Vp,Fp), strokewidth=1,color=Cp, strokecolor=:black, shading = FastShading, transparency=false,colormap=Makie.Categorical(Makie.Reverse(:Spectral)))
-
-
-# hp2 = scatter!(ax1, V1[indKeep],markersize=25,color=:red)
-
-# hp2 = scatter!(ax1, Vg[1:length(xRange)],markersize=15,color=:yellow)
-# hp2 = scatter!(ax1, Vg[2],markersize=15,color=:orange)
 
 fig

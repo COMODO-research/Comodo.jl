@@ -55,16 +55,32 @@ VGn = [GeometryBasics.Point{3, Float64}(R'*v)+p for v ∈ VG1]
 MG = GeometryBasics.Mesh(VGn,FG1)
 
 fig = Figure(size=(800,800))
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A sliced mesh")
+
+# ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A sliced mesh")
+ax1 = LScene(fig[1,1]); 
+cc1 = cam3d!(ax1.scene, clipping_mode = :view_relative, projectiontype = Makie.Perspective) 
+
+hp1 = wireframe!(ax1,MG, linewidth=5, color=:red)
+hp2 = poly!(ax1,Mn, color=CnV, strokewidth=1, strokecolor=:black, shading = FastShading, transparency=false, colorrange = (-2.5,2.5),colormap=cmap)
+hp3 = Colorbar(fig[1,2],hp2,ticks=-2:1:2)
+
+cc1.near[] = 1f-3
+cc1.far[] = 100
+
+# ax2 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A sliced mesh")
+ax2 = LScene(fig[1,3]); 
+cc2 = cam3d!(ax1.scene, clipping_mode = :view_relative, projectiontype = Makie.Perspective) 
+
+Mn = GeometryBasics.Mesh(Vn,Fn[Cn.<=0])
+hp4 = poly!(ax2,Mn, color=:white, strokewidth=1, strokecolor=:black, shading = FastShading, transparency=false, colorrange = (-2.5,2.5),colormap=cmap)
+
+cc2.near[] = 1f-3
+cc2.far[] = 100
+
+
 
 stepRange = range(-s,s,100)
-hSlider = Slider(fig[2, 1], range = stepRange, startvalue = 0,linewidth=30)
-
-# hp1 = mesh!(ax1,GeometryBasics.Mesh(V,F),color=:white, shading = FastShading, transparency=true)
-hp2 = wireframe!(ax1,MG, linewidth=5, color=:red)
-hp3 = poly!(ax1,Mn, color=CnV, strokewidth=1, strokecolor=:black, shading = FastShading, transparency=false, colorrange = (-2.5,2.5),colormap=cmap)
-# hp3 = normalplot(ax1,Mn)
-hp4 = Colorbar(fig[1,2],hp3,ticks=-2:1:2)
+hSlider = Slider(fig[2, :], range = stepRange, startvalue = 0,linewidth=30)
 
 on(hSlider.value) do stepIndex 
     pp = p + stepIndex*n
@@ -82,9 +98,13 @@ on(hSlider.value) do stepIndex
     VGn = [GeometryBasics.Point{3, Float64}(R'*v)+pp for v ∈ VG1] # Rotate plane    
     MG = GeometryBasics.Mesh(VGn,FG1)
 
-    hp2[1] = MG
-    hp3[1] = Mn
-    hp3.color = CnV
+    hp1[1] = MG
+    hp2[1] = Mn
+    hp2.color = CnV
+
+    Mn = GeometryBasics.Mesh(Vn,Fn[Cn.<=0])
+    hp4[1] = Mn
+
 end
 
 slidercontrol(hSlider,ax1)

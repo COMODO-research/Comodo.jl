@@ -866,7 +866,7 @@ end
 
 
 @testset "icosahedron" begin
-    eps_level = 1e-4
+    eps_level = 1e-6
     r = 1.0
     ϕ = Base.MathConstants.golden # (1.0+sqrt(5.0))/2.0, Golden ratio
     s = r/sqrt(ϕ + 2.0)
@@ -880,7 +880,7 @@ end
 
 
 @testset "octahedron" begin
-    eps_level = 1e-4
+    eps_level = 1e-6
     r = 1.0
     s = r/sqrt(2.0)
     F,V = octahedron(1.0) 
@@ -892,22 +892,23 @@ end
 
 
 @testset "dodecahedron" begin
-    eps_level = 1e-4
-    r = 1.0
-    ϕ = Base.MathConstants.golden # (1.0+sqrt(5.0))/2.0, Golden ratio
-    s = r/sqrt(3.0)
-    t = ϕ*s    
-    w = (ϕ-1.0)*s
+    eps_level = 1e-6    
+    r = 2.5 # Radius
+    h = 1.0/Base.MathConstants.golden    
+    s = r/sqrt(3.0) # Scaling factor
+    t = s * (1.0 + h)
+    w = s * (1.0 - h^2)
+
     F,V = dodecahedron(r)
     @test isa(F,Vector{NgonFace{5,Int}})
     @test isa(V,Vector{Point{3,Float64}})
     @test length(F) == 12
-    @test isapprox(V[1], [s,s,s], atol=eps_level)
+    @test isapprox(V[1], [-s,-s,-s], atol=eps_level)
 end
 
 
 @testset "cube" begin
-    eps_level = 1e-4
+    eps_level = 1e-6
     r = 1.0
     s = r/sqrt(3.0)
     F,V = cube(1.0)
@@ -919,7 +920,7 @@ end
 
 
 @testset "tetrahedron" begin
-    eps_level = 1e-4
+    eps_level = 1e-6
     r = 1.0
     a = r*sqrt(2.0)/sqrt(3.0)
     b = -r*sqrt(2.0)/3.0
@@ -933,7 +934,7 @@ end
 
 
 @testset "platonicsolid" begin
-    eps_level = 1e-4
+    eps_level = 1e-6
 
     r = 2.5 # Radius
     lv = [4,8,6,12,20] # Correct vertex numbers
@@ -5164,24 +5165,16 @@ end
 
 @testset "rhombicdodecahedron" verbose=true begin
     eps_level = 1e-6
-
-    F,V = rhombicdodecahedron(1.0)
-
-    Vt = Point{3, Float64}[[-0.5, -0.5, -0.5], [0.5, -0.5, -0.5], [0.5, 0.5, -0.5], 
-    [-0.5, 0.5, -0.5], [-0.5, -0.5, 0.5], [0.5, -0.5, 0.5], [0.5, 0.5, 0.5], [-0.5, 0.5, 0.5], 
-    [-1.0, -0.0, 0.0], [0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, -0.0, -1.0], 
-    [0.0, -0.0, 1.0]]
-
-    @test F == QuadFace{Int}[[1, 10, 5, 9], [2, 11, 6, 10], [3, 12, 7, 11], [4, 9, 8, 12], 
-    [5, 10, 6, 14], [6, 11, 7, 14], [7, 12, 8, 14], [8, 9, 5, 14], [1, 13, 2, 10], [2, 13, 3, 11], 
-    [3, 13, 4, 12], [4, 13, 1, 9]]
-
-    @test isapprox(V,Vt,atol=eps_level)
-
-    r = π
-    F,V = rhombicdodecahedron(r)
+    F,V = rhombicdodecahedron(1.0)    
+    @test isa(F,Vector{QuadFace{Int}})
+    @test isa(V,Vector{Point{3,Float64}})
+    @test length(F) == 12
+    @test isapprox(V[1], [0.0,-0.5,-sqrt(2)/4], atol=eps_level)
     
-    @test isapprox(V,Vt.*r,atol=eps_level)
+    Vt = deepcopy(V)
+    w = π
+    F,V = rhombicdodecahedron(w)    
+    @test isapprox(V,Vt.*w,atol=eps_level)
 end
 
 

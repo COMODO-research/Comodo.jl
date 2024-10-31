@@ -15,7 +15,9 @@ F2 = deepcopy(F1)
 V2 = deepcopy(V1)
 
 
-F2,V2,ind1,ind2 = mergevertices(F2,V2; roundVertices=true)
+V2,indUnique,indMap = mergevertices(V2; pointSpacing=pointspacingmean(F2,V2))
+indexmap!(F2,indMap) #Update indices in F2
+
 M2 = GeometryBasics.Mesh(V2,F2)
 
 NV1 = vertexnormal(F1,V1)

@@ -15,7 +15,7 @@ F = [F[i] for i in findall(map(v-> v[3]>0,VC))] # Remove some faces
 Fc,Vc = remove_unused_vertices(F,V)
 
 # Visualization
-markersize = 12
+markersize = 20
 M = GeometryBasics.Mesh(Vc,Fc)
 fig = Figure(size=(1200,1200))
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A cut mesh with unused vertices removed")

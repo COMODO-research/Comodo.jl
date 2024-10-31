@@ -17,7 +17,7 @@ E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
 
 
 # Visualisation
-cmap = colormap = cgrad(:Spectral, 6, categorical = true)
+cmap = cgrad(:Spectral, 6, categorical = true)
 
 Fbs,Vbs = separate_vertices(Fb,V)
 Cbs_V = simplex2vertexdata(Fbs,CFb_type)

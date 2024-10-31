@@ -18,10 +18,9 @@ fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
 M = load(fileName_mesh)
 
 # Obtain mesh faces and vertices
-F = faces(M)
+F = tofaces(faces(M))
 V1 = topoints(coordinates(M))
-
-F,V1 = mergevertices(F,V1)
+F,V1,_,_ = mergevertices(F,V1)
 
 # Define a rotation tensor using Euler angles
 Q = RotXYZ(0.0,0.25*π,0.25*π)

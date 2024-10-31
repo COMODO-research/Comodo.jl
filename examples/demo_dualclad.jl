@@ -54,12 +54,8 @@ elseif testCase == 6
     B = [v[3]>-10 for v in V]
     BF = [all(B[f]) for f in F]
     F = F[BF]
-    F,V = remove_unused_vertices(F,V)
-    
+    F,V = remove_unused_vertices(F,V)    
 end
-
-
-
 
 s = 0.5
 con_type = :face

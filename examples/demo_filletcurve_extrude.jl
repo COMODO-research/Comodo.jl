@@ -1,13 +1,6 @@
 using Comodo
 using GLMakie
 using GeometryBasics
-using LinearAlgebra
-using Rotations
-using Random
-
-
-# Set seed so demo performs the same each time
-Random.seed!(1)
 
 testCase = 4
 
@@ -27,7 +20,7 @@ end
 
 
 
-rMax = 0.5 #collect(range(0.5,5,length(V)))
+rMax = 0.5 
 n = 20
 h =2.0
 VC = filletcurve(V; rMax=rMax,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
