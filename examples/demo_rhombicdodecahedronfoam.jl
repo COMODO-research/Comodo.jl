@@ -3,7 +3,7 @@ using GLMakie
 using GeometryBasics
 
 w = 1.0
-n = (5,4,3)
+n = (3,4,5)
 E,V = rhombicdodecahedronfoam(w,n; merge=false, orientation=:allign)
 F = element2faces(E)
 

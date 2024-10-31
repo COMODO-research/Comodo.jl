@@ -5464,15 +5464,17 @@ The Euler characteristic is defined as:
 faces respectively. It is assumed all inputs are set of unique entities, e.g. 
 no vertices, edges, or faces occur multiple times. 
 """
-function eulerchar(F,V=nothing; E=nothing)
+function eulerchar(F,V=nothing,E=nothing)
     nf = length(F)
     if isnothing(V)
-        nv = maximum(reduce(vcat,F1)) # Use largest index (assumes all points used in mesh)
+        nv = maximum(reduce(vcat,F)) # Use largest index (assumes all points used in mesh)
     else
         nv = length(V)
     end
     if isnothing(E)
         ne = length(meshedges(F; unique_only=true))        
+    else 
+        ne = length(E)
     end    
     return nv-ne+nf
 end
@@ -5904,9 +5906,9 @@ function spacing2numvertices(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}}
     else    
         n = 0:1:ceil(nRefineScalar)+1
     end
-
+    
     # Use knowledge of triangle splitting to get corresponding sets of edge and face counts
-    nf_sim = nf .* 4.0 .^n
+    nf_sim = nf .* 4.0 .^n    
     ne_sim = zeros(length(n))
     ne_sim[1] = ne
     if nRefineScalar>0.0
@@ -5922,9 +5924,12 @@ function spacing2numvertices(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}}
     # Use Euler's characteristic to determine theoretical number of vertices
     nv_sim = eulerchar(F,V) .+ ne_sim .- nf_sim
 
-    # Interpolate at desired number of faces to get desired number of vertices 
-    # return ceil(Int,lerp(nf_sim,nv_sim,nf_desired))
     
     # Interpolate at desired number of faces to get desired number of vertices 
-    return ceil(Int,lerp(n,nv_sim,nRefineScalar))
+    if nRefineScalar>0.0
+        nOut = ceil(Int,lerp(n,nv_sim,nRefineScalar))
+    else
+        nOut = ceil(Int,lerp(reverse(collect(n)),reverse(nv_sim),nRefineScalar))
+    end
+    return nOut 
 end

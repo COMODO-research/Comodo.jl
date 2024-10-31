@@ -5066,7 +5066,7 @@ end
 
 
 @testset "element2faces" verbose=true begin
-    @testset "hexahedra" begin
+    @testset "hex8" begin
         boxDim = [1.0,2.0,3.0] # Dimensions for the box in each direction
         boxEl = [1,1,1] # Number of elements to use in each direction 
         E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
@@ -5084,7 +5084,7 @@ end
         @test F[1] == [3,4,2,1]
     end
 
-    @testset "tetrahedra" begin
+    @testset "tet4" begin
         E = [Tet4{Int}(1,2,3,4)]
         F = element2faces(E)
         @test length(F) == length(E)*4
@@ -5098,7 +5098,7 @@ end
         @test F[1] == [3,2,1]
     end
 
-    @testset "pentahedra" begin
+    @testset "penta6" begin
         E = [Penta6{Int}(1,2,3,4,5,6)]
         F = element2faces(E)
         @test isa(F,Tuple)
@@ -5116,6 +5116,44 @@ end
         @test isa(F[1],Vector{TriangleFace{Int}})
         @test isa(F[2],Vector{QuadFace{Int}})
         @test F[1][1] == [3,2,1]
+    end
+
+    @testset "Rhombicdodeca14" begin
+        nf = 12
+        E = [Rhombicdodeca14{Int}(1:14)]
+        F = element2faces(E)
+        @test length(F) == length(E)*nf
+        @test isa(F,Vector{QuadFace{Int}})
+        @test F[1] == [1,10,5,9]
+
+        E = [Rhombicdodeca14{Int}(1:14),Rhombicdodeca14{Int}(8:21),Rhombicdodeca14{Int}(22:35)]
+        F = element2faces(E)
+        @test length(F) == length(E)*nf
+        @test isa(F,Vector{QuadFace{Int}})
+        @test F[1] == [1,10,5,9]
+        @test F[nf+1] == [8,17,12,16]
+    end
+
+    @testset "Truncatedocta24" begin
+        E = [Truncatedocta24{Int}(1:24)]
+        F = element2faces(E)
+        @test isa(F,Tuple)
+        @test length(F[1]) == length(E)*8
+        @test length(F[2]) == length(E)*6
+        @test isa(F[1],Vector{NgonFace{6, Int64}})
+        @test isa(F[2],Vector{QuadFace{Int}})
+        @test F[1][1] == [6,18,1,13,3,15]
+        @test F[2][1] == [2,3,13,16]
+
+        E = [Truncatedocta24{Int}(i:i+23) for i=1:4]        
+        F = element2faces(E)
+        @test isa(F,Tuple)
+        @test length(F[1]) == length(E)*8
+        @test length(F[2]) == length(E)*6
+        @test isa(F[1],Vector{NgonFace{6, Int64}})
+        @test isa(F[2],Vector{QuadFace{Int}})
+        @test F[1][1] == [6,18,1,13,3,15]
+        @test F[2][1] == [2,3,13,16]
     end
 
     @testset "errors" begin
@@ -5963,4 +6001,206 @@ end
         @test isapprox(G,collect(1:m),atol=eps_level)
         @test length(G) == length(F)
     end
+end
+
+@testset "eulerchar" verbose = true begin
+
+    # Triangulated sphere with X=2
+    X = 2
+    n = 2; r = 2.5
+    F,V = geosphere(n,r)
+    E = meshedges(F; unique_only=true)    
+    @test eulerchar(F) == X  
+    @test eulerchar(F,V) == X
+    @test eulerchar(F,V,E) == X
+    n = 3; 
+    F,V = geosphere(n,r)
+    @test eulerchar(F,V) == X
+        
+    # Quad cube X = 2
+    X = 2
+    r = 2.5
+    F,V = cube(r)
+    E = meshedges(F; unique_only=true)    
+    @test eulerchar(F) == X  
+    @test eulerchar(F,V) == X
+    @test eulerchar(F,V,E) == X
+    n = 3; 
+    F,V = subquad(F,V,n)
+    @test eulerchar(F,V) == X
+
+    # dodecahedron (pentagonal faces)
+    X = 2
+    r = 2.5
+    F,V = dodecahedron(r)
+    E = meshedges(F; unique_only=true)    
+    @test eulerchar(F) == X  
+    @test eulerchar(F,V) == X
+    @test eulerchar(F,V,E) == X
+        
+    # Triangulated disc with X=1
+    X = 1
+    n=2; r=2.5
+    F,V = tridisc(r,3)    
+    E = meshedges(F; unique_only=true)    
+    @test eulerchar(F) == X  
+    @test eulerchar(F,V) == X
+    @test eulerchar(F,V,E) == X
+
+    # Triangulated disc with central hole X=0
+    X = 0
+    n=2; r=2.5
+    F,V = tridisc(r,3)    
+    VF = simplexcenter(F,V)    
+    RF = norm.(VF)
+    F = F[RF.>r/2]
+    F,V = remove_unused_vertices(F,V)
+    E = meshedges(F; unique_only=true)    
+    @test eulerchar(F) == X  
+    @test eulerchar(F,V) == X
+    @test eulerchar(F,V,E) == X
+
+end
+
+
+@testset "rhombicdodecahedronfoam" verbose = true begin
+
+    # rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :allign) where T<:Real
+    w = 2.1
+    n = (3,4,5)
+    E,V = rhombicdodecahedronfoam(w,n)
+
+    m = ceil(Int,n[3]/2)    
+    k = m*(n[1]*n[2]) + (n[3]-m)*((n[1]-1)*(n[2]-1))
+
+    @test isa(E,Vector{Rhombicdodeca14{Int}})
+    @test isa(V,Vector{Point{3,Float64}})
+    @test length(E) == k
+
+    E,V = rhombicdodecahedronfoam(w,n; merge = false, orientation = :allign)
+    @test length(E) == k
+    @test length(V) == k*14
+    
+    ind = elements2indices(E[1])
+    v_min = minp(V[ind])
+    v_max = maxp(V[ind])
+    @test v_max[1]-v_min[1] == w
+
+    E,V = rhombicdodecahedronfoam(w,n; merge = false, orientation = :diagonal)
+    k = prod(n) + (n[1]-1) * (n[2]-1) * n[3] + (n[1]-1) * n[2] * (n[3]-1) + n[1] * (n[2]-1)  * (n[3]-1)
+    @test length(E) == k
+    @test length(V) == k*14
+
+end
+
+
+@testset "truncatedoctahedron" verbose=true begin
+    eps_level = 1e-6
+
+    w = 1.0
+    F,V = truncatedoctahedron(w)    
+    ind = round.(Int,range(1,length(V),6))
+
+    @test isa(F,Tuple)
+    @test isa(F[1],Vector{NgonFace{6, Int64}})
+    @test isa(F[2],Vector{QuadFace{Int}})    
+    @test isa(V,Vector{Point{3,Float64}})
+    @test length(F[1]) == 8
+    @test length(F[2]) == 6
+    @test isapprox(V[ind], Point{3, Float64}[[0.5, -0.25, 0.0], [0.25, -0.0, -0.5], [0.0, 0.5, 0.25], [-0.0, -0.25, -0.5], [0.25, -0.0, 0.5], [-0.25, 0.0, 0.5]], atol=eps_level)
+    
+    Vt = deepcopy(V)
+    w = π
+    F,V = truncatedoctahedron(w)    
+    @test isapprox(V,Vt.*w,atol=eps_level)
+end
+
+
+
+@testset "kelvinfoam" verbose = true begin
+    eps_level = 1e-6
+
+    w = 2.1
+    n = (3,4,5)
+    E,V = kelvinfoam(w,n)
+
+    m = ceil(Int,n[3]/2)    
+    k = m*(n[1]*n[2]) + (n[3]-m)*((n[1]-1)*(n[2]-1))
+
+    @test isa(E,Vector{Truncatedocta24{Int}})
+    @test isa(V,Vector{Point{3,Float64}})
+    @test length(E) == k
+
+    E,V = kelvinfoam(w,n; merge = false)
+    @test length(E) == k
+    @test length(V) == k*24
+    
+    ind = elements2indices(E[1])
+    v_min = minp(V[ind])
+    v_max = maxp(V[ind])
+    @test v_max[1]-v_min[1] == w
+
+    ind = round.(Int,range(1,length(V),6))    
+    @test isapprox(V[ind], Point{3, Float64}[[1.05, -0.525, 0.0], [4.2, 1.5750000000000002, -1.05], [0.525, 3.1500000000000004, 2.1], [3.6750000000000003, 5.25, 2.1], [0.0, 5.25, 4.7250000000000005], [3.6750000000000003, 6.300000000000001, 5.25]], atol=eps_level)
+end
+
+
+@testset "minp" verbose = true begin    
+    V = gridpoints(range(-1.0,pi,3),range(-pi,1.0,2),range(2.0,3.0,5))
+    @test minp(V) == [-1.0,-pi,2.0]
+end
+
+
+@testset "maxp" verbose = true begin    
+    V = gridpoints(range(-1.0,pi,3),range(-pi,1.0,2),range(2.0,3.0,5))
+    @test maxp(V) == [pi,1.0,3.0]
+end
+
+
+@testset "ntrapezohedron" verbose=true begin
+    eps_level = 1e-6
+
+    r = 2.1
+    n = 6
+    F,V = ntrapezohedron(n,r)    
+    ind = round.(Int,range(1,length(V),6))
+    @test isa(F,Vector{QuadFace{Int}})   
+    @test isa(V,Vector{Point{3,Float64}}) 
+    @test length(F) == 2*n
+    @test isapprox(V[ind], Point{3, Float64}[[2.1000000000000005, 0.0, -0.3288297781786662], [1.2858791391047212e-16, 2.1000000000000005, 0.3288297781786662], [-1.8186533479473213, 1.050000000000001, 0.3288297781786662], [-1.0500000000000012, -1.8186533479473213, -0.3288297781786662], [1.049999999999999, -1.8186533479473224, -0.3288297781786662], [0.0, 0.0, 4.580007978638879]], atol=eps_level)    
+end
+
+
+@testset "spacing2numvertices" verbose=true begin
+    r = 2.0 # radius
+    n = 3 # Number of refinement iterations
+    F,V = geosphere(n,r)
+    pointSpacing = pointspacingmean(F,V)
+    pointSpacingDesired = pointSpacing/4.0
+
+    n2 = n+2
+    F2,V2 = geosphere(n2,r)
+    pointSpacingTrue = pointspacingmean(F2,V2)
+    
+    NV = spacing2numvertices(F,V,pointSpacingDesired)
+            
+    @test isa(NV,Int)   
+    @test abs(NV-length(V2))<length(V2)/100
+    @test abs(pointSpacingTrue-pointSpacingDesired)<pointSpacingDesired/100
+
+    r = 2.0 # radius
+    n = 5 # Number of refinement iterations
+    F,V = geosphere(n,r)
+    pointSpacing = pointspacingmean(F,V)
+    pointSpacingDesired = pointSpacing*4
+
+    n2 = n-2
+    F2,V2 = geosphere(n2,r)
+    pointSpacingTrue = pointspacingmean(F2,V2)
+    
+    NV = spacing2numvertices(F,V,pointSpacingDesired)
+            
+    @test isa(NV,Int)   
+    @test abs(NV-length(V2))<length(V2)/100
+    @test abs(pointSpacingTrue-pointSpacingDesired)<pointSpacingDesired/100
 end

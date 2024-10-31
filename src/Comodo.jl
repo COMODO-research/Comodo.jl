@@ -50,7 +50,7 @@ export tet2hex, element2faces, subhex, rhombicdodecahedron, tri2quad
 export tetgenmesh, surfacevolume, tetvolume, extrudefaces, filletcurve
 export squircle, circlerange, edgefaceangles, faceanglesegment, eulerchar
 export rhombicdodecahedronfoam, kelvinfoam, truncatedoctahedron, ntrapezohedron, hexagonaltrapezohedron #, tetrakaidecahedron
-export mag, indexmap!, indexmap, minp, maxp
+export mag, indexmap!, indexmap, minp, maxp, spacing2numvertices
 
 # Export functions: Visualization related
 export slidercontrol, slider2anim, dirplot, normalplot

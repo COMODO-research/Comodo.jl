@@ -6,7 +6,7 @@ using Rotations
 
 
 w = 1.0
-n = (4,5,5)
+n = (3,4,5)
 E,V = kelvinfoam(w,n; merge=false)
 F = element2faces(E)
 
