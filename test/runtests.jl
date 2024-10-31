@@ -2405,7 +2405,7 @@ end
     Fs,Vs = separate_vertices(F,V)
     Fm, Vm, indReverse = mergevertices(Fs, Vs; roundVertices = true)
 
-    @test_throws UndefVarError mergevertices(Vs)
+    @test_throws ArgumentError mergevertices(Vs)
 
     @test V isa Vector{Point3{Float64}}
     @test length(Vm) == length(V)

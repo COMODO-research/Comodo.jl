@@ -2419,7 +2419,7 @@ function mergevertices(V::Vector{Point{ND,TV}}; roundVertices = true, pointSpaci
             # Compute numDigitsMerge from point spacing
             if isnothing(pointSpacing)
                 # pointSpacing = norm(maxp(V)-minp(V))/length(V)
-                 throw(UndefVarError("Specify either numDigitsMerge or pointSpacing"))
+                 throw(ArgumentError("Specify either numDigitsMerge or pointSpacing"))
             else
                 numDigitsMerge = 6-mag(pointSpacing)
             end            
