@@ -5919,9 +5919,9 @@ function spacing2numvertices(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}}
     
     # Interpolate at desired number of faces to get desired number of vertices 
     if nRefineScalar>0.0
-        nOut = ceil(Int,lerp(n,nv_sim,nRefineScalar))
+        nv_Out = ceil(Int,lerp(n,nv_sim,nRefineScalar))
     else
-        nOut = ceil(Int,lerp(reverse(collect(n)),reverse(nv_sim),nRefineScalar))
+        nv_Out = ceil(Int,lerp(reverse(collect(n)),reverse(nv_sim),nRefineScalar))
     end
-    return nOut 
+    return nv_Out 
 end
