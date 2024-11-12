@@ -1510,7 +1510,7 @@ end
         nc = 3
         Vc = circlepoints(r,nc;dir=:acw)    
         d = norm(Vc[1]-Vc[2])        
-        F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:tri_slash)
+        F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:forwardslash)
         
         Fn, Vn = subtri(F, V, 0; method=:Loop, constrain_boundary=false)
         @test Fn == F
@@ -1522,9 +1522,7 @@ end
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)        
-        @test isapprox(Vn[ind], Point{3, Float64}[[0.53125, -3.469446951953614e-17, 0.0], [-0.26562500000000006, 0.46007599576048297, 0.8660254037844388], 
-        [0.2265624999999999, 0.39241776108982374, 0.4330127018922194], [-0.031249999999999778, -0.48713928962874686, 0.8660254037844388], 
-        [-0.031249999999999778, -0.48713928962874686, 1.7320508075688776], [0.4375000000000001, -0.2165063509461097, 1.7320508075688776]], atol=eps_level)
+        @test isapprox(Vn[ind], Point{3, Float64}[[0.53125, -3.469446951953614e-17, 0.0], [0.22656249999999992, 0.39241776108982374, 0.8660254037844388], [0.43749999999999994, 0.21650635094610965, 0.4330127018922194], [0.2265625000000002, -0.39241776108982385, 1.2990381056766582], [0.53125, -3.469446951953614e-17, 1.2990381056766582], [0.4375000000000001, -0.2165063509461097, 1.7320508075688776]], atol=eps_level)
     end
 
     @testset "Loop, constrained boundary" begin
@@ -1533,7 +1531,7 @@ end
         nc = 3
         Vc = circlepoints(r,nc;dir=:acw)    
         d = norm(Vc[1]-Vc[2])        
-        F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:tri_slash)
+        F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:backslash)
         
         Fn, Vn = subtri(F, V, 0; method=:Loop, constrain_boundary=true)
         @test Fn == F
@@ -1545,9 +1543,7 @@ end
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)        
-        @test isapprox(Vn[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [-0.2890625000000001, 0.5006709365628785, 0.8660254037844388], 
-        [0.2734374999999999, 0.39241776108982374, 0.4330127018922194], [-0.05468749999999976, -0.5277342304311424, 0.8660254037844388], 
-        [-0.1249999999999997, -0.6495190528383291, 1.7320508075688776], [0.6250000000000001, -0.2165063509461097, 1.7320508075688776]], atol=eps_level)
+        @test isapprox(Vn[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [-0.2890625000000001, 0.5006709365628785, 0.8660254037844388], [0.2734374999999999, 0.39241776108982374, 0.4330127018922194], [-0.05468749999999976, -0.5277342304311424, 0.8660254037844388], [-0.1249999999999997, -0.6495190528383291, 1.7320508075688776], [0.6250000000000001, -0.2165063509461097, 1.7320508075688776]], atol=eps_level)
     end
 
     @testset "errors" begin
@@ -1556,7 +1552,7 @@ end
         Vc = circlepoints(r,nc;dir=:acw)    
         d = norm(Vc[1]-Vc[2])        
         num_steps = -5
-        @test_throws Exception extrudecurve(Vc; extent=d, direction=:positive, num_steps=num_steps, close_loop=true,face_type=:tri_slash)
+        @test_throws Exception extrudecurve(Vc; extent=d, direction=:positive, num_steps=num_steps, close_loop=true,face_type=:forwardslash)
 
         r = 1.0
         nc = 3
@@ -1564,7 +1560,7 @@ end
         d = norm(Vc[1]-Vc[2])        
         num_steps = 2
         direction = :wrong
-        @test_throws Exception extrudecurve(Vc; extent=d, direction=direction, num_steps=num_steps, close_loop=true,face_type=:tri_slash)
+        @test_throws Exception extrudecurve(Vc; extent=d, direction=direction, num_steps=num_steps, close_loop=true,face_type=:forwardslash)
     end
 
 end
@@ -3081,7 +3077,6 @@ end
         # Providing "nothing" for the number of steps should create point spacing based number of steps
         F,V = loftlinear(V1,V2;num_steps=nothing,close_loop=true,face_type=:quad)
         @test length(V)/nc == ceil(Int,norm(n)/(0.5*(pointspacingmean(V1)+pointspacingmean(V2))))
-
     end
 
     @testset "tri" begin
@@ -3092,11 +3087,11 @@ end
         @test length(F) == (nc*(num_steps-1))*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
-        @test isapprox(V[ind], Point3{Float64}[[1.0, 0.0, 0.0], [-0.8090169943749475, 0.587785252292473, 0.0], [0.7617793324199491, 1.5707963267948963, 1.5707963267948966], [3.4506096479647406, 2.1905361372946395, 3.141592653589793], [3.4506096479647406, 4.092649169884947, 3.141592653589793]], atol=eps_level)
+        @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [-0.8090169943749475, 0.587785252292473, 0.0], [0.5802030396500877, 1.5707963267948963, 1.5707963267948966], [3.4506096479647406, 2.1905361372946395, 3.141592653589793], [3.4506096479647406, 4.092649169884947, 3.141592653589793]], atol=eps_level)
     end
 
-    @testset "tri_slash" begin
-        F,V = loftlinear(V1,V2;num_steps=num_steps,close_loop=true,face_type=:tri_slash)
+    @testset "forwardslash" begin
+        F,V = loftlinear(V1,V2;num_steps=num_steps,close_loop=true,face_type=:forwardslash)
         ind = round.(Int,range(1,length(V),5))
 
         @test F isa Vector{TriangleFace{Int}}
@@ -3118,135 +3113,153 @@ end
     end
 end
 
-@testset "loftpoints2surf" verbose = true begin    
+@testset "grid2surf" verbose = true begin    
 
     nc = 5
     t = range(0,2.0*π-(2.0*π)/nc,nc) 
     V1 = [Point3{Float64}(cos(tt), sin(tt),0.0) for tt in t]
     V2 = [Point3{Float64}(v[1],v[2],v[3]+2.0) for v in V1]
     V3 = [Point3{Float64}(v[1],v[2],v[3]+4.0) for v in V1]
+    V4 = [Point3{Float64}(v[1],v[2],v[3]+6.0) for v in V1]
     Vp2 = vcat(V1,V2)
     Vp3 = vcat(V1,V2,V3)     
+    Vp4 = vcat(V1,V2,V3,V4)     
 
     @testset "errors" begin
         num_steps=4 # i.e. too many
-        @test_throws ArgumentError  loftpoints2surf(Vp3,num_steps; close_loop=false,face_type=:quad)
+        @test_throws ArgumentError  grid2surf(Vp3,num_steps; periodicity=(false,false),face_type=:quad)
     end    
 
     @testset "quad" begin
         #Non-closed loop
         num_steps = 2
-        F,V = loftpoints2surf(Vp2,num_steps; close_loop=false,face_type=:quad)
+        F = grid2surf(Vp2,num_steps; periodicity=(false,false),face_type=:quad)
         @test F isa Vector{QuadFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)
-        @test V isa Vector{Point3{Float64}}
-        @test length(V) == nc*num_steps
-        @test V == Vp2
-
+        
         # Closed loop
         num_steps = 2
-        F,V = loftpoints2surf(Vp2,num_steps; close_loop=true,face_type=:quad)
+        F = grid2surf(Vp2,num_steps; periodicity=(true,false),face_type=:quad)
         @test F isa Vector{QuadFace{Int}}
-        @test length(F) == nc*(num_steps-1)
-        @test V isa Vector{Point3{Float64}}
-        @test length(V) == nc*num_steps
-        @test V == Vp2
+        @test length(F) == nc*(num_steps-1)        
 
         # 3 layers
         num_steps = 3
-        F,V = loftpoints2surf(Vp3,num_steps; close_loop=true,face_type=:quad)
+        F = grid2surf(Vp3,num_steps; periodicity=(true,false),face_type=:quad)
         @test F isa Vector{QuadFace{Int}}
-        @test length(F) == nc*(num_steps-1)
-        @test V isa Vector{Point3{Float64}}
-        @test length(V) == nc*num_steps
-        @test V == Vp3
+        @test length(F) == nc*(num_steps-1)        
     end
 
-    @testset "tri_slash" begin
+    @testset "forwardslash" begin
         #Non-closed loop
         num_steps = 2
-        F,V = loftpoints2surf(Vp2,num_steps; close_loop=false,face_type=:tri_slash)
+        F = grid2surf(Vp2,num_steps; periodicity=(false,false),face_type=:forwardslash)
         @test F isa Vector{TriangleFace{Int}}
-        @test length(F) == (nc-1)*(num_steps-1)*2
-        @test V isa Vector{Point3{Float64}}
-        @test length(V) == nc*num_steps
-        @test V == Vp2
+        @test length(F) == (nc-1)*(num_steps-1)*2        
 
         # Closed loop
         num_steps = 2
-        F,V = loftpoints2surf(Vp2,num_steps; close_loop=true,face_type=:tri_slash)
+        F = grid2surf(Vp2,num_steps; periodicity=(true,false),face_type=:forwardslash)
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
-        @test V isa Vector{Point3{Float64}}
-        @test length(V) == nc*num_steps
-        @test V == Vp2
-
+    
         # 3 layers
         num_steps = 3
-        F,V = loftpoints2surf(Vp3,num_steps; close_loop=true,face_type=:tri_slash)
+        F = grid2surf(Vp3,num_steps; periodicity=(true,false),face_type=:forwardslash)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*(num_steps-1)*2    
+    end
+
+    @testset "backslash" begin
+        #Non-closed loop
+        num_steps = 2
+        F = grid2surf(Vp2,num_steps; periodicity=(false,false),face_type=:backslash)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == (nc-1)*(num_steps-1)*2        
+
+        # Closed loop
+        num_steps = 2
+        F = grid2surf(Vp2,num_steps; periodicity=(true,false),face_type=:backslash)
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
-        @test V isa Vector{Point3{Float64}}
-        @test length(V) == nc*num_steps
-        @test V == Vp3
+    
+        # 3 layers
+        num_steps = 3
+        F = grid2surf(Vp3,num_steps; periodicity=(true,false),face_type=:backslash)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*(num_steps-1)*2    
     end
 
     @testset "tri" begin
         #Non-closed loop
         num_steps = 2
-        F,V = loftpoints2surf(Vp2,num_steps; close_loop=false,face_type=:tri)
+        F = grid2surf(deepcopy(Vp2),num_steps; periodicity=(false,false),face_type=:tri)
         @test F isa Vector{TriangleFace{Int}}
-        @test length(F) == (nc-1)*(num_steps-1)*2
-        @test V isa Vector{Point3{Float64}}
-        @test length(V) == nc*num_steps
-        @test V == Vp2
+        @test length(F) == (nc-1)*(num_steps-1)*2       
 
         # Closed loop
         num_steps = 2
-        F,V = loftpoints2surf(Vp2,num_steps; close_loop=true,face_type=:tri)
+        F = grid2surf(deepcopy(Vp2),num_steps; periodicity=(true,false),face_type=:tri)
         @test F isa Vector{TriangleFace{Int}}
-        @test length(F) == nc*(num_steps-1)*2
-        @test V isa Vector{Point3{Float64}}
-        @test length(V) == nc*num_steps
-        @test V == Vp2
+        @test length(F) == nc*(num_steps-1)*2        
 
-        # 3 layers
+        # 3 layers, tri_dir=1
         num_steps = 3
-        F,V = loftpoints2surf(Vp3,num_steps; close_loop=true,face_type=:tri)
+        F = grid2surf(deepcopy(Vp3),num_steps; periodicity=(true,false),face_type=:tri,tri_dir=1)
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
-        @test V isa Vector{Point3{Float64}}
-        @test length(V) == nc*num_steps
-        @test V == Vp3
+        
+        # 3 layers, tri_dir=2
+        num_steps = 3
+        F = grid2surf(deepcopy(Vp3),num_steps; periodicity=(true,false),face_type=:tri,tri_dir=2)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*(num_steps-1)*2
+    end
+
+    @testset "tri_even" begin
+        #Non-closed loop
+        num_steps = 2
+        F = grid2surf(deepcopy(Vp2),num_steps; periodicity=(false,false),face_type=:tri_even)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == (nc-1)*(num_steps-1)*2       
+
+        # Closed loop
+        num_steps = 2
+        F = grid2surf(deepcopy(Vp2),num_steps; periodicity=(true,false),face_type=:tri_even)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*(num_steps-1)*2        
+
+        # 3 layers, tri_dir=1
+        num_steps = 3
+        F = grid2surf(deepcopy(Vp3),num_steps; periodicity=(true,false),face_type=:tri_even,tri_dir=1)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*(num_steps-1)*2        
+
+        # 3 layers, tri_dir=2
+        num_steps = 3
+        F = grid2surf(deepcopy(Vp3),num_steps; periodicity=(true,false),face_type=:tri_even,tri_dir=2)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*(num_steps-1)*2        
     end
 
     @testset "quad2tri" begin
         #Non-closed loop
         num_steps = 2
-        F,V = loftpoints2surf(Vp2,num_steps; close_loop=false,face_type=:quad2tri)
+        F = grid2surf(Vp2,num_steps; periodicity=(false,false),face_type=:quad2tri)
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)*2
-        @test V isa Vector{Point3{Float64}}
-        @test length(V) == nc*num_steps
-        @test V == Vp2
 
         # Closed loop
         num_steps = 2
-        F,V = loftpoints2surf(Vp2,num_steps; close_loop=true,face_type=:quad2tri)
+        F = grid2surf(Vp2,num_steps; periodicity=(true,false),face_type=:quad2tri)
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
-        @test V isa Vector{Point3{Float64}}
-        @test length(V) == nc*num_steps
-        @test V == Vp2
 
         # 3 layers
         num_steps = 3
-        F,V = loftpoints2surf(Vp3,num_steps; close_loop=true,face_type=:quad2tri)
+        F = grid2surf(Vp3,num_steps; periodicity=(true,false),face_type=:quad2tri)
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
-        @test V isa Vector{Point3{Float64}}
-        @test length(V) == nc*num_steps
-        @test V == Vp3
     end
 end
 
@@ -3787,6 +3800,7 @@ end
     end
 
     @testset "face_type=:tri" begin
+        Vc = circlepoints(r, nc; dir=:cw)
         F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:tri)
         z = [v[3] for v in V]
         zMax = maximum(z)
@@ -3798,11 +3812,12 @@ end
         ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point{3, Float64}[[0.9238795325112865, 0.3826834323650904, 0.0], [-0.5448951067758191, 0.8154931568489168, 0.75], [-1.0, -5.66553889764798e-16, 1.5], [0.19134171618254506, -0.9619397662556434, 2.25], [1.0, 0.0, 3.0]],atol = eps_level)
+        @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-0.19507776807625948, 0.9807221674855444, 0.75], [-0.923879532511287, 0.3826834323650892, 1.5], [-0.1950777680762584, -0.9807221674855446, 2.25], [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
     end
 
-    @testset "face_type=:tri_slash" begin
-        F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:tri_slash)
+    @testset "face_type=:forwardslash" begin
+        Vc = circlepoints(r, nc; dir=:cw)
+        F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:forwardslash)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)
@@ -3813,10 +3828,11 @@ end
         ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point{3, Float64}[[0.9238795325112865, 0.3826834323650904, 0.0], [-0.38268343236509034, 0.9238795325112865, 0.75], [-1.0, -5.66553889764798e-16, 1.5], [2.83276944882399e-16, -1.0, 2.25], [1.0, 0.0, 3.0]],atol = eps_level)
+        @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-1.8369701987210297e-16, 1.0, 0.75], [-0.923879532511287, 0.3826834323650892, 1.5], [-0.3826834323650895, -0.9238795325112868, 2.25], [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
     end
 
     @testset "face_type=:quad2tri" begin
+        Vc = circlepoints(r, nc; dir=:cw)
         F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad2tri)
         z = [v[3] for v in V]
         zMax = maximum(z)
@@ -3828,7 +3844,7 @@ end
         ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point{3, Float64}[[0.9238795325112865, 0.3826834323650904, 0.0], [-0.38268343236509034, 0.9238795325112865, 0.75], [-1.0, -5.66553889764798e-16, 1.5], [2.83276944882399e-16, -1.0, 2.25], [1.0, 0.0, 3.0]],atol = eps_level)
+        @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-1.8369701987210297e-16, 1.0, 0.75], [-0.923879532511287, 0.3826834323650892, 1.5], [-0.3826834323650895, -0.9238795325112868, 2.25], [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
     end
 
 end
@@ -4420,14 +4436,14 @@ end
         @test isa(V,Vector{Point3{Float64}})        
     end
 
-    @testset "tri_slash" begin
-        F,V = sweeploft(Vc,V1,V2; face_type=:tri_slash, num_twist=0, close_loop=true)
+    @testset "forwardslash" begin
+        F,V = sweeploft(Vc,V1,V2; face_type=:forwardslash, num_twist=0, close_loop=true)
         @test length(F) == (nc-1)*np*2
         @test isa(F,Vector{TriangleFace{Int}})
         @test length(V) == nc*np
         @test isa(V,Vector{Point3{Float64}})
 
-        F,V = sweeploft(Vc,V1,V2; face_type=:tri_slash, num_twist=1, close_loop=false)
+        F,V = sweeploft(Vc,V1,V2; face_type=:forwardslash, num_twist=1, close_loop=false)
         @test length(F) == (nc-1)*(np-1)*2
         @test isa(F,Vector{TriangleFace{Int}})
         @test length(V) == nc*np
@@ -4499,7 +4515,7 @@ end
         for i in eachindex(VN)
             m = VN[i] # Current rotation axis
             Q = rotation_between(n,m) # Rotation matrix to rotate Vc orthogonal to m       
-            F1,V1 = revolvecurve([Q*v for v in Vc]; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=:quad)
+            F1,V1 = revolvecurve([Q*v for v in Vc]; extent=θ,  direction=:positive, n=m,num_steps=num_steps,periodicity=(close_loop,false),face_type=:quad)
             
             d = sum([dot(m,v) for v in V1])
             b[i]=isapprox(d,0.0,atol=eps_level)
@@ -4511,18 +4527,18 @@ end
         face_type =:quad
         close_loop = true
 
-        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=n,num_steps=num_steps,periodicity=(close_loop,false),face_type=face_type)
         ϕ = [atan(v[2],v[1]) for v in V]
         @test isapprox(minimum(ϕ),0.0,atol=eps_level)
         @test isapprox(maximum(ϕ),π,atol=eps_level)
 
-        F,V = revolvecurve(Vc; extent=θ,  direction=:both, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:both, n=n,num_steps=num_steps,periodicity=(close_loop,false),face_type=face_type)
         ϕ = [atan(v[2],v[1]) for v in V]
         @test isapprox(minimum(ϕ),-π/2,atol=eps_level)
         @test isapprox(maximum(ϕ),π/2,atol=eps_level)
 
         
-        F,V = revolvecurve(Vc; extent=θ,  direction=:negative, n=n,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:negative, n=n,num_steps=num_steps,periodicity=(close_loop,false),face_type=face_type)
         ϕ = [atan(v[2],v[1]) for v in V]
         @test isapprox(minimum(ϕ),-π,atol=eps_level)
         @test isapprox(maximum(ϕ),0.0,atol=eps_level)
@@ -4531,7 +4547,7 @@ end
     @testset "Nothing for num_steps" begin        
         face_type =:quad
         close_loop = true
-        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=n,num_steps=nothing,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=n,num_steps=nothing,periodicity=(close_loop,false),face_type=face_type)
         @test length(V)/nc == ceil(Int,(2*θ)/pointspacingmean(Vc))
     end
 
@@ -4539,7 +4555,7 @@ end
     @testset "quad" begin        
         face_type =:quad
         close_loop = true
-        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,periodicity=(close_loop,false),face_type=face_type)
 
         @test F isa Vector{QuadFace{Int}}
         @test length(F) == nc*(num_steps-1)
@@ -4551,7 +4567,7 @@ end
 
         face_type =:quad
         close_loop = false
-        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,periodicity=(close_loop,false),face_type=face_type)
 
         @test F isa Vector{QuadFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)
@@ -4562,10 +4578,10 @@ end
         [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=eps_level)
     end
 
-    @testset "tri_slash" begin        
-        face_type =:tri_slash
+    @testset "forwardslash" begin        
+        face_type =:forwardslash
         close_loop = true
-        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,periodicity=(close_loop,false),face_type=face_type)
 
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
@@ -4575,9 +4591,9 @@ end
         [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
         [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=eps_level)
 
-        face_type =:tri_slash
+        face_type =:forwardslash
         close_loop = false
-        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,periodicity=(close_loop,false),face_type=face_type)
 
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)*2
@@ -4591,7 +4607,7 @@ end
     @testset "quad2tri" begin        
         face_type =:quad2tri
         close_loop = true
-        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,periodicity=(close_loop,false),face_type=face_type)
 
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
@@ -4603,7 +4619,7 @@ end
 
         face_type =:quad2tri
         close_loop = false
-        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,periodicity=(close_loop,false),face_type=face_type)
 
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)*2
@@ -4617,34 +4633,30 @@ end
     @testset "tri" begin        
         face_type =:tri
         close_loop = true
-        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,periodicity=(close_loop,false),face_type=face_type)
 
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
-        @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.5053331258162692, -0.6077564601298446, 0.07231366047062965], 
-        [0.5571630293277714, -0.7522988300778739, 0.6238916805133436], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=eps_level)
+        @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.4977812873924417, -0.6047075146776881, 0.0719508829097402], [0.5450507895597763, -0.7359445076848767, 0.6103288178934885], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], [0.3432297454505914, -0.190676780853473, 1.4477001440496169]], atol=eps_level)
 
         face_type =:tri
         close_loop = false
-        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=m,num_steps=num_steps,periodicity=(close_loop,false),face_type=face_type)
 
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc-1)*(num_steps-1)*2
         @test V isa Vector{Point3{Float64}}
         @test length(V) == nc*num_steps
-        @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.5053331258162692, -0.6077564601298446, 0.07231366047062965], 
-        [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], 
-        [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=eps_level)
+        @test isapprox(V[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [1.5053331258162692, -0.6077564601298445, 0.07231366047062965], [0.4952560260691301, -0.6687100711803323, 0.5545703826785278], [0.45369147546634303, -0.7152667193399468, 1.2379650904988573], [0.4576396606007882, -0.2542357078046306, 1.930266858732822]], atol=eps_level)
     end
 
     @testset "errors" begin
         face_type =:tri
         close_loop = true
         direction = :wrong
-        @test_throws Exception revolvecurve(Vc; extent=θ,  direction=:direction, n=m,num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+        @test_throws Exception revolvecurve(Vc; extent=θ,  direction=:direction, n=m,num_steps=num_steps,periodicity=(close_loop,false),face_type=face_type)
     end
 end
 

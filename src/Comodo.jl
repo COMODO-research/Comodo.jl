@@ -40,11 +40,11 @@ export edgecrossproduct, facearea, facenormal, vertexnormal, normalizevector
 export con_edge_face, con_edge_edge, con_face_edge, con_face_face, con_face_face_v, con_vertex_edge, con_vertex_vertex_f
 export con_vertex_face, con_vertex_vertex, con_vertex_simplex, meshconnectivity
 export simplexcenter, vertex2simplexdata, simplex2vertexdata
-export circlepoints, loftlinear, trisurfslice
+export circlepoints, loftlinear, grid2surf, trisurfslice
 export edgeangles, count_edge_face, boundaryedges, boundaryfaces, boundaryfaceindices, edges2curve
 export pointspacingmean, extrudecurve, meshgroup, ray_triangle_intersect
 export distmarch, mesh_curvature_polynomial, curve_length, evenly_sample, evenly_space
-export invert_faces, kabsch_rot, sweeploft, loftpoints2surf, revolvecurve
+export invert_faces, kabsch_rot, sweeploft, revolvecurve
 export batman, tridisc, quaddisc, regiontrimesh, scalesimplex, subcurve, dualclad
 export tet2hex, element2faces, subhex, rhombicdodecahedron, tri2quad
 export tetgenmesh, surfacevolume, tetvolume, extrudefaces, filletcurve

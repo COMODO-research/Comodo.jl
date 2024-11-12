@@ -17,12 +17,12 @@ direction = :positive
 #   num_steps = ceil(Int,d/pointSpacing)
 
 F1,V1 = extrudecurve(Vc; extent=d, direction=:positive, n=n, close_loop=true,face_type=:quad)
-F2,V2 = extrudecurve(Vc; extent=d, direction=:both, n=n, close_loop=true,face_type=:tri_slash)
-F3,V3 = extrudecurve(Vc; extent=d, direction=:negative, n=n, close_loop=true,face_type=:tri)
+F2,V2 = extrudecurve(Vc; extent=d, direction=:both, n=n, close_loop=true,face_type=:forwardslash)
+F3,V3 = extrudecurve(Vc; extent=d, direction=:negative, n=n, close_loop=true,face_type=:tri_even)
 
 n = normalizevector(Vec{3, Float64}(1.0,0.0,1.0))
 F4,V4 = extrudecurve(Vc; extent=d, direction=:positive, n=n, close_loop=true,face_type=:quad)
-F5,V5 = extrudecurve(Vc; extent=d, direction=:both, n=n, close_loop=true,face_type=:tri)
+F5,V5 = extrudecurve(Vc; extent=d, direction=:both, n=n, close_loop=true,face_type=:tri_even)
 F6,V6 = extrudecurve(Vc; extent=d, direction=:negative, n=n, close_loop=true,face_type=:quad2tri)
 
 M1 = GeometryBasics.Mesh(V1,F1)
@@ -39,11 +39,11 @@ ax1 = Axis3(fig[1, 1], aspect = :data, limits=(-r,r,-r,r,-d,d),xlabel = "X", yla
 hp1 = lines!(ax1,Vc,color=:red,linewidth=4, transparency=true, depth_shift=-1.0f-3)
 hp2 = poly!(ax1,M1, strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
 
-ax2 = Axis3(fig[1, 2], aspect = :data, limits=(-r,r,-r,r,-d,d), xlabel = "X", ylabel = "Y", zlabel = "Z", title = """Extruded direction=:both, face_type=:tri_slash """)
+ax2 = Axis3(fig[1, 2], aspect = :data, limits=(-r,r,-r,r,-d,d), xlabel = "X", ylabel = "Y", zlabel = "Z", title = """Extruded direction=:both, face_type=:forwardslash """)
 hp1 = lines!(ax2,Vc,color=:red,linewidth=4, transparency=true, depth_shift=-1.0f-3)
 hp2 = poly!(ax2,M2, strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
 
-ax3 = Axis3(fig[1, 3], aspect = :data, limits=(-r,r,-r,r,-d,d), xlabel = "X", ylabel = "Y", zlabel = "Z", title = """Extruded direction=:negative, face_type=:tri """)
+ax3 = Axis3(fig[1, 3], aspect = :data, limits=(-r,r,-r,r,-d,d), xlabel = "X", ylabel = "Y", zlabel = "Z", title = """Extruded direction=:negative, face_type=:tri_even """)
 hp1 = lines!(ax3,Vc,color=:red,linewidth=4, transparency=true, depth_shift=-1.0f-3)
 hp2 = poly!(ax3,M3, strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
 
@@ -55,7 +55,7 @@ ax1 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z",
 hp1 = lines!(ax1,Vc,color=:red,linewidth=4, transparency=true, depth_shift=-1.0f-3)
 hp2 = poly!(ax1,M4, strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
 
-ax2 = Axis3(fig[2, 2], aspect = :data,xlabel = "X", ylabel = "Y", zlabel = "Z", title = """Extruded direction=:both, face_type=:tri_slash """)
+ax2 = Axis3(fig[2, 2], aspect = :data,xlabel = "X", ylabel = "Y", zlabel = "Z", title = """Extruded direction=:both, face_type=:tri_even """)
 hp1 = lines!(ax2,Vc,color=:red,linewidth=4, transparency=true, depth_shift=-1.0f-3)
 hp2 = poly!(ax2,M5, strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
 

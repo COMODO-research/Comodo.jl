@@ -6,7 +6,7 @@ using Statistics
 using LinearAlgebra
 
 testCase = 5
-vizCase = 2
+vizCase = 1
 if testCase == 1    
     # Define guide curve
     nc = 101 # Number of points on guide curve
@@ -239,7 +239,6 @@ cMap = Makie.Reverse(:Spectral)
 markersize = 6
 linewidth = 2
 
-
 if vizCase ==1 
 
     CF = round.(Int,vertex2simplexdata(F,C))
@@ -260,8 +259,8 @@ if vizCase ==1
     scatter!(ax, V2,markersize=markersize,color=:red)
     hp3 = lines!(ax, V2,linewidth=linewidth,color=:red)
 
-    # hp1 = poly!(ax, GeometryBasics.Mesh(V,F), color=C, strokecolor=:black, strokewidth=0.5,transparency=false,shading = FastShading,colormap=:Spectral)
-    hp1 = mesh!(ax, GeometryBasics.Mesh(V,F), color=C,transparency=false,shading = FastShading,colormap=cMap)
+    hp1 = poly!(ax, GeometryBasics.Mesh(V,F), color=C, strokecolor=:black, strokewidth=0.5,transparency=false,shading = FastShading,colormap=:Spectral)
+    # hp1 = mesh!(ax, GeometryBasics.Mesh(V,F), color=C,transparency=false,shading = FastShading,colormap=cMap)
 
     on(hSlider1.value) do stepIndex1        
         hp1[1] = GeometryBasics.Mesh(V,F[CF.<=stepIndex1])  

@@ -1948,7 +1948,7 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
                         
             if closed == true
                 indTopFaces = [j .+ i*nf  for i = 0:3 for j in indTopFaces]
-                indPush = Vector{Int64}()
+                indPush = Vector{Int}()
                 for f in F[indTopFaces]
                     for i in f
                         if i>nv
@@ -2754,7 +2754,7 @@ end
 """
     loftlinear(V1,V2;num_steps=2,close_loop=true,face_type=:tri)
 
-Loft a surface mesh between two input curves
+Lofts surface between curves
 
 # Description 
 
@@ -2772,7 +2772,6 @@ latter, triangles are formed by slashing the quads.
 # Arguments:
 - `V1::Vector`: n-vector 
 - `V2::Vector`: n-vector
-
 """
 function loftlinear(V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}};num_steps=nothing,close_loop=true,face_type=:quad) where ND where TV<:Real
     # Derive num_steps from distance and mean curve point spacing if missing    
@@ -2793,11 +2792,34 @@ function loftlinear(V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}};num_steps=
         Vn = (1.0-λ).*V1 .+ λ.* V2  
         append!(V,Vn)
     end   
-    return loftpoints2surf(V,num_steps;close_loop=close_loop,face_type=face_type) # Return faces and vertices
+
+    F = grid2surf(V,num_steps; face_type=face_type, periodicity=(close_loop,false))
+
+    return F,V
 end 
 
+"""
+    grid2surf(V::Vector{Point{ND,TV}},num_steps; face_type=:quad, periodicity=(false,false), tri_dir=2) where ND where TV<:Real
 
-function loftpoints2surf(V::Vector{Point{ND,TV}},num_steps; close_loop=true,face_type=:quad) where ND where TV<:Real
+Creates surface from grid
+
+# Description 
+This function creates the faces `F` to form a closed surface for the input grid
+defined by the vector of points `V`. The grid is assumed to be structured i.e. 
+that it is composed of `num_steps` point sets which each have point-to-point 
+correspondence. Such a grid can represent a set of corresponding curves, or a 
+set of columns of points for a Cartesian grid for instance. 
+Optional inputs include the following: 
+* `face_type`, which can be `:quad` (default), `:tri`, `:tri_even`, `:backslash`, 
+`:forwardslash`, or `:quad2tri`. 
+* `periodicity`, which is of the type `Tuple{Bool, Bool}`. If 
+`periodicity[1]==true` it is assumed the grid is periodic in the first direction
+, i.e. that the grid should be closed in the first direction. If 
+`periodicity[2]==true` it is assumed the grid is periodic in the second 
+direction, i.e. that the grid should be closed in the second direction.
+"""
+function grid2surf(V::Vector{Point{ND,TV}},num_steps; face_type=:quad, periodicity=(false,false), tri_dir=1) where ND where TV<:Real
+    
     # Get number of points in each offset curve
     nc = length(V)/num_steps # Number of points in curve
     if !isinteger(nc) || nc<1
@@ -2805,93 +2827,190 @@ function loftpoints2surf(V::Vector{Point{ND,TV}},num_steps; close_loop=true,face
     end
     nc = Int(nc)
 
-    # Form faces
-    if face_type == :tri
-        V0 = deepcopy(V)
-        for qq in 2:2:num_steps-1
-            i = (1:nc) .+ (qq-1) *nc
-            @inbounds for q in 1:nc    
-                if q == 1 
-                    if close_loop == true      
-                        V[i[q]] = 0.5 .* (V0[i[q]]+V0[i[q+1]])
-                    end
-                elseif q == nc 
-                    if close_loop == true      
-                        V[i[q]] = 0.5 .* (V0[i[q]]+V0[i[1]]) 
-                    end
-                else
-                    V[i[q]] = 0.5 .* (V0[i[q]]+V0[i[q+1]])
-                end
-            end
-        end 
-    end
-
     ij2ind(i,j) = i + nc*(j-1) # function to convert subscript to linear indices
 
-    # Build faces
-    if face_type == :quad    
-        F = Vector{QuadFace{Int}}()
-        @inbounds for i = 1:(nc-1)
-            @inbounds for j = 1:(num_steps-1)    
-                push!(F,QuadFace{Int}([ij2ind(i,j), ij2ind(i+1,j), ij2ind(i+1,j+1), ij2ind(i,j+1)  ]))
-            end
-        end
-
-        # Add faces to close over shape if requested
-        if close_loop
-            @inbounds for q in 1:(num_steps-1)                
-                push!(F,QuadFace{Int}([ ij2ind(nc,q), ij2ind(1,q), ij2ind(1,q+1), ij2ind(nc,q+1) ])) 
-            end
-        end
-    elseif face_type == :tri_slash 
-        F = Vector{TriangleFace{Int}}()
-        @inbounds for i = 1:nc-1
-            @inbounds for j = 1:num_steps-1    
-                push!(F,TriangleFace{Int}([     ij2ind(i,j), ij2ind(i+1,j), ij2ind(i+1,j+1) ])) 
-                push!(F,TriangleFace{Int}([ ij2ind(i+1,j+1), ij2ind(i,j+1), ij2ind(i,j)     ])) 
-            end
-        end
-
-        # Add faces to close over shape if requested
-        if close_loop
-            @inbounds for q in 1:num_steps-1
-                push!(F,TriangleFace{Int}([  ij2ind(nc,q),    ij2ind(1,q), ij2ind(1,q+1) ])) 
-                push!(F,TriangleFace{Int}([ ij2ind(1,q+1), ij2ind(nc,q+1), ij2ind(nc,q)  ])) 
-            end
-        end
-    elseif face_type == :tri 
-        F = Vector{TriangleFace{Int}}()
-        @inbounds for i = 1:nc-1
-            @inbounds for j = 1:(num_steps-1)    
-                if iseven(j) # Normal slash
-                    push!(F,TriangleFace{Int}([     ij2ind(i,j), ij2ind(i+1,j), ij2ind(i+1,j+1) ]))
-                    push!(F,TriangleFace{Int}([ ij2ind(i+1,j+1), ij2ind(i,j+1), ij2ind(i,j)     ])) 
-                else # Other slash 
-                    push!(F,TriangleFace{Int}([ ij2ind(i+1,j), ij2ind(i+1,j+1), ij2ind(i,j+1) ])) 
-                    push!(F,TriangleFace{Int}([ ij2ind(i,j+1),     ij2ind(i,j), ij2ind(i+1,j) ]))               
-                end
-            end
-        end
-
-        # Add faces to close over shape if requested
-        if close_loop
-            @inbounds for q in 1:(num_steps-1)
-                if iseven(q) 
-                    push!(F,TriangleFace{Int}([ ij2ind(1,q+1), ij2ind(nc,q+1), ij2ind(nc,q)  ])) 
-                    push!(F,TriangleFace{Int}([  ij2ind(nc,q),    ij2ind(1,q), ij2ind(1,q+1) ])) 
-                else
-                    push!(F,TriangleFace{Int}([    ij2ind(1,q), ij2ind(1,q+1), ij2ind(nc,q+1) ]))
-                    push!(F,TriangleFace{Int}([ ij2ind(nc,q+1),  ij2ind(nc,q), ij2ind(1,q)    ]))   
-                end
-            end
-        end
-    elseif face_type ==:quad2tri
-        F,V = loftpoints2surf(V,num_steps; close_loop=close_loop,face_type=:quad)
-        F = quad2tri(F,V; convert_method = :angle)
+    if periodicity[1]
+        iEnd = nc
     else
-        throw(ArgumentError("Invalid face_type specified :$face_type, use :quad, :tri, :tri_slash, or :quad2tri"))
+        iEnd = nc-1
     end
-    return F, V
+    if periodicity[2]
+        jEnd = num_steps
+    else
+        jEnd = num_steps-1
+    end
+    
+    if face_type == :tri || face_type == :tri_even        
+
+        if face_type == :tri
+            f = 2.0 # divide by 2 to get half-spacing shift
+            stepSize = 2 # Shift every second            
+        else    
+            f = 4.0 # divide by 4 to get quarter-spacing shift            
+            stepSize = 1 # Shift every second            
+        end
+
+        if tri_dir == 1             
+            if nc>3
+                spline_order = 4            
+            else
+                spline_order = 2
+            end            
+            
+            indEnd = num_steps 
+            @inbounds for qq in stepSize:stepSize:indEnd
+                indNow = (1:nc) .+ (qq-1)*nc
+
+                L = curve_length(V[indNow])
+                dL = diff(L) # Between point distances           
+                if periodicity[1]
+                    p = norm(V[indNow[1]]-V[indNow[end]]) 
+                    push!(dL,p)                
+                    if iseven(qq)
+                        L_i = L .+ dL./f
+                    else
+                        L_i = L .- circshift(dL./f,1)
+                    end
+                else
+                    if iseven(qq)
+                        L_i = L[2:end-1] .+ dL[2:end]./f
+                    else
+                        L_i = L[2:end-1] .- dL[1:end-1]./f                
+                    end
+                end            
+                if periodicity[1]                
+                    bc = BSplineKit.Periodic(last(L) + p) # Use periodic bc for closed curves
+                else
+                    if spline_order == 4 
+                        bc = BSplineKit.Natural() # Natural
+                    else
+                        bc = nothing
+                    end
+                end  
+                S = BSplineKit.interpolate(L, V[indNow], BSplineOrder(spline_order), bc) # Create interpolator
+
+                # Even range for curve distance 
+                if periodicity[1]
+                    V[indNow] = S.(L_i)
+                else
+                    V[indNow[2:end-1]] = S.(L_i)
+                end
+            end
+        elseif tri_dir == 2           
+            if num_steps>3
+                spline_order = 4            
+            else
+                spline_order = 2
+            end            
+
+            indEnd = nc 
+            @inbounds for qq in stepSize:stepSize:indEnd
+                indNow = qq:nc:nc*num_steps                        
+                
+                L = curve_length(V[indNow])
+                dL = diff(L) # Between point distances           
+                if periodicity[2]
+                    p = norm(V[indNow[1]]-V[indNow[end]]) 
+                    push!(dL,p)                
+                    if iseven(qq)
+                        L_i = L .+ dL./f
+                    else
+                        L_i = L .- circshift(dL./f,1)
+                    end
+                else
+                    if iseven(qq)
+                        L_i = L[2:end-1] .+ dL[2:end]./f
+                    else
+                        L_i = L[2:end-1] .- dL[1:end-1]./f                
+                    end
+                end            
+                if periodicity[2]                
+                    bc = BSplineKit.Periodic(last(L) + p) # Use periodic bc for closed curves
+                else
+                    if spline_order == 4 
+                        bc = BSplineKit.Natural() # Natural
+                    else
+                        bc = nothing
+                    end
+                end  
+                S = BSplineKit.interpolate(L, V[indNow], BSplineOrder(spline_order), bc) # Create interpolator
+
+                # Even range for curve distance 
+                if periodicity[2]
+                    V[indNow] = S.(L_i)
+                else
+                    V[indNow[2:end-1]] = S.(L_i)
+                end
+            end
+        end
+    end
+
+    # Build faces
+    i_f = 1
+    if face_type == :quad || face_type == :quad2tri      
+        F = Vector{QuadFace{Int}}(undef,iEnd*jEnd)             
+        @inbounds for i = 1:iEnd
+            @inbounds for j = 1:jEnd    
+                F[i_f] = QuadFace{Int}( ij2ind(i,j), ij2ind(mod1(i+1,nc),j),ij2ind(mod1(i+1,nc),mod1(j+1,num_steps)), ij2ind(i,mod1(j+1,num_steps)))
+                i_f += 1
+            end
+        end
+        if face_type == :quad2tri 
+            F = quad2tri(F,V; convert_method = :angle)
+        end
+    elseif face_type == :tri || face_type == :tri_even
+        F = Vector{TriangleFace{Int}}(undef,iEnd*jEnd*2)     
+        if tri_dir == 2       
+            @inbounds for j = 1:jEnd
+                @inbounds for i = 1:iEnd    
+                    if iseven(i)
+                        F[i_f  ] = TriangleFace{Int}( ij2ind(i,j), ij2ind(mod1(i+1,nc),j), ij2ind(mod1(i+1,nc),mod1(j+1,num_steps)) ) # 1-2-3
+                        F[i_f+1] = TriangleFace{Int}( ij2ind(mod1(i+1,nc),mod1(j+1,num_steps)), ij2ind(i,mod1(j+1,num_steps)), ij2ind(i,j) ) # 3-4-1
+                    else
+                        F[i_f  ] = TriangleFace{Int}( ij2ind(i,j), ij2ind(mod1(i+1,nc),j), ij2ind(i,mod1(j+1,num_steps)) ) # 1-2-4
+                        F[i_f+1] = TriangleFace{Int}( ij2ind(mod1(i+1,nc),j), ij2ind(mod1(i+1,nc),mod1(j+1,num_steps)), ij2ind(i,mod1(j+1,num_steps)) ) # 2-3-4
+                    end
+                    i_f +=2
+                end
+            end
+        elseif tri_dir == 1
+            @inbounds for i = 1:iEnd
+                @inbounds for j = 1:jEnd    
+                    if iseven(j)
+                        F[i_f  ] = TriangleFace{Int}( ij2ind(i,j), ij2ind(mod1(i+1,nc),j), ij2ind(mod1(i+1,nc),mod1(j+1,num_steps)) ) # 1-2-3
+                        F[i_f+1] = TriangleFace{Int}( ij2ind(mod1(i+1,nc),mod1(j+1,num_steps)), ij2ind(i,mod1(j+1,num_steps)), ij2ind(i,j) ) # 3-4-1
+                    else
+                        F[i_f  ] = TriangleFace{Int}( ij2ind(i,j), ij2ind(mod1(i+1,nc),j), ij2ind(i,mod1(j+1,num_steps)) ) # 1-2-4
+                        F[i_f+1] = TriangleFace{Int}( ij2ind(mod1(i+1,nc),j), ij2ind(mod1(i+1,nc),mod1(j+1,num_steps)), ij2ind(i,mod1(j+1,num_steps)) ) # 2-3-4
+                    end
+                    i_f +=2
+                end
+            end
+        end
+
+    elseif face_type == :backslash
+        F = Vector{TriangleFace{Int}}(undef,iEnd*jEnd*2)     
+        @inbounds for i = 1:iEnd
+            @inbounds for j = 1:jEnd    
+                F[i_f  ] = TriangleFace{Int}( ij2ind(i,j), ij2ind(mod1(i+1,nc),j), ij2ind(mod1(i+1,nc),mod1(j+1,num_steps)) ) # 1-2-3
+                F[i_f+1] = TriangleFace{Int}( ij2ind(mod1(i+1,nc),mod1(j+1,num_steps)), ij2ind(i,mod1(j+1,num_steps)), ij2ind(i,j) ) # 3-4-1
+                i_f +=2
+            end
+        end
+    elseif face_type == :forwardslash
+        F = Vector{TriangleFace{Int}}(undef,iEnd*jEnd*2)     
+        @inbounds for i = 1:iEnd
+            @inbounds for j = 1:jEnd    
+                F[i_f  ] = TriangleFace{Int}( ij2ind(i,j), ij2ind(mod1(i+1,nc),j), ij2ind(i,mod1(j+1,num_steps)) ) # 1-2-4
+                F[i_f+1] = TriangleFace{Int}( ij2ind(mod1(i+1,nc),j), ij2ind(mod1(i+1,nc),mod1(j+1,num_steps)), ij2ind(i,mod1(j+1,num_steps)) ) # 2-3-4
+                i_f +=2
+            end
+        end    
+    else
+        throw(ArgumentError("Invalid face_type specified :$face_type, use :quad, :tri, :tri_even, :backslash, :forwardslash, or :quad2tri"))
+    end
+
+    return F
 end
 
 
@@ -3735,12 +3854,11 @@ end
 
 function make_geospline(V::Vector{Point{ND,TV}}; rtol = 1e-8, niter = 10, spline_order=4, close_loop=false) where ND where TV<:Real
     LL = curve_length(V) # Initialise as along curve (multi-linear) distance
-
     if close_loop == true
-        D = last(LL)+ norm(V[1]-V[end])
+        D = last(LL) + norm(V[1]-V[end])
         bc = BSplineKit.Periodic(D) # Use periodic bc for closed curves
     else
-        D = last(LL) # Normalise  
+        D = last(LL)  
         bc = BSplineKit.Natural() # Otherwise use natural
     end
     S = BSplineKit.interpolate(LL, deepcopy(V), BSplineOrder(spline_order), bc) # Create interpolator
@@ -3754,8 +3872,8 @@ function make_geospline(V::Vector{Point{ND,TV}}; rtol = 1e-8, niter = 10, spline
         end
         
         if close_loop == true
-            D = last(L) + integrate_segment_(dS,LL[end], D,rtol)              
-            bc = BSplineKit.Periodic(D)     
+            D = last(L) + integrate_segment_(dS,LL[end], D,rtol)           
+            bc = BSplineKit.Periodic(D)                   
         else
             D = last(L)
         end      
@@ -3993,7 +4111,7 @@ This function rotates the curve `Vc` by the angle `extent`, in the direction
 defined by `direction` (`:positive`, `:negative`, `:both`), around the vector 
 `n`, to build the output mesh defined by the faces `F` and vertices `V`. 
 """
-function revolvecurve(Vc::Vector{Point{ND,TV}}; extent = 2.0*pi, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=true,face_type=:quad)  where ND where TV<:Real   
+function revolvecurve(Vc::Vector{Point{ND,TV}}; extent = 2.0*pi, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing, periodicity=(false,false),face_type=:quad)  where ND where TV<:Real   
     
     # Compute num_steps from curve point spacing
     if isnothing(num_steps)
@@ -4025,7 +4143,9 @@ function revolvecurve(Vc::Vector{Point{ND,TV}}; extent = 2.0*pi, direction=:posi
         append!(V,Vn)
     end    
    
-    return loftpoints2surf(V,num_steps;close_loop=close_loop,face_type=face_type)
+    F = grid2surf(V,num_steps; face_type=face_type, periodicity=periodicity)
+
+    return F,V
 end
 
 
@@ -4110,9 +4230,9 @@ function tridisc(r=1.0,n=0; ngon=6, method=:Loop, orientation=:up)
     V = circlepoints(r,ngon)
     push!(V,Point{3,Float64}(0.0,0.0,0.0))
     if orientation==:up
-        F = [TriangleFace{Int64}(i,mod1(i+1,ngon),ngon+1) for i in 1:ngon]
+        F = [TriangleFace{Int}(i,mod1(i+1,ngon),ngon+1) for i in 1:ngon]
     else#if orientation==:down
-        F = [TriangleFace{Int64}(i,ngon+1,mod1(i+1,ngon)) for i in 1:ngon]    
+        F = [TriangleFace{Int}(i,ngon+1,mod1(i+1,ngon)) for i in 1:ngon]    
     end
 
     # Refine mesh n times
@@ -4173,17 +4293,17 @@ function quaddisc(r,n; method = :Catmull_Clark, orientation=:up)
     V = circlepoints(r,8)
     V = append!(V, circlepoints(r/2,8)) 
     V = push!(V, Point{3,Float64}(0.0,0.0,0.0))
-    F = Vector{QuadFace{Int64}}(undef,12)
+    F = Vector{QuadFace{Int}}(undef,12)
 
     # Add outer ring
     for i = 1:8
-        F[i] = QuadFace{Int64}(i, mod1(i+1,8), mod1(i+1+8,8)+8, mod1(i+8,16))
+        F[i] = QuadFace{Int}(i, mod1(i+1,8), mod1(i+1+8,8)+8, mod1(i+8,16))
     end
 
     # Add core
     for i = 1:4
         j = 9 + (i-1)*2
-        F[i+8] = QuadFace{Int64}(j, mod1(j+1+8,8)+8, mod1(j+2+8,8)+8, 17)
+        F[i+8] = QuadFace{Int}(j, mod1(j+1+8,8)+8, mod1(j+2+8,8)+8, 17)
     end
     
     # Invert if needed
@@ -4579,10 +4699,10 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
         F0[11] = QuadFace{Int}( 3, 13, 4, 12)
         F0[12] = QuadFace{Int}( 4, 13, 1,  9)
 
-        F = Vector{QuadFace{Int64}}(undef,length(E)*length(F0))
+        F = Vector{QuadFace{Int}}(undef,length(E)*length(F0))
         for (i,e) in enumerate(E) 
             j = 1+(i-1)*length(F0)
-            F[j:j+length(F0)-1] = [QuadFace{Int64}(view(e,f)) for f in F0]    
+            F[j:j+length(F0)-1] = [QuadFace{Int}(view(e,f)) for f in F0]    
         end
     elseif element_type <: Truncatedocta24{T}
         # Hexagonal faces
@@ -4605,10 +4725,10 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
         F02[ 5] = QuadFace{Int}(11,  9,  6, 15)
         F02[ 6] = QuadFace{Int}(4, 19, 22, 24)
 
-        F1 = Vector{NgonFace{6,Int64}}(undef,length(E)*length(F01))
+        F1 = Vector{NgonFace{6,Int}}(undef,length(E)*length(F01))
         for (i,e) in enumerate(E) 
             j = 1+(i-1)*length(F01)
-            F1[j:j+length(F01)-1] = [NgonFace{6,Int64}(view(e,f)) for f in F01]    
+            F1[j:j+length(F01)-1] = [NgonFace{6,Int}(view(e,f)) for f in F01]    
         end
 
         F2 = Vector{QuadFace{Int}}(undef,length(E)*length(F02))
@@ -5925,3 +6045,4 @@ function spacing2numvertices(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}}
     end
     return nv_Out 
 end
+
