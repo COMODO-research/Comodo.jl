@@ -23,7 +23,7 @@ hp1 = poly!(ax1,M,color=:white, shading = FastShading, transparency=true,strokec
 # hp2 = normalplot(ax1,M,color=:red)
 
 for x = range(-1.25,1.25,np)
-    ray_origin = GeometryBasics.Point3{Float64}(x,0.25*sin(x*pi),1.25)
+    ray_origin = Point3{Float64}(x,0.25*sin(x*pi),1.25)
     ray_vector = Vec3{Float64}(0.0,0.0,-2)
     P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 1)
     scatter!(ax1,ray_origin,markersize = markerSize,color=:blue)
@@ -38,7 +38,7 @@ hp1 = poly!(ax1,M,color=:white, shading = FastShading, transparency=true,strokec
 # hp2 = normalplot(ax1,M,color=:red)
 
 for x = range(-1.25,1.25,np)
-    ray_origin = GeometryBasics.Point3{Float64}(x,0.25*sin(x*pi),1.25)
+    ray_origin = Point3{Float64}(x,0.25*sin(x*pi),1.25)
     ray_vector = Vec3{Float64}(0.0,0.0,-2)
     P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 0)
     scatter!(ax1,ray_origin,markersize = markerSize,color=:blue)
@@ -53,7 +53,7 @@ hp1 = poly!(ax1,M,color=:white, shading = FastShading, transparency=true,strokec
 # hp2 = normalplot(ax1,M,color=:red)
 
 for x = range(-1.25,1.25,np)
-    ray_origin = GeometryBasics.Point3{Float64}(x,0.25*sin(x*pi),1.25)
+    ray_origin = Point3{Float64}(x,0.25*sin(x*pi),1.25)
     ray_vector = Vec3{Float64}(0.0,0.0,-2)
     P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = -1)
     scatter!(ax1,ray_origin,markersize = markerSize,color=:blue)
