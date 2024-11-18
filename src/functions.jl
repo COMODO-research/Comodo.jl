@@ -2922,7 +2922,7 @@ function grid2surf(V::Vector{Point{ND,TV}},num_steps; face_type=:quad, periodici
                 if periodicity[2]                
                     bc = BSplineKit.Periodic(last(L) + p) # Use periodic bc for closed curves
                 else
-                    if spline_order == 4 
+                    if spline_order == 4                         
                         bc = BSplineKit.Natural() # Natural
                     else
                         bc = nothing
@@ -5337,8 +5337,8 @@ function filletcurve(V::Vector{Point{NV,TV}}; rMax::Union{Vector{T},T,Nothing}=n
                 rFit = l/tan(β)
                 if !isnothing(r) && r<=rFit
                     rNow = r
-                    lNow = rNow*tan(β) # Update as as radius used is smaller
-                    if lNow == l
+                    lNow = rNow*tan(β) # Update as as radius used is smaller                                        
+                    if isapprox(lNow,l,atol=eps_level)                        
                         fullRound = true
                     else
                         fullRound = false

@@ -3117,7 +3117,7 @@ end
 
 @testset "grid2surf" verbose = true begin    
 
-    nc = 5
+    nc = 11
     t = range(0,2.0*π-(2.0*π)/nc,nc) 
     V1 = [Point3{Float64}(cos(tt), sin(tt),0.0) for tt in t]
     V2 = [Point3{Float64}(v[1],v[2],v[3]+2.0) for v in V1]
@@ -3172,7 +3172,13 @@ end
         num_steps = 3
         F = grid2surf(Vp3,num_steps; periodicity=(true,false),face_type=:quad)
         @test F isa Vector{QuadFace{Int}}
-        @test length(F) == nc*(num_steps-1)        
+        @test length(F) == nc*(num_steps-1) 
+        
+        # 4 layers
+        num_steps = 4
+        F = grid2surf(Vp4,num_steps; periodicity=(true,false),face_type=:quad)
+        @test F isa Vector{QuadFace{Int}}
+        @test length(F) == nc*(num_steps-1) 
     end
 
     @testset "forwardslash" begin
@@ -3193,6 +3199,12 @@ end
         F = grid2surf(Vp3,num_steps; periodicity=(true,false),face_type=:forwardslash)
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2    
+
+        # 4 layers
+        num_steps = 4
+        F = grid2surf(Vp4,num_steps; periodicity=(true,false),face_type=:forwardslash)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*(num_steps-1)*2    
     end
 
     @testset "backslash" begin
@@ -3211,6 +3223,12 @@ end
         # 3 layers
         num_steps = 3
         F = grid2surf(Vp3,num_steps; periodicity=(true,false),face_type=:backslash)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*(num_steps-1)*2    
+
+        # 4 layers
+        num_steps = 4
+        F = grid2surf(Vp4,num_steps; periodicity=(true,false),face_type=:backslash)
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2    
     end
@@ -3239,6 +3257,19 @@ end
         F = grid2surf(deepcopy(Vp3),num_steps; periodicity=(true,false),face_type=:tri,tri_dir=2)
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
+
+        # 4 layers, tri_dir=1
+        num_steps = 4
+        F = grid2surf(deepcopy(Vp4),num_steps; periodicity=(true,false),face_type=:tri,tri_dir=1)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*(num_steps-1)*2
+
+        # 4 layers, tri_dir=2
+        num_steps = 4
+        F = grid2surf(deepcopy(Vp4),num_steps; periodicity=(true,false),face_type=:tri,tri_dir=2)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*(num_steps-1)*2
+
     end
 
     @testset "tri_even" begin
@@ -3264,7 +3295,19 @@ end
         num_steps = 3
         F = grid2surf(deepcopy(Vp3),num_steps; periodicity=(true,false),face_type=:tri_even,tri_dir=2)
         @test F isa Vector{TriangleFace{Int}}
-        @test length(F) == nc*(num_steps-1)*2        
+        @test length(F) == nc*(num_steps-1)*2    
+        
+        # 4 layers, tri_dir=1
+        num_steps = 4
+        F = grid2surf(deepcopy(Vp4),num_steps; periodicity=(true,false),face_type=:tri_even,tri_dir=1)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*(num_steps-1)*2
+
+        # 4 layers, tri_dir=2
+        num_steps = 4
+        F = grid2surf(deepcopy(Vp4),num_steps; periodicity=(true,false),face_type=:tri_even,tri_dir=2)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*(num_steps-1)*2
     end
 
     @testset "quad2tri" begin
@@ -5595,6 +5638,30 @@ end
 @testset "extrudefaces" verbose=true begin
     eps_level = 1e-6
 
+    @testset "Single QuadFace" begin        
+        F = QuadFace{Int}(1,2,3,4)
+        V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [0.0,1.0,0.0] ]
+        d = 2.0
+        num_steps = 4
+        directionSet = (:positive,:negative,:both)
+        for direction in directionSet
+            E, VE = extrudefaces(F,V; extent=d, direction=direction, num_steps=num_steps)
+            E_ind = reduce(vcat,E)            
+            @test isa(E, Vector{Hex8{Int}})
+            @test isa(VE, Vector{eltype(V)})
+            @test length(VE) == num_steps * length(V)
+            @test length(E) == (num_steps-1) 
+            @test minimum(E_ind) == 1
+            @test maximum(E_ind) == length(VE)
+            @test E == Hex8{Int}[[1, 2, 3, 4, 5, 6, 7, 8], [5, 6, 7, 8, 9, 10, 11, 12], [9, 10, 11, 12, 13, 14, 15, 16]]
+        end
+        ind = round.(Int,range(1,length(VE),6))
+        E, VE = extrudefaces(F,V; extent=d, direction=:positive, num_steps=num_steps)
+        @test isapprox(VE[ind],Point{3, Float64}[[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], 
+        [1.0, 1.0, 0.6666666666666666], [1.0, 0.0, 1.3333333333333333], 
+        [0.0, 0.0, 2.0], [0.0, 1.0, 2.0]],atol=eps_level)     
+    end
+
     @testset "Vector with single QuadFace" begin        
         F = QuadFace{Int}[ [1,2,3,4] ]
         V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [0.0,1.0,0.0] ]
@@ -5748,6 +5815,11 @@ end
         VC = filletcurve(V; rMax=0.0,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
         @test eltype(VC) == eltype(V) # Same type
         @test VC == V # Unchanged input 
+
+        VC = filletcurve(V; rMax=d,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)        
+        @test eltype(VC) == eltype(V) # Same type
+        @test length(VC) == n # Number equals n since this should be a full round
+        @test all(isapprox.(norm.(VC),d,atol=eps_level)) 
     end
 
     @testset "5 points straight (no round) then 90 degree" begin
