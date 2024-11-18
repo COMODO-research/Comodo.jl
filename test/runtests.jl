@@ -1234,23 +1234,33 @@ end
 
 @testset "edgecrossproduct" verbose = true begin
     @testset "Single triangle" begin
-        F = [TriangleFace{Int}(1, 2, 3)]
+        F = TriangleFace{Int}(1, 2, 3)
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,3)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
         V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
         C = edgecrossproduct(F,V) 
-        @test C == [Vec3{Float64}(0.0,0.0,0.5)]
+        @test C == Vec3{Float64}(0.0,0.0,0.5)
     end
     @testset "Single quad" begin
-        F = [QuadFace{Int}(1, 2, 3, 4)]
+        F = QuadFace{Int}(1, 2, 3, 4)
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
         V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
         V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
         V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
         V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
         C = edgecrossproduct(F,V) 
-        @test C == [Vec3{Float64}(0.0,0.0,1.0)]
+        @test C == Vec3{Float64}(0.0,0.0,1.0)
+    end
+    @testset "Single vector" begin
+        F = [1, 2, 3, 4]
+        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
+        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
+        C = edgecrossproduct(F,V) 
+        @test C == Vec3{Float64}(0.0,0.0,1.0)
     end
     @testset "Triangles" begin
         F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
@@ -1273,14 +1283,6 @@ end
         V[6] = GeometryBasics.Point{3, Float64}(2.0, 1.0, 0.0)
         C = edgecrossproduct(F,V) 
         @test C == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,-1.0)]
-    end
-    @testset "Mesh" begin
-        F,V = cube(1.0)
-        C = edgecrossproduct(F,V) 
-        @test C == Vec3{Float64}[[0.0, 0.0, -1.3333333333333337], 
-        [0.0, 0.0, 1.3333333333333337], [-1.3333333333333337, 0.0, 0.0], 
-        [0.0, 1.3333333333333337, 0.0], [1.3333333333333337, 0.0, 0.0], 
-        [0.0, -1.3333333333333337, 0.0]]
     end
 end
 
@@ -3130,6 +3132,29 @@ end
         @test_throws ArgumentError  grid2surf(Vp3,num_steps; periodicity=(false,false),face_type=:quad)
     end    
 
+    @testset "2 points 2 steps" begin
+        # Example curves
+        num_steps = 2        
+        nct = 2
+        tc = range(0,2.0*π-(2.0*π/nct),nct)
+        Vc = [Point3{Float64}(cos(tt),sin(tt),0.0) for tt ∈ tc]        
+        zLevels = range(0.0,3.0,num_steps)
+        Vp = deepcopy(Vc)
+        for i ∈ 2:num_steps
+            append!(Vp, deepcopy(Vc) .+ Point3{Float64}(0.0,0.0,zLevels[i]))
+        end
+        
+        Vs1 = deepcopy(Vp) # copy since face_type = :tri will modify input vertices
+        Fs1 = grid2surf(Vs1,num_steps; face_type=:tri_even, periodicity=(false,false), tri_dir=1)
+        @test Fs1 isa Vector{TriangleFace{Int}}
+        @test length(Fs1) == (nct-1)*(num_steps-1)*2      
+
+        Vs2 = deepcopy(Vp) # copy since face_type = :tri will modify input vertices
+        Fs2 = grid2surf(Vs2,num_steps; face_type=:tri_even, periodicity=(false,false), tri_dir=2)
+        @test Fs2 isa Vector{TriangleFace{Int}}
+        @test length(Fs2) == (nct-1)*(num_steps-1)*2      
+    end
+
     @testset "quad" begin
         #Non-closed loop
         num_steps = 2
@@ -3260,6 +3285,30 @@ end
         F = grid2surf(Vp3,num_steps; periodicity=(true,false),face_type=:quad2tri)
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == nc*(num_steps-1)*2
+    end
+
+    @testset "double periodic" begin
+        # Example curves
+        r = 1.0
+        nc = 16
+        t = range(2.0*π-(2.0*π/nc),0,nc)
+        Vc = [Point3{Float64}(2.0+cos(tt),0.0,sin(tt)) for tt ∈ t]
+        n = Vec{3, Float64}(0.0,0.0,1.0)
+        num_steps = 25
+
+        # Create test data consisting of a revolved circle (resulting in a doughnut shape) 
+        _,V = revolvecurve(Vc; extent=(2*pi-(2*pi/num_steps)), direction=:negative, n=n, num_steps=num_steps, periodicity = (false,false),face_type=:quad)
+        
+        Vn1 = deepcopy(V)
+        F = grid2surf(Vn1,num_steps; face_type=:tri_even, periodicity=(true,true), tri_dir=1)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*num_steps*2
+
+        Vn2 = deepcopy(V)
+        F = grid2surf(Vn2,num_steps; face_type=:tri_even, periodicity=(true,true), tri_dir=2)
+        @test F isa Vector{TriangleFace{Int}}
+        @test length(F) == nc*num_steps*2
+
     end
 end
 
@@ -4097,7 +4146,15 @@ end
 
 @testset "mesh_curvature_polynomial" verbose = true begin
     eps_level = 0.01
-
+       
+    @testset "Entangled quad, singular warning" begin
+        
+        F = [QuadFace{Int}(1, 2, 4, 3)] # Note 4,3 rather than 3,4 causing the twisted/entangled quad
+        V = Point3{Float64}[[0.0,0.0,0.0],[1.0,0.0,0.0],[1.0,1.0,0.0],[0.0,1.0,0.0]]        
+        K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V) # Should trigger singular matrix warning 
+        @test all(isnan.(K1)) # Should result in all NaN output       
+    end
+    
     # A sphere has constant curvature. Both K1 and K2 are equivalent. curvature is 1/r 
     @testset "Triangulated sphere" begin
         r = 10 

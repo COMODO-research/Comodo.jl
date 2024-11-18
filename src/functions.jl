@@ -1457,14 +1457,13 @@ end
 
 """
     edgecrossproduct(F,V::Vector{Point{ND,T}}) where ND where T<:Real  
-    edgecrossproduct(M::GeometryBasics.Mesh)
 
 Returns the edge cross product, useful for nomal direction and area computations. 
 
     # Description
 
 This function computes the so-called edge-cross-product for a input mesh that is
-either defined by the faces `F` and vertices `V` or the mesh `M`. 
+either defined by the faces `F` and vertices `V`. 
 """
 function edgecrossproduct(F::Union{Vector{NgonFace{NF,TF}},Vector{Vector{TF}}},V::Vector{Point{ND,TV}}) where NF where TF<:Integer where ND where TV<:Real
     if isa(F,Vector{Vector{TF}})
@@ -1496,10 +1495,6 @@ function edgecrossproduct(f::Union{NgonFace{NF,TF},Vector{TF}},V::Vector{Point{N
         c += cross(V[f[q]],V[f[mod1(q+1,N)]]) # Add next edge contribution          
     end
     return c./2 # Length = face area, direction is along normal vector
-end
-
-function edgecrossproduct(M::GeometryBasics.Mesh) 
-    return edgecrossproduct(faces(M),coordinates(M))
 end
 
 """
@@ -2886,7 +2881,7 @@ function grid2surf(V::Vector{Point{ND,TV}},num_steps; face_type=:quad, periodici
                     else
                         bc = nothing
                     end
-                end  
+                end                  
                 S = BSplineKit.interpolate(L, V[indNow], BSplineOrder(spline_order), bc) # Create interpolator
 
                 # Even range for curve distance 
@@ -2932,7 +2927,7 @@ function grid2surf(V::Vector{Point{ND,TV}},num_steps; face_type=:quad, periodici
                     else
                         bc = nothing
                     end
-                end  
+                end                                  
                 S = BSplineKit.interpolate(L, V[indNow], BSplineOrder(spline_order), bc) # Create interpolator
 
                 # Even range for curve distance 
@@ -3027,6 +3022,27 @@ function dirplot(ax,V::Vector{Point{ND,TV1}},U::Union{Vector{Point{ND,TV2}},Vect
         UU = (scaleval.*U)/2
         P = V.-UU
         append!(P,V.+UU)        
+    else
+        throw(ArgumentError("Invalid style specified :$style, use :from, :to, or :through"))
+    end    
+    hp = wireframe!(ax,GeometryBasics.Mesh(P,E),linewidth=linewidth, transparency=false, color=color)
+    return hp
+end
+
+function dirplot(ax,V::Union{Point{ND,TV1},Vec{ND,TV1}},U::Union{Point{ND,TV2},Vec{ND,TV2}}; color=:black,linewidth=3,scaleval=1.0,style=:from) where ND where TV1 <: Real where TV2 <: Real
+    
+    E = [LineFace{Int}(1,2)]
+
+    if style==:from        
+        P = [V]
+        push!(P,V.+(scaleval.*U))
+    elseif style==:to
+        P = [V.-(scaleval.*U)]
+        push!(P,V)        
+    elseif style==:through
+        UU = (scaleval.*U)/2
+        P = [V.-UU]
+        push!(P,V.+UU)        
     else
         throw(ArgumentError("Invalid style specified :$style, use :from, :to, or :through"))
     end    
@@ -3302,7 +3318,7 @@ consequtively, and returns an ordered set of indices `ind` defining a curve of
 consequtive points. The function returns empty output if the input edges do not 
 for a proper curve. 
 """
-function edges2curve(Eb::Vector{LineFace{T}}) where T <: Integer
+function edges2curve(Eb::Vector{LineFace{T}}; remove_last = false) where T <: Integer
     # TO DO: 
     # Handle while loop safety/breaking
     # Cope with non-ordered meshes (normals not coherent) 
@@ -3334,7 +3350,12 @@ function edges2curve(Eb::Vector{LineFace{T}}) where T <: Integer
                 throw(ErrorException("Invalid edges. Edges may contained multiple disconnected sets"))
             end            
         end
-        return ind
+        if remove_last 
+            return ind[1:end-1]
+        else
+            return ind
+        end
+
     end
 end
 
@@ -3452,7 +3473,7 @@ This function uses the connectivity `con_type` to create a group label `C` for
 each entitiy in `F`. E.g. `C.==1` for the first group and `C.==2`` for the 
 second and so on.     
 """
-function meshgroup(F; con_type = :v)
+function meshgroup(F; con_type = :v, indStart=1, stop_at = nothing)
 
     if con_type == :v # Group based on vertex connectivity 
         con_F2F = con_face_face_v(F)
@@ -3477,7 +3498,7 @@ function meshgroup(F; con_type = :v)
         C = collect(1:length(F))
     else
         C = fill(0,length(F)) # Initialise group label vector
-        i = 1
+        i = indStart
         c = 1
         C[i] = c 
         seen = Set{Int}(1)
@@ -3501,6 +3522,11 @@ function meshgroup(F; con_type = :v)
                 end
             end
             if np == length(seen) # Group full
+                if !isnothing(stop_at)                 
+                    if c==stop_at
+                        break
+                    end                     
+                end
                 c += 1 # Increment group counter                
                 i = findfirst(iszero.(C))                
                 C[i] = c
@@ -3625,20 +3651,20 @@ When `triSide=0` both inward and outward intersections are considered.
 # References 
 1. [Möller, Tomas; Trumbore, Ben (1997). _Fast, Minimum Storage Ray-Triangle Intersection_. Journal of Graphics Tools. 2: 21-28. doi: 10.1080/10867651.1997.10487468.](https://doi.org/10.1080/10867651.1997.10487468)
 """
-function ray_triangle_intersect(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}},ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64)) where TF <: Integer where ND where TV<:Real
-    P = Vector{Point{ND,TV}}()
+function ray_triangle_intersect(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV1}},ray_origin::Union{Point{ND,TV2},Vec{ND,TV2}},ray_vector::Union{Point{ND,TV3},Vec{ND,TV3}}; rayType = :ray, triSide = 1, tolEps = eps(Float64)) where TF <: Integer where ND where TV1<:Real where TV2<:Real where TV3<:Real
+    P = Vector{Point{ND,TV1}}()
     indIntersect = Vector{Int}()
-    for qf in eachindex(F)
-        p = ray_triangle_intersect(F[qf],V,ray_origin,ray_vector; rayType = rayType, triSide = triSide, tolEps = tolEps)        
+    for (i,f) in enumerate(F)
+        p = ray_triangle_intersect(f,V,ray_origin,ray_vector; rayType = rayType, triSide = triSide, tolEps = tolEps)        
         if !any(isnan.(p))
             push!(P,p)
-            push!(indIntersect,qf)
+            push!(indIntersect,i)
         end
     end
     return P,indIntersect
 end
 
-function ray_triangle_intersect(f::TriangleFace{Int},V::Vector{Point{ND,TV}},ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64)) where ND where TV<:Real
+function ray_triangle_intersect(f::TriangleFace{Int},V::Vector{Point{ND,TV1}},ray_origin::Union{Point{ND,TV2},Vec{ND,TV2}},ray_vector::Union{Point{ND,TV3},Vec{ND,TV3}}; rayType = :ray, triSide = 1, tolEps = eps(Float64)) where ND where TV1<:Real where TV2<:Real where TV3<:Real
 
     # Edge vectors
     P1 = V[f[1]] # First corner point
@@ -3656,7 +3682,7 @@ function ray_triangle_intersect(f::TriangleFace{Int},V::Vector{Point{ND,TV}},ray
         boolDet = det_vec<tolEps
     end
 
-    p = Point{ND,TV}(NaN,NaN,NaN)
+    p = Point{ND,TV1}(NaN,NaN,NaN)
     if boolDet        
         s = ray_origin.-P1
         u = dot(s,ray_cross_e2)/det_vec    

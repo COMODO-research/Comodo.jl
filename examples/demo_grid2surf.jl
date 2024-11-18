@@ -19,8 +19,28 @@ if testCase == 1
     periodicity3 = (false, false)
     periodicity4 = (false, false)
     periodicity5 = (false, false)
-    periodicity6 = (false, false)    
+    periodicity6 = (false, false)   
 elseif testCase == 2
+    # Example curves
+    r = 1.0
+    nc = 2
+    t = range(0,2.0*π-(2.0*π/nc),nc)
+    Vc = [Point3{Float64}(cos(tt),sin(tt),0.0) for tt ∈ t]
+    num_steps = 2
+    zLevels = range(0.0,3.0,num_steps)
+    V = deepcopy(Vc)
+    for i ∈ 2:num_steps
+        append!(V, deepcopy(Vc) .+ Point3{Float64}(0.0,0.0,zLevels[i]))
+    end
+        
+    # Periodicity types, first entry is for direction 1 (which will here close over the ends), the second for direction 2 (which will close in the circle direction)
+    periodicity1 = (false, false)
+    periodicity2 = (false, false)
+    periodicity3 = (false, false)
+    periodicity4 = (false, false)
+    periodicity5 = (false, false)
+    periodicity6 = (false, false)
+elseif testCase == 3
     # Example curves
     r = 1.0
     nc = 16
@@ -40,7 +60,7 @@ elseif testCase == 2
     periodicity4 = (true, false)
     periodicity5 = (true, false)
     periodicity6 = (true, false)
-elseif testCase == 3
+elseif testCase == 4
     # Example curves
     r = 1.0
     nc = 16
