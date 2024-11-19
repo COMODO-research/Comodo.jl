@@ -3357,6 +3357,7 @@ end
 
 
 @testset "dirplot" verbose = true begin
+
     F,V = cube(1.0)    
     U = vertexnormal(F,V)
 
@@ -3378,6 +3379,24 @@ end
         @test typeof(hp2) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
         @test typeof(hp3) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}        
         @test length(faces(Mp)) == length(V)
+    end
+
+    @testset "Single point and vector" begin
+        P = Point{3,Float64}(0.0,0.0,0.0)
+        N = Point{3,Float64}(0.0,0.0,1.0)
+
+        Pv = Point{3,Float64}(0.0,0.0,0.0)
+        Nv = Vec{3,Float64}(0.0,0.0,1.0)
+
+        @test_throws ArgumentError dirplot(ax,Pv,Nv; color=:blue,linewidth=3,scaleval=1.0,style=:wrong)
+        hp1 = dirplot(ax,P,N; color=:blue,linewidth=3,scaleval=1.0,style=:from)
+        hp2 = dirplot(ax,P,N; color=:blue,linewidth=3,scaleval=1.0,style=:to)
+        hp3 = dirplot(ax,P,N; color=:blue,linewidth=3,scaleval=1.0,style=:through)
+
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
+        @test typeof(hp2) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
+        @test typeof(hp3) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
+        @test_throws ArgumentError dirplot(ax,P,N; color=:blue,linewidth=3,scaleval=1.0,style=:wrong)
     end
 end
 
@@ -3760,6 +3779,11 @@ end
     ind = edges2curve(E)
     @test ind == [1,2,3,1]
 
+    # Closed curve, remove last
+    E = LineFace{Int}[[1, 2], [2, 3], [3, 1]]
+    ind = edges2curve(E; remove_last=true)
+    @test ind == [1,2,3]
+
     # Disconnected edges
     E = LineFace{Int}[[1, 2], [2, 3], [3, 4], [4, 5],[7,8]]
     @test_throws Exception edges2curve(E)
@@ -4033,8 +4057,17 @@ end
         append!(V,V2)
         C = meshgroup(F)
         @test C == repeat(1:2,inner=n)
-    end
 
+        # Two tetrahedrons stop at first
+        F,V = cube(1.0)        
+        n = length(F)
+        F2 = map(f-> f.+length(V),F)
+        V2 = map(v-> Point{3, Float64}(2.0+v[1],v[2],v[3]),V)
+        append!(F,F2)
+        append!(V,V2)
+        C = meshgroup(F; stop_at = 1)
+        @test C == append!(ones(length(F2)),zeros(length(F2)))        
+    end
     
 end
 
