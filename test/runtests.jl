@@ -156,11 +156,11 @@ end
 @testset "gridpoints_equilateral" verbose = true begin
     eps_level = 1e-4
        
-    @testset "Vectors, non-rectangular" begin 
+    @testset "Vectors, non-rectangular, forced" begin 
         xSpan = [-3,3]
         ySpan = [-2,2]
         pointSpacing = 0.5
-        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular=false)
+        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular=false, force_equilateral=true)
         ind = round.(Int,range(1,length(V),10))
         
         @test isa(V,Vector{Point{3,Float64}})
@@ -175,11 +175,24 @@ end
         @test isapprox(maximum(x),xSpan[2]+pointSpacing/4,atol=eps_level)
     end
 
+    @testset "Vectors, rectangular, not forced" begin 
+        xSpan = [-3,3]
+        ySpan = [-2,2]
+        pointSpacing = 0.5
+        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular=true, force_equilateral=false)
+        ind = round.(Int,range(1,length(V),10))
+        
+        @test isa(V,Vector{Point{3,Float64}})
+        @test isapprox(V[ind],Point{3, Float64}[[-3.0, -2.0, 0.0], [-1.375, -1.6, 0.0], [-0.125, -1.2, 0.0], [1.125, -0.8, 0.0], [2.375, -0.4, 0.0], [-2.625, 0.4, 0.0], [-0.875, 0.8, 0.0], [-0.125, 1.2, 0.0], [1.625, 1.6, 0.0], [3.0, 2.0, 0.0]],atol=eps_level)        
+        @test isapprox(minp(V),[xSpan[1],ySpan[1],0.0],atol=eps_level)
+        @test isapprox(maxp(V),[xSpan[2],ySpan[2],0.0],atol=eps_level)
+    end
+
     @testset "Tuples, rectangular" begin
         xSpan = (-3,3)
         ySpan = (-2,2)
         pointSpacing = 1
-        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular=true)
+        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular=true, force_equilateral=true)
         ind = round.(Int,range(1,length(V),10))
 
         @test isa(V,Vector{Point{3,Float64}})
@@ -199,7 +212,7 @@ end
         xSpan = (-3,3)
         ySpan = (-2,2)
         pointSpacing = 1
-        F,V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = true, rectangular=true)
+        F,V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = true, rectangular=true, force_equilateral=true)
         ind = round.(Int,range(1,length(V),10))
         indF = round.(Int,range(1,length(F),10))
 
@@ -220,7 +233,6 @@ end
         @test isapprox(minimum(x),xSpan[1],atol=eps_level)
         @test isapprox(maximum(x),xSpan[2],atol=eps_level)
     end
-
 
 end
 
@@ -2619,18 +2631,19 @@ end
 end
 
 @testset "triplate" begin
-    eps_level = 1e-4
+    eps_level = 1e-6
 
     plateDim = [15.0,10.0]
     pointSpacing = 2.5
 
     F,V = triplate(plateDim,pointSpacing; orientation=:up)    
     ind = round.(Int,range(1,length(V),6))
-    V_true = Point{3, Float64}[[-7.5, -5.0, 0.0], [-7.5, -2.8349364905389036, 0.0], [-7.5, -0.6698729810778072, 0.0], [7.5, -0.6698729810778072, 0.0], [7.5, 1.4951905283832891, 0.0], [7.5, 3.6602540378443855, 0.0]]
-
+    
     @test V isa Vector{Point3{Float64}}    
-    @test isapprox(V[ind], V_true, atol=eps_level)
+    @test isapprox(V[ind], Point{3, Float64}[[-7.5, -5.0, 0.0], [-4.375, -3.0, 0.0], [-3.125, -1.0, 0.0], [3.125, 1.0, 0.0], [4.375, 3.0, 0.0], [7.5, 5.0, 0.0]], atol=eps_level)
     @test F isa Vector{TriangleFace{Int}}        
+    @test isapprox(minp(V),[-plateDim[1]/2.0,-plateDim[2]/2.0,0.0],atol=eps_level)
+    @test isapprox(maxp(V),[ plateDim[1]/2.0, plateDim[2]/2.0,0.0],atol=eps_level)
 
     # Check orientation 
     F,V = triplate(plateDim,pointSpacing; orientation=:up)    

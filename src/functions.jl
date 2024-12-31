@@ -206,20 +206,28 @@ flat such that all x-coordinates on the left are at the minimum in `xSpan` and
 all on the right are at the maximum in `xSpan`, however, this does result in a 
 non-uniform spacing at these edges.  
 """
-function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Union{Vector{TT},Tuple{TT,TT}},pointSpacing::T; return_faces = false, rectangular=false) where T <: Real where TT <: Real
+function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Union{Vector{TT},Tuple{TT,TT}},pointSpacing::T; return_faces = false, rectangular=false, force_equilateral=false) where T <: Real where TT <: Real
     minX = minimum(xSpan)
     maxX = maximum(xSpan)
     minY = minimum(ySpan)
     maxY = maximum(ySpan)
 
+    # Set up x-range
     wx = maxX - minX
     nx = ceil(Int,wx./pointSpacing)+1 # Number of points in the x-direction
     xRange = range(minX,maxX,nx) # The xRange
     pointSpacingReal_X = xRange[2]-xRange[1]
-
-    pointSpacingReal_Y = pointSpacingReal_X.*0.5*sqrt(3)
-    yRange = minY:pointSpacingReal_Y:maxY
-
+    
+    # Set up y-range
+    pointSpacing_Y = pointSpacingReal_X.*0.5*sqrt(3) # Point spacing adjusted for equilateral triangles
+    if force_equilateral == true # Perfect equilateral grid needed, does not conform to span        
+        yRange = minY:pointSpacing_Y:maxY
+    else # Approximate grid, conforms to span
+        wy = maxY - minY        
+        ny = ceil(Int,wy./pointSpacing_Y)+1 # Number of points in the y-direction
+        yRange = range(minY,maxY,ny) # The yRange
+    end
+    
     # Create the point grid
     V = Vector{Point{3,Float64}}(undef,length(xRange)*length(yRange))    
     c = 1
@@ -4293,7 +4301,7 @@ function triplate(plateDim,pointSpacing::T; orientation=:up) where T <: Real
         throw(ArgumentError("Orientation not supported. Use :up or :down"))
     end 
 
-    F, V = gridpoints_equilateral((-plateDim[1]/2,plateDim[1]/2),(-plateDim[2]/2,plateDim[2]/2),pointSpacing; return_faces = true, rectangular=true)
+    F, V = gridpoints_equilateral((-plateDim[1]/2,plateDim[1]/2),(-plateDim[2]/2,plateDim[2]/2),pointSpacing; return_faces = true, rectangular=true, force_equilateral=false)
     if orientation == :down
         return invert_faces(F), V
     else
