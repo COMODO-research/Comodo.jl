@@ -440,3 +440,64 @@ Comodo.edgefaceangles
 ```@docs 
 Comodo.faceanglesegment
 ```
+
+## `eulerchar`
+```@docs 
+Comodo.eulerchar
+```
+
+## `rhombicdodecahedronfoam`
+```@docs 
+Comodo.rhombicdodecahedronfoam
+```
+
+## `truncatedoctahedron`
+```@docs 
+Comodo.truncatedoctahedron
+```
+
+## `kelvinfoam`
+```@docs 
+Comodo.kelvinfoam
+```
+
+## `minp`
+```@docs 
+Comodo.minp
+```
+
+## `maxp`
+```@docs 
+Comodo.maxp
+```
+
+## `ntrapezohedron`
+```@docs 
+Comodo.ntrapezohedron
+```
+
+## `spacing2numvertices`
+```@docs 
+Comodo.spacing2numvertices
+```
+
+## `joingeom`
+```@docs 
+Comodo.joingeom
+```
+
+## `quadbox`
+```@docs 
+Comodo.quadbox
+```
+
+## `tribox`
+```@docs 
+Comodo.tribox
+```
+
+## `tetbox`
+```@docs 
+Comodo.tetbox
+```
+

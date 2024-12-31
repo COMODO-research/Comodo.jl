@@ -1772,8 +1772,8 @@ end
         E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[1,1,1])
         @test E == [[1, 2, 4, 3, 5, 6, 8, 7]] 
         @test V == Point3{Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
-        @test F == QuadFace{Int}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [5, 7, 3, 1]]
-        @test Fb == QuadFace{Int}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [4, 3, 7, 8], [2, 4, 8, 6], [5, 7, 3, 1]]
+        @test F == QuadFace{Int}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [7, 8, 4, 3], [2, 4, 8, 6], [5, 7, 3, 1]]
+        @test Fb == QuadFace{Int}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [7, 8, 4, 3], [2, 4, 8, 6], [5, 7, 3, 1]]
         @test CFb_type == [1, 2, 3, 4, 5, 6]
     end
     @testset "2x2x2 hex box" begin
@@ -6419,3 +6419,107 @@ end
     @test abs(NV-length(V2))<length(V2)/100
     @test abs(pointSpacingTrue-pointSpacingDesired)<pointSpacingDesired/100
 end
+
+
+@testset "joingeom" verbose=true begin    
+    n1 = 3 # Number of refinement iterations
+    F1,V1 = geosphere(n1,1.0)
+    n2 = 2 # Number of refinement iterations
+    F2,V2 = geosphere(n2,1.0)
+    n3 = 4 # Number of refinement iterations
+    F3,V3 = geosphere(n3,1.0)
+
+    @testset "Errors" begin        
+        @test_throws Exception joingeom(F1)        
+    end
+
+    @testset "Single face/vertex set" begin
+        F,V,C = joingeom(F1,V1)        
+        @test typeof(F) == typeof(F1) 
+        @test typeof(V) == typeof(V1)
+        @test length(F) == length(F1)
+        @test length(V) == length(V1)
+    end
+
+    @testset "Two face/vertex sets" begin
+        F,V,C = joingeom(F1,V1,F2,V2)        
+        @test typeof(F) == typeof(F1) 
+        @test typeof(V) == typeof(V1)
+        @test length(F) == length(F1)+length(F2)
+        @test length(V) == length(V1)+length(V2)
+    end
+
+    @testset "Three face/vertex sets" begin
+        F,V,C = joingeom(F1,V1,F2,V2,F3,V3)        
+        @test typeof(F) == typeof(F1) 
+        @test typeof(V) == typeof(V1)
+        @test length(F) == length(F1)+length(F2)+length(F3)
+        @test length(V) == length(V1)+length(V2)+length(V3)
+    end
+end
+
+
+@testset "quadbox" verbose=true begin    
+    eps_level=1e-6
+    pointSpacing = 0.5
+    boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
+    boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
+    F,V,C = quadbox(boxDim,boxEl)
+    V_min = minp(V)
+    V_max = maxp(V)
+    @test typeof(F) == Vector{QuadFace{Int64}}
+    @test typeof(V) == Vector{Point{3,Float64}}
+    @test isapprox(V_min,-boxDim/2.0, atol=eps_level)
+    @test isapprox(V_max, boxDim/2.0, atol=eps_level)
+end
+
+
+@testset "tribox" verbose=true begin    
+    eps_level=1e-6
+    boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
+    pointSpacing = 0.5
+    F,V,C = tribox(boxDim,pointSpacing)
+    V_min = minp(V)
+    V_max = maxp(V)
+    @test typeof(F) == Vector{TriangleFace{Int64}}
+    @test typeof(V) == Vector{Point{3,Float64}}
+    @test isapprox(V_min,-boxDim/2.0, atol=eps_level)
+    @test isapprox(V_max, boxDim/2.0, atol=eps_level)
+end
+
+
+@testset "Comodo._faces2box" verbose=true begin        
+    pointSpacing = 0.5
+    boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
+    boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
+    F12,V12 = quadplate(boxDim[[1,2]],boxEl[[1,2]]; orientation=:up)
+    F22,V22 = quadplate(boxDim[[1,3]],boxEl[[1,3]]; orientation=:up)
+    F32,V32 = quadplate(boxDim[[3,2]],boxEl[[3,2]]; orientation=:up)
+    F,V,C = Comodo._faces2box(F12,V12,F22,V22,F32,V32,boxDim)
+    
+    @test typeof(F) == typeof(F12) 
+    @test typeof(V) == typeof(V12) 
+    @test isempty(boundaryedges(F)) # No boundary edges 
+    @test length(C) == length(F)
+    @test unique(C) == collect(1.0:1.0:6.0) # Contains the 6 labels        
+end
+
+
+@testset "tetbox" verbose=true begin    
+    eps_level=1e-6
+    boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
+    pointSpacing = 0.5
+    E, V, Fb, Cb = tetbox(boxDim,pointSpacing)
+    V_min = minp(V)
+    V_max = maxp(V)
+    @test typeof(E) == Vector{Tet4{Int64}}
+    @test typeof(Fb) == Vector{TriangleFace{Int64}}
+    @test typeof(V) == Vector{Point{3,Float64}}
+    @test isapprox(V_min,-boxDim/2.0, atol=eps_level)
+    @test isapprox(V_max, boxDim/2.0, atol=eps_level)
+    @test length(Fb) == length(Cb)
+    @test unique(Cb) == collect(1.0:1.0:6.0) # Contains the 6 labels    
+end
+
+
+
