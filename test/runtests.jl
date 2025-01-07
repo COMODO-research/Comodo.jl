@@ -23,7 +23,7 @@ end
 end
 
 
-@testset "slider2anim" verbose=true begin
+@testset "slider2anim" verbose = true begin
     r = range(-2,2,10)
     startvalue = r[1]
     fig = Figure(size=(800,800))
@@ -1783,16 +1783,17 @@ end
     @testset "Single hex box" begin
         E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[1,1,1])
         @test E == [[1, 2, 4, 3, 5, 6, 8, 7]] 
-        @test V == Point3{Float64}[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
+        @test V == Point{3, Float64}[[-0.5, -0.5, -0.5], [0.5, -0.5, -0.5], [-0.5, 0.5, -0.5], [0.5, 0.5, -0.5], [-0.5, -0.5, 0.5], [0.5, -0.5, 0.5], [-0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
         @test F == QuadFace{Int}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [7, 8, 4, 3], [2, 4, 8, 6], [5, 7, 3, 1]]
         @test Fb == QuadFace{Int}[[3, 4, 2, 1], [5, 6, 8, 7], [1, 2, 6, 5], [7, 8, 4, 3], [2, 4, 8, 6], [5, 7, 3, 1]]
         @test CFb_type == [1, 2, 3, 4, 5, 6]
     end
     @testset "2x2x2 hex box" begin
         E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[2,2,2])
+        ind = round.(Int,range(1,length(V),5))
         @test E[1] == [1, 2, 5, 4, 10, 11, 14, 13]
         @test length(E) == 8
-        @test V[5] == [0.5, 0.5, 0.0]
+        @test V[ind] == Point{3, Float64}[[-0.5, -0.5, -0.5], [0.0, 0.5, -0.5], [0.0, 0.0, 0.0], [0.0, -0.5, 0.5], [0.5, 0.5, 0.5]]
         @test length(V) == 27
         @test length(F) == 48
         @test length(Fb) == 24
@@ -4085,7 +4086,7 @@ end
 end
 
 
-@testset "distmarch" verbose=true begin
+@testset "distmarch" verbose = true begin
     eps_level = 1e-4
 
     @testset "Single face" begin
@@ -4806,7 +4807,7 @@ end
     end
 end
 
-@testset "batman" verbose=true begin
+@testset "batman" verbose = true begin
     eps_level = 1e-6
 
     n = 50 # Number of points, first testing an even number
@@ -4846,7 +4847,7 @@ end
 end
 
 
-@testset "tridisc" verbose=true begin
+@testset "tridisc" verbose = true begin
     eps_level = 1e-6
     r = 2.0
     
@@ -4905,7 +4906,7 @@ end
 end
 
 
-@testset "regiontrimesh" verbose=true begin  
+@testset "regiontrimesh" verbose = true begin  
     n1 = 120
     r1 = 20.0
     V1 = circlepoints(r1,n1)
@@ -4959,7 +4960,7 @@ end
 end
 
 
-@testset "scalesimplex" verbose=true begin
+@testset "scalesimplex" verbose = true begin
     eps_level = 1e-6
 
     Fq,Vq = cube(sqrt(3))
@@ -5034,7 +5035,7 @@ end
 end
 
 
-@testset "subcurve" verbose=true begin
+@testset "subcurve" verbose = true begin
     eps_level = 1e-6
 
     t = range(0.0,2*π,5) 
@@ -5062,7 +5063,7 @@ end
     [6.283185307179586, 1.0, 0.0]],atol=eps_level)
 end
 
-@testset "dualclad" verbose=true begin
+@testset "dualclad" verbose = true begin
     eps_level = 1e-6
 
     @testset "Triangles, single scale" begin
@@ -5233,7 +5234,7 @@ end
 
 
 
-@testset "tet2hex" verbose=true begin
+@testset "tet2hex" verbose = true begin
     eps_level = 1e-6
 
     E = [Tet4{Int}(1,2,3,4),Tet4{Int}(2,3,4,5),Tet4{Int}(6,7,8,9)]
@@ -5264,7 +5265,7 @@ end
 end
 
 
-@testset "element2faces" verbose=true begin
+@testset "element2faces" verbose = true begin
     @testset "hex8" begin
         boxDim = [1.0,2.0,3.0] # Dimensions for the box in each direction
         boxEl = [1,1,1] # Number of elements to use in each direction 
@@ -5363,7 +5364,7 @@ end
 end
 
 
-@testset "subhex" verbose=true begin
+@testset "subhex" verbose = true begin
     boxDim = [1.0,2.0,3.0] # Dimensions for the box in each direction
     boxEl = [1,1,1] # Number of elements to use in each direction 
     E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
@@ -5400,7 +5401,7 @@ end
 end
 
 
-@testset "rhombicdodecahedron" verbose=true begin
+@testset "rhombicdodecahedron" verbose = true begin
     eps_level = 1e-6
     F,V = rhombicdodecahedron(1.0)    
     @test isa(F,Vector{QuadFace{Int}})
@@ -5415,10 +5416,10 @@ end
 end
 
 
-@testset "tri2quad" verbose=true begin
+@testset "tri2quad" verbose = true begin
     eps_level = 1e-6
 
-    @testset "tri2quad, split" verbose=true begin
+    @testset "tri2quad, split" verbose = true begin
         @testset "Single triangle" begin
             F = [TriangleFace{Int}(1,2,3)]
             V = [Point{3,Float64}(0.0,0.0,0.0),Point{3,Float64}(1.0,0.0,0.0),Point{3,Float64}(1.0,1.0,0.0)]
@@ -5473,7 +5474,7 @@ end
         end
     end
 
-    @testset "tri2quad, rhombic" verbose=true begin
+    @testset "tri2quad, rhombic" verbose = true begin
         @testset "Single triangle" begin
             F = [TriangleFace{Int}(1,2,3)]
             V = [Point{3,Float64}(0.0,0.0,0.0),Point{3,Float64}(1.0,0.0,0.0),Point{3,Float64}(1.0,1.0,0.0)]
@@ -5548,7 +5549,7 @@ end
 end
 
 
-@testset "tetgenmesh" verbose=true begin
+@testset "tetgenmesh" verbose = true begin
     eps_level = 1e-4
 
     @testset "One region sphere" begin
@@ -5681,7 +5682,7 @@ end
 end
 
 
-@testset "extrudefaces" verbose=true begin
+@testset "extrudefaces" verbose = true begin
     eps_level = 1e-6
 
     @testset "Single QuadFace" begin        
@@ -5835,7 +5836,7 @@ end
     end
 end
 
-@testset "filletcurve" verbose=true begin
+@testset "filletcurve" verbose = true begin
     eps_level = 1e-6
 
     @testset "Two point line" begin        
@@ -6322,7 +6323,7 @@ end
 end
 
 
-@testset "truncatedoctahedron" verbose=true begin
+@testset "truncatedoctahedron" verbose = true begin
     eps_level = 1e-6
 
     w = 1.0
@@ -6385,7 +6386,7 @@ end
 end
 
 
-@testset "ntrapezohedron" verbose=true begin
+@testset "ntrapezohedron" verbose = true begin
     eps_level = 1e-6
 
     r = 2.1
@@ -6399,7 +6400,7 @@ end
 end
 
 
-@testset "spacing2numvertices" verbose=true begin
+@testset "spacing2numvertices" verbose = true begin
     r = 2.0 # radius
     n = 3 # Number of refinement iterations
     F,V = geosphere(n,r)
@@ -6434,7 +6435,7 @@ end
 end
 
 
-@testset "joingeom" verbose=true begin    
+@testset "joingeom" verbose = true begin    
     n1 = 3 # Number of refinement iterations
     F1,V1 = geosphere(n1,1.0)
     n2 = 2 # Number of refinement iterations
@@ -6472,7 +6473,7 @@ end
 end
 
 
-@testset "quadbox" verbose=true begin    
+@testset "quadbox" verbose = true begin    
     eps_level=1e-6
     pointSpacing = 0.5
     boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
@@ -6487,7 +6488,7 @@ end
 end
 
 
-@testset "tribox" verbose=true begin    
+@testset "tribox" verbose = true begin    
     eps_level=1e-6
     boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
     pointSpacing = 0.5
@@ -6501,7 +6502,7 @@ end
 end
 
 
-@testset "Comodo._faces2box" verbose=true begin        
+@testset "Comodo._faces2box" verbose = true begin        
     pointSpacing = 0.5
     boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
     boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
@@ -6518,7 +6519,7 @@ end
 end
 
 
-@testset "tetbox" verbose=true begin    
+@testset "tetbox" verbose = true begin    
     eps_level=1e-6
     boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
     pointSpacing = 0.5
