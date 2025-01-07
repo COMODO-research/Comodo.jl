@@ -2627,8 +2627,6 @@ end
 
     F,V = quadplate(plateDim,plateElem; orientation=:down)
     @test F[1] == [6,7,2,1]
-
-
 end
 
 @testset "triplate" begin
@@ -6474,7 +6472,7 @@ end
 
 
 @testset "quadbox" verbose = true begin    
-    eps_level=1e-6
+    eps_level = 1e-6
     pointSpacing = 0.5
     boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
     boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
@@ -6489,7 +6487,7 @@ end
 
 
 @testset "tribox" verbose = true begin    
-    eps_level=1e-6
+    eps_level = 1e-6
     boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
     pointSpacing = 0.5
     F,V,C = tribox(boxDim,pointSpacing)
@@ -6520,7 +6518,7 @@ end
 
 
 @testset "tetbox" verbose = true begin    
-    eps_level=1e-6
+    eps_level = 1e-6
     boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
     pointSpacing = 0.5
     E, V, Fb, Cb = tetbox(boxDim,pointSpacing)
@@ -6536,4 +6534,64 @@ end
 end
 
 
+@testset "pad3" verbose = true begin        
+    A = rand(5,3,4)
+    
+    padAmount = 2
+    padValue = -2.0 
+    B = pad3(A; padAmount = padAmount, padValue = padValue)
+
+    siz_A = size(A)
+    siz_B = size(B)
+    @test siz_B == siz_A .+ 2*padAmount # Size is correct
+    @test typeof(A) == typeof(B) # Types match
+    # Centre features A
+    @test all(B[padAmount+1:end-padAmount,padAmount+1:end-padAmount,padAmount+1:end-padAmount] == A)
+    # Padded parts are padValue
+    @test all(B[1:padAmount,:,:] .== padValue)
+    @test all(B[:,1:padAmount,:] .== padValue)
+    @test all(B[:,:,1:padAmount] .== padValue)
+    @test all(B[end-padAmount+1:end,:,:] .== padValue)
+    @test all(B[:,end-padAmount+1:end,:] .== padValue)
+    @test all(B[:,:,end-padAmount+1:end] .== padValue)    
+end
+
+
+@testset "getisosurface" verbose = true begin        
+    epsLevel = 1e-4
+
+    # Define sphere using distance function
+    nSteps = 75
+    xr,yr,zr = ntuple(_->range(-1.0,1.0,nSteps),3)
+    A = [norm((x,y,z)) for x in xr, y in yr, z in zr]
+    
+    # Get isosurface of sphere
+    level = 0.5
+    cap = false
+    F,V = getisosurface(A; x = xr, y = yr, z = zr, level = level, cap = cap, padValue=1e8)        
+
+    # Check types
+    @test typeof(F) == Vector{TriangleFace{Int64}}
+    @test typeof(V) == Vector{Point{3,Float64}}
+
+    # Output geometry checks
+    @test isapprox(mean(V),[0.0,0.0,0.0], atol = epsLevel) # Is centered on origin
+    @test isapprox(mean(norm.(V)),level, atol = epsLevel) #  Has expected mean radius
+
+    # Get isosurface of sphere protruding from boundary (creating holes)
+    level = 1.25
+    cap = false
+    F,V = getisosurface(A; x = xr, y = yr, z = zr, level = level, cap = cap, padValue=1e8)        
+
+    # Output geometry checks
+    @test isapprox(mean(V),[0.0,0.0,0.0], atol = epsLevel) # Is centered on origin
+    @test isapprox(mean(norm.(V)),level, atol = epsLevel) #  Has expected mean radius
+    @test length(boundaryedges(F)) > 0 # Has boundary edges due to holes
+
+    # Get isosurface with caps
+    level = 1.25
+    cap = true
+    F,V = getisosurface(A; x = xr, y = yr, z = zr, level = level, cap = cap, padValue=1e8)            
+    @test length(boundaryedges(F)) == 0 # Is merged/closed due to caps
+end
 

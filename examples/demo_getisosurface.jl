@@ -3,7 +3,7 @@ using GLMakie
 using GeometryBasics
 using LinearAlgebra
 
-testCase = 3
+testCase = 4
 
 if testCase == 1 # Sphere 
     nSteps = 50
@@ -57,7 +57,7 @@ elseif testCase == 5 # Gyroid "shell" capped
 
 end
 
-F1,V1 = getisosurface(A; x=collect(xr), y=collect(yr), z=collect(zr), level=level, cap=cap, padValue=1e8)      
+F1,V1 = getisosurface(A; x = xr, y = yr, z = zr, level = level, cap = cap, padValue=1e8)      
 
 # Visualization
 strokewidth = 1
