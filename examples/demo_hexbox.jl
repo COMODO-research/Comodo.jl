@@ -7,9 +7,8 @@ This demo shows the use of `hexbox` to generate a hexahedral mesh for a 3D box
 domain. 
 =#
 
-sampleSize = 10
-pointSpacing = 2
-boxDim = sampleSize.*[1,1,1] # Dimensionsions for the box in each direction
+pointSpacing = 0.5
+boxDim = [2.5,3.1,4] # Dimensionsions for the box in each direction
 boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
 
 E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
@@ -42,7 +41,7 @@ zMin = minimum(Z)
 numSlicerSteps = 3*ceil(Int,(zMax-zMin)/mean(edgelengths(F,V)))
 
 stepRange = range(zMin,zMax,numSlicerSteps)
-hSlider = Slider(fig[2, 1], range = stepRange, startvalue = mean(stepRange),linewidth=30)
+hSlider = Slider(fig[2, :], range = stepRange, startvalue = mean(stepRange),linewidth=30)
 
 on(hSlider.value) do z 
 

@@ -13,6 +13,7 @@ import QuadGK
 import Distances
 import DelaunayTriangulation # For regiontrimesh
 import StaticArrays # For volumetric mesh definitions
+import MarchingCubes
 
 include("functions.jl")
 
@@ -51,7 +52,7 @@ export tetgenmesh, surfacevolume, tetvolume, extrudefaces, filletcurve
 export squircle, circlerange, edgefaceangles, faceanglesegment, eulerchar
 export rhombicdodecahedronfoam, kelvinfoam, truncatedoctahedron, ntrapezohedron, hexagonaltrapezohedron #, tetrakaidecahedron
 export mag, indexmap!, indexmap, minp, maxp, spacing2numvertices
-export joingeom, quadbox, tribox, tetbox
+export joingeom, quadbox, tribox, tetbox, getisosurface, padarray
 
 # Export functions: Visualization related
 export slidercontrol, slider2anim, dirplot, normalplot

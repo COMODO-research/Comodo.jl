@@ -2021,7 +2021,7 @@ function hexbox(boxDim,boxEl)
 
     V = convert(Vector{Point{3, Float64}},IJK_nodes)
     for q in eachindex(V)
-        V[q]=(V[q].-[1,1,1]).*(boxDim./boxEl)
+        V[q] = ((V[q] .- Point{3, Float64}(1.0,1.0,1.0)).*(boxDim./boxEl)) .- Point{3, Float64}(boxDim/2.0)
     end
 
     # Create face sets from elements
@@ -6255,4 +6255,56 @@ function tetbox(boxDim,pointSpacing; stringOpt = "paAqYQ",region_vol=nothing)
     E, V, _, Fb, Cb = tetgenmesh(Fb, Vb; facetmarkerlist=Cb, V_regions=nothing,region_vol=region_vol,V_holes=nothing,stringOpt=stringOpt)
     
     return E, V, Fb, Cb
+end
+
+
+function getisosurface(A; x=nothing, y=nothing, z=nothing, level=0.0, cap=false, padValue=nothing)    
+    if cap == true                  
+        if isnothing(padValue)
+            if isapprox(level,0.0,atol=1e-8)
+                padValue=1e10
+            else
+                padValue = level + 1*10^(round(Int,log10(abs(level)))+10)        
+                if level<0                  
+                    padValue *= 1.0
+                end
+            end
+        end       
+        A = padarray(A; padAmount = 1, padValue = padValue)
+        if !isnothing(x) && !isnothing(y) && !isnothing(z)            
+            mc = MarchingCubes.MC(A; x=x, y=y, z=z)
+        else
+            mc = MarchingCubes.MC(A)
+        end
+    elseif cap==false
+        mc = MarchingCubes.MC(A,Int; x=x, y=y, z=z)
+    end    
+    MarchingCubes.march(mc,level)
+    F = [TriangleFace{Int64}(f) for f in mc.triangles]
+    V = [Point{3,Float64}(p) for p in mc.vertices]
+    return F,V
+end
+
+
+function padarray(A::Array{T,3}; padAmount = 1, padValue = T[0.0]) where T<:Real
+    siz = size(A) # Get size of A 
+
+    # Create padded image 
+    B = Array{T,3}(undef,siz .+ (2*padAmount)) 
+    B[1:padAmount,:,:]   .= padValue
+    B[:,1:padAmount,:]   .= padValue
+    B[:,:,1:padAmount]   .= padValue
+    B[end-padAmount:end,:,:] .= padValue
+    B[:,end-padAmount:end,:] .= padValue
+    B[:,:,end-padAmount:end] .= padValue
+
+    # Set centre of B to A
+    @inbounds for i in 1:1:siz[1]
+        @inbounds for j in 1:1:siz[2]
+            @inbounds for k in 1:1:siz[3]
+                B[i+padAmount,j+padAmount,k+padAmount] = A[i,j,k]                
+            end
+        end
+    end
+    return B
 end

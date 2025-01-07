@@ -2,7 +2,7 @@
 
 julia_version = "1.11.2"
 manifest_format = "2.0"
-project_hash = "24ba46b1b14e21cf02a4d62cf9ae2eec75ea3359"
+project_hash = "72480ef14f2de4736c039d4ecb09a7d02079897f"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -891,6 +891,12 @@ version = "0.8.12"
 git-tree-sha1 = "2dab0221fe2b0f2cb6754eaa743cc266339f527e"
 uuid = "dbb5928d-eab1-5f90-85c2-b9b0edb7c900"
 version = "0.4.2"
+
+[[deps.MarchingCubes]]
+deps = ["PrecompileTools", "StaticArrays"]
+git-tree-sha1 = "301345b808264ae42e60d10a519e55c5d992969b"
+uuid = "299715c1-40a9-479a-aaf9-4a633d36f717"
+version = "0.1.10"
 
 [[deps.Markdown]]
 deps = ["Base64"]

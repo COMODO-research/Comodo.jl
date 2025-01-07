@@ -96,14 +96,11 @@ F,V,C = regiontrimesh(VT,R,P)
 
 
 # Visualisation
-
 Fp,Vp = separate_vertices(F,V) # Give each face its own point set 
 Cp = simplex2vertexdata(Fp,C) # Convert face color data to vertex color data 
 
-
-fig = Figure(size=(1000,1000))
+fig = Figure(size=(1200,1000))
 ax1 = Axis3(fig[1, 1],aspect = :data,title="Multi-region meshing",azimuth=-pi/2,elevation=pi/2)
-
-hp4 = poly!(ax1,GeometryBasics.Mesh(Vp,Fp), strokewidth=1,color=Cp, strokecolor=:black, shading = FastShading, transparency=false,colormap=Makie.Categorical(Makie.Reverse(:Spectral)))
-
+hp1 = poly!(ax1,GeometryBasics.Mesh(Vp,Fp), strokewidth=1,color=Cp, strokecolor=:black, shading = FastShading, transparency=false,colormap=Makie.Categorical(Makie.Reverse(:Spectral)))
+Colorbar(fig[1, 1][1, 2], hp1)
 fig
