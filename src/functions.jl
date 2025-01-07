@@ -13,6 +13,7 @@ using Distances
 using DelaunayTriangulation # For triangular meshing
 using StaticArrays
 using TetGen # For tetrahedral meshing in tetgenmesh
+using MarchingCubes # For isosurface creation
 
 # Define types
 abstract type AbstractElement{N,T} <: StaticVector{N,T} end

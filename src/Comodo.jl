@@ -13,7 +13,8 @@ import QuadGK
 import Distances
 import DelaunayTriangulation # For regiontrimesh
 import StaticArrays # For volumetric mesh definitions
-import MarchingCubes
+import TetGen # For tetrahedral meshing
+import MarchingCubes # For isosurface creation
 
 include("functions.jl")
 
