@@ -268,9 +268,9 @@ version = "1.11.0"
 
 [[deps.Distributions]]
 deps = ["AliasTables", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsAPI", "StatsBase", "StatsFuns"]
-git-tree-sha1 = "4b138e4643b577ccf355377c2bc70fa975af25de"
+git-tree-sha1 = "7901a6117656e29fa2c74a58adb682f380922c47"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.25.115"
+version = "0.25.116"
 
     [deps.Distributions.extensions]
     DistributionsChainRulesCoreExt = "ChainRulesCore"

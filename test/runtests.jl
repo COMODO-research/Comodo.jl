@@ -6565,9 +6565,9 @@ end
     xr,yr,zr = ntuple(_->range(-1.0,1.0,nSteps),3)
     A = [norm((x,y,z)) for x in xr, y in yr, z in zr]
     
-    xr = collect(xr)
-    yr = collect(yr)
-    zr = collect(zr)
+    # xr = collect(xr)
+    # yr = collect(yr)
+    # zr = collect(zr)
 
     # Get isosurface of sphere
     level = 0.5
