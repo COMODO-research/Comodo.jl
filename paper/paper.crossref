@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doi_batch xmlns="http://www.crossref.org/schema/5.3.1"
+           xmlns:ai="http://www.crossref.org/AccessIndicators.xsd"
+           xmlns:rel="http://www.crossref.org/relations.xsd"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           version="5.3.1"
+           xsi:schemaLocation="http://www.crossref.org/schema/5.3.1 http://www.crossref.org/schemas/crossref5.3.1.xsd">
+  <head>
+    <doi_batch_id>20250108222630-e3d26f587859e0f4f7be481dc1910ada4d1b486b</doi_batch_id>
+    <timestamp>20250108222630</timestamp>
+    <depositor>
+      <depositor_name>JOSS Admin</depositor_name>
+      <email_address>admin@theoj.org</email_address>
+    </depositor>
+    <registrant>The Open Journal</registrant>
+  </head>
+  <body>
+    <journal>
+      <journal_metadata>
+        <full_title>Journal of Open Source Software</full_title>
+        <abbrev_title>JOSS</abbrev_title>
+        <issn media_type="electronic">2475-9066</issn>
+        <doi_data>
+          <doi>10.21105/joss</doi>
+          <resource>https://joss.theoj.org</resource>
+        </doi_data>
+      </journal_metadata>
+      <journal_issue>
+        <publication_date media_type="online">
+          <month>01</month>
+          <year>1970</year>
+        </publication_date>
+        <journal_volume>
+          <volume>¿VOL?</volume>
+        </journal_volume>
+        <issue>¿ISSUE?</issue>
+      </journal_issue>
+      <journal_article publication_type="full_text">
+        <titles>
+          <title>Comodo.jl: A Julia Package for Computational Mechanics and Design</title>
+        </titles>
+        <contributors>
+          <person_name sequence="first" contributor_role="author">
+            <given_name>Kevin Mattheus</given_name>
+            <surname>Moerman</surname>
+            <affiliations>
+              <institution><institution_name>University of Galway, Galway, Ireland.</institution_name></institution>
+              <institution><institution_name>LERO, The SFI Centre for Software Research, Ireland.</institution_name></institution>
+            </affiliations>
+            <ORCID>https://orcid.org/0000-0003-3768-4269</ORCID>
+          </person_name>
+          <person_name sequence="additional"
+                       contributor_role="author">
+            <given_name>Chethana</given_name>
+            <surname>Rao</surname>
+            <affiliations>
+              <institution><institution_name>University of Galway, Galway, Ireland.</institution_name></institution>
+              <institution><institution_name>LERO, The SFI Centre for Software Research, Ireland.</institution_name></institution>
+            </affiliations>
+            <ORCID>https://orcid.org/0000-0002-5504-4807</ORCID>
+          </person_name>
+          <person_name sequence="additional"
+                       contributor_role="author">
+            <given_name>Mehmet Hakan</given_name>
+            <surname>Satman</surname>
+            <affiliations>
+              <institution><institution_name>Department of Econometrics, Istanbul University, Istanbul, Turkey</institution_name></institution>
+            </affiliations>
+            <ORCID>https://orcid.org/0000-0002-9402-1982</ORCID>
+          </person_name>
+          <person_name sequence="additional"
+                       contributor_role="author">
+            <given_name>Simon</given_name>
+            <surname>Danisch</surname>
+            <affiliations>
+              <institution><institution_name>MakieOrg: Berlin, Berlin, Germany</institution_name></institution>
+            </affiliations>
+            <ORCID>https://orcid.org/0000-0001-8834-6644</ORCID>
+          </person_name>
+          <person_name sequence="additional"
+                       contributor_role="author">
+            <given_name>Daniel</given_name>
+            <surname>VandenHeuvel</surname>
+            <affiliations>
+              <institution><institution_name>Department of Mathematics, Imperial College London, United Kingdom</institution_name></institution>
+            </affiliations>
+            <ORCID>https://orcid.org/0000-0001-6462-0135</ORCID>
+          </person_name>
+          <person_name sequence="additional"
+                       contributor_role="author">
+            <given_name>Juan Ignacio</given_name>
+            <surname>Polanco</surname>
+            <affiliations>
+              <institution><institution_name>Univ.Grenoble Alpes, CNRS, Grenoble INP, LEGI, 38000 Grenoble, France</institution_name></institution>
+            </affiliations>
+            <ORCID>https://orcid.org/0000-0001-7705-753X</ORCID>
+          </person_name>
+        </contributors>
+        <publication_date>
+          <month>01</month>
+          <day>01</day>
+          <year>1970</year>
+        </publication_date>
+        <pages>
+          <first_page>¿PAGE?</first_page>
+        </pages>
+        <publisher_item>
+          <identifier id_type="doi">N/A</identifier>
+        </publisher_item>
+        <ai:program name="AccessIndicators">
+          <ai:license_ref applies_to="vor">http://creativecommons.org/licenses/by/4.0/</ai:license_ref>
+          <ai:license_ref applies_to="am">http://creativecommons.org/licenses/by/4.0/</ai:license_ref>
+          <ai:license_ref applies_to="tdm">http://creativecommons.org/licenses/by/4.0/</ai:license_ref>
+        </ai:program>
+        <rel:program>
+          <rel:related_item>
+            <rel:description>Software archive</rel:description>
+            <rel:inter_work_relation relationship-type="references" identifier-type="doi">10.5281</rel:inter_work_relation>
+          </rel:related_item>
+          <rel:related_item>
+            <rel:description>GitHub review issue</rel:description>
+            <rel:inter_work_relation relationship-type="hasReview" identifier-type="uri">https://github.com/openjournals</rel:inter_work_relation>
+          </rel:related_item>
+        </rel:program>
+        <doi_data>
+          <doi>N/A</doi>
+          <resource>https://joss.theoj.org/papers/N/A</resource>
+          <collection property="text-mining">
+            <item>
+              <resource mime_type="application/pdf">https://joss.theoj.org/papers/N/A.pdf</resource>
+            </item>
+          </collection>
+        </doi_data>
+        <citation_list>
+          <citation key="moerman_gibbon_2018">
+            <article_title>GIBBON: The Geometry and Image-Based Bioengineering add-On</article_title>
+            <author>Moerman</author>
+            <journal_title>Journal of Open Source Software</journal_title>
+            <issue>22</issue>
+            <volume>3</volume>
+            <doi>10.21105/joss.00506</doi>
+            <issn>2475-9066</issn>
+            <cYear>2018</cYear>
+            <unstructured_citation>Moerman, K. M. (2018). GIBBON: The Geometry and Image-Based Bioengineering add-On. Journal of Open Source Software, 3(22), 506. https://doi.org/10.21105/joss.00506</unstructured_citation>
+          </citation>
+          <citation key="si_tetgen_2015">
+            <article_title>TetGen, a Delaunay-Based Quality Tetrahedral Mesh Generator</article_title>
+            <author>Si</author>
+            <journal_title>ACM Transactions on Mathematical Software</journal_title>
+            <issue>2</issue>
+            <volume>41</volume>
+            <doi>10.1145/2629697</doi>
+            <cYear>2015</cYear>
+            <unstructured_citation>Si, H. (2015). TetGen, a Delaunay-Based Quality Tetrahedral Mesh Generator. ACM Transactions on Mathematical Software, 41(2), 1–36. https://doi.org/10.1145/2629697</unstructured_citation>
+          </citation>
+          <citation key="maas_febio_2012">
+            <article_title>FEBio: Finite Elements for Biomechanics</article_title>
+            <author>Maas</author>
+            <journal_title>Journal of Biomechanical Engineering</journal_title>
+            <issue>1</issue>
+            <volume>134</volume>
+            <doi>10.1115/1.4005694</doi>
+            <issn>1528-8951</issn>
+            <cYear>2012</cYear>
+            <unstructured_citation>Maas, S. A., Ellis, B. J., Ateshian, G. A., &amp; Weiss, J. A. (2012). FEBio: Finite Elements for Biomechanics. Journal of Biomechanical Engineering, 134(1), 011005–011005. https://doi.org/10.1115/1.4005694</unstructured_citation>
+          </citation>
+          <citation key="badia_gridap_2020">
+            <article_title>Gridap: An extensible Finite Element toolbox in Julia</article_title>
+            <author>Badia</author>
+            <journal_title>Journal of Open Source Software</journal_title>
+            <issue>52</issue>
+            <volume>5</volume>
+            <doi>10.21105/joss.02520</doi>
+            <issn>2475-9066</issn>
+            <cYear>2020</cYear>
+            <unstructured_citation>Badia, S., &amp; Verdugo, F. (2020). Gridap: An extensible Finite Element toolbox in Julia. Journal of Open Source Software, 5(52), 2520. https://doi.org/10.21105/joss.02520</unstructured_citation>
+          </citation>
+          <citation key="carlsson_ferritejl_2024">
+            <article_title>Ferrite.jl</article_title>
+            <author>Carlsson</author>
+            <doi>10.5281/zenodo.13862653</doi>
+            <cYear>2024</cYear>
+            <unstructured_citation>Carlsson, K., Ekre, F., &amp; contributors, F. jl. (2024). Ferrite.jl. Zenodo. https://doi.org/10.5281/zenodo.13862653</unstructured_citation>
+          </citation>
+        </citation_list>
+      </journal_article>
+    </journal>
+  </body>
+</doi_batch>
