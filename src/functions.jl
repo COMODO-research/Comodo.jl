@@ -6297,7 +6297,7 @@ function getisosurface(A; level=0.0, cap=false, padValue=nothing, x::Union{Abstr
             end
         end               
         A = pad3(A; padAmount = 1, padValue = padValue) # Pad input array
-        if isnothing(x) && isnothing(y) && isnothing(z)            
+        if isnothing(x) || isnothing(y) || isnothing(z)            
             mc = MarchingCubes.MC(A)
         else
             # Extend coordinates to conform to padded array (assumes evenly spaced coordinates in each direction)
@@ -6306,11 +6306,11 @@ function getisosurface(A; level=0.0, cap=false, padValue=nothing, x::Union{Abstr
             s = y[2]-y[1]
             y = range(y[1]-s, y[end]+s, length(y)+2)
             s = z[2]-z[1]
-            z = range(z[1]-s, z[end]+s, length(z)+2)
+            z = range(z[1]-s, z[end]+s, length(z)+2)                        
             mc = MarchingCubes.MC(A; x=x, y=y, z=z)            
         end
     elseif cap==false
-        if isnothing(x) && isnothing(y) && isnothing(z)            
+        if isnothing(x) || isnothing(y) || isnothing(z)            
             mc = MarchingCubes.MC(A,Int)
         else
             mc = MarchingCubes.MC(A,Int; x=x, y=y, z=z)
