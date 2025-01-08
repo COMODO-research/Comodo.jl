@@ -8,7 +8,7 @@ assets/temp
 *.backup
 
 # Ignore Manifest.toml
-./Manifest.toml
+Manifest.toml
 ./test/Manifest.toml
 ./docs/Manifest.toml
 
