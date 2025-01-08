@@ -6565,6 +6565,10 @@ end
     xr,yr,zr = ntuple(_->range(-1.0,1.0,nSteps),3)
     A = [norm((x,y,z)) for x in xr, y in yr, z in zr]
     
+    xr = collect(xr)
+    yr = collect(yr)
+    zr = collect(zr)
+
     # Get isosurface of sphere
     level = 0.5
     cap = false
@@ -6579,7 +6583,7 @@ end
     @test isapprox(mean(norm.(V)),level, atol = epsLevel) #  Has expected mean radius
 
     # Get isosurface of sphere protruding from boundary (creating holes)
-    level = 1.25
+    level = 1.25 # Large level=radius such that sphere is too big for domain
     cap = false
     F,V = getisosurface(A; x = xr, y = yr, z = zr, level = level, cap = cap, padValue=1e8)        
 
@@ -6589,7 +6593,7 @@ end
     @test length(boundaryedges(F)) > 0 # Has boundary edges due to holes
 
     # Get isosurface with caps
-    level = 1.25
+    level = 1.25 # Large level=radius such that sphere is too big for domain
     cap = true
     F,V = getisosurface(A; x = xr, y = yr, z = zr, level = level, cap = cap, padValue=1e8)            
     @test length(boundaryedges(F)) == 0 # Is merged/closed due to caps

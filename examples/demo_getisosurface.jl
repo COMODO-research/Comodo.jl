@@ -1,6 +1,6 @@
 using Comodo
 using GLMakie
-using GeometryBasics
+using Comodo.GeometryBasics
 using LinearAlgebra
 
 testCase = 4
@@ -54,7 +54,6 @@ elseif testCase == 5 # Gyroid "shell" capped
     A = [gyroid_shell((x,y,z),s) for x in xr, y in yr, z in zr]
     level = 0.0
     cap = true
-
 end
 
 F1,V1 = getisosurface(A; x = xr, y = yr, z = zr, level = level, cap = cap, padValue=1e8)      
