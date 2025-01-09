@@ -1,7 +1,5 @@
 using Test, FileIO, Comodo, Comodo.GeometryBasics, Statistics, LinearAlgebra, GLMakie, Rotations, BSplineKit
 
-# ConnectivitySet
-
 @testset "comododir" begin
     f = comododir()
     @test any(contains.(readdir(f),"src"))
@@ -4624,7 +4622,6 @@ end
     end
 end
 
-
 @testset "revolvecurve" verbose = true begin
     eps_level = 1e-6
     nc = 5
@@ -4902,7 +4899,6 @@ end
     @test_throws Exception tridisc(r,n; ngon=6, method = :linear, orientation=:wrong) 
     
 end
-
 
 @testset "regiontrimesh" verbose = true begin  
     n1 = 120

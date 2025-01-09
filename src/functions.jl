@@ -1,23 +1,9 @@
-# Call required packages
-
-using GeometryBasics # For point and mesh format
-using LinearAlgebra # For things like dot and cross products
-using DataStructures # For unique_dict
-using Statistics # For: mean etc.
-using GLMakie # For slidercontrol
-using Rotations 
-using Interpolations # E.g. for resampling curves
-using BSplineKit # E.g. for resampling curves
-using QuadGK: quadgk # For numerical integration
-using Distances
-using DelaunayTriangulation # For triangular meshing
-using StaticArrays
-using TetGen # For tetrahedral meshing in tetgenmesh
-using MarchingCubes # For isosurface creation
 
 # Define types
 abstract type AbstractElement{N,T} <: StaticVector{N,T} end
+
 GeometryBasics.@fixed_vector Element = AbstractElement
+
 const Tet4{T} = Element{4,T} where T<:Integer
 const Tet10{T} = Element{10,T} where T<:Integer
 const Hex8{T} = Element{8,T} where T<:Integer
@@ -85,7 +71,7 @@ function slidercontrol(hSlider::Slider,ax::Union{Axis3, Figure, LScene})
     sliderRange = hSlider.range[] # Get slider range
     rangeLength = length(sliderRange) # Number of possible steps 
     sliderIndex = hSlider.selected_index[] # Current slider index
-    on(events(ax).keyboardbutton) do event
+    GLMakie.on(events(ax).keyboardbutton) do event
         if event.action == Keyboard.press || event.action == Keyboard.repeat # Pressed or held for instance            
             if event.key == Keyboard.up                                                  
                 if sliderIndex == rangeLength
@@ -4028,7 +4014,7 @@ function kabsch_rot(V1::Vector{Point{ND,TV1}},V2::Vector{Point{ND,TV2}}) where N
     d = det(U)*det(V) #sign(det(U'*V))
     D = [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
     D[3,3] = d 
-    return Rotations.RotMatrix3{Float64}(V*D*U')
+    return RotMatrix3{Float64}(V*D*U')
 end
 
 
