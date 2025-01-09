@@ -1,8 +1,8 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.Rotations
 using FileIO
-using Rotations
 
 #=
 This demo is for the `kabsch_rot` function. The Kabsch method allows one to 

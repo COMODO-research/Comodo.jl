@@ -1,6 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 #=
 This demo shows the use of `tet2hex` to convert tetrahedral elements to hexahedral elements

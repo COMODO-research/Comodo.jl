@@ -1,6 +1,6 @@
 using Comodo
-using GeometryBasics # For point and mesh format
-using GLMakie
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 #=
 This demo shows the use of dist to compute distances for ND points. A 3D 

@@ -1,6 +1,7 @@
 using Comodo
-using GLMakie
-using Statistics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.Statistics
 
 #=
 This demo shows the use of `tetbox` to generate a tetrahedral mesh for a 3D box

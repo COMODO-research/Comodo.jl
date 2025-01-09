@@ -1,10 +1,7 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using LinearAlgebra
-using Rotations
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 using Random
-
 
 # Set seed so demo performs the same each time
 Random.seed!(1)

@@ -1,6 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 r = 1.0 #radius
 F1,V1 = platonicsolid(1,r)

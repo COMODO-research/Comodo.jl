@@ -1,6 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 # Example geometry for a sphere that is cut so some edges are boundary edges
 nSub = 3 # Number of refinement steps of the geodesic sphere

@@ -1,12 +1,11 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 using FileIO
-using LinearAlgebra
 
 testCase = 1
 
-if testCase==1 
+if testCase == 1 
     # A "zig-zag" curve with known angles for testing
     r = 2.0
     B = [170.0,150.0,135.0,90.0,75.0,60.0,45.0,-45.0,-60.0,-75,-90.0,-135.0,-150.0,-170.0]
@@ -18,8 +17,8 @@ if testCase==1
     end
     push!(V,V[end]+[r, 0.0, 0.0])
 
-    F,V = extrudecurve(V; extent=1, direction=:positive, n=Vec{3, Float64}(0.0,0.0,-1.0), close_loop=false,face_type=:quad)
-elseif testCase==2 
+    F,V = extrudecurve(V; extent=1, direction=:positive, n=Vec{3, Float64}(0.0,0.0,-1.0), close_loop=false, face_type=:quad)
+elseif testCase == 2 
     # An imported STL based geometry of an engineering part with various flat faces and some known angles (e.g. 0, 45, and 90 degrees)
     # This model is relatively evenly sampled and of a relatively low resolution
     fileName_mesh = joinpath(comododir(),"assets","stl","spur_gear_01.stl")
@@ -27,7 +26,7 @@ elseif testCase==2
     F = tofaces(faces(M))
     V = topoints(coordinates(M))
     F,V,_,_ = mergevertices(F,V)
-elseif testCase==3 # Same as 2 but higher angular/general resolution
+elseif testCase == 3 # Same as 2 but higher angular/general resolution
     # An imported STL based geometry of an engineering part with various flat faces and some known angles (e.g. 0, 45, and 90 degrees)
     # This model features a non-homogeneous mesh (includes sharp triangles) and is of a relatively high resolution
     fileName_mesh = joinpath(comododir(),"assets","stl","spur_gear_02.stl")

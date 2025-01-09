@@ -1,9 +1,8 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using Rotations
-using Statistics
-using LinearAlgebra
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.Rotations
+using Comodo.LinearAlgebra
 
 testCase = 3
 
@@ -85,10 +84,10 @@ elseif testCase == 3
 #########
 
     # face_type=:quad
-    F,V = sweeploft(Vc,V1,V2; face_type=:tri, num_twist=0)
+    F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist=0)
 
     t = 1
-    n = 5
+    n = 4
     direction=:positive
 end
 
@@ -137,10 +136,10 @@ else
     C = repeat(collect(1:n),inner=length(V))
     Cs = C[ind]
     FEs,Vs = separate_vertices(FE,Ve)
-    hp2=poly!(ax2,GeometryBasics.Mesh(Vs,FEs), strokewidth=strokewidth,color=Cs, shading = FastShading,transparency=true,colormap=:Spectral)
-    normalplot(ax2,FE,Ve; scaleval=0.25)
+    hp2=poly!(ax2,GeometryBasics.Mesh(Vs,FEs), strokewidth=strokewidth,color=Cs, shading = FastShading,transparency=false,colormap=:Spectral)
+    # normalplot(ax2,FE,Ve; scaleval=0.25)
 
-    poly!(ax2,GeometryBasics.Mesh(V,F), strokewidth=strokewidth,color=:lightgreen, shading = FastShading,transparency=false)
+    # poly!(ax2,GeometryBasics.Mesh(V,F), strokewidth=strokewidth,color=:lightgreen, shading = FastShading,transparency=false)
 end
 
 fig

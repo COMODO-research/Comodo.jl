@@ -1,8 +1,8 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using Statistics
-using LinearAlgebra
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.Statistics
+using Comodo.LinearAlgebra
 
 ## Define example input
 r = 1.0 #radius

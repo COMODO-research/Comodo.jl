@@ -1,9 +1,9 @@
 using Comodo
-using GeometryBasics
-using GLMakie
-using BSplineKit
-using QuadGK: quadgk # For numerical integration
-using LinearAlgebra
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.Statistics
+using Comodo.BSplineKit
+using Comodo.QuadGK: quadgk # For numerical integration
 
 testCase = 2
 

@@ -1,7 +1,5 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using LinearAlgebra
+using Comodo.GLMakie
 
 #=
 This demo shows the use of the gridpoints function. This function can be used to create

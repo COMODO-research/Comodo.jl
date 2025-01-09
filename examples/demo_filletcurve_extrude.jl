@@ -1,6 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 testCase = 4
 
@@ -18,8 +18,6 @@ elseif testCase == 4
     close_loop = false
 end
 
-
-
 rMax = 0.5 
 n = 20
 h =2.0
@@ -35,9 +33,8 @@ ax1 = Axis3(fig[1, 1],aspect = :data,title="Input curve")
 hp11 = lines!(ax1, V,linewidth=2,color=:black)
 hp12 = scatter!(ax1, V,markersize=15,color=:black)
 
-
 Fes,Ves = separate_vertices(Fe,Ve)
-hp3=poly!(ax1,GeometryBasics.Mesh(Ves,Fes), strokewidth=1,color=:lightgreen, shading = FastShading,transparency=false)
+hp3 = poly!(ax1,GeometryBasics.Mesh(Ves,Fes), strokewidth=1,color=:lightgreen, shading = FastShading,transparency=false)
 # # scatter!(ax1, V[1],markersize=25,color=:yellow)
 # # scatter!(ax1, V[end],markersize=25,color=:red)
 

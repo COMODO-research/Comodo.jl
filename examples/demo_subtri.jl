@@ -1,7 +1,7 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using LinearAlgebra
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.LinearAlgebra
 
 #=
 This demo shows the use of `subtri` to refine triangulated meshes. Each 
@@ -32,7 +32,7 @@ elseif testCase == 2 # Extruded prism/cylinder with nc points
     nc = 3
     Vc = circlepoints(r,nc;dir=:cw)    
     d = norm(Vc[1]-Vc[2])        
-    F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:tri_slash)
+    F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:backslash)
     M = GeometryBasics.Mesh(V,F)
 end
 

@@ -1,9 +1,7 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 using FileIO
-using LinearAlgebra
-using ProgressMeter
 
 # Example geometry
 testCase = 6

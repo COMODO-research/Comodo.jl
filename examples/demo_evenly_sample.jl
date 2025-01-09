@@ -1,6 +1,6 @@
 using Comodo
-using GeometryBasics
-using GLMakie
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 # This demo shows how to evenly sample a curve using spline interpolations.
 

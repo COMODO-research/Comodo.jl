@@ -1,8 +1,8 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.LinearAlgebra
 using Printf
-using LinearAlgebra
 
 function truncatedntrapezohedron(n,r=1.0,f=nothing)
     m = 2*n # Number of faces

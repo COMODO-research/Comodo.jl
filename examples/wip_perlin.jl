@@ -1,4 +1,6 @@
-using GLMakie
+using Comodo
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 using Random
 
 Random.seed!(1)

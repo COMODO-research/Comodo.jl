@@ -1,7 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using LinearAlgebra
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 #=
 This is a demonstration of the capabilities of the `quaddisc` function which 
@@ -9,8 +8,6 @@ generates the faces `F` and vertices `V` for a quadrangulated disc (circle).
 =#
 
 # Define input parameters
-
-
 r = 1.0 # Radius
 
 n1 = 0
@@ -43,6 +40,5 @@ hp3 = poly!(ax3,GeometryBasics.Mesh(V3,F3), strokewidth=1,color=:white,shading=F
 
 ax4 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Quandrangulated disc, n=$n4, method=$method4")
 hp4 = poly!(ax4,GeometryBasics.Mesh(V4,F4), strokewidth=1,color=:white,shading=FastShading,transparency=false)
-
 
 fig

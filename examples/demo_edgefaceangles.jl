@@ -1,10 +1,9 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 using FileIO
-using LinearAlgebra
 
-testCase = 1
+testCase = 2
 
 if testCase==1 
     # A "zig-zag" curve with known angles for testing

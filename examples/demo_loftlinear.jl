@@ -1,7 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using LinearAlgebra
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 ## Create example data
 r = 1.0 # Radius
@@ -16,7 +15,6 @@ V2 = evenly_sample(V2,nc)
 ## Loft from curve 1 to curve 2
 num_steps = 11 # Uneven works best for "tri" face type
 close_loop = true
-
 
 face_types = [:quad,:forwardslash,:backslash,:tri,:tri_even,:quad2tri]
 
@@ -41,7 +39,6 @@ for (q,face_type) in enumerate(face_types)
     hp3=poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,color=:white,shading=FastShading,transparency=false)
     # normalplot(ax1,GeometryBasics.Mesh(V,F); type_flag=:face, color=:black)
     j+=1
-
 end
 # Legend(fig[1, 4],[hp1,hp2,hp3],["curve 1", "curve 2", "lofted surface"])
 

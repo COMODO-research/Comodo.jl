@@ -1,6 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 using Printf
 
 r = sqrt(3.0)

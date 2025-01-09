@@ -1,10 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using Rotations
-using Statistics
-using LinearAlgebra
-
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 # Demo for building a  hemissphere from an isosaheddron.
 

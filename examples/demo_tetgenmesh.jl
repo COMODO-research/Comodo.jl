@@ -1,7 +1,7 @@
 using Comodo
-using GeometryBasics
-using Statistics
-using GLMakie
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.Statistics
 using FileIO
 
 testCase = 5

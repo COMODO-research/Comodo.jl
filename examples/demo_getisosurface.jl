@@ -1,7 +1,7 @@
 using Comodo
-using GLMakie
+using Comodo.GLMakie
 using Comodo.GeometryBasics
-using LinearAlgebra
+using Comodo.LinearAlgebra
 
 testCase = 4
 

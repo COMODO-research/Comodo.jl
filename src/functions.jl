@@ -1,4 +1,3 @@
-
 # Define types
 abstract type AbstractElement{N,T} <: StaticVector{N,T} end
 
@@ -11,7 +10,6 @@ const Hex20{T} = Element{20,T} where T<:Integer
 const Penta6{T} = Element{6,T} where T<:Integer
 const Rhombicdodeca14{T} = Element{14,T} where T<:Integer
 const Truncatedocta24{T} = Element{24,T} where T<:Integer
-# const Truncatedocta24{T} = Element{24,T} where T<:Integer
 
 
 """
@@ -2763,12 +2761,15 @@ latter, triangles are formed by slashing the quads.
 - `V1::Vector`: n-vector 
 - `V2::Vector`: n-vector
 """
-function loftlinear(V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}};num_steps=nothing,close_loop=true,face_type=:quad) where ND where TV<:Real
+function loftlinear(V1::Vector{Point{ND,TV}}, V2::Vector{Point{ND,TV}}; num_steps=nothing, close_loop=true, face_type=:quad) where ND where TV<:Real
     # Derive num_steps from distance and mean curve point spacing if missing    
     if isnothing(num_steps)
         d = mean([norm(V1[i]-V2[i]) for i in eachindex(V1)])
         dp = 0.5* (pointspacingmean(V1)+pointspacingmean(V2))
-        num_steps = ceil(Int,d/dp)        
+        num_steps = ceil(Int,d/dp)                
+        if num_steps < 2
+            num_steps = 2
+        end
     end
 
     if num_steps < 2
@@ -3430,6 +3431,9 @@ function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive,
         num_steps = ceil(Int,extent/pointspacingmean(V1))
         if face_type==:tri
             num_steps = num_steps + Int(iseven(num_steps)) # Force uneven
+        end
+        if num_steps < 2
+            num_steps = 2
         end
     end
 

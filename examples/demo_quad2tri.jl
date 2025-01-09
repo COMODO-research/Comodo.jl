@@ -1,12 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using LinearAlgebra
-
-# Example data 
-
-
-convert_method = :angle
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 testCase = 1
 if testCase ==1

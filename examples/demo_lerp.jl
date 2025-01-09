@@ -1,6 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 #=
 This demo shows the use of `lerp` for linear data interpolation. 
@@ -13,7 +13,6 @@ y = 5.0*cos.(x.^2 ./ 9.0) # Data values
 xi = range(-0.5,9.5,50) # Interpolation sites
 yi = lerp(x,y,xi) # Linearly interpolate data 
 
-
 # 3D curve interpolation based on 1D parameterisation
 np = 10
 t = range(0.0,2.0*π,np) # Parameterisation metric
@@ -21,7 +20,6 @@ V = [GeometryBasics.Point{3, Float64}(cos(t[i]),sin(t[i]),t[i]/(2.0*π)) for i �
 np_i = np*3
 ti = range(minimum(t)-0.5,maximum(t)+0.5,np_i)
 Vi = lerp(t,V,ti) # Linearly interpolate data 
-
 
 # Visualization
 fig = Figure(size = (1200,800))

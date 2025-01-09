@@ -1,9 +1,9 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.Statistics
+using Comodo.Rotations
 using FileIO
-using Statistics
-using Rotations
 
 # Example geometry
 testCase = 3

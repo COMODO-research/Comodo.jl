@@ -1,9 +1,8 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.GLMakie.Colors
 using FileIO
-using StaticArrays
-using Makie.Colors
 
 c1 = RGBf(1.0, 0.30196078431372547, 0.023529411764705882)
 c2 = RGBf(0.2235294117647059, 1.0, 0.0784313725490196)
@@ -90,8 +89,8 @@ end
 
 set_close_to!(hSlider,0.5)
 
-fileName = comododir()*"/assets/temp/dualclad_anim_06.mp4"
-slider2anim(fig,hSlider,fileName; backforth=true, duration=6)
+# fileName = comododir()*"/assets/temp/dualclad_anim_06.mp4"
+# slider2anim(fig,hSlider,fileName; backforth=true, duration=6)
 
 fig
 

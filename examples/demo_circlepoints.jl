@@ -1,7 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using LinearAlgebra
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 ## Defining a set of points on a circle using scalar radius
 r = 1.0 # Radius

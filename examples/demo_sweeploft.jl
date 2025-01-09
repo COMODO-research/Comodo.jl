@@ -1,9 +1,7 @@
 using Comodo
-using GeometryBasics
-using GLMakie
-using Rotations
-using Statistics
-using LinearAlgebra
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.Rotations
 
 testCase = 5
 vizCase = 1

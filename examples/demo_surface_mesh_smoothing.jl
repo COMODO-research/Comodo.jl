@@ -1,4 +1,7 @@
-using Comodo, GLMakie, GeometryBasics, FileIO, Statistics, Random
+using Comodo
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using FileIO, Random
 
 Random.seed!(1) # Set seed so demo performs the same each time
 
@@ -52,10 +55,10 @@ cLim = maximum(Ds_LAP).*(0.0,1.0)
 fig = Figure(size=(1200,1200))
 
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Original")
-hp1=poly!(ax1,GeometryBasics.Mesh(V0,F),strokewidth=strokeWidth1,color=:white, shading = FastShading)
+hp1 = poly!(ax1,GeometryBasics.Mesh(V0,F),strokewidth=strokeWidth1,color=:white, shading = FastShading)
 
 ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Noisy")
-hp2=poly!(ax2,GeometryBasics.Mesh(V,F),strokewidth=strokeWidth1,color=:white, shading = FastShading)
+hp2 = poly!(ax2,GeometryBasics.Mesh(V,F),strokewidth=strokeWidth1,color=:white, shading = FastShading)
 
 ax3 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z")
 hp3 = poly!(ax3,GeometryBasics.Mesh(Vs_LAP,F),strokewidth=strokeWidth1,color=Ds_LAP, shading = FastShading,colormap=Makie.Reverse(:Spectral),colorrange=cLim)

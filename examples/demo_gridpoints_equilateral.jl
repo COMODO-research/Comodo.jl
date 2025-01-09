@@ -1,7 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using DelaunayTriangulation
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 #=
 This demo shows the use of `gridpoints_equilateral` to generate an equilateralt

@@ -1,8 +1,7 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 using FileIO
-using Statistics
 
 #=
 This demo shows the use of the `meshnormal` function to obtain mesh face normal

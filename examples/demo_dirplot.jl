@@ -1,14 +1,12 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using FileIO
-using Statistics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 #=
 This demo shows the use of the `dirplot` function to visualize directional data. 
 =#
 
-testCase = 1
+testCase = 2
 if testCase == 1 
     P = Point{3,Float64}(0.0,0.0,0.0)
     N = Point{3,Float64}(0.0,0.0,1.0)

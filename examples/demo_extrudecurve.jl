@@ -1,9 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using Statistics
-using Rotations
-using LinearAlgebra
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 # Example curve
 r = 1.0

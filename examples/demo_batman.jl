@@ -1,5 +1,5 @@
 using Comodo
-using GLMakie
+using Comodo.GLMakie
 
 #=
 This demo shows the use of the `batman` function to create a Batman logo curve. 

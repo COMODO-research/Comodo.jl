@@ -1,7 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using Rotations
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 # Creating faces and vertices for a rhombic dodecahedron
 w = 1.0 

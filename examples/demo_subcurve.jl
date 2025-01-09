@@ -1,11 +1,10 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 #=
 This demo shows the use of `lerp` for linear data interpolation. 
 =#
-
 
 # 1D curve interpolation 
 t = range(0.0,2*π,10) 

@@ -1,6 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 plateDim1 = [20.0,24.0]
 pointSpacing1 = 2.0

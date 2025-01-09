@@ -1,9 +1,7 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using Statistics
-using Rotations
-using LinearAlgebra
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.Rotations
 using Colors
 
 # Example curves

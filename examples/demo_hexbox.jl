@@ -1,6 +1,7 @@
 using Comodo
-using GLMakie
-using Statistics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.Statistics
 
 #=
 This demo shows the use of `hexbox` to generate a hexahedral mesh for a 3D box

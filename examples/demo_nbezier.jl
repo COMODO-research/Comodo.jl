@@ -1,7 +1,6 @@
 using Comodo
-using GeometryBasics
-using GLMakie
-
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 # This demo shows the use of nbezier for Bezier curve interpolation. 
 

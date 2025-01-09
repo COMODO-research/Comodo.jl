@@ -1,9 +1,8 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.LinearAlgebra
 using FileIO
-using LinearAlgebra
-using Statistics
 
 # Example geometry
 testCase = 2
@@ -13,19 +12,17 @@ if testCase == 1
     # V = [GeometryBasics.Point{3, Float64}(v[1],v[2],3*v[3]) for v ∈ V]  
 
     println("Theoretical area: " * string(4*pi*r^2))    
-elseif testCase==2
+elseif testCase == 2
     r = 1.0
     F,V = quadsphere(3,r)    
     println("Theoretical area: " * string(4*pi*r^2))    
-elseif testCase==3
-    r=2*sqrt(3)/2
+elseif testCase == 3
+    r = 2*sqrt(3)/2
     M = cube(r)
-    F=faces(M)
-    V=coordinates(M)
-    # F = quad2tri(F,V; convert_method = "angle")
-
+    F = faces(M)
+    V = coordinates(M)
     println("Theoretical area: " * string(6*(2*(r./(sqrt(3))))^2))
-elseif testCase==4 # Merged STL for single object
+elseif testCase == 4 # Merged STL for single object
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
     M = load(fileName_mesh)
@@ -33,9 +30,8 @@ elseif testCase==4 # Merged STL for single object
     # Obtain mesh faces and vertices
     F = tofaces(faces(M))
     V = topoints(coordinates(M))
-    F,V,_ = mergevertices(F,V)
-    # F,V = subtri(F,V,3; method = :Loop)
-elseif testCase==5 # Merged STL for single object
+    F,V,_ = mergevertices(F,V)    
+elseif testCase == 5 # Merged STL for single object
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")
     M = load(fileName_mesh)
@@ -44,7 +40,7 @@ elseif testCase==5 # Merged STL for single object
     F = tofaces(faces(M))
     V = topoints(coordinates(M))
     F,V,_ = mergevertices(F,V)
-elseif testCase==6
+elseif testCase == 6
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","obj","motherChild_5k.obj")
     M = load(fileName_mesh)
@@ -53,7 +49,6 @@ elseif testCase==6
     F = tofaces(faces(M))
     V = topoints(coordinates(M))
 end
-
 
 M = GeometryBasics.Mesh(V,F)
 

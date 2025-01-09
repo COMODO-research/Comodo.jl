@@ -1,6 +1,6 @@
 using Comodo
-using GeometryBasics
-using GLMakie
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 testCase = 1
 if testCase==1

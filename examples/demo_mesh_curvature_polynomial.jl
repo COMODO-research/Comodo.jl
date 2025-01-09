@@ -1,12 +1,11 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.Rotations
 using FileIO
-using Rotations
-using Statistics
 
 # Example geometry0
-testCase = 4
+testCase = 7
 if testCase == 1
     r = 25.25
     F,V = geosphere(5,r)  

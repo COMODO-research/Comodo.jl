@@ -1,8 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using LinearAlgebra
-using Rotations
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 pointSpacing = 0.5
 boxDim = [2.5,3.1,4] # Dimensions for the box in each direction

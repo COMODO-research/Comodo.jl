@@ -1,9 +1,9 @@
 using Comodo
-using GLMakie
-using BSplineKit
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.BSplineKit
 
 # This demo shows the use of the BSplineKit package for spline based curve interpolation. 
-
 
 # Define raw data
 x = range(0,9,9) # Interval definition

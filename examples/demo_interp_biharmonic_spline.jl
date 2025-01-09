@@ -1,9 +1,7 @@
 using Comodo
-using GLMakie
-
+using Comodo.GLMakie
 
 # This demo shows the use of interp_biharmonic_spline for curve interpolation. 
-
 
 # Define raw data
 x = range(0,9,9) # Interval definition

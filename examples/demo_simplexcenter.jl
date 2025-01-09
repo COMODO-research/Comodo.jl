@@ -1,7 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using Statistics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 r = 10.0 # radius
 n = 1 # Number of refinement iterations

@@ -1,6 +1,6 @@
 using Comodo
-using GeometryBasics
-using GLMakie
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 using Printf
 
 τ = 0.5

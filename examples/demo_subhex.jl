@@ -1,6 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 #=
 This demo shows the use of `subhex` to refine a a hexhedral mesh through splitting. 
@@ -21,7 +21,6 @@ Fh2 = element2faces(Eh2)
 
 Eh3,Vh3 = subhex(E,V,1;direction=3)
 Fh3 = element2faces(Eh3)
-
 
 # Visualisation
 strokewidth = 3

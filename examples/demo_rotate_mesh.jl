@@ -1,8 +1,8 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.Rotations
 using FileIO
-using Rotations
 
 #=
 In this demo a mesh is loaded, in this case a triangulated surface from an STL 

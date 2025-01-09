@@ -3073,8 +3073,10 @@ end
     r = 1.0
     nc = 5
     n = Vec{3,Float64}(pi, pi, pi) # Offset vector
+    nSmall = Vec{3,Float64}(0.0, 0.0, 0.01*((2*pi*r)/nc)) # Offset vector
     V1 = circlepoints(r, nc; dir=:cw)
     V2 = [v.+n for v in V1]
+    V2_close = [v.+nSmall for v in V1]
     num_steps = 3
 
     @testset "Errors" begin
@@ -3095,6 +3097,10 @@ end
         # Providing "nothing" for the number of steps should create point spacing based number of steps
         F,V = loftlinear(V1,V2;num_steps=nothing,close_loop=true,face_type=:quad)
         @test length(V)/nc == ceil(Int,norm(n)/(0.5*(pointspacingmean(V1)+pointspacingmean(V2))))
+        
+        # Providing "nothing" for the number of steps and having a small depth should result in num_steps defaulting to 2
+        F,V = loftlinear(V1,V2_close;num_steps=nothing,close_loop=true,face_type=:quad)
+        @test length(V) == length(V1)*2        
     end
 
     @testset "tri" begin
@@ -3864,6 +3870,15 @@ end
         zMax = maximum(z)
         zMin = minimum(z)            
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+
+        # Check num_steps = 2 handling 
+        dSmall = pointspacingmean(Vc)/2
+        F, V = extrudecurve(Vc; extent = dSmall, face_type=:tri)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)            
+        @test isapprox(zMax,dSmall,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+        @test length(V) == length(Vc)*2
     end
 
     @testset "Direction (s) variations" begin
@@ -3872,7 +3887,7 @@ end
         zMax = maximum(z)
         zMin = minimum(z)            
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-       
+        
         F, V = extrudecurve(Vc; extent=d, direction=:both, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad)
         z = [v[3] for v in V]
         zMax = maximum(z)
@@ -3927,6 +3942,7 @@ end
 
         ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
+        @test length(V) == num_steps*length(Vc)
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
         @test isapprox(V[ind],Point{3, Float64}[[0.9238795325112865, 0.3826834323650904, 0.0], [-0.38268343236509034, 0.9238795325112865, 0.75], [-1.0, -5.66553889764798e-16, 1.5], [2.83276944882399e-16, -1.0, 2.25], [1.0, 0.0, 3.0]],atol = eps_level)
     end

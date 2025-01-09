@@ -1,12 +1,13 @@
 using Comodo
-using GLMakie
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 #=
 This demo shows the use of `boundaryfaces` to obtain the boundary faces of a 
 volumetric mesh. 
 =#
 
-testCase = 2
+testCase = 1
 
 if testCase == 1 
     sampleSize = 10
@@ -28,10 +29,10 @@ Fb2 = boundaryfaces(E)
 
 fig = Figure(size=(1600,800))
 
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary faces from input faces")
-hp1 = poly!(ax1,GeometryBasics.Mesh(V,Fb1), strokewidth=3,shading=FastShading,strokecolor=:black, color=:white, transparency=true, overdraw=false)
+ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Input faces")
+hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=3,shading=FastShading,strokecolor=:black, color=:white, transparency=true, overdraw=false)
 
-ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary faces from input elements")
+ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary faces")
 hp1 = poly!(ax2,GeometryBasics.Mesh(V,Fb2), strokewidth=3,shading=FastShading,strokecolor=:black, color=:white, transparency=true, overdraw=false)
 
 fig

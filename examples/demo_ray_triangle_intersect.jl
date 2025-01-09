@@ -1,15 +1,12 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using Statistics
-using LinearAlgebra
-using FileIO
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+# using FileIO
 
 # Example geometry
 F,V = geosphere(1,1.0)
 
 M = GeometryBasics.Mesh(V,F)
-
 
 ## Visualization
 

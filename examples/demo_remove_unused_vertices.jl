@@ -1,11 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
-using Statistics
-using Rotations
-using LinearAlgebra
-using FileIO
-using SparseArrays
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 # Example geometry
 F,V = geosphere(3,1.0)

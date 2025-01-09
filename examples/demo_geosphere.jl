@@ -1,6 +1,6 @@
 using Comodo
-using GLMakie
-using GeometryBasics
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 #=
 This demo shows the use of the geosphere function. An unrefined sphere is an 
@@ -27,18 +27,18 @@ F4,V4 = geosphere(n4,r; method=method4)
 #Visualize mesh
 lineWidth = 1
 
-fig = Figure(size=(1600,800))
+fig = Figure(size = (1600,800))
 
-ax1=Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A geodesic sphere n=$n1")
-hp1=poly!(ax1,V1,F1, strokewidth=lineWidth,color=:white, shading = FastShading)
+ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A geodesic sphere n=$n1")
+hp1 = poly!(ax1,V1,F1, strokewidth = lineWidth, color = :white, shading = FastShading)
 
-ax2=Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A geodesic sphere n=$n2")
-hp2=poly!(ax2,V2,F2, strokewidth=lineWidth,color=:white, shading = FastShading)
+ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A geodesic sphere n=$n2")
+hp2 = poly!(ax2,V2,F2, strokewidth = lineWidth, color = :white, shading = FastShading)
 
-ax3=Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A geodesic sphere n=$n3, method=$method3")
-hp3=poly!(ax3,V3,F3, strokewidth=lineWidth,color=:white, shading = FastShading)
+ax3 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A geodesic sphere n=$n3, method=$method3")
+hp3 = poly!(ax3,V3,F3, strokewidth = lineWidth, color = :white, shading = FastShading)
 
-ax4=Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A geodesic sphere n=$n4, method=$method4")
-hp4=poly!(ax4,V4,F4, strokewidth=lineWidth,color=:white, shading = FastShading)
+ax4 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A geodesic sphere n=$n4, method=$method4")
+hp4 = poly!(ax4,V4,F4, strokewidth = lineWidth, color = :white, shading = FastShading)
 
 fig

@@ -1,9 +1,6 @@
 using Comodo
-using GeometryBasics
-using GLMakie
-using Rotations
-using Statistics
-using LinearAlgebra
+using Comodo.GLMakie
+using Comodo.GeometryBasics
 
 function makeMesh(τ = 1.0)
 
