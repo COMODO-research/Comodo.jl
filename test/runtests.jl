@@ -1,6 +1,10 @@
-using Test, FileIO, Comodo, Comodo.GeometryBasics, Statistics, LinearAlgebra, GLMakie, Rotations, BSplineKit
-
-# ConnectivitySet
+using Test, FileIO, Comodo
+using Comodo.GeometryBasics
+using Comodo.Statistics
+using Comodo.LinearAlgebra
+using Comodo.GLMakie
+using Comodo.Rotations
+using Comodo.BSplineKit
 
 @testset "comododir" begin
     f = comododir()
@@ -4624,7 +4628,6 @@ end
     end
 end
 
-
 @testset "revolvecurve" verbose = true begin
     eps_level = 1e-6
     nc = 5
@@ -4902,7 +4905,6 @@ end
     @test_throws Exception tridisc(r,n; ngon=6, method = :linear, orientation=:wrong) 
     
 end
-
 
 @testset "regiontrimesh" verbose = true begin  
     n1 = 120
