@@ -20,8 +20,21 @@ using GeometryBasics: LineFace, Point, NgonFace,
 
 include("functions.jl")
 
-# Export imported packages
+# Export imported modules for later possible use
 export GeometryBasics
+export Statistics
+export Distances
+export QuadGK
+export StaticArrays
+export Rotations
+export MarchingCubes
+export TetGen
+export BSplineKit
+export DelaunayTriangulation
+export GLMakie
+export LinearAlgebra
+export GeometryBasics
+export DataStructures
 
 # Export types
 export Element, Tet4, Tet10, Hex8, Hex20, Penta6, Rhombicdodeca14, Truncatedocta24 # Volumetric elements (polyhedra)

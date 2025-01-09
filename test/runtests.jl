@@ -1,4 +1,10 @@
-using Test, FileIO, Comodo, Comodo.GeometryBasics, Statistics, LinearAlgebra, GLMakie, Rotations, BSplineKit
+using Test, FileIO, Comodo
+using Comodo.GeometryBasics
+using Comodo.Statistics
+using Comodo.LinearAlgebra
+using Comodo.GLMakie
+using Comodo.Rotations
+using Comodo.BSplineKit
 
 @testset "comododir" begin
     f = comododir()
