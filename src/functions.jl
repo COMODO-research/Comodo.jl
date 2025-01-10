@@ -205,7 +205,7 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
     
     # Set up y-range
     pointSpacing_Y = pointSpacingReal_X.*0.5*sqrt(3) # Point spacing adjusted for equilateral triangles
-    if force_equilateral == true # Perfect equilateral grid needed, does not conform to span        
+    if force_equilateral # Perfect equilateral grid needed, does not conform to span        
         yRange = minY:pointSpacing_Y:maxY
     else # Approximate grid, conforms to span
         wy = maxY - minY        
@@ -237,7 +237,7 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
     end
 
     # Creat output, including faces if requested
-    if return_faces == true
+    if return_faces 
         plateElem=[length(xRange)-1,length(yRange)-1]
         F = Vector{TriangleFace{Int}}(undef,prod(plateElem)*2)
         num_x = length(xRange)
@@ -878,29 +878,29 @@ be seen as the same as [2,1] for instance.
 """
 function gunique(X; return_unique=true, return_index=false, return_inverse=false, return_counts=false, sort_entries=false)
     # Use required unique function 
-    if return_unique==true && return_index==false && return_inverse==false && return_counts==false
+    if return_unique && !return_index && !return_inverse && !return_counts
         # UNIQUE
         if sort_entries && length(X[1])>1
             return unique(sort.(X))
         else
             return unique(X)
         end
-    elseif return_unique==true && return_index==true && return_inverse==false && return_counts==false
+    elseif return_unique && return_index && !return_inverse && !return_counts
         # UNIQUE, INDICES
         return unique_dict_index(X; sort_entries=sort_entries)
-    elseif return_unique==true && return_index==false && return_inverse==false && return_counts==true
+    elseif return_unique && !return_index && !return_inverse && return_counts
         # UNIQUE, COUNTS
         return unique_dict_count(X; sort_entries=sort_entries)
-    elseif return_unique==true && return_index==false && return_inverse==true && return_counts==false
+    elseif return_unique && !return_index && return_inverse && !return_counts
         # UNIQUE, INVERSE
         return unique_dict_inverse(X; sort_entries=sort_entries)
-    elseif return_unique==true && return_index==true && return_inverse==true && return_counts==false
+    elseif return_unique && return_index && return_inverse && !return_counts
         # UNIQUE, INDICES, INVERSE
         return unique_dict_index_inverse(X; sort_entries=sort_entries)
-    elseif return_unique==true && return_index==true && return_inverse==false && return_counts==true
+    elseif return_unique && return_index && !return_inverse && return_counts
         # UNIQUE, INDICES, COUNTS
         return unique_dict_index_count(X; sort_entries=sort_entries)
-    elseif return_unique==true && return_index==true && return_inverse==true && return_counts==true
+    elseif return_unique && return_index && return_inverse && return_counts
         # UNIQUE, INDICES, INVERSE, COUNTS
         return unique_dict_index_inverse_count(X; sort_entries=sort_entries)
     end
@@ -1903,7 +1903,7 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
     F = [F[i] for i in findall(map(f-> mean([V[j][3] for j in f])>=-searchTol,F))] # Remove faces below equator
     F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
 
-    if closed==true 
+    if closed
         if face_type == :tri           
             Fb,Vb = tridisc(r,1; ngon=5, method=:linear, orientation=:down)
             Q = RotXYZ(0.0,0.0,pi/2.0) # Rotation matrix
@@ -1935,7 +1935,7 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
                 F,V = subquad(F,V,1)                
             end
                         
-            if closed == true
+            if closed
                 indTopFaces = [j .+ i*nf  for i = 0:3 for j in indTopFaces]
                 indPush = Vector{Int}()
                 for f in F[indTopFaces]
@@ -2403,7 +2403,7 @@ function mergevertices(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; roundV
 end
 
 function mergevertices(V::Vector{Point{ND,TV}}; roundVertices = true, pointSpacing=nothing, numDigitsMerge=nothing) where ND where TV<:Real
-    if roundVertices == true
+    if roundVertices
         if isnothing(numDigitsMerge) 
             # Compute numDigitsMerge from point spacing
             if isnothing(pointSpacing)
@@ -3448,7 +3448,7 @@ function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive,
         p = extent.*n
     elseif direction == :negative # Against n from V1
         p = -extent.*n
-        if close_loop == true
+        if close_loop 
             circshift!(reverse!(V1),1)
         else
             reverse!(V1)
@@ -3873,7 +3873,7 @@ function evenly_sample(V::Vector{Point{ND,TV}}, n::Int; rtol=1e-8, niter=1, spli
     S,_,D = make_geospline(V; rtol=rtol, niter=niter, spline_order=spline_order, close_loop=close_loop)
 
     # Even range for curve distance 
-    if close_loop == true        
+    if close_loop 
         l_end = D - D/n
     else
         l_end = D
@@ -3885,7 +3885,7 @@ end
 
 function make_geospline(V::Vector{Point{ND,TV}}; rtol = 1e-8, niter = 10, spline_order=4, close_loop=false) where ND where TV<:Real
     LL = curve_length(V) # Initialise as along curve (multi-linear) distance
-    if close_loop == true
+    if close_loop
         D = last(LL) + norm(V[1]-V[end])
         bc = BSplineKit.Periodic(D) # Use periodic bc for closed curves
     else
@@ -3902,7 +3902,7 @@ function make_geospline(V::Vector{Point{ND,TV}}; rtol = 1e-8, niter = 10, spline
             L[i] = L[i - 1] + integrate_segment_(dS,LL[i-1], LL[i],rtol)    
         end
         
-        if close_loop == true
+        if close_loop 
             D = last(L) + integrate_segment_(dS,LL[end], D,rtol)           
             bc = BSplineKit.Periodic(D)                   
         else
@@ -3939,7 +3939,7 @@ function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8
     else
         # Check must point set
         m = length(V)        
-        if close_loop == false && last(must_points)!=m # Check if last needs to be added 
+        if !close_loop && last(must_points) != m # Check if last needs to be added 
             push!(must_points,m)
         else
             push!(must_points,1) # Add first to close over curve
@@ -4216,7 +4216,7 @@ function batman(n::Int; symmetric = false, dir=:acw)
         + 6.4 * sin( ( (π/2.0 + asin(47/53)) * ((abs(t-7.0) 
         - abs(t-8.0) + 1.0)/2.0) ) + asin(56/64) ) + 4.95 ) for t in tt]   
 
-    if symmetric == true    
+    if symmetric    
         if iseven(n)
             m = round(Int,n/2+1)
         else
@@ -5322,14 +5322,14 @@ function filletcurve(V::Vector{Point{NV,TV}}; rMax::Union{Vector{T},T,Nothing}=n
                 l2 = L[i]     
                 if constrain_method == :max
                     if i==2
-                        if close_loop == true
+                        if close_loop
                             lp = L[end]/2
                         else
                             lp=0.0
                         end
                     end
                     if i == i_last
-                        if close_loop == true
+                        if close_loop
                             l3 = L[2]
                         else
                             l3 = 0 
@@ -5384,7 +5384,7 @@ function filletcurve(V::Vector{Point{NV,TV}}; rMax::Union{Vector{T},T,Nothing}=n
                         Vc = Vc[2:end] # Remove first point 
                     end   
 
-                    if close_loop == true && i == i_last && fullRound && isapprox(norm(Vc[end]-VC[1]),0.0,atol=eps_level)                        
+                    if close_loop && i == i_last && fullRound && isapprox(norm(Vc[end]-VC[1]),0.0,atol=eps_level)                        
                         # The end of the current segment is the same as the first point on the closed loop curve built
                         Vc = Vc[1:end-1] # Remove last point
                     end
@@ -5469,13 +5469,13 @@ Using `deg=true` results in angles in degrees.
 """
 function circlerange(n::Int; dir=:acw, deg=false)
     if dir==:acw
-        if deg == true
+        if deg 
             return range(0.0, 360 - 360/n, n)
         else
             return range(0.0, 2.0*π - (2.0*π)/n, n)
         end
     elseif dir==:cw
-        if deg == true
+        if deg 
             return range(0.0, 360/n - 360, n)
         else
             return range(0.0, (2.0*π)/n - 2.0*π, n)
@@ -5524,7 +5524,7 @@ function edgefaceangles(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=
                 end
                 
                 # Compute the face angles 
-                if deg == true # Compute angles in degrees                       
+                if deg # Compute angles in degrees                       
                     A[i_e] = s*acosd(clamp(dot(n1,n2),-1.0,1.0))
                 else # Compute angles in radians
                     A[i_e] = s*acos(clamp(dot(n1,n2),-1.0,1.0))                         
@@ -5777,7 +5777,7 @@ function rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int,
     end
     
     # merge vertices if requested
-    if merge == true
+    if merge
         V,_,indMap = mergevertices(V; pointSpacing=w)
         indexmap!(E,indMap)        
     end
@@ -5933,7 +5933,7 @@ function kelvinfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge =
     end
       
     # merge vertices if requested
-    if merge == true
+    if merge 
         V,_,indMap = mergevertices(V; pointSpacing=w)
         indexmap!(E,indMap)        
     end
@@ -6291,7 +6291,7 @@ This function creates the triangular faces `F` and vertices `V` for an
 isosurface in the 3D image `A` of the level specified by `level`. 
 """
 function getisosurface(A; level=0.0, cap=false, padValue=nothing, x::Union{AbstractVector{T},Nothing}=nothing, y::Union{AbstractVector{T},Nothing}, z::Union{AbstractVector{T},Nothing}) where T<:Real  
-    if cap == true                
+    if cap                
         # Get/determine padValue  
         if isnothing(padValue)
             if isapprox(level,0.0,atol=1e-8)
@@ -6316,7 +6316,7 @@ function getisosurface(A; level=0.0, cap=false, padValue=nothing, x::Union{Abstr
             z = range(z[1]-s, z[end]+s, length(z)+2)                        
             mc = MarchingCubes.MC(A; x=x, y=y, z=z)            
         end
-    elseif cap==false
+    elseif !cap
         if isnothing(x) || isnothing(y) || isnothing(z)            
             mc = MarchingCubes.MC(A,Int)
         else
