@@ -6617,3 +6617,79 @@ end
     @test length(boundaryedges(F)) == 0 # Is merged/closed due to caps
 end
 
+
+@testset "randangle" verbose = true begin         
+    # Default input is 1 and should return Float64 
+    A = randangle()    
+    @test isa(A,Float64)    
+
+    # Vector 
+    len = 5
+    A = randangle(len)
+    @test isa(A,Vector{Float64})
+    @test length(A) == len
+
+    # Matrix
+    siz = (25,35)
+    A = randangle(siz)
+    @test isa(A,Matrix{Float64})
+    @test size(A) == siz
+    
+    # 3D Array 
+    siz = (5,4,3)
+    A = randangle(siz)
+    @test isa(A,Array{Float64,length(siz)})
+    @test size(A) == siz
+
+    # Check values are in the right range 
+    A = randangle(100000)
+    @test all(A.<=pi .&& A.>=-pi)    
+end
+
+
+@testset "stepfunc" verbose = true begin        
+    eps_level = 1e-8
+
+    t = [-10.0,0.0,0.1,0.25,0.5,0.75,0.9,1.0,10]    
+    a = 1.0
+    b = 3.0
+
+    fade = stepfunc(:Perlin)
+    v = fade.(a,b,t)
+    @test isa(v,Vector{Float64})
+    @test isapprox(v,[0.0, 0.0, 1.01712, 1.20703125, 2.0, 2.79296875, 2.9828799999999993, 1.0, 1.0],atol=eps_level)
+
+    fade = stepfunc(:linear)
+    v = fade.(a,b,t)
+    @test isa(v,Vector{Float64})
+    @test isapprox(v,[0.0, 0.0, 1.2000000000000002, 1.5, 2.0, 2.5, 2.8000000000000003, 1.0, 1.0],atol=eps_level)
+
+    fade = stepfunc(:smoothstep)
+    v = fade.(a,b,t)
+    @test isa(v,Vector{Float64})
+    @test isapprox(v,[0.0, 0.0, 1.056, 1.3125, 2.0, 2.6875, 2.944, 1.0, 1.0],atol=eps_level)
+
+    fade = stepfunc(:cosine)
+    v = fade.(a,b,t)
+    @test isa(v,Vector{Float64})
+    @test isapprox(v,[0.0, 0.0, 1.0489434837048466, 1.2928932188134523, 1.9999999999999998, 2.707106781186547, 2.9510565162951536, 1.0, 1.0],atol=eps_level)
+    
+    @test isa(fade,Function)  
+    @test_throws Exception stepfunc(:wrong)
+end
+
+@testset "perlin_noise" verbose = true begin        
+    eps_level = 1e-8
+
+    # Define grid
+    size_grid = (25,30) # grid size
+    sampleFactor = 30 # Pixel sample factor wrt grid
+    pixelSize = 1/sampleFactor # Pixel size assuming grid has unit steps
+
+    M = perlin_noise(size_grid, sampleFactor; type=:Perlin)
+
+    @test isa(M,Matrix{Float64})
+    @test size(M) == (size_grid .- 1) .* sampleFactor
+    @test_throws Exception perlin_noise(size_grid, sampleFactor; type=:wrong)
+end
+

@@ -329,7 +329,7 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
     elseif  pad_data==:none
         # No padding
     else
-        throw(ArgumentError("Invalid pad_data method provided, valued options are :linear, :constant, and :none"))
+        throw(ArgumentError("Invalid pad_data method provided, valid options are :linear, :constant, and :none"))
     end
 
     # Change behaviour depending on extrapolation method
@@ -364,7 +364,7 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
         # Allow extrapolation as per the biharmonic function
         yi = interp_biharmonic(xx,yy,xi) 
     else
-        error("InvalidParameter: Invalid extrapolate_method method provided, valued options are :linear, :constant, and :biharmonic")
+        error("InvalidParameter: Invalid extrapolate_method method provided, valid options are :linear, :constant, and :biharmonic")
     end
 
     return yi
@@ -564,7 +564,7 @@ end
 
 
 """
-    unique_dict_index(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+    unique_dict_index(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
 
 Returns unique values and indices
 
@@ -575,7 +575,7 @@ The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
 be seen as the same as [2,1] for instance.  
 """
-function unique_dict_index(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+function unique_dict_index(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
     # T = eltype(X)
@@ -597,7 +597,7 @@ end
 
 
 """
-    unique_dict_index_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+    unique_dict_index_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
 
 Returns unique values, indices, and inverse indices
 
@@ -609,7 +609,7 @@ The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
 be seen as the same as [2,1] for instance.  
 """
-function unique_dict_index_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+function unique_dict_index_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
     # T = eltype(X)
@@ -637,7 +637,7 @@ end
 
 
 """
-    unique_dict_index_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+    unique_dict_index_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
 
 Returns unique values, indices, and counts
 
@@ -649,7 +649,7 @@ The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
 be seen as the same as [2,1] for instance.  
 """
-function unique_dict_index_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+function unique_dict_index_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
     
@@ -679,7 +679,7 @@ end
 
 
 """
-    unique_dict_index_inverse_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+    unique_dict_index_inverse_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
 
 Returns unique values, indices, inverse indices, and counts
 
@@ -692,7 +692,7 @@ The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
 be seen as the same as [2,1] for instance.  
 """
-function unique_dict_index_inverse_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+function unique_dict_index_inverse_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
     # T = eltype(X)
@@ -724,7 +724,7 @@ end
 
 
 """
-    unique_dict_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+    unique_dict_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
 
 Returns unique values and counts
 
@@ -736,7 +736,7 @@ The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
 be seen as the same as [2,1] for instance.  
 """
-function unique_dict_count(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any
+function unique_dict_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
     # T = eltype(X)
@@ -762,7 +762,7 @@ end
 
 
 """
-    unique_dict_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any 
+    unique_dict_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
 
 Returns unique values and inverse indices
 
@@ -774,7 +774,7 @@ The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
 be seen as the same as [2,1] for instance.  
 """
-function unique_dict_inverse(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any 
+function unique_dict_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
     # T = eltype(X)
@@ -830,7 +830,7 @@ end
 
 
 """
-    occursonce(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any    
+    occursonce(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N  
 
 Checks if entries occur once
 
@@ -841,7 +841,8 @@ parameter `sort_entries` (default is false) is true, then each entry will be
 sorted, in this case and entry [3,1,2] is viewed as the same as [1,3,2] and 
 [1,2,3] and so on. 
 """
-function occursonce(X::Union{Array{T},Tuple{T}}; sort_entries=false) where T <: Any    
+
+function occursonce(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N   
     d = Dict{T,Int}() # Use dict to keep track of used values    
     B = Vector{Bool}(undef,length(X)) 
     for (i,x) in enumerate(X)         
@@ -2547,7 +2548,7 @@ This function implements HC (Humphrey's Classes) smoothing [1]. This method uses
 Laplacian like smoothing but aims to compensate for shrinkage/swelling by also 
 "pushing back" towards the original coordinates. 
 
-# Reference 
+# References 
 1. [Vollmer et al., _Improved Laplacian Smoothing of Noisy Surface Meshes_, 1999. doi: 10.1111/1467-8659.00334](https://doi.org/10.1111/1467-8659.00334)
 """
 function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, α=0.1, β=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
@@ -3120,7 +3121,7 @@ function quad2tri(F::Vector{QuadFace{TF}},V::Vector{Point{ND,TV}}; convert_metho
     return Ft
 end
 
-function remove_unused_vertices(F,V::Vector{Point{ND,TV}})::Tuple where ND where TV<:Real
+function remove_unused_vertices(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
     if isempty(F) # If the face set is empty, return all emtpy outputs
         Fc = F
         Vc = Vector{Point{ND,TV}}(undef,0)
@@ -6192,7 +6193,6 @@ function tribox(boxDim,pointSpacing)
     return _faces2box(F12,V12,F22,V22,F32,V32,boxDim)
 end
 
-
 """
     _faces2box(F12,V12,F22,V22,F32,V32,boxDim)
 
@@ -6248,7 +6248,16 @@ function tetbox(boxDim,pointSpacing; stringOpt = "paAqYQ",region_vol=nothing)
     return E, V, Fb, Cb
 end
 
+"""
+    pad3(A::Array{T,3}; padAmount = 1, padValue = T(0.0)) where T<:Real
 
+Pads 3D array 
+
+# Description 
+This function pads the 3D input array `A` by the amount `padAmount` and with the
+value `padValue`. The output is an array that is 2*padAmount larger in size 
+direction. 
+"""
 function pad3(A::Array{T,3}; padAmount = 1, padValue = T(0.0)) where T<:Real
     siz = size(A) # Get size of A 
 
@@ -6272,7 +6281,15 @@ function pad3(A::Array{T,3}; padAmount = 1, padValue = T(0.0)) where T<:Real
     return B
 end
 
+"""
+    getisosurface(A; level=0.0, cap=false, padValue=nothing, x::Union{AbstractVector{T},Nothing}=nothing, y::Union{AbstractVector{T},Nothing}, z::Union{AbstractVector{T},Nothing}) where T<:Real  
 
+Constructs isosurface geometry 
+
+# Description 
+This function creates the triangular faces `F` and vertices `V` for an 
+isosurface in the 3D image `A` of the level specified by `level`. 
+"""
 function getisosurface(A; level=0.0, cap=false, padValue=nothing, x::Union{AbstractVector{T},Nothing}=nothing, y::Union{AbstractVector{T},Nothing}, z::Union{AbstractVector{T},Nothing}) where T<:Real  
     if cap == true                
         # Get/determine padValue  
@@ -6312,4 +6329,158 @@ function getisosurface(A; level=0.0, cap=false, padValue=nothing, x::Union{Abstr
     return F,V
 end
 
+"""
+    randangle(siz::Union{Int,Tuple{Vararg{Int, N}}, Vector{Int}} = 1) where N
 
+Returns random angles
+
+# Description 
+This function returns a random angle or array of random angles of the size 
+`siz`. The angles are in radians and values lie between -pi and pi. 
+"""
+function randangle(siz::Union{Int,Tuple{Vararg{Int, N}}, Vector{Int}} = 1) where N
+    if siz == 1
+        return rand()*pi*rand((-1,1))
+    else
+        A = Array{Float64}(undef,siz)    
+        for i in eachindex(A)
+            A[i] = pi * rand() * rand((-1.0,1.0))
+        end
+        return A
+    end    
+end
+
+"""
+    stepfunc(type)
+
+Returns a step function
+
+# Description 
+This function returns a step function (such as smoothstep functions [1]) to move
+from a level `a` to `b` using the  function type specified by `type`. I.e. 
+`f = stepfunc(type)` can be used as: `y = f(a,b,t)`
+The functions are constrained such that the output is `a` if `t<=0.0` and the
+output is `b` when `t>=1.0`. Each function uses the following definition: 
+`(1.0 - f(t)) * a + f(t) * b`
+Where `f(t)` depends on the function type requested. The following types are
+supported: 
+    :linear, this is a simple linear mapping (lerp) from `a` to `b`
+    :Perlin, the Perlin smooth step function 6t⁵-15t⁴+10t³
+    :smoothstep, 6t²-2t³
+    :cosine, 2-cos(tπ)/2
+The default is :linear
+
+# References
+1. https://en.wikipedia.org/wiki/Smoothstep
+"""
+function stepfunc(type::Symbol=:linear)      
+    # Create inline function variations 
+    f = t -> t    
+    if type == :Perlin
+        f = t -> t^3 * (t * (6.0 * t - 15.0) + 10.0) # 6t⁵-15t⁴+10t³ 
+    elseif type == :smoothstep
+        f = t -> 3.0 * t^2 - 2.0 * t^3 
+    elseif type == :cosine
+        f = t -> 0.5 - 0.5 * cos(t*pi) 
+    elseif type == :linear
+        # Nothing, already default
+        # f = t -> t 
+    else        
+        error("InvalidParameter: Invalid type $type, valid options are :linear, :Perlin, :cosine, and :smoothstep")
+    end            
+    # Return function with constraints
+    return function (a, b, t)
+        if t <= 0.0
+            return 0.0
+        elseif t >= 1.0
+            return 1.0
+        else            
+            return (1.0 - f(t)) * a + f(t) * b
+        end
+    end
+end
+
+"""
+    perlin_noise(size_grid, sampleFactor, type=:Perlin)    
+
+Returns Perlin noise array
+
+# Description 
+This function returns a 2D image containing Perlin noise [1]. The grid size is 
+defined by `size_grid`. The `sampleFactor` defines the number of pixels to use 
+for each grid cell. The output is a Matrix{Float64} with the size
+`(size_grid .- 1) .* sampleFactor`. The `type` parameter dictates the type of 
+"fade" function to use (see also: `stepfunc`), and the default is :Perlin. 
+
+# References
+1. https://en.wikipedia.org/wiki/Perlin_noise
+"""
+function perlin_noise(size_grid, sampleFactor; type=:Perlin)        
+    pixelSize = 1/sampleFactor # Pixel size assuming grid has unit steps
+
+    # Create grid vectors 
+    A = randangle(size_grid) # Random angles    
+    Ux = cos.(A) # Unit vector x-component
+    Uy = sin.(A) # Unit vector y-component
+
+    # Define "fade"/smoothstep function for interpolation 
+    fade = stepfunc(type)
+
+    # Initialise image
+    size_image = (size_grid .- 1) .* sampleFactor # image size
+    M = Matrix{Float64}(undef,size_image) # Start as undef Float64
+
+    # Pre-compute grid cell quantities
+    xy = range(0+pixelSize/2,1-pixelSize/2,sampleFactor) # x or y coordinates within a grid cell
+
+    xc = [0,1,1,0]
+    yc = [0,0,1,1]
+    @inbounds for ip in 1:sampleFactor # For each cell row
+        @inbounds for jp in 1:sampleFactor # For each cell column
+            @inbounds for ig in 1:size_grid[1]-1 # For each grid row    
+                @inbounds for jg in 1:size_grid[2]-1 # For each grid column
+                    i = (ig-1)*sampleFactor + ip # Pixel row index
+                    j = (jg-1)*sampleFactor + jp # Pixel column index
+                    
+                    # Current pixel cell coordinates
+                    px = xy[jp]
+                    py = xy[ip]
+                            
+                    # Offset vector components
+                    xc1 = px # -xc[1] Offset vector 1 x
+                    xc2 = px-xc[2] # Offset vector 2 x
+                    xc3 = px-xc[3] # Offset vector 3 x
+                    xc4 = px-xc[4] # Offset vector 4 x
+
+                    yc1 = py # -yc[2] Offset vector 1 y                
+                    yc2 = py-yc[2] # Offset vector 2 y               
+                    yc3 = py-yc[3] # Offset vector 3 y                
+                    yc4 = py-yc[4] # Offset vector 4 y
+
+                    u1x = Ux[ig  , jg]
+                    u2x = Ux[ig  , jg+1]
+                    u3x = Ux[ig+1, jg+1]
+                    u4x = Ux[ig+1, jg]
+
+                    u1y = Uy[ig  ,jg]
+                    u2y = Uy[ig  ,jg+1]
+                    u3y = Uy[ig+1,jg+1]
+                    u4y = Uy[ig+1,jg]
+
+                    d1 = xc1.*u1x + yc1.*u1y
+                    d2 = xc2.*u2x + yc2.*u2y
+                    d3 = xc3.*u3x + yc3.*u3y
+                    d4 = xc4.*u4x + yc4.*u4y
+            
+                    # Interpolation using fade function 
+                    d12 = fade(d1,   d2, px)
+                    d34 = fade(d4,   d3, px)
+                    d   = fade(d12, d34, py)
+
+                    M[i,j] = d                
+                end
+            end
+        end
+    end
+    return M
+end
