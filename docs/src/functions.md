@@ -500,4 +500,31 @@ Comodo.tribox
 ```@docs 
 Comodo.tetbox
 ```
+, getisosurface
 
+export randangle, stepfunc, perlin\_noise
+
+## `pad3`
+```@docs 
+Comodo.pad3
+```
+
+## `getisosurface`
+```@docs 
+Comodo.getisosurface
+```
+
+## `randangle`
+```@docs 
+Comodo.randangle
+```
+
+## `stepfunc`
+```@docs 
+Comodo.stepfunc
+```
+
+## `perlin_noise`
+```@docs 
+Comodo.perlin_noise
+```
