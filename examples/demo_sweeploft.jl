@@ -2,6 +2,7 @@ using Comodo
 using Comodo.GLMakie
 using Comodo.GeometryBasics
 using Comodo.Rotations
+using Comodo.LinearAlgebra
 
 testCase = 5
 vizCase = 1
