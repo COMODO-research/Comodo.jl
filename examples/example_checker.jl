@@ -5,28 +5,18 @@ Pkg.activate("../.")
 
 using Test
 
-struct Problem
-    filename::String
-    error::Exception
-end
-
-function Base.show(io::IO, p::Problem)
-    println(io, "Problem in file: $(p.filename)")
-    println(io, "Error: $(p.error)")
-end
-
-function load_and_run!(filename::String, problems::Vector{Problem})::Bool
+function load_and_run!(filename::String, problems::Vector{String})::Bool
+    cmdline = "using Pkg; Pkg.activate(\"./..\"); include(\"$filename\")"
+    command = `julia -e $cmdline`
     try
-        @test begin
-            include(filename)
-            return true
+        result =  run(command)
+        if result.exitcode != 0
+            push!(problems, filename)
+            return false
         end
+        return true
     catch e
-        p = Problem(filename, e)
-        push!(problems, p)
-        println("Error in file: $filename")
-        println("Please check the error message to find out the required function and package")
-        println(e)
+        push!(problems, filename)
         return false
     end
 end
@@ -35,13 +25,14 @@ function main()
     dircontent = readdir(".")
     juliafiles = filter(x -> occursin(r"demo.*\.jl", x), dircontent)
 
-    problems = Vector{Problem}(undef, 0)
+    problems = Vector{String}(undef, 0)
 
     for file in juliafiles
         println("Checking file: $file")
         load_and_run!(file, problems)
     end
 
+    @info "Here is the list of problematic files:"
     display(problems)
 end
 
