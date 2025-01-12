@@ -3,7 +3,7 @@ using Comodo.GLMakie
 using Comodo.GeometryBasics
 using FileIO
 
-testCase = 2
+testCase = 1
 
 if testCase==1 
     # A "zig-zag" curve with known angles for testing
@@ -17,7 +17,7 @@ if testCase==1
     end
     push!(V,V[end]+[r, 0.0, 0.0])
 
-    F,V = extrudecurve(V; extent=1, direction=:positive, n=Vec{3, Float64}(0.0,0.0,-1.0), close_loop=false,face_type=:quad)
+    F,V = extrudecurve(V; extent=1, direction=:positive, n=Vec{3, Float64}(0.0,0.0,-3.0), close_loop=false,face_type=:quad)
 elseif testCase==2 
     # An imported STL based geometry of an engineering part with various flat faces and some known angles (e.g. 0, 45, and 90 degrees)
     fileName_mesh = joinpath(comododir(),"assets","stl","spur_gear_01.stl")

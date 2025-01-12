@@ -1901,7 +1901,7 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
     # Now cut off bottom hemisphere    
     searchTol = r./1000.0 # Tolerance for cropping hemisphere (safe, somewhat arbitrary if much smaller then mesh edge lengths)
     F = [F[i] for i in findall(map(f-> mean([V[j][3] for j in f])>=-searchTol,F))] # Remove faces below equator
-    F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
+    F,V,_ = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
 
     if closed
         if face_type == :tri           
@@ -3069,19 +3069,22 @@ function normalplot(ax,M::GeometryBasics.Mesh; type_flag=:face, color=:black,lin
     return normalplot(ax,F,V;type_flag=type_flag, color=color,linewidth=linewidth,scaleval=scaleval)
 end
 
-function edgeangles(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
-    m = length(F[1])
-    A = Vector{GeometryBasics.Vec{m, Float64}}()
-    for f in F
-        a = Vector{Float64}(undef,m)
-        for i in 1:m                        
-            ip1 = mod1(i+1,m)            
-            ip2 = mod1(i+2,m)
+function edgeangles(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; deg=false) where N where TF<:Integer where ND where TV<:Real        
+    A = Vector{GeometryBasics.Vec{N, Float64}}(undef,length(F))
+    for (j,f) in enumerate(F)
+        a = Vector{Float64}(undef,N)
+        @inbounds for i in 1:N            
+            ip1 = mod1(i+1,N)            
+            ip2 = mod1(i+2,N)
             n1 = normalizevector(V[f[ip1]]-V[f[i]])
             n2 = normalizevector(V[f[ip2]]-V[f[ip1]])
-            a[i] = acos(clamp(dot(n1,n2),-1.0,1.0))
-        end
-        push!(A,a)
+            if deg 
+                a[i] = acosd(clamp(dot(n1,n2),-1.0,1.0))
+            else
+                a[i] = acos(clamp(dot(n1,n2),-1.0,1.0))
+            end
+        end        
+        A[j] = a        
     end
     return A
 end
@@ -3226,7 +3229,7 @@ function trisurfslice(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}},n = Ve
             end    
         end
     end    
-    Fn,Vn = remove_unused_vertices(Fn,Vn)
+    Fn,Vn,_ = remove_unused_vertices(Fn,Vn)
     return Fn,Vn,Cn
 end
 
@@ -4577,7 +4580,7 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
 
         if !isempty(Eb)
             Ebs,Vbs = scalesimplex(Eb,V,s)
-            Ebs,Vbs = remove_unused_vertices(Ebs,Vbs)
+            Ebs,Vbs,_ = remove_unused_vertices(Ebs,Vbs)
             Ebs = [e.+length(Vs) for e in Ebs]
             append!(Vs,Vbs) # Append boundary edge points 
         end

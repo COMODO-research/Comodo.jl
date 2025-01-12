@@ -3496,6 +3496,11 @@ end
     A2 = edgeangles(F,V2) # Angles for sheared cube
     @test all([all(a.==pi/2) for a in A]) # All right angles in undeformed cube
     @test isapprox(sort(unique(reduce(vcat,A2))),[pi/4, pi/2, pi/2+pi/4],atol=eps_level)
+
+    A = edgeangles(F,V; deg = true) # Angles for regular cube
+    A2 = edgeangles(F,V2; deg = true)
+    @test all([all(a.==90) for a in A]) # All right angles in undeformed cube
+    @test isapprox(sort(unique(reduce(vcat,A2))),[45.0, 90.0, 135.0],atol=eps_level)
 end
 
 
