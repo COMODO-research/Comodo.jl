@@ -4543,6 +4543,20 @@ end
     @test invert_faces(F)==F_inv    
 end
 
+@testset "invert_faces!" begin
+    # Single face
+    F = TriangleFace{Int}[[1,2,3]]
+    F_inv = TriangleFace{Int}[[3,2,1]]
+    invert_faces!(F)
+    @test F == F_inv
+
+    # Two face
+    F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(4, 5, 6)]   
+    F_inv = [TriangleFace{Int}(3, 2, 1),TriangleFace{Int}(6, 5, 4)]   
+    invert_faces!(F)
+    @test F == F_inv   
+end
+
 @testset "kabsch_rot" begin
     eps_level = 1e-6
 

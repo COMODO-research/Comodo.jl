@@ -61,7 +61,7 @@ export circlepoints, loftlinear, grid2surf, trisurfslice
 export edgeangles, count_edge_face, boundaryedges, boundaryfaces, boundaryfaceindices, edges2curve
 export pointspacingmean, extrudecurve, meshgroup, ray_triangle_intersect
 export distmarch, mesh_curvature_polynomial, curve_length, evenly_sample, evenly_space
-export invert_faces, kabsch_rot, sweeploft, revolvecurve
+export invert_faces, invert_faces!, kabsch_rot, sweeploft, revolvecurve
 export batman, tridisc, quaddisc, regiontrimesh, scalesimplex, subcurve, dualclad
 export tet2hex, element2faces, subhex, rhombicdodecahedron, tri2quad
 export tetgenmesh, surfacevolume, tetvolume, extrudefaces, filletcurve

@@ -3075,9 +3075,9 @@ function edgeangles(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; deg=false
         a = Vector{Float64}(undef,N)
         @inbounds for i in 1:N            
             ip1 = mod1(i+1,N)            
-            ip2 = mod1(i+2,N)
+            ip2 = mod1(i-1,N)
             n1 = normalizevector(V[f[ip1]]-V[f[i]])
-            n2 = normalizevector(V[f[ip2]]-V[f[ip1]])
+            n2 = normalizevector(V[f[ip2]]-V[f[i]])
             if deg 
                 a[i] = acosd(clamp(dot(n1,n2),-1.0,1.0))
             else
@@ -3987,9 +3987,14 @@ This function inverts the faces in `F`, such that the face normal will be
 flipped, by reversing the node order for each face. 
 """
 function invert_faces(F::Vector{NgonFace{N, TF}}) where N where TF<:Integer     
-    return map(f-> reverse(f),F) # [NgonFace{N, Int}(reverse(f)) for f in F]    
+    return map(f-> reverse(f),F)     
 end
 
+function invert_faces!(F::Vector{NgonFace{N, TF}}) where N where TF<:Integer     
+    for (i,f) in enumerate(F)
+        F[i] = reverse(f)
+    end    
+end
 
 """
     R = kabsch_rot(V1::Array{Point{N, T}, 1},V2::Array{Point{N, TT}, 1}) where N where T<:Real where TT<:Real
