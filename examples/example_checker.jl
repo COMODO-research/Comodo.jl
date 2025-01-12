@@ -1,10 +1,5 @@
 module ExampleCheckter
 
-using Pkg
-Pkg.activate("../.")
-
-using Test
-
 function load_and_run!(filename::String, problems::Vector{String})::Bool
     cmdline = "using Pkg; Pkg.activate(\"./..\"); include(\"$filename\")"
     command = `julia -e $cmdline`
