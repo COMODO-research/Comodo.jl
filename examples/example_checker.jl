@@ -1,4 +1,4 @@
-module ExampleCheckter
+module ExampleChecker
 
 function load_and_run!(filename::String, problems::Vector{String})::Bool
     cmdline = "using Pkg; Pkg.activate(\"./..\"); include(\"$filename\")"
