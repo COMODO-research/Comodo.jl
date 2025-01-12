@@ -1,6 +1,7 @@
 using Comodo
 using Comodo.GLMakie
 using Comodo.GeometryBasics
+using Comodo.Statistics
 using FileIO
 
 #=
