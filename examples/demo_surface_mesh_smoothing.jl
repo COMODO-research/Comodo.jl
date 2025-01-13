@@ -2,7 +2,8 @@ using Comodo
 using Comodo.GLMakie
 using Comodo.GeometryBasics
 using Comodo.Statistics
-using FileIO, Random
+using Comodo.GLMakie.FileIO
+using Random
 
 Random.seed!(1) # Set seed so demo performs the same each time
 

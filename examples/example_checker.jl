@@ -21,14 +21,17 @@ function main()
     juliafiles = filter(x -> occursin(r"demo.*\.jl", x), dircontent)
 
     problems = Vector{String}(undef, 0)
-
     for file in juliafiles
         println("Checking file: $file")
         load_and_run!(file, problems)
     end
 
-    @info "Here is the list of problematic files:"
-    display(problems)
+    if !isempty(problems)
+        @info "Here is the list of problematic files:"
+        display(problems)
+    else
+        @info "All demos completed succesfully."
+    end
 end
 
 function __init__()
