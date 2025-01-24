@@ -3819,8 +3819,18 @@ end
     E = LineFace{Int}[[1, 2], [2, 3], [3, 4], [4, 5],[5,3]]
     @test_throws Exception edges2curve(E)
 
+    # Closed curve with two branches (two apparent start points)
+    E = LineFace{Int}[[6, 1], [1, 2], [2, 3], [3, 4], [4, 1], [4, 5]]
+    @test_throws Exception edges2curve(E)
+    
+    # Back tracking
     E = LineFace{Int}[[1, 2], [2, 3], [3, 4], [4, 5],[5,3]]
     @test_throws Exception edges2curve(E)
+
+    # Closed curve
+    E = LineFace{Int}[[1, 2], [2, 3], [3, 1], [4, 5], [5, 6], [6, 7]]
+    @test_throws Exception edges2curve(E)
+
 end
 
 

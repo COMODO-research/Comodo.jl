@@ -27,11 +27,6 @@ elseif testCase==2
     F,V,_,_ = mergevertices(F,V)
 end
 
-# E = meshedges(F)
-# E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)        
-# con_E2F = con_edge_face(F,E_uni)
-# con_F2E = con_face_edge(F,E_uni,indReverse)   
-
 A,E,con_E2F = edgefaceangles(F,V; deg=true)
 
 
@@ -51,7 +46,7 @@ ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z",
 hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), color=:white, shading = FastShading, transparency=false)#,strokecolor=:black,strokewidth=0.25)
 # normalplot(ax1,F,V)
 
-hp_A = wireframe!(ax1,GeometryBasics.Mesh(Vn,En),linewidth=linewidth, transparency=false, color=An,colormap=:Spectral,colorrange = (-180, 180))
+hp_A = wireframe!(ax1,GeometryBasics.Mesh(Vn,En),linewidth=linewidth, transparency=false, color=An,colormap=:Spectral, colorrange = (-180, 180))
 
 Colorbar(fig[1, 2],hp_A, label = "Angles",ticks =-180:20:180)
 

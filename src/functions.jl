@@ -3326,18 +3326,31 @@ function edges2curve(Eb::Vector{LineFace{T}}; remove_last = false) where T <: In
     if isempty(Eb)
         return Vector{T}[] # Return empty
     else
-        numEdges = length(Eb)
-        numMax = 2*numEdges # Max number of connected points is all points
-        con_E2E = con_edge_edge(Eb) # Edge-edge connectivity
+        numEdges = length(Eb)        
+        con_V2E = con_vertex_edge(Eb) # Vertex-edge connectivity
+        con_E2E = con_edge_edge(Eb,con_V2E) # Edge-edge connectivity
+        numConnectedEdges = length.(con_V2E)
+        indStartEnd = findall(numConnectedEdges .== 1)
+        if length(indStartEnd) == 2 # Non-closed curve           
+            if Eb[con_V2E[indStartEnd[1]][1]][1] == indStartEnd[1]
+                i = con_V2E[indStartEnd[1]][1]
+            else
+                i = con_V2E[indStartEnd[2]][1]
+            end
+        elseif length(indStartEnd) == 0 # Consistent with closed loop
+            i = 1
+        else
+            throw(ErrorException("Invalid edges. Edges may contain branches or multiple disconnected sets"))
+        end
+
         seen = fill(false,numEdges) # Bool to keep track of visited points
-        i = 1 # Start with first edge
         ind = [Eb[i][1]] # Add first edge point and grow this list
         while !all(seen) # loop until all edges have been visited        
             push!(ind,Eb[i][2]) # Add edge end point (start is already in list)
             seen[i] = true # Lable current edge as visited       
             e_ind = con_E2E[i] # Indices for connected edges
             if length(e_ind)>2 # Branch point detected
-                throw(ErrorException("Invalid edges or branch point detected."))    
+                throw(ErrorException("Invalid edges or branch point detected. Current edge is connected to more than two edges."))    
             else
                 if Eb[e_ind[1]][1]==ind[end] #Check if 1st point of 1st edge equals end
                     i = e_ind[1]
@@ -3347,7 +3360,7 @@ function edges2curve(Eb::Vector{LineFace{T}}; remove_last = false) where T <: In
             end
 
             if seen[i] & !all(seen)
-                throw(ErrorException("Invalid edges. Edges may contained multiple disconnected sets"))
+                throw(ErrorException("Invalid edges. Edges may contain multiple disconnected sets, such as multiple closed loops."))
             end            
         end
         if remove_last 
@@ -4371,7 +4384,7 @@ end
 # Description
 
 Generates a multi-region triangle mesh for the input regions. The boundary 
-curves for all regions are containedin the tuple `VT`. Each region to be meshed
+curves for all regions are contained in the tuple `VT`. Each region to be meshed
 is next defined using a tuple `R` containing indices into the curve typle `VT`. 
 If an entry in `R` contains only one index then the entire curve domain is 
 meshed. If `R` contains multiple indices then the first index is assumed to be 

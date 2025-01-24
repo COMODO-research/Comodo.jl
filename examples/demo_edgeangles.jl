@@ -6,8 +6,8 @@ F,V = cube(sqrt(3))
 
 # Build deformation gradient tensor to induce shear with known angles
 f = zeros(3,3)
-for i=1:3
-    f[i,i]=1.0
+for i = 1:3
+    f[i,i] = 1.0
 end
 a = pi/4 # "45 degree shear"  
 f[1,2] = tan(a) 
