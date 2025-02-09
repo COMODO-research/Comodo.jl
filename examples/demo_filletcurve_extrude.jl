@@ -28,7 +28,7 @@ Fe,Ve = extrudecurve(VC; extent=h, direction=:both, close_loop=false,face_type=:
  
 # Visualisation
 fig = Figure(size=(1000,1000))
-ax1 = Axis3(fig[1, 1],aspect = :data,title="Input curve")
+ax1 = Axis3(fig[1, 1],aspect = :data,title="Filleting a curve")
 
 hp11 = lines!(ax1, V,linewidth=2,color=:black)
 hp12 = scatter!(ax1, V,markersize=15,color=:black)

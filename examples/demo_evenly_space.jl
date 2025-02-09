@@ -16,7 +16,7 @@ if testCase == 1
 
     # Evenly sample curve
     Vi1 = evenly_space(V, 0.65; close_loop = false, spline_order = 4) # Returns points and spline interpolation object
-    Vi2 = evenly_space(V, 0.65; close_loop = true, spline_order = 4,must_points = must_points) # Returns points and spline interpolation object
+    Vi2 = evenly_space(V, 0.65; close_loop = true, spline_order = 4, must_points = must_points) # Returns points and spline interpolation object
 elseif testCase == 2
     n = 4*7+4
     rFun(t) = sin(4*t)+2

@@ -2736,6 +2736,10 @@ function circlepoints(r::T,n::Int; dir=:acw) where T <: Real
     return [Point{3, Float64}(r*cos(t),r*sin(t),0) for t in circlerange(n;dir=dir)]
 end
 
+function circlepoints(r::Tuple{T,T},n::Int; dir=:acw) where T <: Real
+    return [Point{3, Float64}(r[1]*cos(t),r[2]*sin(t),0) for t in circlerange(n;dir=dir)]
+end
+
 function circlepoints(f::FunctionType,n::Int; dir=:acw) where {FunctionType <: Function}
     return [Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t in circlerange(n;dir=dir)]
 end
@@ -3943,7 +3947,7 @@ function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8
     end    
 
     if !isnothing(must_points)
-        sort!(must_points) # sort the indices
+        sort!(unique!(must_points)) # sort the indices
         if first(must_points)==1 # Check if first is 1
             popfirst!(must_points) # remove start, is already a must point
         end
@@ -3977,12 +3981,13 @@ function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8
             l = range(l1,l2,n)
             Vn_now = S.(l)                
                         
-            if j==1 # i.e. last step when close_loop == true         
-                append!(Vn,Vn_now[1:end-1])
-            else
+            if i==1 # Append all for first segment
                 append!(Vn,Vn_now)  
+            elseif j==1 # last step when close_loop == true         
+                append!(Vn,Vn_now[2:end-1])
+            else # Append 2nd up to last for intermediate segments
+                append!(Vn,Vn_now[2:end])  
             end
-            
             l1 = deepcopy(l2)
         end
     end
@@ -6116,7 +6121,7 @@ Joins geometry
 # Description 
 This function joins geometry defined for instance by multiple face and vertex 
 sets into one such set. All geometry such be of the same type such that they can
-be joined. The input can for instance be n-sets of faces (or elemens) and 
+be joined. The input can for instance be n-sets of faces (or elements) and 
 vertices e.g. appearing as inpus as: `F1,V1,F2,V2,...,FN,VN`.  
 """
 function joingeom(G...)
