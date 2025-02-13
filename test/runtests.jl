@@ -6722,3 +6722,16 @@ end
     @test_throws Exception perlin_noise(size_grid, sampleFactor; type=:wrong)
 end
 
+@testset "removepoints" verbose = true begin            
+    n = 15
+    V = Vector{Point{3,Float64}}(undef,n)
+    V_ori = deepcopy(V)
+    indRemove = [1,5,10] # Indices to remove
+    V,indFix = removepoints(V,indRemove)
+    indMap = [2,6,11,10]
+    indMapped = [1,4,8,0]    
+    @test V == V_ori[setdiff(collect(1:n),indRemove)]    
+    @test isa(V,Vector{Point{3,Float64}})    
+    @test length(V) == n-length(indRemove)
+    @test indFix[indMap] == indMapped
+end

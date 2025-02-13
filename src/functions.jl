@@ -3131,9 +3131,9 @@ end
 function remove_unused_vertices(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
     if isempty(F) # If the face set is empty, return all emtpy outputs
         Fc = F
-        Vc = Vector{Point{ND,TV}}(undef,0)
-        indFix = Vector{Int}(undef,0)
-    else # Faces not empty to check which indices are used and shorten V if needed        
+        Vc = Vector{Point{ND,TV}}()
+        indFix = Vector{Int}()
+    else # Faces not empty, so check which indices are used and shorten V if needed        
         indUsed = elements2indices(F) # Indices used
         Vc = V[indUsed] # Remove unused points    
         indFix = zeros(Int,length(V))
@@ -4405,8 +4405,7 @@ function regiontrimesh(VT,R,P)
         r = R[q] # The curve indices for the current region       
         pointSpacing = P[q] # Region point spacing
         Vn = reduce(vcat,VT[r]) # The current curve point set 
-        numCurvePoints = length(Vn) # Number of points in the current curve set
-
+        
         # Creating constraints
         constrained_segments = Vector{Vector{Vector{Int}}}()
         n = 1        
@@ -4441,53 +4440,46 @@ function regiontrimesh(VT,R,P)
         constrained_segments_ori = deepcopy(constrained_segments) # Clone since triangulate can add new constraint points
         TRn = triangulate(Vn; boundary_nodes=constrained_segments, delete_ghosts=true)
         Fn = [TriangleFace{Int}(tr) for tr in each_solid_triangle(TRn)] 
-
+        Vn = get_points(TRn)
+        # Fn,Vn,indFix = remove_unused_vertices(Fn,Vn)
+        # constrained_segments = [[indFix[c[1]]] for c in constrained_segments_ori] # Fix indices after point removal 
+    
         # Check if new boundary points were introduced and remove if needed 
         Eb = boundaryedges(Fn)
         indB = unique(reduce(vcat,Eb))
-        indRemove = indB[indB.>numCurvePoints]        
-        if !iszero(length(indRemove))                        
-            logicKeep = fill(true,length(Vn))
-            logicKeep[indRemove] .= false
-            indKeep = findall(logicKeep)
-            indFix = zeros(Int,length(Vn))
-            indFix[indKeep] = 1:length(indKeep)
-            Vn = Vn[indKeep]
-            constrained_segments = [[indFix[c[1]]] for c in constrained_segments_ori] # Fix indices after point removal                
+        indConstrained = reduce(vcat,reduce(vcat,constrained_segments_ori))
+        indRemove = setdiff(indB,indConstrained)
+        if !isempty(indRemove)    
+            Vn,indFix = removepoints(Vn,indRemove)
+            constrained_segments = [[indFix[c[1]]] for c in constrained_segments_ori]
+    
+            # Redo triangulation after points have been removed
+            constrained_segments_ori = deepcopy(constrained_segments) # Clone since triangulate can add new constraint points
             TRn = triangulate(Vn; boundary_nodes=constrained_segments,delete_ghosts=true)
             Fn = [TriangleFace{Int}(tr) for tr in each_solid_triangle(TRn)] 
             Vn = get_points(TRn)
+            constrained_segments = constrained_segments_ori
         end
-
-        # Remove unused points (e.g. outside region)
-        Fn,Vn,indFix1 = remove_unused_vertices(Fn,Vn)
-        constrained_segments = [[indFix1[c[1]]] for c in constrained_segments]  # Fix indices after point removal 
-
+    
         # Remove 3 and 4 connected points
         E_uni = meshedges(Fn; unique_only=false)
         con_V2V = con_vertex_vertex(E_uni,Vn)
-        nCon = map(length,con_V2V)
-        Eb = boundaryedges(Fn)
-        indB = unique(reduce(vcat,Eb))
-
-        indLowCon = findall(nCon.<5)
-        indRemove = indLowCon[ [!in(i,indB) for i in indLowCon] ]
-
-        logicKeep = fill(true,length(Vn))
-        logicKeep[indRemove] .= false
-        indKeep = findall(logicKeep)
-        indFix = zeros(Int,length(Vn))
-        indFix[indKeep] = 1:length(indKeep)
-
-        Vn = Vn[indKeep] # Remove points 
-        constrained_segments = [[indFix[c[1]]] for c in constrained_segments] # Fix indices after point removal 
-
-        # Redo triangulation after points have been removed
-        TRn = triangulate(Vn; boundary_nodes=constrained_segments,delete_ghosts=true)
-        Fn = [TriangleFace{Int}(tr) for tr in each_solid_triangle(TRn)] 
-        Vn = get_points(TRn)
-
-        Fn,Vn,indFix = remove_unused_vertices(Fn,Vn)
+        nCon = map(length,con_V2V)        
+        indLowCon = findall(nCon.>0 .&& nCon.<5)
+        indConstrained = reduce(vcat,reduce(vcat,constrained_segments))
+        indRemove = setdiff(indLowCon,indConstrained)     
+        if !isempty(indRemove)
+            Vn,indFix = removepoints(Vn,indRemove)
+            constrained_segments = [[indFix[c[1]]] for c in constrained_segments]
+    
+            # Redo triangulation after points have been removed
+            constrained_segments_ori = deepcopy(constrained_segments) # Clone since triangulate can add new constraint points
+            TRn = triangulate(Vn; boundary_nodes=constrained_segments,delete_ghosts=true)
+            Fn = [TriangleFace{Int}(tr) for tr in each_solid_triangle(TRn)] 
+            Vn = get_points(TRn)
+            constrained_segments = constrained_segments_ori
+        end    
+        Fn,Vn,indFix = remove_unused_vertices(Fn,Vn)    
 
         # Smoothen mesh using Laplacian smoothing
         Eb = boundaryedges(Fn)
@@ -4502,13 +4494,14 @@ function regiontrimesh(VT,R,P)
         end
         append!(V,Vn) # Append vertices 
         append!(F,Fn) # Append faces 
-        append!(C,fill(q,length(Fn))) # Append color data 
+        append!(C,fill(q,length(Fn))) # Append color data         
     end
     V,_,indMap = mergevertices(V; pointSpacing = mean(P))
     indexmap!(F,indMap)    
     
     return F,V,C 
 end
+
 
 """
     scalesimplex(F,V,s)
@@ -6509,4 +6502,13 @@ function perlin_noise(size_grid, sampleFactor; type=:Perlin)
         end
     end
     return M
+end
+
+function removepoints(V,indRemove)
+    n = length(V)        
+    indFix = zeros(Int,n)
+    indKeep = setdiff(1:n,indRemove)
+    indFix[indKeep] .= 1:length(indKeep)
+    V = V[indKeep]    
+    return V,indFix
 end

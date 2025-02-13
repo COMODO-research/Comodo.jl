@@ -7,7 +7,7 @@ This demo shows the use of `hexbox` to generate a hexahedral mesh for a 3D box
 domain. 
 =#
 
-testCase = 5
+testCase = 6
 
 if testCase == 1 # Batman curve
     n = 120
@@ -37,7 +37,36 @@ elseif testCase == 3
     VT = (V,)
     R = ([1],)
     P = (pointSpacing)
-elseif testCase == 4
+elseif testCase == 4 
+    
+    function squarepoints(w,h,pointSpacing; dir=:acw)
+        nw = ceil(Int,w./pointSpacing)+1
+        nh = ceil(Int,h./pointSpacing)+1
+        sw = w./(nw-1)
+        sh = h./(nh-1)        
+        if dir == :acw            
+            V1 = collect(range(Point{3,Float64}( w./2.0,           h/2.0, 0.0), Point{3,Float64}(-w./2.0,         h/2.0, 0.0),   nw))
+            V2 = collect(range(Point{3,Float64}(-w./2.0,      h/2.0 - sh, 0.0), Point{3,Float64}(-w./2.0,        -h/2.0, 0.0), nh-1))
+            V3 = collect(range(Point{3,Float64}(-w./2.0+sw,       -h/2.0, 0.0), Point{3,Float64}( w./2.0,        -h/2.0, 0.0), nw-1))
+            V4 = collect(range(Point{3,Float64}( w./2.0,     -h/2.0 + sh, 0.0), Point{3,Float64}( w./2.0,     h/2.0 -sh, 0.0), nh-2))            
+        else
+            V1 = collect(range(Point{3,Float64}(-w./2.0,           h/2.0, 0.0), Point{3,Float64}( w./2.0,         h/2.0, 0.0),   nw))
+            V2 = collect(range(Point{3,Float64}( w./2.0,      h/2.0 - sh, 0.0), Point{3,Float64}( w./2.0,        -h/2.0, 0.0), nh-1))
+            V3 = collect(range(Point{3,Float64}( w./2.0-sw,       -h/2.0, 0.0), Point{3,Float64}(-w./2.0,        -h/2.0, 0.0), nw-1))
+            V4 = collect(range(Point{3,Float64}(-w./2.0,     -h/2.0 + sh, 0.0), Point{3,Float64}(-w./2.0,     h/2.0 -sh, 0.0), nh-2))            
+        end
+        return [V1; V2; V3; V4]        
+    end
+
+    w = 4.0
+    h = 8.0
+    pointSpacing = 1.0
+    V = squarepoints(w,h,pointSpacing; dir=:acw)
+    
+    VT = (V,)
+    R = ([1],)
+    P = (pointSpacing)
+elseif testCase == 5
     rFun1(t) = 12.0 + 3.0.*sin(5*t)
     n1 = 120
     V1 = circlepoints(rFun1,n1)
@@ -61,18 +90,17 @@ elseif testCase == 4
     VT = (V1,V2,V3,V4,V5,V6) # Curves
     R = ([1,2],[2,3,4,5,6],[4],[5]) # Regions 
     P = (1,0.6,0.2,0.3)  # Point spacings
-
-elseif testCase == 5    
-    n1 = 120
+elseif testCase == 6    
+    n1 = 100
     r1 = 20.0
     V1 = circlepoints(r1,n1)
     
-    n2 = 100
+    n2 = 90
     r2 = 12.0
     V2 = circlepoints(r2,n2)
     V2 = [Point{3,Float64}(v[1]+6,v[2],v[3]) for v in V2]
         
-    n3 = 30
+    n3 = 25
     r3 = 4
     V3 = circlepoints(r3,n3)
     V3 = [Point{3,Float64}(v[1]-14,v[2],v[3]) for v in V3]
@@ -89,11 +117,12 @@ elseif testCase == 5
 
     VT = (V1,V2,V3,V4,V5) # Curves
     R = ([1,2,3],[2,4,5],[5]) # Regions 
-    P = (1,0.75,0.5)  # Point spacings
+    P = (1.5,0.75,0.5)  # Point spacings
 end
 
-F,V,C = regiontrimesh(VT,R,P)
+VTp = deepcopy(VT) # Copy for plotting
 
+F,V,C = regiontrimesh(VT,R,P)
 
 # Visualisation
 Fp,Vp = separate_vertices(F,V) # Give each face its own point set 
@@ -102,5 +131,9 @@ Cp = simplex2vertexdata(Fp,C) # Convert face color data to vertex color data
 fig = Figure(size=(1200,1000))
 ax1 = Axis3(fig[1, 1],aspect = :data,title="Multi-region meshing",azimuth=-pi/2,elevation=pi/2)
 hp1 = poly!(ax1,GeometryBasics.Mesh(Vp,Fp), strokewidth=1,color=Cp, strokecolor=:black, shading = FastShading, transparency=false,colormap=Makie.Categorical(Makie.Reverse(:Spectral)))
+# for V in VTp
+#     scatter!(ax1, V, markersize=15, color=:black)
+#     lines!(ax1, V, linewidth=5, color=:black)
+# end
 Colorbar(fig[1, 1][1, 2], hp1)
 fig
