@@ -21,20 +21,18 @@ one, and 3 at each corner). The following refinement methods are implemented:
 =#
 
 ## Define example input
-testCase = 2
+testCase = 1
 if testCase == 1 # icosahedron
     r = 0.5 #radius
-    M = platonicsolid(4,r) 
-    V = coordinates(M)
-    F = faces(M)
+    F,V = platonicsolid(4,r)     
 elseif testCase == 2 # Extruded prism/cylinder with nc points
     r = 1.0
     nc = 3
     Vc = circlepoints(r,nc;dir=:cw)    
     d = norm(Vc[1]-Vc[2])        
-    F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:backslash)
-    M = GeometryBasics.Mesh(V,F)
+    F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:backslash)    
 end
+M = GeometryBasics.Mesh(V,F)
 
 ## Refine triangulation using `subtri` and the default :linear method
 
