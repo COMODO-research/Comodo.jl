@@ -1711,43 +1711,51 @@ end
     @testset "triangles" begin
         # Smallest unrefined open
         n = 0
-        F,V = hemisphere(n,r; face_type=:tri)
+        F,V,C = hemisphere(n,r; face_type=:tri)
         @test F isa Vector{TriangleFace{Int}}
-        @test V isa Vector{Point{3,Float64}}
+        @test V isa Vector{Point{3,Float64}}        
         @test length(F) == 40
         @test length(boundaryedges(F)) == 10
         ind = round.(Int,range(1,length(V),6)) # Sample indices
         V_true = Point{3, Float64}[[-1.4694631307311825, -2.0225424859373686, 1.1102230246251565e-16], [-0.406149620291133, -1.2499999999999998, 2.1266270208801], [-1.720477400588967, 1.2499999999999998, 1.314327780297834], [1.4694631307311825, -2.0225424859373686, -1.1102230246251565e-16], [-2.23606797749979, 0.0, 1.118033988749895], [-0.6909830056250527, 2.1266270208801, 1.118033988749895]]
         @test isapprox(V[ind],V_true, atol=eps_level)
+        @test C isa Vector{Int}
+        @test sort(unique(C)) == [1]
 
         # Smallest unrefined closed
-        F,V = hemisphere(n,r; face_type=:tri, closed=true)
+        F,V,C = hemisphere(n,r; face_type=:tri, closed=true)
         @test F isa Vector{TriangleFace{Int}}
         @test V isa Vector{Point{3,Float64}}
         @test length(F) == 60
         @test length(boundaryedges(F)) == 0
+        @test C isa Vector{Int}
+        @test sort(unique(C)) == [1,2]
 
         # Linear refinement open
         n = 2
-        F,V = hemisphere(n,r; face_type=:tri)
+        F,V,C = hemisphere(n,r; face_type=:tri)
         @test F isa Vector{TriangleFace{Int}}
-        @test V isa Vector{Point{3,Float64}}
+        @test V isa Vector{Point{3,Float64}}        
         @test length(F) == 640
         @test length(boundaryedges(F)) == 40
-        
+        @test C isa Vector{Int}
+        @test sort(unique(C)) == [1]
+
         # Linear refinement closed
         n = 3
-        F,V = hemisphere(n,r; face_type=:tri, closed=true)
+        F,V,C = hemisphere(n,r; face_type=:tri, closed=true)
         @test F isa Vector{TriangleFace{Int}}
-        @test V isa Vector{Point{3,Float64}}
+        @test V isa Vector{Point{3,Float64}}        
         @test length(F) == 3840
-        @test length(boundaryedges(F)) == 0
+        @test length(boundaryedges(F)) == 0        
+        @test C isa Vector{Int}
+        @test sort(unique(C)) == [1,2]
     end
     
     @testset "quads" begin
         # Smallest unrefined open
         n = 0
-        F,V = hemisphere(n,r; face_type=:quad)
+        F,V,C = hemisphere(n,r; face_type=:quad)
         @test F isa Vector{QuadFace{Int}}
         @test V isa Vector{Point{3,Float64}}
         @test length(F) == 12
@@ -1755,29 +1763,37 @@ end
         ind = round.(Int,range(1,length(V),6)) # Sample indices
         V_true = Point{3, Float64}[[1.4433756729740645, -1.4433756729740645, 1.4433756729740645], [0.0, -1.7677669529663689, 1.7677669529663689], [-2.5, 0.0, 0.0], [0.0, 2.5, 0.0], [2.5, 0.0, 0.0], [1.7677669529663689, -1.7677669529663689, 0.0]]
         @test isapprox(V[ind],V_true, atol=eps_level)
+        @test C isa Vector{Int}
+        @test sort(unique(C)) == [1]
 
         # Smallest unrefined closed
-        F,V = hemisphere(n,r; face_type=:quad, closed=true)
+        F,V,C = hemisphere(n,r; face_type=:quad, closed=true)
         @test F isa Vector{QuadFace{Int}}
         @test V isa Vector{Point{3,Float64}}
         @test length(F) == 24
         @test length(boundaryedges(F)) == 0
+        @test C isa Vector{Int}
+        @test sort(unique(C)) == [1,2]
 
         # Linear refinement open
         n = 2
-        F,V = hemisphere(n,r; face_type=:quad)
+        F,V,C = hemisphere(n,r; face_type=:quad)
         @test F isa Vector{QuadFace{Int}}
         @test V isa Vector{Point{3,Float64}}
         @test length(F) == 192
         @test length(boundaryedges(F)) == 32
-        
+        @test C isa Vector{Int}
+        @test sort(unique(C)) == [1]
+
         # Linear refinement closed
         n = 3
-        F,V = hemisphere(n,r; face_type=:quad, closed=true)
+        F,V,C = hemisphere(n,r; face_type=:quad, closed=true)
         @test F isa Vector{QuadFace{Int}}
         @test V isa Vector{Point{3,Float64}}
         @test length(F) == 1536
         @test length(boundaryedges(F)) == 0
+        @test C isa Vector{Int}
+        @test sort(unique(C)) == [1,2]
     end
     
 end
