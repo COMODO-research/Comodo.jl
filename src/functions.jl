@@ -65,7 +65,7 @@ left arrow keys, however, rather than stopping at the slider extrema, the
 sliders position will "wrap" back to the start when advancing beyond the end 
 position, and vice versa. 
 """
-function slidercontrol(hSlider::Slider,ax::Union{Axis3, Figure, LScene})    
+function slidercontrol(hSlider::Slider,ax::Union{GLMakie.Axis, GLMakie.Axis3, GLMakie.Figure, GLMakie.LScene})    
     sliderRange = hSlider.range[] # Get slider range
     rangeLength = length(sliderRange) # Number of possible steps 
     sliderIndex = hSlider.selected_index[] # Current slider index
