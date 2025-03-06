@@ -3,7 +3,7 @@ using Comodo.GLMakie
 using Comodo.GeometryBasics
 
 # Example geometry
-testCase = 4
+testCase = 9
 if testCase == 1
     s=1.0
     V=Vector{GeometryBasics.Point{3, Float64}}(undef,5)
@@ -96,12 +96,18 @@ elseif testCase==8 # Merged STL for single object
     V2 = map(v-> Point{3, Float64}(v[1],150+v[2],v[3]),deepcopy(V))
     append!(F,F2)
     append!(V,V2)
+elseif testCase==9
+    fileName_mesh = joinpath(comododir(),"assets","obj","lego_figure.obj")    
+    M = load(fileName_mesh)
+    F = tofaces(faces(M))
+    V = topoints(coordinates(M))    
 end
 
 C = meshgroup(F)
 numGroups = maximum(C)
 
-c = cgrad(:Spectral,numGroups,categorical = true)
+# c = cgrad(:Spectral,numGroups,categorical = true)
+c = Makie.Categorical(Makie.Reverse(:Spectral))
 
 Fn,Vn = separate_vertices(F,V)
 Cn = simplex2vertexdata(Fn,C,Vn)
