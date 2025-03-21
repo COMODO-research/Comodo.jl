@@ -5122,6 +5122,18 @@ end
     [4.188790204786391, -0.3333333333333335, 0.0], [4.71238898038469, -1.8369701987210297e-16, 0.0], 
     [5.235987755982988, 0.33333333333333315, 0.0], [5.759586531581287, 0.6666666666666665, 0.0], 
     [6.283185307179586, 1.0, 0.0]],atol=eps_level)
+
+    n = 3
+    Vn = subcurve(V,n; close_loop = true)
+    @test typeof(V) == typeof(Vn)
+    @test length(Vn) == length(V) + length(V)*n 
+
+    ind = round.(Int,range(1,length(Vn),6)) # Sample indices
+
+    @test isapprox(Vn[ind],Point{3, Float64}[[0.0, 1.0, 0.0], [1.5707963267948966, 6.123233995736766e-17, 0.0], 
+    [3.141592653589793, -1.0, 0.0], [4.319689898685965, -0.2500000000000001, 0.0], [5.890486225480862, 0.75, 0.0], 
+    [1.5707963267948966, 1.0, 0.0]],atol=eps_level)
+    
 end
 
 @testset "dualclad" verbose = true begin
@@ -6750,4 +6762,81 @@ end
     @test isa(V,Vector{Point{3,Float64}})    
     @test length(V) == n-length(indRemove)
     @test indFix[indMap] == indMapped
+end
+
+@testset "removepoints" verbose = true begin 
+    # Square
+    V = [Point{3,Float64}(-1.0,  1.0, 0.0), Point{3,Float64}( 1.0,  1.0, 0.0), 
+         Point{3,Float64}( 1.0, -1.0, 0.0), Point{3,Float64}(-1.0, -1.0, 0.0)]
+
+    p_in = Point{3,Float64}(0.0, 0.0, 0.0)
+    p_on = Point{3,Float64}(1.0, 0.0, 0.0)
+    p_out = Point{3,Float64}(2.0, 0.0, 0.0)
+    p_corner = V[1]
+    @test inpolygon(p_in,V) == 1
+    @test inpolygon(p_on,V) == 0
+    @test inpolygon(p_out,V) == -1
+    @test inpolygon(p_corner,V) == 0
+    
+    # Test other flag options 
+    # Strings
+    in_flag = "green"
+    on_flag = "blue"
+    out_flag = "red"
+    @test inpolygon(p_in,V; atol=1e-6, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) == "green"
+    @test inpolygon(p_on,V; atol=1e-6, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) == "blue"
+    @test inpolygon(p_out,V; atol=1e-6, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) == "red"
+    @test inpolygon(p_corner,V; atol=1e-6, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) == "blue"
+
+    # Symbols
+    in_flag = :in
+    on_flag = :on
+    out_flag = :out
+    @test inpolygon(p_in,V; atol=1e-6, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) == :in
+    @test inpolygon(p_on,V; atol=1e-6, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) == :on
+    @test inpolygon(p_out,V; atol=1e-6, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) == :out
+    @test inpolygon(p_corner,V; atol=1e-6, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) == :on
+
+    # Boolean
+    in_flag = true
+    on_flag = false
+    out_flag = false
+    @test inpolygon(p_in,V; atol=1e-6, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) == true
+    @test inpolygon(p_on,V; atol=1e-6, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) == false
+    @test inpolygon(p_out,V; atol=1e-6, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) == false
+    @test inpolygon(p_corner,V; atol=1e-6, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) == false
+
+    # Testing vector of points
+
+    # Create example points for a "bow-tie"
+    w = 0.1
+    V = [Point{3,Float64}(-w, 0.0, 0.0), Point{3,Float64}(-1-w, 1.0, 0.0), 
+        Point{3,Float64}(1+w, 1.0, 0.0), Point{3,Float64}(w, 0.0, 0.0),
+        Point{3,Float64}(1+w, -1.0, 0.0), Point{3,Float64}(-1-w, -1.0, 0.0)]
+
+    # Create query points on a simple grid which includes on edge and on vertex points
+    np=7
+    xRange = range(-1.0-w,1.0+w,np)
+    yRange = range(-1.0,1.0,np)
+    Vq = gridpoints(xRange, yRange,[0.0])
+        
+    # Add some co-linear on edge points 
+    Vq_add = [(0.25*V[i] + 0.75*V[i+1]) for i in 1:length(V)-1]
+    append!(Vq,Vq_add)
+    Vq_add = [(0.75*V[i] + 0.25*V[i+1]) for i in 1:length(V)-1]
+    append!(Vq,Vq_add)
+
+    # Add some co-linear off edge points
+    Vq_add = [(V[i] + 1.25*(V[i+1]-V[i])) for i in 1:length(V)-1]
+    append!(Vq,Vq_add)
+    Vq_add = [(V[i] - 0.25*(V[i+1]-V[i])) for i in 1:length(V)-1]
+    append!(Vq,Vq_add)
+
+    # Do the inpolygon check for all query points 
+    F = [inpolygon(p,V) for p in Vq]
+    @test F == [0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1]
+
+    # Check for invariance in terms of polygon reversal
+    F = [inpolygon(p,reverse(V)) for p in Vq]
+    @test F == [0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1]
 end

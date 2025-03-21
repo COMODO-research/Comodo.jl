@@ -19,20 +19,19 @@ const Truncatedocta24{T} = Element{24,T} where T<:Integer
 
 A struct featuring the connectivity data for a mesh.   
 """
-struct ConnectivitySet
+struct ConnectivitySet{N}
     edge_vertex::Vector{LineFace{Int}}
     edge_face::Vector{Vector{Int}}
     edge_edge::Vector{Vector{Int}}
-    face_vertex#::Vector{Vector{Int}} # Could be triangle/quad etc
-    face_edge::Vector{Vector{Int}}        
+    face_vertex::Vector{NgonFace{N,Int}}
+    face_edge::Vector{Vector{Int}}
     face_face::Vector{Vector{Int}}
     vertex_edge::Vector{Vector{Int}}
-    vertex_face::Vector{Vector{Int}}        
+    vertex_face::Vector{Vector{Int}}
     vertex_vertex::Vector{Vector{Int}}
     vertex_vertex_f::Vector{Vector{Int}}
     face_face_v::Vector{Vector{Int}}
-    ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) = new(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v) 
-end
+ end
 
 
 """
@@ -1414,12 +1413,8 @@ function topoints(VM::Matrix{T}) where T<: Real
     return [Point{m, T}(v) for v in eachrow(VM)]
 end
 
-function topoints(VM::Union{Array{Vec{N, T}, 1}, GeometryBasics.StructArray{TT,1} }) where TT <: AbstractPoint{N,T} where T <: Real where N   
-    if eltype(VM)<:PointMeta{N,T} where N where T<:Real               
-        return VM.position
-    else        
-        return [Point{N, T}(v) for v in VM]
-    end
+function topoints(VM::Array{Vec{N, T}, 1}) where T <: Real where N   
+    return [Point{N, T}(v) for v in VM]
 end
 
 function topoints(VM::Vector{Vector{T}}) where T <: Real    
@@ -4541,15 +4536,28 @@ Adds `n` points between each curve point.
 
 This function adds `n` points between each current point on the curve `V`.
 """
-function subcurve(V::Vector{Point{ND,TV}},n) where ND where TV<:Real
+function subcurve(V::Vector{Point{ND,TV}}, n; close_loop=false) where ND where TV<:Real    
     m = length(V)
-    Vn = Vector{Point{ND,TV}}(undef,m+(m-1)*n)    
-    for q = 1:lastindex(V)-1                
+    
+    if close_loop == true
+        Vn = Vector{Point{ND,TV}}(undef,m+m*n)    
+    else
+        Vn = Vector{Point{ND,TV}}(undef,m+(m-1)*n)    
+    end
+    
+    @inbounds for q = 1:lastindex(V)-1                
         vn = range(V[q],V[q+1],n+2)
         i1 = 1+(q-1)*(n+1)
         Vn[i1:i1+n] = vn[1:end-1]
     end
-    Vn[end] = V[end]
+
+    if close_loop == true
+        vn = range(V[end],V[1],n+2)
+        i1 = 1+(m-1)*(n+1)
+        Vn[i1:i1+n] = vn[1:end-1]
+    else
+        Vn[end] = V[end]
+    end
     return Vn
 end
 
@@ -4717,6 +4725,16 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
             F[ii+1] = TriangleFace{T}(e[1],e[2],e[4])
             F[ii+2] = TriangleFace{T}(e[2],e[3],e[4])
             F[ii+3] = TriangleFace{T}(e[3],e[1],e[4])
+        end
+    elseif element_type <: Tet10{T}
+        nf = 4        
+        F = Vector{NgonFace{6,Int}}(undef,length(E)*nf)
+        for (i,e) in enumerate(E)
+            ii = 1 + (i-1)*nf 
+            F[ii  ] = NgonFace{6,Int}(e[3],e[6],e[2],e[5 ],e[1],e[7 ])
+            F[ii+1] = NgonFace{6,Int}(e[1],e[5],e[2],e[9 ],e[4],e[8 ])
+            F[ii+2] = NgonFace{6,Int}(e[2],e[6],e[3],e[10],e[4],e[9 ])
+            F[ii+3] = NgonFace{6,Int}(e[3],e[7],e[1],e[8 ],e[4],e[10])
         end
     elseif element_type <: Hex8{T}
         nf = 6
@@ -6514,4 +6532,95 @@ function removepoints(V,indRemove)
     indFix[indKeep] .= 1:length(indKeep)
     V = V[indKeep]    
     return V,indFix
+end
+
+"""
+    inpolygon(p::Point{M,T}, V::Vector{Point{N,T}}; atol = sqrt(eps(T))) where N where M where T<:Real    
+    inpolygon(P::Vector{Point{M,T}}, V::Vector{Point{N,T}}; atol = sqrt(eps(T))) where N where M where T<:Real
+
+Finds points in/on/out of polygon
+
+# Description 
+This function is an improved version of the algorithm proposed by Hao et al. [1]
+for determining if the input points `P` are inside the polygon defined by the 
+input `V`. For a single point the output is a single integer which is: 
+* -1 if the point is computed to be outside of the polygon
+*  0 if the point is computed to be on the boundary of the polygon
+*  1 if the point is computed to be inside the boundary
+If the input is instead a vector of points then the output consists of a 
+corresponding vector of such integers. 
+This implementation differs from [1] in terms of the use of `atol` for 
+approximate equivalance. This helps in more robust labelling of "on polygon" 
+points.  
+
+# References
+1. https://doi.org/10.3390/sym10100477
+"""
+function inpolygon(p::Point{M,T}, V::Vector{Point{N,T}}; atol = sqrt(eps(T)), in_flag::TP=1, on_flag::TP=0, out_flag::TP=-1) where {TP} where N where M where T<:Real    
+    k = 0
+    xₚ = p[1]
+    yₚ = p[2]    
+    j = length(V)
+    Ø = zero(T)
+    for i in 1:1:length(V) # Looping over edges
+        Δyᵢ = V[i][2] - yₚ # Point i y distance from p
+        Δyⱼ = V[j][2] - yₚ # Point j y distance from p 
+        isneg_Δyᵢ = Δyᵢ <= -atol # Point i significantly under p
+        isneg_Δyⱼ = Δyⱼ <= -atol # Point j significantly under p       
+        ispos_Δyᵢ = Δyᵢ >   atol # Point i significantly above p
+        ispos_Δyⱼ = Δyⱼ >   atol # Point j significantly above p                       
+        if ((isneg_Δyᵢ && isneg_Δyⱼ) || (ispos_Δyᵢ && ispos_Δyⱼ)) # Case 11 or 26 
+            # edge is fully above or fully below
+            j=i 
+            continue
+        end
+        Δxᵢ = V[i][1] - xₚ # Point i x distance from p
+        Δxⱼ = V[j][1] - xₚ # Point j x distance from p       
+        if (isapprox(Δxᵢ,Ø,atol=atol) && isapprox(Δyᵢ,Ø,atol=atol)) || (isapprox(Δxⱼ,Ø,atol=atol) && isapprox(Δyⱼ,Ø,atol=atol))
+            return on_flag
+        end
+
+        a = (Δxᵢ * Δyⱼ) - (Δxⱼ * Δyᵢ) # Edge cross product -> paralellogram area
+        if ispos_Δyⱼ && isneg_Δyᵢ # Case 3, 9, 16, 21, 13, 24            
+            if a > atol # Case 3 or 9
+                k += 1
+            elseif isapprox(a,Ø,atol=atol) # Case 16 or 21
+                return on_flag 
+            # else case 13 or 24
+            end
+        elseif ispos_Δyᵢ && isneg_Δyⱼ # Case 4, 10, 19, 20, 12, or 25            
+            if a < -atol # Case 4 or 10 
+                k += 1
+            elseif isapprox(a,Ø,atol=atol) # Case 19 or 20
+                return on_flag 
+            # else case 12 or 25
+            end
+        elseif (isapprox(Δyⱼ,Ø,atol=atol) && Δyᵢ < -atol) # Case 7, 14, or 17            
+            if a > atol #&& !((Δxⱼ <= -atol && Δxᵢ >= atol) || (Δxᵢ <= -atol && Δxⱼ >= atol))
+                k += 1
+            elseif isapprox(a,Ø,atol=atol) # Case 17
+                return on_flag             
+            end   
+        elseif (isapprox(Δyᵢ,Ø,atol=atol) && Δyⱼ < -atol) # Case 8, 15, or 18                           
+            if a < -atol #&& !((Δxⱼ <= -atol && Δxᵢ >= atol) || (Δxᵢ <= -atol && Δxⱼ >= atol))
+                k += 1
+            elseif isapprox(a,Ø,atol=atol) # Case 18
+                return on_flag             
+            end
+        elseif isapprox(Δyᵢ,Ø,atol=atol) && isapprox(Δyⱼ,Ø,atol=atol) # Case 1, 2, 5, 6, 22, or 23                                       
+            if (Δxⱼ <= -atol && Δxᵢ >= atol) # Case 1
+                return on_flag
+            elseif (Δxᵢ <= -atol && Δxⱼ >= atol) # Case 2
+                return on_flag
+                # else case 5, 6, 22, 23
+            end
+        end        
+        j = i
+    end
+    iszero(k % 2) && return out_flag
+    return in_flag
+end
+
+function inpolygon(P::Vector{Point{M,T}}, V::Vector{Point{N,T}}; atol = sqrt(eps(T)), in_flag::TP=1, on_flag::TP=0, out_flag::TP=-1) where {TP} where N where M where T<:Real
+    return [inpolygon(p,V; atol = atol, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) for p in P]
 end
