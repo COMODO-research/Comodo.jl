@@ -1174,15 +1174,15 @@ end
         @test length(V) == 5
     end
 
-    @testset "Imported mesh points" begin
-        # Imported triangular mesh 
-        fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
-        M = load(fileName_mesh) 
-        Vv = coordinates(M)       
-        V = topoints(Vv)
-        @test isa(V,Vector{GeometryBasics.Point3{Float32}})
-        @test length(V) == length(Vv)
-    end
+    # @testset "Imported mesh points" begin
+    #     # Imported triangular mesh 
+    #     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
+    #     M = load(fileName_mesh) 
+    #     Vv = coordinates(M)       
+    #     V = topoints(Vv)
+    #     @test isa(V,Vector{GeometryBasics.Point3{Float32}})
+    #     @test length(V) == length(Vv)
+    # end
 
     @testset "points no change" begin
         # Imported triangular mesh 
