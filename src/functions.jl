@@ -1426,6 +1426,11 @@ function topoints(VM::Vector{Point{ND,TV}}) where ND where TV <: Real
     return VM
 end
 
+#TEMP FIX
+function topoints(VM)
+    [Point{3,Float64}(v) for v in coordinates(VM)]
+end
+
 """
     togeometrybasics_mesh
 

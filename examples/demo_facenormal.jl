@@ -3,7 +3,7 @@ using Comodo.GLMakie
 using Comodo.GeometryBasics
 
 #=
-This demo shows the use of the `meshnormal` function to obtain mesh face normal
+This demo shows the use of the `facenormal` function to obtain mesh face normal
 directions. The demo shows visualisations for a triangular, quadrilateral, and 
 a pentagonal mesh. 
 =#

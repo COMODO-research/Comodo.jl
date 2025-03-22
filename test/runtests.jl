@@ -2265,7 +2265,7 @@ end
         
         C = meshconnectivity(F,V)
 
-        @test typeof(C) == ConnectivitySet
+        @test typeof(C) == ConnectivitySet{3}
         @test C.edge_vertex == E_uni
         @test C.edge_face == con_E2F
         @test C.edge_edge == con_E2E
@@ -2315,7 +2315,7 @@ end
 
         C = meshconnectivity(F,V)
 
-        @test typeof(C) == ConnectivitySet
+        @test typeof(C) == ConnectivitySet{4}
         @test C.edge_vertex == E_uni
         @test C.edge_face == con_E2F
         @test C.edge_edge == con_E2E
@@ -2365,7 +2365,7 @@ end
 
         C = meshconnectivity(F,V)
 
-        @test typeof(C) == ConnectivitySet
+        @test typeof(C) == ConnectivitySet{3}
         @test C.edge_vertex == E_uni
         @test C.edge_face == con_E2F
         @test C.edge_edge == con_E2E
@@ -2415,7 +2415,7 @@ end
 
         C = meshconnectivity(F,V)
 
-        @test typeof(C) == ConnectivitySet
+        @test typeof(C) == ConnectivitySet{4}
         @test C.edge_vertex == E_uni
         @test C.edge_face == con_E2F
         @test C.edge_edge == con_E2E
@@ -3470,24 +3470,17 @@ end
         fileName_mesh = joinpath(comododir(),"assets","obj","spot_control_mesh.obj")
         Mn = load(fileName_mesh)   
         F = tofaces(faces(Mn))
-        V = topoints(coordinates(Mn))
+        V = [Point{3,Float64}(v) for v in coordinates(Mn)]
 
         hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float32, Line{3, Float32}, SimpleFaceView{3, Float32, 2, Int, Point3{Float32}, LineFace{Int}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point{3, Float64}, LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(V)
 
         hp1 =  normalplot(ax,Mn; type_flag=:face)
         Mp = hp1[1].val
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float32, Line{3, Float32}, SimpleFaceView{3, Float32, 2, Int, Point3{Float32}, LineFace{Int}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point{3, Float64}, LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(F)
-
-        # Not supported yet
-        # hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
-        # Mp = hp1[1].val
-        # @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
-        # @test length(faces(Mp)) == length(V)
-
     end
 end
 
@@ -5429,8 +5422,22 @@ end
         @test F[2][1] == [2,3,13,16]
     end
 
+    @testset "Tet10" begin
+        E = [Tet10{Int}(1,2,3,4,5,6,7,8,9,10)]    
+        F = element2faces(E)
+        @test length(F) == length(E)*4
+        @test isa(F,Vector{NgonFace{6, Int}})
+        @test F[1] == [3, 6, 2, 5, 1, 7]
+
+        E = [Tet10{Int}(collect(1:10)), Tet10{Int}(collect(11:20)) ]    
+        F = element2faces(E)
+        @test length(F) == length(E)*4
+        @test isa(F,Vector{NgonFace{6, Int}})
+        @test F[1] == [3, 6, 2, 5, 1, 7]
+    end
+
     @testset "errors" begin
-        E = [Tet10{Int}(1,2,3,4,5,6,7,8,9,10)]                
+        E = [Hex20{Int}(collect(1:20))]                
         @test_throws Exception element2faces(E)
     end
 
