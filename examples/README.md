@@ -1,6 +1,6 @@
 # Example Checker
 
-This Julia scripts runs examples in the current folder and reports any errors. 
+This Julia script runs examples in the current folder and reports any errors. 
 
 ## Usage
 
