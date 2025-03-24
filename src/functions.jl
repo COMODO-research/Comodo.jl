@@ -6335,7 +6335,7 @@ Constructs isosurface geometry
 This function creates the triangular faces `F` and vertices `V` for an 
 isosurface in the 3D image `A` of the level specified by `level`. 
 """
-function getisosurface(A; level=0.0, cap=false, padValue=nothing, x::Union{AbstractVector{T},Nothing}=nothing, y::Union{AbstractVector{T},Nothing}, z::Union{AbstractVector{T},Nothing}) where T<:Real  
+function getisosurface(A; level=0.0, cap=false, padValue=nothing, x::Union{AbstractVector{T},Nothing}=nothing, y::Union{AbstractVector{T},Nothing}=x, z::Union{AbstractVector{T},Nothing}=x) where T<:Real  
     if cap                
         # Get/determine padValue  
         if isnothing(padValue)
@@ -6603,14 +6603,14 @@ function inpolygon(p::Point{M,T}, V::Vector{Point{N,T}}; atol = sqrt(eps(T)), in
         elseif (isapprox(Δyⱼ,Ø,atol=atol) && Δyᵢ < -atol) # Case 7, 14, or 17            
             if a > atol #&& !((Δxⱼ <= -atol && Δxᵢ >= atol) || (Δxᵢ <= -atol && Δxⱼ >= atol))
                 k += 1
-            elseif isapprox(a,Ø,atol=atol) # Case 17
-                return on_flag             
+            # elseif isapprox(a,Ø,atol=atol) # Case 17 -> only for point on vertex, handled already
+            #     return on_flag             
             end   
         elseif (isapprox(Δyᵢ,Ø,atol=atol) && Δyⱼ < -atol) # Case 8, 15, or 18                           
             if a < -atol #&& !((Δxⱼ <= -atol && Δxᵢ >= atol) || (Δxᵢ <= -atol && Δxⱼ >= atol))
                 k += 1
-            elseif isapprox(a,Ø,atol=atol) # Case 18
-                return on_flag             
+            # elseif isapprox(a,Ø,atol=atol) # Case 18 -> only for point on vertex, handled already
+            #     return on_flag             
             end
         elseif isapprox(Δyᵢ,Ø,atol=atol) && isapprox(Δyⱼ,Ø,atol=atol) # Case 1, 2, 5, 6, 22, or 23                                       
             if (Δxⱼ <= -atol && Δxᵢ >= atol) # Case 1

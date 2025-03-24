@@ -3413,9 +3413,9 @@ end
     end
 
     @testset "Styles" begin
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
-        @test typeof(hp2) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
-        @test typeof(hp3) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}        
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
+        @test typeof(hp2) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
+        @test typeof(hp3) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(V)
     end
 
@@ -3431,9 +3431,9 @@ end
         hp2 = dirplot(ax,P,N; color=:blue,linewidth=3,scaleval=1.0,style=:to)
         hp3 = dirplot(ax,P,N; color=:blue,linewidth=3,scaleval=1.0,style=:through)
 
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
-        @test typeof(hp2) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
-        @test typeof(hp3) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
+        @test typeof(hp2) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
+        @test typeof(hp3) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
         @test_throws ArgumentError dirplot(ax,P,N; color=:blue,linewidth=3,scaleval=1.0,style=:wrong)
     end
 end
@@ -3454,17 +3454,17 @@ end
     @testset "type_flag options" begin
         hp1 =  normalplot(ax,F,V; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(F)
 
         hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(V)
 
         hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int, Point3{Float64}, LineFace{Int}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(V)
 
         fileName_mesh = joinpath(comododir(),"assets","obj","spot_control_mesh.obj")
@@ -3474,16 +3474,15 @@ end
 
         hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
         Mp = hp1[1].val
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point{3, Float64}, LineFace{Int64}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(V)
 
         hp1 =  normalplot(ax,Mn; type_flag=:face)
         Mp = hp1[1].val
-        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, Line{3, Float64}, SimpleFaceView{3, Float64, 2, Int64, Point{3, Float64}, LineFace{Int64}}}}}
+        @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float32, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float32}}}, Vector{LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(F)
     end
 end
-
 
 @testset "edgeangles" begin
     eps_level = 1e-4
@@ -6646,10 +6645,6 @@ end
     nSteps = 75
     xr,yr,zr = ntuple(_->range(-1.0,1.0,nSteps),3)
     A = [norm((x,y,z)) for x in xr, y in yr, z in zr]
-    
-    # xr = collect(xr)
-    # yr = collect(yr)
-    # zr = collect(zr)
 
     # Get isosurface of sphere
     level = 0.5
@@ -6679,6 +6674,18 @@ end
     cap = true
     F,V = getisosurface(A; x = xr, y = yr, z = zr, level = level, cap = cap, padValue=1e8)            
     @test length(boundaryedges(F)) == 0 # Is merged/closed due to caps
+
+    # Get isosurface with caps and no padValue supplied
+    level = 1.25 # Large level=radius such that sphere is too big for domain
+    cap = true
+    F,V = getisosurface(A; x = xr, y = yr, z = zr, level = level, cap = cap, padValue=nothing)            
+    @test length(boundaryedges(F)) == 0 # Is merged/closed due to caps
+    
+    F,V = getisosurface(A; level = level, cap = cap)
+    @test length(boundaryedges(F)) == 0 # Is merged/closed due to caps
+
+    F,V = getisosurface(A; level = level, cap = false)
+    @test length(boundaryedges(F)) > 0 # Is not merged/closed
 end
 
 
@@ -6839,11 +6846,26 @@ end
     Vq_add = [(V[i] - 0.25*(V[i+1]-V[i])) for i in 1:length(V)-1]
     append!(Vq,Vq_add)
 
+    # Add offset points (same y-direction)
+    Vq_add = [v.+Point{3,Float64}(-0.5, 0.0, 0.0) for v in V]
+    append!(Vq,Vq_add)
+    Vq_add = [v.+Point{3,Float64}( 0.5, 0.0, 0.0) for v in V]
+    append!(Vq,Vq_add)
+
+    #Add copy of polygon points (fully same coordinates)
+    append!(Vq,deepcopy(V))
+
     # Do the inpolygon check for all query points 
     F = [inpolygon(p,V) for p in Vq]
-    @test F == [0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1]
+    @test F == [0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, -1, 0, -1, 0, -1, -1, 0, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0]
 
     # Check for invariance in terms of polygon reversal
     F = [inpolygon(p,reverse(V)) for p in Vq]
-    @test F == [0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1]
+    @test F == [0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, -1, 0, -1, 0, -1, -1, 0, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0]
+
+    # With options
+    F = [inpolygon(p,V; atol=1e-6, in_flag=1, on_flag=0, out_flag=-1) for p in Vq]
+    @test F == [0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, -1, 0, -1, 0, -1, -1, 0, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0]
+
+
 end

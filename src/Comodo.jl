@@ -16,7 +16,7 @@ using LinearAlgebra: cross, norm, dot, eigen, svd, det, LinearAlgebra
 using GeometryBasics: LineFace, Point, NgonFace, 
                       OffsetInteger, AbstractPoint, Vec, 
                       QuadFace, TriangleFace, faces, 
-											PointMeta, coordinates, Vec3, GeometryBasics
+											coordinates, Vec3, GeometryBasics
 
 include("functions.jl")
 
@@ -69,8 +69,7 @@ export squircle, circlerange, edgefaceangles, faceanglesegment, eulerchar
 export rhombicdodecahedronfoam, kelvinfoam, truncatedoctahedron, ntrapezohedron, hexagonaltrapezohedron #, tetrakaidecahedron
 export mag, indexmap!, indexmap, minp, maxp, spacing2numvertices
 export joingeom, quadbox, tribox, tetbox, pad3, getisosurface 
-export randangle, stepfunc, perlin_noise, removepoints
-export inpolygon
+export randangle, stepfunc, perlin_noise, removepoints, inpolygon
 
 # Export functions: Visualization related
 export slidercontrol, slider2anim, dirplot, normalplot

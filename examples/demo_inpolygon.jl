@@ -4,7 +4,7 @@ using Comodo.GeometryBasics
 using Comodo.LinearAlgebra
 using Comodo.DelaunayTriangulation
 
-testCase = 1
+testCase = 2
 
 if testCase == 1    
     w = 0.1
@@ -21,6 +21,7 @@ elseif testCase == 2
     V = [Point{3,Float64}(-w, 0.0, 0.0), Point{3,Float64}(-1-w, 1.0, 0.0), 
          Point{3,Float64}(1+w, 1.0, 0.0), Point{3,Float64}(w, 0.0, 0.0),
          Point{3,Float64}(1+w, -1.0, 0.0), Point{3,Float64}(-1-w, -1.0, 0.0)]#circlepoints(1.0,4; dir=:acw)
+    n = 3
     V = subcurve(V,n; close_loop = true) 
     np = 7  
     Vq = 0.5.* randn(Point{2,Float64},500)    
