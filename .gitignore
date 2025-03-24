@@ -11,6 +11,7 @@ assets/temp
 Manifest.toml
 ./test/Manifest.toml
 ./docs/Manifest.toml
+./examples/Manifest.toml
 
 # Code Coverage Files
 ./*.cov
