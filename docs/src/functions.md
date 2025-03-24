@@ -500,9 +500,6 @@ Comodo.tribox
 ```@docs 
 Comodo.tetbox
 ```
-, getisosurface
-
-export randangle, stepfunc, perlin\_noise
 
 ## `pad3`
 ```@docs 
@@ -527,4 +524,14 @@ Comodo.stepfunc
 ## `perlin_noise`
 ```@docs 
 Comodo.perlin_noise
+```
+
+## `removepoints`
+```@docs 
+Comodo.removepoints
+```
+
+## `inpolygon`
+```@docs 
+Comodo.inpolygon
 ```
