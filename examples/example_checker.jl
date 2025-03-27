@@ -1,8 +1,9 @@
 module ExampleChecker
 
 function load_and_run!(filename::String, problems::Vector{String})::Bool
-    cmdline = "using Pkg; Pkg.activate(\"./..\"); include(\"$filename\")"
-    command = `julia -e $cmdline`
+    #cmdline = "using Pkg; Pkg.activate(\"./..\"); include(\"$filename\")"
+		cmdline = "using Pkg; Pkg.activate(\".\"); Pkg.instantiate(); include(\"$filename\")"
+    command = `julia --project=. -e $cmdline`
     try
         result =  run(command)
         if result.exitcode != 0
