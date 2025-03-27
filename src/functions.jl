@@ -42,7 +42,7 @@ struct ConnectivitySet{N}
 This function simply returns the string for the Comodo path. This is helpful for instance to load items, such as meshes, from the `assets`` folder. 
 """
 function comododir()
-    joinpath(@__DIR__, "..")
+    pkgdir(@__MODULE__)
 end
 
 
