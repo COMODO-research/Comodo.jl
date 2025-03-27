@@ -6530,6 +6530,17 @@ function perlin_noise(size_grid, sampleFactor; type=:Perlin)
     return M
 end
 
+"""
+    removepoints(V,indRemove)
+
+Removes listed points
+
+# Description 
+This function removes the points `indRemove` from the point vector `V`. The 
+output contains a vector lacking these points, as well as `indFix`, a vector of
+indices that can be used to update indices from before the point removal to 
+equivalent indices after point removal. 
+"""
 function removepoints(V,indRemove)
     n = length(V)        
     indFix = zeros(Int,n)
