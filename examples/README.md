@@ -8,12 +8,7 @@ Start Julia in the current folder with the project file.
 
 ```shell
 shell> cd examples
-shell> julia --project=.
+shell> julia example_checker.jl
 ```
 
-In Julia, just run the script using
-
-```julia
-julia> include("example_checker.jl")
-```
 
