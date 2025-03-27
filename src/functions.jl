@@ -134,7 +134,18 @@ Hence any suitable vector containing vectors of numbers permitted by
 `reduce(vcat,F)` is supported. 
 """
 function elements2indices(F)
-    return unique(reduce(vcat,F))
+    if isempty(F)
+        return Set{eltype(eltype(F))}()
+    else
+        f = first(F)
+        S = Set{eltype(f)}()
+        for f in F 
+            for j in f 
+                push!(S, j)
+            end
+        end
+        return S 
+    end
 end
 
 """
