@@ -1,6 +1,7 @@
 using Comodo
 using Comodo.GLMakie
 using Comodo.GeometryBasics
+using FileIO
 
 # Example geometry
 testCase = 9
@@ -64,7 +65,6 @@ elseif testCase==5
     end
 elseif testCase==6 # Unmerged STL, each triangle is seperate group
     # Loading a mesh
-    using FileIO
     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
     M = load(fileName_mesh)
 
@@ -73,7 +73,6 @@ elseif testCase==6 # Unmerged STL, each triangle is seperate group
     V = topoints(coordinates(M))
 elseif testCase==7 # Merged STL for single object
     # Loading a mesh
-    using FileIO
     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
     M = load(fileName_mesh)
 
@@ -83,7 +82,6 @@ elseif testCase==7 # Merged STL for single object
     F,V,_ = mergevertices(F,V)
 elseif testCase==8 # Merged STL for single object
     # Loading a mesh
-    using FileIO
     fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")
     M = load(fileName_mesh)
 
