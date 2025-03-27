@@ -89,7 +89,10 @@ end
         @test V == Point3{Float64}[[1.0, 1.0, 0.0], [2.0, 1.0, 0.0], 
         [1.0, 2.0, 0.0], [2.0, 2.0, 0.0], [1.0, 1.0, 0.375], 
         [2.0, 1.0, 0.375], [1.0, 2.0, 0.375], [2.0, 2.0, 0.375],
-         [1.0, 1.0, 0.75], [2.0, 1.0, 0.75], [1.0, 2.0, 0.75], [2.0, 2.0, 0.75]]      
+         [1.0, 1.0, 0.75], [2.0, 1.0, 0.75], [1.0, 2.0, 0.75], [2.0, 2.0, 0.75]] 
+         
+         @inferred V[1]
+         @test typeof(V) <: AbstractVector{Point3{Float64}}
     end
 
     @testset "with 1 vector" begin
@@ -155,6 +158,14 @@ end
 
         @test allequal([result1, result2, result3])
     end
+
+    @testset "Empty input" begin
+        a = Float64[]
+        result = gridpoints(a)
+        @test result == Point3{Float64}[]
+    end
+
+        
 end
 
 

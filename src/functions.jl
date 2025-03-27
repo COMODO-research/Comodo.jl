@@ -148,6 +148,24 @@ function elements2indices(F)
     end
 end
 
+struct Grid3D{T, X, Y, Z} <: AbstractVector{Point{3, T}}
+    x::X
+    y::Y
+    z::Z
+    function Grid3D(x::X, y::Y, z::Z) where {X, Y, Z}
+        T = promote_type(eltype(x), eltype(y), eltype(z))
+        return new{T, X, Y, Z}(x, y, z)
+    end
+end
+Base.length(g::Grid3D) = length(g.x) * length(g.y) * length(g.z)
+Base.size(g::Grid3D) = (length(g),)
+function Base.getindex(g::Grid3D{T}, i::Int) where {T}
+    nx, ny, nz = length(g.x), length(g.y), length(g.z)
+    idx = CartesianIndices((1:nx, 1:ny, 1:nz))
+    ix, iy, iz = Tuple(idx[i])
+    return Point{3, T}(g.x[ix], g.y[iy], g.z[iz])
+end
+
 """
     gridpoints(x::Vector{T}, y=x, z=x) where T<:Real
 
@@ -159,20 +177,8 @@ The `gridpoints` function returns a vector of 3D points which span a grid in 3D
 space. Points are defined as per the input ranges or range vectors. The output 
 point vector contains elements of the type `Point`. 
 """
-function gridpoints(x::Union{Vector{T}, AbstractRange{T}}, y=x, z=x) where T<:Real
-    # reshape([Point{3, Float64}(x, y, z) for x in x, y in y, z in z],length(x)*length(y)*length(z)) # Features more allocations    
-    V = Vector{Point{3,Float64}}(undef,length(x)*length(y)*length(z)) # Allocate point vector 
-    c = 1 # Initiate linear index into V
-    # Create grid with point order x->y->z (important for related meshing functions which assume this order)
-    @inbounds for z in z  
-        @inbounds for y in y
-            @inbounds for x in x                           
-                V[c] = Point{3,Float64}(x,y,z)
-                c += 1 
-            end
-        end
-    end
-    return V
+function gridpoints(x, y=x, z=x) 
+    return Grid3D(x, y, z)
 end  
 
 """
