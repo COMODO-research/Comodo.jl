@@ -16,3 +16,5 @@ Manifest.toml
 # Code Coverage Files
 ./*.cov
 ./test/*.cov
+
+tmpcl.txt

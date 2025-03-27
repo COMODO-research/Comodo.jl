@@ -207,7 +207,7 @@ flat such that all x-coordinates on the left are at the minimum in `xSpan` and
 all on the right are at the maximum in `xSpan`, however, this does result in a 
 non-uniform spacing at these edges.  
 """
-function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Union{Vector{TT},Tuple{TT,TT}},pointSpacing::T; return_faces = false, rectangular=false, force_equilateral=false) where T <: Real where TT <: Real
+function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Union{Vector{TT},Tuple{TT,TT}},pointSpacing::T; return_faces::Val{B1} = Val(false), rectangular::Val{B2}=Val(false), force_equilateral::Val{B3}=Val(false)) where {T<:Real, TT<:Real, B1, B2, B3}
     minX = minimum(xSpan)
     maxX = maximum(xSpan)
     minY = minimum(ySpan)
@@ -221,7 +221,7 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
     
     # Set up y-range
     pointSpacing_Y = pointSpacingReal_X.*0.5*sqrt(3) # Point spacing adjusted for equilateral triangles
-    if force_equilateral # Perfect equilateral grid needed, does not conform to span        
+    if B3 # Perfect equilateral grid needed, does not conform to span        
         yRange = minY:pointSpacing_Y:maxY
     else # Approximate grid, conforms to span
         wy = maxY - minY        
@@ -240,7 +240,7 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
             else
                 x = xRange[i]-sx
             end                    
-            if rectangular
+            if B2
                 if isone(i)
                     x = minX
                 elseif i == nx
@@ -253,8 +253,8 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
     end
 
     # Creat output, including faces if requested
-    if return_faces 
-        plateElem=[length(xRange)-1,length(yRange)-1]
+    if B1
+        plateElem=(length(xRange)-1,length(yRange)-1)
         F = Vector{TriangleFace{Int}}(undef,prod(plateElem)*2)
         num_x = length(xRange)
         ij2ind(i,j) = i + ((j-1)*num_x) # function to convert subscript to linear indices    

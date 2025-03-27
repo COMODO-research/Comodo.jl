@@ -176,7 +176,8 @@ end
         xSpan = [-3,3]
         ySpan = [-2,2]
         pointSpacing = 0.5
-        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular=false, force_equilateral=true)
+        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(false), rectangular=Val(false), force_equilateral=Val(true))
+        @inferred gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(false), rectangular=Val(false), force_equilateral=Val(true))
         ind = round.(Int,range(1,length(V),10))
         
         @test isa(V,Vector{Point{3,Float64}})
@@ -195,7 +196,8 @@ end
         xSpan = [-3,3]
         ySpan = [-2,2]
         pointSpacing = 0.5
-        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular = true, force_equilateral = false)
+        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(false), rectangular = Val(true), force_equilateral = Val(false))
+        @inferred gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(false), rectangular=Val(true), force_equilateral=Val(false))
         ind = round.(Int,range(1,length(V),10))
         
         @test isa(V,Vector{Point{3,Float64}})
@@ -208,7 +210,8 @@ end
         xSpan = (-3,3)
         ySpan = (-2,2)
         pointSpacing = 1
-        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular = true, force_equilateral = true)
+        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(false), rectangular = Val(true), force_equilateral = Val(true))
+        @inferred gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(false), rectangular=Val(true), force_equilateral = Val(true))
         ind = round.(Int,range(1,length(V),10))
 
         @test isa(V,Vector{Point{3,Float64}})
@@ -228,7 +231,8 @@ end
         xSpan = (-3,3)
         ySpan = (-2,2)
         pointSpacing = 1
-        F,V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = true, rectangular = true, force_equilateral = true)
+        F,V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(true), rectangular = Val(true), force_equilateral = Val(true))
+        @inferred gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(true), rectangular=Val(true), force_equilateral = Val(true))
         ind = round.(Int,range(1,length(V),10))
         indF = round.(Int,range(1,length(F),10))
 
