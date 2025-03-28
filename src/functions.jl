@@ -366,7 +366,6 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
         Ll = xi.>x[end] # Boolean for points after the end
         # TODO: Optimise to remove need for masks
         if any(_x -> _x < x[1] || _x > x[end], xi) # If any points outside of the range were encountered
-            @show 2
             yi = similar(xi) # Initialise yi 
             copyto!(yi, xi)
             replace!(_x -> _x < x[1] ? yy[1] : _x > x[end] ? yy[end] : _x, yi) 
