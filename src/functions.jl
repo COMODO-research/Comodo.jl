@@ -300,13 +300,13 @@ vector or a range.
 function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union{Vector{T}, AbstractRange{T}},xi::Union{Vector{T}, AbstractRange{T}}; extrapolate_method=:linear,pad_data=:linear) where T<:Real
 
     # Pad data if needed
-    if isa(x,AbstractRange{T})
+    if x isa AbstractRange
         xx = collect(x)
     else
         xx = deepcopy(x)
     end
 
-    if isa(y,AbstractRange{T})
+    if y isa AbstractRange
         yy = collect(y)
     else
         yy = deepcopy(y)
@@ -352,9 +352,10 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
     if extrapolate_method==:linear
         # Simple data based linear extrapolation 
         L = [xii<x[1] || xii>x[end] for xii in xi] # Boolean for points to extrapolate for
+        # TODO: Optimise to remove need for masks
         if any(L) # If any points outside of the range were encountered
-            yi = Vector{Float64}(undef,length(xi)) # Initialise yi
-            yi[L] = lerp(xx,yy,xi[L]) # Linearly extrapolate outside of the input range
+            yi = similar(xi) # Initialise yi
+            yi[L] .= lerp.((xx,),(yy,),xi[L]) # Linearly extrapolate outside of the input range
             yi[.!L] = interp_biharmonic(xx,yy,xi[.!L]) # Use biharmonic interpolation for points within range
         else # Nothing to extrapolate
             yi = interp_biharmonic(xx,yy,xi)
@@ -363,14 +364,11 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
         # Simple constant extrapolation (last/first value is repeated indefinately)
         Ls = xi.<x[1] # Boolean for points preceeding the start
         Ll = xi.>x[end] # Boolean for points after the end
-        if any(Ls .|| Ll) # If any points outside of the range were encountered
-            yi = Vector{Float64}(undef,length(xi)) # Initialise yi
-            if any(Ls) # If any before start were found 
-                yi[Ls] .= yy[1] # Just copy the start for these
-            end
-            if any(Ll) # If any after the end were found
-                yi[Ll] .= yy[end] # Just copy the end for these
-            end
+        # TODO: Optimise to remove need for masks
+        if any(x -> x < x[1] || x > x[end], xi) # If any points outside of the range were encountered
+            yi = similar(xi) # Initialise yi 
+            replace!(x -> x < x[1] ? yy[1] : x > x[end] ? yy[end] : x, xi) 
+
             L = .!Ls .&& .!Ll # Boolean for points to interpolate using biharmonic interpolation
             yi[L] = interp_biharmonic(xx,yy,xi[L]) # Use biharmonic interpolation for points within range
         else # Nothing to extrapolate
@@ -408,13 +406,13 @@ function interp_biharmonic(x,y,xi)
     # Determine weights for interpolation
     g = (Dxx.^2) .* (log.(Dxx).-1.0)   # Green's function.
     g[1:size(g,1)+1:length(g)] .= 0.0 # Fix values along diagonal
-    g[isnan.(g)] .= 0.0 # Replace NaN entries by zeros 
+    replace!(x -> isnan(x) ? zero(x) : x, g) # Replace NaN entries by zeros
     W = g \ y # Weights  
 
     D = dist(xi,x) # Distance between points in X and XI
 
     G = (D.^2).*(log.(D).-1.0) # Green's function.
-    G[isnan.(G)] .= 0.0 # Replace NaN entries by zeros
+    replace!(x -> isnan(x) ? zero(x) : x, G) # Replace NaN entries by zeros
     return G * W
 end
 
@@ -461,38 +459,20 @@ Linear interpolation
 # Description 
 
 This linearly interpolates (lerps) the input data specified by the sites `x` and 
-data `y` at the specified sites `xi`. 
+data `y` at the specified site `xi`. 
 """
-function lerp(x::Union{T,Vector{T}, AbstractRange{T}},y,xi::Union{T,Vector{T}, AbstractRange{T}}) where T <: Real
-    # Check if the lengths of x and y are the same
-    if length(x)!=length(y)
-        throw(DimensionMismatch("The number of sites in x should match the number of data entries in y"))
-    end
-
-    if length(xi)==1 # Single site provided
-        yi = lerp_(x,y,xi)
-    else # Loop over all data sites
-        yi = Vector{eltype(y)}(undef,length(xi))
-        for q in eachindex(xi)
-            yi[q] = lerp_(x,y,xi[q])
-        end
-    end 
-    return yi
-end
-
-function lerp_(x::Union{T,Vector{T}, AbstractRange{T}},y,xi::T) where T <: Real
-    j = findfirst(x.>xi)
-    
-    if isnothing(j) # Deal with extrapolation at the end
+function lerp(x, y, xi::T) where {T<:Real}
+    j = findfirst(>(xi), x)
+    if isnothing(j)
         j = length(x)
-        i = j-1 
-    elseif isone(j) # Deal with extrapolation at the start
-        i=1
-        j=2
+        i = j-1
+    elseif isone(j)
+        i = 1
+        j = 2
     else
         i = j-1
-    end    
-    w = abs(x[j]-x[i]) 
+    end
+    w = abs(x[j]-x[i])
     t = (xi-x[i])/w
     yi = (1.0-t)*y[i] + t*y[j]
     return yi
