@@ -355,7 +355,7 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
         # TODO: Optimise to remove need for masks
         if any(L) # If any points outside of the range were encountered
             yi = similar(xi) # Initialise yi
-            yi[L] .= lerp.((xx,),(yy,),xi[L]) # Linearly extrapolate outside of the input range
+            yi[L] .= lerp(xx,yy,xi[L]) # Linearly extrapolate outside of the input range
             yi[.!L] = interp_biharmonic(xx,yy,xi[.!L]) # Use biharmonic interpolation for points within range
         else # Nothing to extrapolate
             yi = interp_biharmonic(xx,yy,xi)
@@ -365,9 +365,11 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
         Ls = xi.<x[1] # Boolean for points preceeding the start
         Ll = xi.>x[end] # Boolean for points after the end
         # TODO: Optimise to remove need for masks
-        if any(x -> x < x[1] || x > x[end], xi) # If any points outside of the range were encountered
+        if any(_x -> _x < x[1] || _x > x[end], xi) # If any points outside of the range were encountered
+            @show 2
             yi = similar(xi) # Initialise yi 
-            replace!(x -> x < x[1] ? yy[1] : x > x[end] ? yy[end] : x, xi) 
+            copyto!(yi, xi)
+            replace!(_x -> _x < x[1] ? yy[1] : _x > x[end] ? yy[end] : _x, yi) 
 
             L = .!Ls .&& .!Ll # Boolean for points to interpolate using biharmonic interpolation
             yi[L] = interp_biharmonic(xx,yy,xi[L]) # Use biharmonic interpolation for points within range
@@ -477,7 +479,8 @@ function lerp(x, y, xi::T) where {T<:Real}
     yi = (1.0-t)*y[i] + t*y[j]
     return yi
 end
-
+lerp(x, y, xi::AbstractVector) = lerp.((x,), (y,), xi)
+  
 """
     dist(V1,V2)
 
@@ -491,13 +494,7 @@ can be any type supported by the `euclidean` function of `Distances.jl`.
 See also: https://github.com/JuliaStats/Distances.jl
 """
 function dist(V1,V2)
-    D = Matrix{Float64}(undef,length(V1),length(V2))   
-    for i in eachindex(V1)
-        for j in eachindex(V2)          
-            D[i,j] = euclidean(V1[i],V2[j]) # norm(V1[i]-V2[j])       
-        end
-    end
-    return D
+    return pairwise(Euclidean(), V1, V2)
 end
 
 function dist(V1::Vector{T},v2::T) where T <: AbstractVector
