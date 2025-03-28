@@ -463,6 +463,9 @@ This linearly interpolates (lerps) the input data specified by the sites `x` and
 data `y` at the specified site `xi`. 
 """
 function lerp(x, y, xi::T) where {T<:Real}
+    if length(x) != length(y)
+        throw(DimensionMismatch("x and y must be the same length"))
+    end
     j = findfirst(>(xi), x)
     if isnothing(j)
         j = length(x)
@@ -497,19 +500,11 @@ function dist(V1,V2)
 end
 
 function dist(V1::Vector{T},v2::T) where T <: AbstractVector
-    D = Matrix{Float64}(undef,length(V1),1)   
-    for i in eachindex(V1)        
-        D[i,1] = euclidean(V1[i],v2)
-    end
-    return D
+    return pairwise(Euclidean(), V1, (v2,))
 end
 
 function dist(v1::T,V2::Vector{T}) where T <: AbstractVector
-    D = Matrix{Float64}(undef,1,length(V2))   
-    for j in eachindex(V2)        
-        D[1,j] = euclidean(v1,V2[j])
-    end
-    return D
+    return pairwise(Euclidean(), (v1,), V2)
 end
 
 """

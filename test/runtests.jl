@@ -435,13 +435,9 @@ end
         @test lerp([0.0,1.0],[[0.0,10.0,20.0,30.0],[10.0,20.0,30.0,40.0]],[0.0,0.5,1.0]) == [[0.0,10.0,20.0,30.0],[5.0,15.0,25.0,35.0],[10.0,20.0,30.0,40.0]] # Single value interpolation site
     end
 
+    @test Comodo.lerp([0.0, 1.0], [0.0, 10.0],0.5) == 5.0 # Vector input
+    @test Comodo.lerp(range(0.0, 1.0, 3), range(0.0, 10.0, 3),0.5) == 5.0 # range input
 end
-
-@testset "lerp_" begin 
-    @test Comodo.lerp_([0.0, 1.0], [0.0, 10.0],0.5) == 5.0 # Vector input
-    @test Comodo.lerp_(range(0.0, 1.0, 3), range(0.0, 10.0, 3),0.5) == 5.0 # range input
-end
-
 
 @testset "dist" verbose = true begin
     eps_level = 1e-4
