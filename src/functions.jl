@@ -182,7 +182,7 @@ function gridpoints(x, y=x, z=x)
 end  
 
 """
-    gridpoints_equilateral(xSpan,ySpan,pointSpacing::T; return_faces = false, rectangular=false) where T <: Real
+    gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Union{Vector{TT},Tuple{TT,TT}},pointSpacing::T; return_faces::Val{B1} = Val(false), rectangular::Val{B2}=Val(false), force_equilateral::Val{B3}=Val(false)) where {T<:Real, TT<:Real, B1, B2, B3}
 
 Returns a "grid" of 3D points that are located on the corners of an equilateral triangle tesselation.
 
@@ -523,8 +523,7 @@ t0 `true` (default is `false`) if "self distances" (e.g. the nth point to the
 nth point) are to be avoided.  
 """
 function mindist(V1,V2; getIndex=false, skipSelf = false )
-    D = Vector{Float64}(undef,length(V1))
-    d = Vector{Float64}(undef,length(V2))
+    D, d = similar(V1), similar(V2)
     if getIndex
         I = Vector{Int}(undef,length(V1))
     end
