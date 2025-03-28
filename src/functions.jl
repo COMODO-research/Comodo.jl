@@ -508,7 +508,7 @@ function dist(v1::T,V2::Vector{T}) where T <: AbstractVector
 end
 
 """
-    mindist(V1,V2; getIndex=false, skipSelf = false )
+    mindist(V1,V2; getIndex=Val(false), skipSelf = false )
 
 Returns nearest point distances 
 
@@ -522,9 +522,9 @@ point set is provided twice, then the optional parameter `skipSelf` can be set
 t0 `true` (default is `false`) if "self distances" (e.g. the nth point to the 
 nth point) are to be avoided.  
 """
-function mindist(V1,V2; getIndex=false, skipSelf = false )
+function mindist(V1,V2; getIndex::Val{B1}=Val(false), skipSelf = false ) where {B1}
     D, d = similar(V1), similar(V2)
-    if getIndex
+    if B1
         I = Vector{Int}(undef,length(V1))
     end
     for i in eachindex(V1)
@@ -535,19 +535,18 @@ function mindist(V1,V2; getIndex=false, skipSelf = false )
                 d[j] = euclidean(V1[i],V2[j]) # norm(V1[i]-V2[j]) 
             end       
         end
-        if getIndex
+        if B1
             D[i], I[i] = findmin(d)
         else
             D[i] = minimum(d)
         end
     end
-    if getIndex
+    if B1
         return D, I
     else
         return D
     end
 end
-
 
 """
     unique_dict_index(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
@@ -565,15 +564,17 @@ function unique_dict_index(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entr
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
     # Hence the unique indices need to seperately be tracked. 
     # T = eltype(X)
-    d = Dict{T,Nothing}() # Use dict to keep track of used values
+    d = Set{T}() # Use dict to keep track of used values
     xUni = Vector{T}()
     indUnique = Vector{Int}() 
+    sizehint!(xUni, length(X))
+    sizehint!(indUnique, length(X))
     for (i,x) in enumerate(X)        
         if sort_entries && length(x)>1
             x = sort(x) # Note sort!(x) doesn't work for static vectors                    
         end
-        if !haskey(d, x)
-            d[x] = nothing
+        if x ∉ d
+            push!(d, x)
             push!(xUni, X[i]) #Grow unique set
             push!(indUnique, i) #Grow unique indices
         end
@@ -603,6 +604,8 @@ function unique_dict_index_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; s
     xUni = Vector{T}()
     indUnique = Vector{Int}() 
     indInverse = Vector{Int}(undef,length(X)) 
+    sizehint!(xUni, length(X))
+    sizehint!(indUnique, length(X))
     j=0
     for (i,x) in enumerate(X)         
         if sort_entries && length(x)>1
@@ -644,6 +647,9 @@ function unique_dict_index_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sor
     xUni = Vector{T}()
     indUnique = Vector{Int}() 
     c =  Vector{Int}() 
+    sizehint!(xUni, length(X))
+    sizehint!(indUnique, length(X))
+    sizehint!(c, length(X))
 
     j=0
     for (i,x) in enumerate(X)         
@@ -687,6 +693,10 @@ function unique_dict_index_inverse_count(X::Union{Tuple{Vararg{T, N}}, Array{T, 
     indUnique = Vector{Int}() 
     indInverse = Vector{Int}(undef,length(X)) 
     c =  Vector{Int}() 
+    sizehint!(xUni, length(X))
+    sizehint!(indUnique, length(X))
+    sizehint!(indInverse, length(X))
+    sizehint!(c, length(X))
 
     j=0
     for (i,x) in enumerate(X)         
@@ -729,6 +739,8 @@ function unique_dict_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entr
     d = Dict{T,Int}() # Use dict to keep track of used values
     xUni = Vector{T}()
     c = Vector{Int}()
+    sizehint!(xUni, length(X))
+    sizehint!(c, length(X))
     j = 0
     for (i,x) in enumerate(X)         
         if sort_entries && length(x)>1
@@ -767,6 +779,7 @@ function unique_dict_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_en
     d = Dict{T,Int}() # Use dict to keep track of used values
     xUni = Vector{T}()
     indInverse = Vector{Int}(undef,length(X)) 
+    sizehint!(xUni, length(X))
 
     j=0
     for (i,x) in enumerate(X)         
