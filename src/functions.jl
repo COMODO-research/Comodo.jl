@@ -5,9 +5,11 @@ GeometryBasics.@fixed_vector Element = AbstractElement
 
 const Tet4{T} = Element{4,T} where T<:Integer
 const Tet10{T} = Element{10,T} where T<:Integer
+const Tet15{T} = Element{15,T} where T<:Integer
 const Hex8{T} = Element{8,T} where T<:Integer
 const Hex20{T} = Element{20,T} where T<:Integer
 const Penta6{T} = Element{6,T} where T<:Integer
+const Penta15{T} = Element{15,T} where T<:Integer
 const Rhombicdodeca14{T} = Element{14,T} where T<:Integer
 const Truncatedocta24{T} = Element{24,T} where T<:Integer
 
@@ -4733,13 +4735,13 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
         end
     elseif element_type <: Tet10{T}
         nf = 4        
-        F = Vector{NgonFace{6,Int}}(undef,length(E)*nf)
+        F = Vector{NgonFace{6,T}}(undef,length(E)*nf)
         for (i,e) in enumerate(E)
             ii = 1 + (i-1)*nf 
-            F[ii  ] = NgonFace{6,Int}(e[3],e[6],e[2],e[5 ],e[1],e[7 ])
-            F[ii+1] = NgonFace{6,Int}(e[1],e[5],e[2],e[9 ],e[4],e[8 ])
-            F[ii+2] = NgonFace{6,Int}(e[2],e[6],e[3],e[10],e[4],e[9 ])
-            F[ii+3] = NgonFace{6,Int}(e[3],e[7],e[1],e[8 ],e[4],e[10])
+            F[ii  ] = NgonFace{6,T}(e[3],e[6],e[2],e[5 ],e[1],e[7 ])
+            F[ii+1] = NgonFace{6,T}(e[1],e[5],e[2],e[9 ],e[4],e[8 ])
+            F[ii+2] = NgonFace{6,T}(e[2],e[6],e[3],e[10],e[4],e[9 ])
+            F[ii+3] = NgonFace{6,T}(e[3],e[7],e[1],e[8 ],e[4],e[10])
         end
     elseif element_type <: Hex8{T}
         nf = 6
@@ -4769,6 +4771,24 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
             ii = 1 + (i-1)*nft
             Ft[ii  ] = TriangleFace{T}(e[3],e[2],e[1]) # Bottom
             Ft[ii+1] = TriangleFace{T}(e[4],e[5],e[6]) # Top
+        end
+        F = (Ft,Fq) # Collect faces in tuple
+    elseif element_type <: Penta15{T}        
+        nfq = 3
+        Fq = Vector{NgonFace{8,T}}(undef,length(E)*nfq)
+        for (i,e) in enumerate(E)
+            ii = 1 + (i-1)*nfq
+            Fq[ii  ] = NgonFace{8,T}(e[[1,7,2,14,5,10,4,13]]) # Side 1
+            Fq[ii+1] = NgonFace{8,T}(e[[2,8,3,15,6,11,5,14]]) # Side 2
+            Fq[ii+2] = NgonFace{8,T}(e[[3,9,1,13,4,12,6,15]]) # Side 3            
+        end
+
+        nft = 2
+        Ft = Vector{NgonFace{6,T}}(undef,length(E)*nft)
+        for (i,e) in enumerate(E)
+            ii = 1 + (i-1)*nft
+            Ft[ii  ] = NgonFace{6,T}(e[[3,  8, 2,  7, 1,  9]]) # Bottom
+            Ft[ii+1] = NgonFace{6,T}(e[[4, 10, 5, 11, 6, 12]]) # Top
         end
         F = (Ft,Fq) # Collect faces in tuple
     elseif element_type <: Rhombicdodeca14{T}
@@ -6640,3 +6660,104 @@ end
 function inpolygon(P::Vector{Point{M,T}}, V::Vector{Point{N,T}}; atol = sqrt(eps(T)), in_flag::TP=1, on_flag::TP=0, out_flag::TP=-1) where {TP} where N where M where T<:Real
     return [inpolygon(p,V; atol = atol, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) for p in P]
 end
+
+"""
+    indexPair2sortedEdge(i,j)
+
+"""
+function indexPair2sortedEdge(i,j)
+    if j>i
+        return LineFace{typeof(i)}(i,j)
+    else
+        return LineFace{typeof(i)}(j,i)
+    end
+end
+
+"""
+    elementEdges(E::Vector{Element{N,T}}) where N where T 
+
+"""
+function elementEdges(E::Vector{Element{N,T}}) where N where T    
+    element_type = eltype(E)
+    if element_type <: Tet4{T}
+        numElementEdges = 6
+        numElements = length(E)
+        elementEdges = Vector{LineFace{T}}(undef,numElements*numElementEdges)        
+        for (i,e) in enumerate(E) # Loop over each node/point for the current simplex                               
+            j = 1 + (i-1)*numElementEdges
+            elementEdges[j  ] = indexPair2sortedEdge(e[1],e[2])
+            elementEdges[j+1] = indexPair2sortedEdge(e[2],e[3])
+            elementEdges[j+2] = indexPair2sortedEdge(e[3],e[1])
+            elementEdges[j+3] = indexPair2sortedEdge(e[1],e[4])
+            elementEdges[j+4] = indexPair2sortedEdge(e[2],e[4])
+            elementEdges[j+5] = indexPair2sortedEdge(e[3],e[4])           
+        end 
+    elseif element_type <: Penta6{T}
+        numElementEdges = 9
+        numElements = length(E)
+        elementEdges = Vector{LineFace{T}}(undef,numElements*numElementEdges)        
+        for (i,e) in enumerate(E) # Loop over each node/point for the current simplex                               
+            j = 1 + (i-1)*numElementEdges
+            elementEdges[j  ] = indexPair2sortedEdge(e[1],e[2])
+            elementEdges[j+1] = indexPair2sortedEdge(e[2],e[3])
+            elementEdges[j+2] = indexPair2sortedEdge(e[3],e[1])
+            elementEdges[j+3] = indexPair2sortedEdge(e[4],e[5])
+            elementEdges[j+4] = indexPair2sortedEdge(e[5],e[6])
+            elementEdges[j+5] = indexPair2sortedEdge(e[6],e[4])           
+            elementEdges[j+6] = indexPair2sortedEdge(e[1],e[4])           
+            elementEdges[j+7] = indexPair2sortedEdge(e[2],e[5])           
+            elementEdges[j+8] = indexPair2sortedEdge(e[3],e[6])                       
+        end 
+    end 
+    return elementEdges
+end
+
+"""
+    tet4_tet10(E,V)
+"""
+function tet4_tet10(E,V)
+    tetEdges = elementEdges(E)
+    tetEdgesUnique,_,indReverse = gunique(tetEdges; return_unique=true, return_index=true, return_inverse=true, sort_entries=false)
+    Vn = simplexcenter(tetEdgesUnique,V)
+    V_tet10 = [V; Vn]  # Old and new mid-edge points          
+    E_tet10 = Vector{Tet10{Int}}(undef,length(E))        
+    for (i,e) in enumerate(E)
+        indNew = indReverse[1+(i-1)*6:i*6] .+ length(V)
+        E_tet10[i] = Tet10{Int}(e[1],e[2],e[3],e[4],indNew[1],indNew[2],indNew[3],indNew[4],indNew[5],indNew[6])
+    end
+    return E_tet10, V_tet10
+end
+
+"""
+    penta6_penta15(E,V)
+"""
+function penta6_penta15(E,V)
+    pentaEdges = elementEdges(E)
+    pentaEdgesUnique,_,indReverse = gunique(pentaEdges; return_unique=true, return_index=true, return_inverse=true, sort_entries=false)
+    Vn = simplexcenter(pentaEdgesUnique,V)
+    V_penta15 = [V; Vn]  # Old and new mid-edge points          
+    E_penta15 = Vector{Penta15{Int}}(undef,length(E))        
+    for (i,e) in enumerate(E)
+        indNew = indReverse[1+(i-1)*9:i*9] .+ length(V)
+        E_penta15[i] = Penta15{Int}(e[1],e[2],e[3],e[4],e[5],e[6],indNew[1],indNew[2],indNew[3],indNew[4],indNew[5],indNew[6],indNew[7],indNew[8],indNew[9])
+    end
+    return E_penta15, V_penta15
+end
+
+# function tet4_tet15(E,V)
+#     tetEdges = elementEdges(E)
+#     tetEdgesUnique,_,indReverse = gunique(tetEdges; return_unique=true, return_index=true, return_inverse=true, sort_entries=false)
+
+#     F = element2faces(E)
+#     Vn1 = simplexcenter(tetEdgesUnique,V)
+#     Vn2 = simplexcenter(E,V)
+#     Vn3 = simplexcenter(F,V)
+    
+#     V_tet10 = [V; Vn1; Vn2; Vn3;]  # Old and new mid-edge points          
+#     E_tet10 = Vector{Tet10{Int}}(undef,length(E))        
+#     for (i,e) in enumerate(E)
+#         indNew = indReverse[1+(i-1)*6:i*6].+length(V)
+#         E_tet10[i] = Tet10{Int}(e[1],e[2],e[3],e[4],indNew[1],indNew[2],indNew[3],indNew[4],indNew[5],indNew[6])
+#     end
+#     return E_tet10, V_tet10
+# end

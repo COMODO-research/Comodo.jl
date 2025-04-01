@@ -37,7 +37,7 @@ export GeometryBasics
 export DataStructures
 
 # Export types
-export Element, Tet4, Tet10, Hex8, Hex20, Penta6, Rhombicdodeca14, Truncatedocta24 # Volumetric elements (polyhedra)
+export Element, Tet4, Tet10, Hex8, Hex20, Penta6, Penta15, Rhombicdodeca14, Truncatedocta24 # Volumetric elements (polyhedra)
 
 # Export types/structs
 export ConnectivitySet
@@ -70,6 +70,7 @@ export rhombicdodecahedronfoam, kelvinfoam, truncatedoctahedron, ntrapezohedron,
 export mag, indexmap!, indexmap, minp, maxp, spacing2numvertices
 export joingeom, quadbox, tribox, tetbox, pad3, getisosurface 
 export randangle, stepfunc, perlin_noise, removepoints, inpolygon
+export tet4_tet10, penta6_penta15
 
 # Export functions: Visualization related
 export slidercontrol, slider2anim, dirplot, normalplot
