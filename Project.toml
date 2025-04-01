@@ -1,6 +1,6 @@
 name = "Comodo"
 uuid = "59095408-2761-4f7a-bdc2-044e78630271"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Kevin-Mattheus-Moerman <kevin.moerman@gmail.com>"]
 
 [deps]
