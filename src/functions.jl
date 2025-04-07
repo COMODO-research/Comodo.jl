@@ -644,18 +644,16 @@ and the reverse indices to retrieve the original faces from the unique faces.
 Entries in F are sorted such that the node order does not matter. 
 """
 function unique_simplices(F,V=nothing)
-    if isnothing(V)
-        n = maximum(reduce(vcat,F)) 
-    else
-        n = length(V)
+    n = !isnothing(V) ? length(V) : maximum(maximum, F)
+    virtual_indices = let n=n 
+        sub2ind(ntuple(i -> n, Val(length(F[1]))), sort.(F))
     end
-
-
-
-    virtualFaceIndices = sub2ind(n.*ones(Int,length(F[1])),sort.(F))    
-    ind1, ind2 = gunique(virtualFaceIndices; return_unique = Val(false), return_index = Val(true), return_inverse = Val(true)) 
-
-    return F[ind1], ind1, ind2
+    unique_indices, inverse_indices = gunique(virtual_indices; return_unique = Val(false), return_index = Val(true), return_inverse = Val(true))
+    unique_faces = F[unique_indices]
+    if !isnothing(V)
+        unique_faces = map(f -> sort(f), unique_faces)
+    end
+    return unique_faces, unique_indices, inverse_indices
 end
 
 
