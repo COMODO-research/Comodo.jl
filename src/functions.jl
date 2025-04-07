@@ -596,7 +596,7 @@ be seen as the same as [2,1] for instance.
 """
 function gunique(X; return_unique::Val{CompUnique}=Val(true), return_index::Val{CompIdx}=Val(false), return_inverse::Val{CompInv}=Val(false), return_counts::Val{CompCounts}=Val(false), sort_entries=false) where {CompUnique,CompIdx,CompInv,CompCounts}
     if CompUnique && !(CompIdx || CompInv || CompCounts)
-        return sort_entries ? unique(_sort, X) : unique(X)
+        return sort_entries ? unique(Iterators.map(_sort, X)) : unique(X)
     else
         CompIdx && (unique_indices = Int[]; sizehint!(unique_indices, length(X)))
         CompInv && (inverse_indices = similar(X, Int))
@@ -699,15 +699,15 @@ The input `F` can either represent a vector of faces or a
 GeometryBasics.Mesh. The convention is such that for a face referring to the 
 nodes 1-2-3-4, the edges are 1-2, 2-3, 3-4, 4-1.   
 """
-function meshedges(F::Array{NgonFace{N,T},1}; unique_only=false) where N where T<:Integer        
+function meshedges(F::AbstractVector{NgonFace{N,T}}; unique_only=false) where {N,T}
     nf = length(F)
     E = Vector{LineFace{T}}(undef,N*nf)        
     for (i,f) in enumerate(F) # Loop over each node/point for the current simplex                           
-        E[i:nf:end] = [LineFace{T}(f[j],f[mod1(j+1,N)]) for j in 1:N]        
+        for (j, idx) in enumerate(i:nf:lastindex(E))
+            E[idx] = LineFace{T}(f[j], f[mod1(j+1,N)])
+        end
     end    
-    if unique_only # Remove doubles if requested e.g. 1-2 seen as same as 2-1
-        E = gunique(E; sort_entries=true);
-    end
+    unique_only && (E = gunique(E; sort_entries=true)) # Remove doubles if requested e.g. 1-2 seen as same as 2-1
     return E
 end
 
@@ -831,41 +831,41 @@ function dodecahedron(r=1.0; h=1.0/Base.MathConstants.golden)
 
     # Create vertices    
     V = Vector{Point{3, Float64}}(undef,20)
-    V[ 1] = Point{3, Float64}([ -s,  -s,  -s])
-    V[ 2] = Point{3, Float64}([  s,  -s,  -s])
-    V[ 3] = Point{3, Float64}([  s,   s,  -s])
-    V[ 4] = Point{3, Float64}([ -s,   s,  -s])
-    V[ 5] = Point{3, Float64}([ -s,  -s,   s])
-    V[ 6] = Point{3, Float64}([  s,  -s,   s])
-    V[ 7] = Point{3, Float64}([  s,   s,   s])
-    V[ 8] = Point{3, Float64}([ -s,   s,   s])
-    V[ 9] = Point{3, Float64}([ -w, 0.0,  -t])
-    V[10] = Point{3, Float64}([  w, 0.0,  -t])
-    V[11] = Point{3, Float64}([ -w, 0.0,   t])
-    V[12] = Point{3, Float64}([  w, 0.0,   t])
-    V[13] = Point{3, Float64}([0.0,  -t,  -w])
-    V[14] = Point{3, Float64}([0.0,  -t,   w])
-    V[15] = Point{3, Float64}([  t,   w, 0.0])
-    V[16] = Point{3, Float64}([  t,  -w, 0.0])
-    V[17] = Point{3, Float64}([0.0,   t,  -w])
-    V[18] = Point{3, Float64}([0.0,   t,   w])
-    V[19] = Point{3, Float64}([ -t,  -w, 0.0])
-    V[20] = Point{3, Float64}([ -t,   w, 0.0])
+    V[ 1] = Point{3, Float64}( -s,  -s,  -s)
+    V[ 2] = Point{3, Float64}(  s,  -s,  -s)
+    V[ 3] = Point{3, Float64}(  s,   s,  -s)
+    V[ 4] = Point{3, Float64}( -s,   s,  -s)
+    V[ 5] = Point{3, Float64}( -s,  -s,   s)
+    V[ 6] = Point{3, Float64}(  s,  -s,   s)
+    V[ 7] = Point{3, Float64}(  s,   s,   s)
+    V[ 8] = Point{3, Float64}( -s,   s,   s)
+    V[ 9] = Point{3, Float64}( -w, 0.0,  -t)
+    V[10] = Point{3, Float64}(  w, 0.0,  -t)
+    V[11] = Point{3, Float64}( -w, 0.0,   t)
+    V[12] = Point{3, Float64}(  w, 0.0,   t)
+    V[13] = Point{3, Float64}(0.0,  -t,  -w)
+    V[14] = Point{3, Float64}(0.0,  -t,   w)
+    V[15] = Point{3, Float64}(  t,   w, 0.0)
+    V[16] = Point{3, Float64}(  t,  -w, 0.0)
+    V[17] = Point{3, Float64}(0.0,   t,  -w)
+    V[18] = Point{3, Float64}(0.0,   t,   w)
+    V[19] = Point{3, Float64}( -t,  -w, 0.0)
+    V[20] = Point{3, Float64}( -t,   w, 0.0)
 
     # Create faces
     F = Vector{NgonFace{5,Int}}(undef,12)
-    F[ 1] = NgonFace{5,Int}([18,  8, 11, 12,  7])
-    F[ 2] = NgonFace{5,Int}([12, 11,  5, 14,  6])
-    F[ 3] = NgonFace{5,Int}([11,  8, 20, 19,  5])
-    F[ 4] = NgonFace{5,Int}([20,  8, 18, 17,  4])
-    F[ 5] = NgonFace{5,Int}([ 9,  1, 19, 20,  4])
-    F[ 6] = NgonFace{5,Int}([19,  1, 13, 14,  5])
-    F[ 7] = NgonFace{5,Int}([13,  1,  9, 10,  2])
-    F[ 8] = NgonFace{5,Int}([13,  2, 16,  6, 14])
-    F[ 9] = NgonFace{5,Int}([ 2, 10,  3, 15, 16])
-    F[10] = NgonFace{5,Int}([ 7, 12,  6, 16, 15])
-    F[11] = NgonFace{5,Int}([ 7, 15,  3, 17, 18])
-    F[12] = NgonFace{5,Int}([10,  9,  4, 17,  3])
+    F[ 1] = NgonFace{5,Int}(18,  8, 11, 12,  7)
+    F[ 2] = NgonFace{5,Int}(12, 11,  5, 14,  6)
+    F[ 3] = NgonFace{5,Int}(11,  8, 20, 19,  5)
+    F[ 4] = NgonFace{5,Int}(20,  8, 18, 17,  4)
+    F[ 5] = NgonFace{5,Int}( 9,  1, 19, 20,  4)
+    F[ 6] = NgonFace{5,Int}(19,  1, 13, 14,  5)
+    F[ 7] = NgonFace{5,Int}(13,  1,  9, 10,  2)
+    F[ 8] = NgonFace{5,Int}(13,  2, 16,  6, 14)
+    F[ 9] = NgonFace{5,Int}( 2, 10,  3, 15, 16)
+    F[10] = NgonFace{5,Int}( 7, 12,  6, 16, 15)
+    F[11] = NgonFace{5,Int}( 7, 15,  3, 17, 18)
+    F[12] = NgonFace{5,Int}(10,  9,  4, 17,  3)
     
     return F, V
 end
