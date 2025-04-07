@@ -6799,7 +6799,7 @@ end
     @test indFix[indMap] == indMapped
 end
 
-@testset "removepoints" verbose = true begin 
+@testset "inpolygon" verbose = true begin 
     # Square
     V = [Point{3,Float64}(-1.0,  1.0, 0.0), Point{3,Float64}( 1.0,  1.0, 0.0), 
          Point{3,Float64}( 1.0, -1.0, 0.0), Point{3,Float64}(-1.0, -1.0, 0.0)]
@@ -6877,17 +6877,16 @@ end
     append!(Vq,deepcopy(V))
 
     # Do the inpolygon check for all query points 
-    F = [inpolygon(p,V) for p in Vq]
+    F = inpolygon(Vq,V)
     @test F == [0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, -1, 0, -1, 0, -1, -1, 0, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0]
 
     # Check for invariance in terms of polygon reversal
-    F = [inpolygon(p,reverse(V)) for p in Vq]
+    F = inpolygon(Vq,reverse(V))
     @test F == [0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, -1, 0, -1, 0, -1, -1, 0, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0]
 
     # With options
     F = [inpolygon(p,V; atol=1e-6, in_flag=1, on_flag=0, out_flag=-1) for p in Vq]
     @test F == [0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, -1, 0, -1, 0, -1, -1, 0, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0]
-
 end
 
 @testset "_indexPair2sortedEdge" verbose = true begin            
@@ -6909,6 +6908,11 @@ end
     E = [Penta6{Int}(1,2,3,4,5,6)]
     edgeSet = elementEdges(E)
     @test edgeSet == LineFace{Int64}[LineFace{Int64}(1, 2), LineFace{Int64}(2, 3), LineFace{Int64}(1, 3), LineFace{Int64}(4, 5), LineFace{Int64}(5, 6), LineFace{Int64}(4, 6), LineFace{Int64}(1, 4), LineFace{Int64}(2, 5), LineFace{Int64}(3, 6)]
+
+    # Test single hex8 element 
+    E = [Hex8{Int}(1,2,3,4,5,6,7,8)]
+    edgeSet = elementEdges(E)
+    @test edgeSet == LineFace{Int64}[LineFace{Int64}(1, 2), LineFace{Int64}(2, 3), LineFace{Int64}(3, 4), LineFace{Int64}(1, 4), LineFace{Int64}(5, 6), LineFace{Int64}(6, 7), LineFace{Int64}(7, 8), LineFace{Int64}(5, 8), LineFace{Int64}(1, 5), LineFace{Int64}(2, 6), LineFace{Int64}(3, 7), LineFace{Int64}(4, 8)]
 end
 
 @testset "tet4_tet10" verbose = true begin               
@@ -6942,7 +6946,6 @@ end
     ind = round.(Int,range(1,length(V_tet10),6))    
     @test E_tet10 == Tet10{Int64}[[1, 2, 3, 4, 10, 11, 12, 13, 14, 15], [2, 3, 4, 5, 11, 15, 14, 16, 17, 18], [6, 7, 8, 9, 19, 20, 21, 22, 23, 24]]
     @test V_tet10[ind] == Point{3, Float64}[[-1.0, 0.0, 0.0], [2.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.75, 0.5], [3.0, 0.0, 0.0], [3.0, 0.75, 0.5]]   
-    
 end
 
 @testset "penta6_penta15" verbose = true begin                
