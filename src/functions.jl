@@ -550,286 +550,6 @@ function mindist(V1,V2; getIndex::Val{B1}=Val(false), skipSelf = false ) where {
 end
 
 """
-    unique_dict_index(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-
-Returns unique values and indices
-
-# Description
-
-Returns the unique entries in `X` as well as the indices for them. 
-The optional parameter `sort_entries` (default is `false`) can be set to `true`
-if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
-be seen as the same as [2,1] for instance.  
-"""
-function unique_dict_index(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-    # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to seperately be tracked. 
-    # T = eltype(X)
-    d = Set{T}() # Use dict to keep track of used values
-    xUni = Vector{T}()
-    indUnique = Vector{Int}() 
-    sizehint!(xUni, length(X))
-    sizehint!(indUnique, length(X))
-    for (i,x) in enumerate(X)        
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end
-        if x ∉ d
-            push!(d, x)
-            push!(xUni, X[i]) #Grow unique set
-            push!(indUnique, i) #Grow unique indices
-        end
-    end
-    return xUni, indUnique
-end
-
-
-"""
-    unique_dict_index_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-
-Returns unique values, indices, and inverse indices
-
-# Description
-    
-Returns the unique entries in `X` as well as the indices for them and the 
-reverse indices to retrieve the original from the unique entries. 
-The optional parameter `sort_entries` (default is `false`) can be set to `true`
-if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
-be seen as the same as [2,1] for instance.  
-"""
-function unique_dict_index_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-    # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to seperately be tracked. 
-    # T = eltype(X)
-    d = Dict{T,Int}() # Use dict to keep track of used values
-    xUni = Vector{T}()
-    indUnique = Vector{Int}() 
-    indInverse = Vector{Int}(undef,length(X)) 
-    sizehint!(xUni, length(X))
-    sizehint!(indUnique, length(X))
-    j=0
-    for (i,x) in enumerate(X)         
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end
-        if !haskey(d, x)
-            j+=1 # Increment counter
-            d[x] = j # inverse index in dict
-            push!(xUni, X[i]) #Grow unique set
-            push!(indUnique, i) #Grow unique indices
-            indInverse[i] = j  # Store inverse index          
-        else
-            indInverse[i]=d[x]
-        end
-    end
-    return xUni, indUnique, indInverse
-end
-
-
-"""
-    unique_dict_index_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-
-Returns unique values, indices, and counts
-
-# Description
-    
-Returns the unique entries in `X` as well as the indices for them and the counts 
-in terms of how often they occured. 
-The optional parameter `sort_entries` (default is `false`) can be set to `true`
-if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
-be seen as the same as [2,1] for instance.  
-"""
-function unique_dict_index_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-    # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to seperately be tracked. 
-    
-    # T = eltype(X)
-    d = Dict{T,Int}() # Use dict to keep track of used values
-    xUni = Vector{T}()
-    indUnique = Vector{Int}() 
-    c =  Vector{Int}() 
-    sizehint!(xUni, length(X))
-    sizehint!(indUnique, length(X))
-    sizehint!(c, length(X))
-
-    j=0
-    for (i,x) in enumerate(X)         
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end
-        if !haskey(d, x)
-            j+=1 # Increment counter
-            d[x] = j # inverse index in dict
-            push!(xUni, X[i]) #Grow unique set
-            push!(indUnique, i) #Grow unique indices
-            push!(c,1)
-        else
-            c[d[x]] += 1
-        end
-    end
-    return xUni, indUnique, c
-end
-
-
-"""
-    unique_dict_index_inverse_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-
-Returns unique values, indices, inverse indices, and counts
-
-# Description
-    
-Returns the unique entries in `X` as well as the indices for them and the reverse 
-indices to retrieve the original from the unique entries, and also the counts in 
-terms of how often they occured. 
-The optional parameter `sort_entries` (default is `false`) can be set to `true`
-if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
-be seen as the same as [2,1] for instance.  
-"""
-function unique_dict_index_inverse_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-    # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to seperately be tracked. 
-    # T = eltype(X)
-    d = Dict{T,Int}() # Use dict to keep track of used values
-    xUni = Vector{T}()
-    indUnique = Vector{Int}() 
-    indInverse = Vector{Int}(undef,length(X)) 
-    c =  Vector{Int}() 
-    sizehint!(xUni, length(X))
-    sizehint!(indUnique, length(X))
-    sizehint!(indInverse, length(X))
-    sizehint!(c, length(X))
-
-    j=0
-    for (i,x) in enumerate(X)         
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end 
-        if !haskey(d, x)
-            j+=1 # Increment counter
-            d[x] = j # inverse index in dict
-            push!(xUni, X[i]) #Grow unique set
-            push!(indUnique, i) #Grow unique indices
-            indInverse[i] = j  # Store inverse index
-            push!(c,1)
-        else
-            indInverse[i]=d[x]
-            c[d[x]] += 1
-        end
-    end
-    return xUni, indUnique, indInverse,c
-end
-
-
-"""
-    unique_dict_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-
-Returns unique values and counts
-
-# Description
-    
-Returns the unique entries in `X` as well as the counts in terms of how often 
-they occured. 
-The optional parameter `sort_entries` (default is `false`) can be set to `true`
-if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
-be seen as the same as [2,1] for instance.  
-"""
-function unique_dict_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-    # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to seperately be tracked. 
-    # T = eltype(X)
-    d = Dict{T,Int}() # Use dict to keep track of used values
-    xUni = Vector{T}()
-    c = Vector{Int}()
-    sizehint!(xUni, length(X))
-    sizehint!(c, length(X))
-    j = 0
-    for (i,x) in enumerate(X)         
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end  
-        if !haskey(d, x)
-            j += 1 # Index in unique array
-            d[x] = j # Store count in dict
-            push!(xUni, X[i]) # Grow unique set
-            push!(c,1) # Grow counting array
-        else
-            c[d[x]] += 1
-        end
-    end
-    return xUni, c
-end
-
-
-"""
-    unique_dict_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-
-Returns unique values and inverse indices
-
-# Description
-
-Returns the unique entries in `X` as well as the reverse indices to retrieve the 
-original from the unique entries. 
-The optional parameter `sort_entries` (default is `false`) can be set to `true`
-if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
-be seen as the same as [2,1] for instance.  
-"""
-function unique_dict_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-    # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to seperately be tracked. 
-    # T = eltype(X)
-    d = Dict{T,Int}() # Use dict to keep track of used values
-    xUni = Vector{T}()
-    indInverse = Vector{Int}(undef,length(X)) 
-    sizehint!(xUni, length(X))
-
-    j=0
-    for (i,x) in enumerate(X)         
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end
-        if !haskey(d, x)
-            j+=1 # Increment counter
-            d[x] = j # inverse index in dict
-            push!(xUni, X[i]) #Grow unique set
-            indInverse[i] = j  # Store inverse index
-        else
-            indInverse[i]=d[x]
-        end
-    end
-    return xUni, indInverse
-end 
-
-
-"""
-    unique_dict(X::AbstractVector{T}) where T <: Real    
-
-Returns unique values, indices, and inverse indices. Uses an OrderedDict.
-
-# Description
-    
-Returns the unique entries in `X` as well as the indices for them and the reverse 
-indices to retrieve the original from the unique entries. 
-"""
-function unique_dict(X::AbstractVector{T}) where T <: Real    
-    d = OrderedDict{T ,Int}() # Use dict to keep track of used values    
-    indUnique = Vector{Int}()
-    indReverse = Vector{Int}(undef,length(X))
-    j=0
-    for (i,x) in enumerate(X)        
-        if !haskey(d, x)                                          
-            j+=1
-            d[x] = j # reverse index in dict            
-            push!(indUnique, i)                     
-            indReverse[i] = j 
-        else
-            indReverse[i] = d[x]            
-        end        
-    end
-    return collect(keys(d)), indUnique, indReverse
-end
-
-
-"""
     occursonce(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N  
 
 Checks if entries occur once
@@ -860,6 +580,7 @@ function occursonce(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=fal
     return B
 end
 
+@inline _sort(x) = length(x) > 1 ? sort(x) : x
 
 """
     gunique(X; return_unique=true, return_index=false, return_inverse=false, return_counts=false, sort_entries=false)
@@ -876,36 +597,43 @@ The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
 be seen as the same as [2,1] for instance.  
 """
-function gunique(X; return_unique=true, return_index=false, return_inverse=false, return_counts=false, sort_entries=false)
-    # Use required unique function 
-    if return_unique && !return_index && !return_inverse && !return_counts
-        # UNIQUE
-        if sort_entries && length(X[1])>1
-            return unique(sort.(X))
-        else
-            return unique(X)
+function gunique(X; compute_unique::Val{CompUnique}=Val(true), compute_index::Val{CompIdx}=Val(false), compute_inverse::Val{CompInv}=Val(false), compute_counts::Val{CompCounts}=Val(false), sort_entries=false) where {CompUnique,CompIdx,CompInv,CompCounts}
+    if CompUnique && !(CompIdx || CompInv || CompCounts)
+        return sort_entries ? unique(_sort, X) : unique(X)
+    else
+        CompIdx && (unique_indices = Int[]; sizehint!(unique_indices, length(X)))
+        CompInv && (inverse_indices = similar(X, Int))
+        CompUnique && (unique_values = empty(X))
+        CompCounts && (counts = Int[]; sizehint!(counts, length(X)))
+        seen = Dict{eltype(X),Int}()
+        sizehint!(seen, length(X))
+
+        nunique = 0
+        for (i, x) in enumerate(X)
+            sort_entries && (x = _sort(x))
+            if !haskey(seen, x)
+                nunique += 1
+                seen[x] = nunique
+                CompUnique && (push!(unique_values, x))
+                CompIdx && (push!(unique_indices, i))
+                CompInv && (inverse_indices[i] = nunique)
+                CompCounts && (push!(counts, 1))
+            elseif CompInv || CompCounts
+                idx = seen[x]
+                CompInv && (inverse_indices[i] = idx)
+                CompCounts && (counts[idx] += 1)
+            end
         end
-    elseif return_unique && return_index && !return_inverse && !return_counts
-        # UNIQUE, INDICES
-        return unique_dict_index(X; sort_entries=sort_entries)
-    elseif return_unique && !return_index && !return_inverse && return_counts
-        # UNIQUE, COUNTS
-        return unique_dict_count(X; sort_entries=sort_entries)
-    elseif return_unique && !return_index && return_inverse && !return_counts
-        # UNIQUE, INVERSE
-        return unique_dict_inverse(X; sort_entries=sort_entries)
-    elseif return_unique && return_index && return_inverse && !return_counts
-        # UNIQUE, INDICES, INVERSE
-        return unique_dict_index_inverse(X; sort_entries=sort_entries)
-    elseif return_unique && return_index && !return_inverse && return_counts
-        # UNIQUE, INDICES, COUNTS
-        return unique_dict_index_count(X; sort_entries=sort_entries)
-    elseif return_unique && return_index && return_inverse && return_counts
-        # UNIQUE, INDICES, INVERSE, COUNTS
-        return unique_dict_index_inverse_count(X; sort_entries=sort_entries)
+
+        ret = ()
+        CompUnique && (ret = (unique_values,))
+        CompIdx && (ret = (ret..., unique_indices))
+        CompInv && (ret = (ret..., inverse_indices))
+        CompCounts && (ret = (ret..., counts))
+
+        return ret
     end
 end
-
 
 """
     unique_simplices(F,V=nothing)

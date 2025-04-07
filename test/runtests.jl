@@ -522,23 +522,27 @@ end
 
 
 @testset "unique_dict_index" begin 
-    result1, result2 = Comodo.unique_dict_index([1, 2, 3, 3, 3, 4, 4, 4, 5])
+    arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    result1, result2 = gunique(arr; compute_index = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 2, 3, 6, 9]
 
-    result1, result2 = Comodo.unique_dict_index([[1, 2, 3], [3,2,1],[4,5,6]], sort_entries = true)
+    arr = [[1, 2, 3], [3,2,1],[4,5,6]]
+    result1, result2 = gunique(arr; compute_index = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 3]
 end 
 
 
 @testset "unique_dict_index_inverse" begin 
-    result1, result2, result3 = Comodo.unique_dict_index_inverse([1, 2, 3, 3, 3, 4, 4, 4, 5])
+    arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    result1, result2, result3 = gunique(arr; compute_index = Val(true), compute_inverse = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 2, 3, 6, 9]
     @test result3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
 
-    result1, result2, result3 = Comodo.unique_dict_index_inverse([[1, 2, 3], [3,2,1],[4,5,6]],sort_entries = true)
+    arr = [[1, 2, 3], [3,2,1],[4,5,6]]
+    result1, result2, result3 = gunique(arr; compute_index = Val(true), compute_inverse = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 3]
     @test result3 == [1, 1, 2]
@@ -546,12 +550,14 @@ end
 
 
 @testset "unique_dict_index_count" begin 
-    result1, result2, result3 = Comodo.unique_dict_index_count([1, 2, 3, 3, 3, 4, 4, 4, 5])
+    arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    result1, result2, result3 = gunique(arr; compute_index = Val(true), compute_counts = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 2, 3, 6, 9]
     @test result3 == [1, 1, 3, 3, 1]
 
-    result1, result2, result3 = Comodo.unique_dict_index_count([[1, 2, 3], [3,2,1],[4,5,6]], sort_entries = true)
+    arr = [[1, 2, 3], [3,2,1],[4,5,6]]
+    result1, result2, result3 = gunique(arr; compute_index = Val(true), compute_counts = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 3]
     @test result3 == [2, 1]
@@ -559,44 +565,51 @@ end
 
 
 @testset "unique_dict_index_inverse_count" begin 
-    r1, r2, r3, r4 = Comodo.unique_dict_index_inverse_count([1, 2, 3, 3, 3, 4, 4, 4, 5])
-    @test r1 == [1, 2, 3, 4, 5]
-    @test r2 == [1, 2, 3, 6, 9]
-    @test r3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
-    @test r4 == [1, 1, 3, 3, 1]
+    arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    result1, result2, result3, result4 = gunique(arr, compute_index = Val(true), compute_inverse = Val(true), compute_counts = Val(true))
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [1, 2, 3, 6, 9]
+    @test result3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    @test result4 == [1, 1, 3, 3, 1]
 
-    r1, r2, r3, r4 = Comodo.unique_dict_index_inverse_count([[1, 2, 3], [3,2,1],[4,5,6]], sort_entries = true)
-    @test r1 == [[1, 2, 3], [4, 5,6]]
-    @test r2 == [1, 3]
-    @test r3 == [1, 1, 2]
-    @test r4 == [2,1]
+    arr = [[1, 2, 3], [3,2,1],[4,5,6]]
+    result1, result2, result3, result4 = gunique(arr, compute_index = Val(true), compute_inverse = Val(true), compute_counts = Val(true), sort_entries = true)
+    @test result1 == [[1, 2, 3], [4, 5,6]]
+    @test result2 == [1, 3]
+    @test result3 == [1, 1, 2]
+    @test result4 == [2, 1]
 end 
 
 
 @testset "unique_dict_count" begin 
-    result1, result2 = Comodo.unique_dict_count([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
+    arr = [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
+    result1, result2 = gunique(arr; compute_counts = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [3, 4, 2, 1, 1]
 
-    result1, result2 = Comodo.unique_dict_count([[1, 2, 3], [3,2,1],[4,5,6]], sort_entries = true)
+    arr = [[1, 2, 3], [3,2,1],[4,5,6]]
+    result1, result2 = gunique(arr; compute_counts = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [2,1]
 end
 
 
 @testset "unique_dict_inverse" begin 
-    result1, result2 = Comodo.unique_dict_inverse([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
+    arr = [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
+    result1, result2 = gunique(arr; compute_inverse = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
 
-    result1, result2 = Comodo.unique_dict_inverse([[1, 2, 3], [3,2,1],[4,5,6]], sort_entries = true)
+    arr = [[1, 2, 3], [3,2,1],[4,5,6]]
+    result1, result2 = gunique(arr; compute_inverse = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 1, 2]
 end 
 
 
 @testset "unique_dict" begin 
-    result1, result2, result3 = unique_dict([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
+    arr = [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
+    result1, result2, result3 = gunique(arr; compute_index=Val(true), compute_inverse=Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 4, 8, 10, 11]
     @test result3 == [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
