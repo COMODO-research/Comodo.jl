@@ -876,8 +876,8 @@ end
         F, V = cube(1.0)
         M = GeometryBasics.Mesh(V,F)
         E = meshedges(M,unique_only=true)
-        @test E == LineFace{Int}[[1, 2], [7, 8], [5, 6], [6, 7], [5, 8], [2, 3], 
-        [2, 6], [3, 7], [4, 8], [1, 5], [3, 4], [1, 4]]
+        @test E == LineFace{Int}[[1, 2], [8,7], [5, 6], [6, 7], [8, 5], [2, 3], 
+        [6, 2], [7, 3], [8, 4], [5, 1], [3, 4], [1, 4]]
     end
 end
 
@@ -3740,9 +3740,9 @@ end
     end
 
     @testset "Hex. mesh of a cube" begin        
-        sampleSize = 10
-        pointSpacing = 2
-        boxDim = sampleSize.*[1,1,1] # Dimensionsions for the box in each direction
+        sampleSize = 10.0
+        pointSpacing = 2.0
+        boxDim = sampleSize.*[1.0,1.0,1.0] # Dimensionsions for the box in each direction
         boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
         E,V,F,Fbq,CFb_type = hexbox(boxDim,boxEl)   
         F = element2faces(E)
@@ -3794,6 +3794,27 @@ end
         Fb1 = boundaryfaces(F)        
         indB = boundaryfaceindices(F)        
         @test F[indB] == Fb1
+    end
+
+    @testset "Hex. mesh with element labels" begin        
+        # Create two layers (in z-dir.) of labelled elements
+        sampleSize = 10.0
+        pointSpacing = 2.0
+        boxDim = sampleSize.*[1.0,1.0,1.0] # Dimensionsions for the box in each direction
+        boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
+        E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)    
+        VE = simplexcenter(E,V)
+        elementLabels = [v[3]<=eps(0.0) for v in VE] # Element labels based on Z-coordinate
+    
+        # Get boundary face indices 
+        indBoundaryFacesNormal = boundaryfaceindices(F)
+    
+        # Get boundary face indices 
+        indBoundaryFacesLabel = boundaryfaceindices(F; elementLabels=elementLabels)
+
+        # Check for added boundary faces between label layer *will be boxEl[1]*boxEl[2]
+        @test length(indBoundaryFacesLabel) == length(indBoundaryFacesNormal) + boxEl[1]*boxEl[2]
+        
     end
 end
 
@@ -6867,5 +6888,114 @@ end
     F = [inpolygon(p,V; atol=1e-6, in_flag=1, on_flag=0, out_flag=-1) for p in Vq]
     @test F == [0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, -1, 0, -1, 0, -1, -1, 0, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0]
 
+end
 
+@testset "_indexPair2sortedEdge" verbose = true begin            
+    e = Comodo._indexPair2sortedEdge(1,2)
+    @test e == LineFace{Int64}(1, 2)    
+
+    e = Comodo._indexPair2sortedEdge(2,1)
+    @test e == LineFace{Int64}(1, 2)    
+    @test typeof(e) <: LineFace{Int}
+end
+
+@testset "elementEdges" verbose = true begin            
+    # Test single tet4 element 
+    E = [Tet4{Int}(1,2,3,4)]
+    edgeSet = elementEdges(E)
+    @test edgeSet == LineFace{Int64}[LineFace{Int64}(1, 2), LineFace{Int64}(2, 3), LineFace{Int64}(1, 3), LineFace{Int64}(1, 4), LineFace{Int64}(2, 4), LineFace{Int64}(3, 4)]
+
+    # Test single penta6 element 
+    E = [Penta6{Int}(1,2,3,4,5,6)]
+    edgeSet = elementEdges(E)
+    @test edgeSet == LineFace{Int64}[LineFace{Int64}(1, 2), LineFace{Int64}(2, 3), LineFace{Int64}(1, 3), LineFace{Int64}(4, 5), LineFace{Int64}(5, 6), LineFace{Int64}(4, 6), LineFace{Int64}(1, 4), LineFace{Int64}(2, 5), LineFace{Int64}(3, 6)]
+end
+
+@testset "tet4_tet10" verbose = true begin               
+    # Test single element 
+    E = [Tet4{Int}(1,2,3,4)]
+    V = [Point{3,Float64}(-1.0,0.0,0.0),
+         Point{3,Float64}( 1.0,0.0,0.0),
+         Point{3,Float64}( 0.0,1.0,0.0),
+         Point{3,Float64}( 0.0,0.5,1.0),         
+         ]
+    E_tet10, V_tet10 = tet4_tet10(E,V)
+    
+    @test typeof(E_tet10) <: Vector{Tet10{Int}} 
+    @test E_tet10 == Tet10{Int64}[[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]
+    @test V_tet10 == Point{3, Float64}[[-1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.5, 1.0], [0.0, 0.0, 0.0], [0.5, 0.5, 0.0], [-0.5, 0.5, 0.0], [-0.5, 0.25, 0.5], [0.5, 0.25, 0.5], [0.0, 0.75, 0.5]]
+
+    # Test multiple elements 
+    E = [Tet4{Int}(1,2,3,4),Tet4{Int}(2,3,4,5),Tet4{Int}(6,7,8,9)]
+    V = [Point{3,Float64}(-1.0,0.0,0.0),
+         Point{3,Float64}( 1.0,0.0,0.0),
+         Point{3,Float64}( 0.0,1.0,0.0),
+         Point{3,Float64}( 0.0,0.5,1.0),
+         Point{3,Float64}( 1.0,1.0,1.0),
+         Point{3,Float64}( 2.0,0.0,0.0),
+         Point{3,Float64}( 4.0,0.0,0.0),
+         Point{3,Float64}( 3.0,1.0,0.0),
+         Point{3,Float64}( 3.0,0.5,1.0),
+         ]
+    E_tet10, V_tet10 = tet4_tet10(E,V)
+    
+    ind = round.(Int,range(1,length(V_tet10),6))    
+    @test E_tet10 == Tet10{Int64}[[1, 2, 3, 4, 10, 11, 12, 13, 14, 15], [2, 3, 4, 5, 11, 15, 14, 16, 17, 18], [6, 7, 8, 9, 19, 20, 21, 22, 23, 24]]
+    @test V_tet10[ind] == Point{3, Float64}[[-1.0, 0.0, 0.0], [2.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.75, 0.5], [3.0, 0.0, 0.0], [3.0, 0.75, 0.5]]   
+    
+end
+
+@testset "penta6_penta15" verbose = true begin                
+    # Test single element 
+    E = [Penta6{Int}(1,2,3,4,5,6)]
+    V = [Point{3,Float64}(-1.0,0.0,0.0),
+         Point{3,Float64}( 1.0,0.0,0.0),
+         Point{3,Float64}( 0.0,1.0,0.0),
+         Point{3,Float64}( 0.0,0.5,1.0),
+         Point{3,Float64}( 1.0,1.0,1.0),
+         Point{3,Float64}( 2.0,0.0,0.0),         
+         ]
+    E_penta15, V_penta15 = penta6_penta15(E,V)
+    
+    @test typeof(E_penta15) <: Vector{Penta15{Int}} 
+    @test E_penta15 == Penta15{Int64}[[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
+    @test V_penta15  == Point{3, Float64}[[-1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.5, 1.0], [1.0, 1.0, 1.0], [2.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.5, 0.5, 0.0], [-0.5, 0.5, 0.0], [0.5, 0.75, 1.0], [1.5, 0.5, 0.5], [1.0, 0.25, 0.5], [-0.5, 0.25, 0.5], [1.0, 0.5, 0.5], [1.0, 0.5, 0.0]]
+
+    # Test multiple elements 
+    E = [Penta6{Int}(1,2,3,4,5,6),Penta6{Int}(1,2,3,7,8,9),Penta6{Int}(7,8,9,4,5,6)]    
+    V = [Point{3,Float64}(-1.0,0.0,0.0),
+         Point{3,Float64}( 1.0,0.0,0.0),
+         Point{3,Float64}( 0.0,1.0,0.0),
+         Point{3,Float64}( 0.0,0.5,1.0),
+         Point{3,Float64}( 1.0,1.0,1.0),
+         Point{3,Float64}( 2.0,0.0,0.0),
+         Point{3,Float64}( 4.0,0.0,0.0),
+         Point{3,Float64}( 3.0,1.0,0.0),
+         Point{3,Float64}( 3.0,0.5,1.0),
+         ]
+    E_penta15, V_penta15 = penta6_penta15(E,V)
+    
+    ind = round.(Int,range(1,length(V_penta15 ),6))    
+    @test E_penta15 == Penta15{Int64}[[1, 2, 3, 4, 5, 6, 10, 11, 12, 13, 14, 15, 16, 17, 18], [1, 2, 3, 7, 8, 9, 10, 11, 12, 19, 20, 21, 22, 23, 24], [7, 8, 9, 4, 5, 6, 19, 20, 21, 13, 14, 15, 25, 26, 27]]
+    @test V_penta15[ind] == Point{3, Float64}[[-1.0, 0.0, 0.0], [2.0, 0.0, 0.0], [0.5, 0.5, 0.0], [1.0, 0.5, 0.5], [1.5, 0.0, 0.0], [2.5, 0.25, 0.5]]
+end
+
+@testset "findindexin" verbose = true begin            
+    a = [6,1,2,3,4,5,11]
+    b = collect(1:10)
+    ind = findindexin(a, b)
+    @test ind == [6, 1, 2, 3, 4, 5, 0]
+
+    ind = findindexin(a, b; missingIndex=nothing)
+    indOri = indexin(a,b)
+    @test ind == [6, 1, 2, 3, 4, 5, nothing]
+    @test ind == indOri
+
+    a = [TriangleFace{Int}(1,2,3),TriangleFace{Int}(4,5,6)]
+    b = [TriangleFace{Int}(4,5,6), TriangleFace{Int}(1,2,4), TriangleFace{Int}(1,2,3),TriangleFace{Int}(4,5,6)]
+    ind = findindexin(a, b; missingIndex=nothing)
+
+    indOri = indexin(a,b)
+    @test ind == [3,1]
+    @test ind == indOri
 end

@@ -27,12 +27,12 @@ strokewidth = 1
 
 fig = Figure(size=(800,800))
 
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Tet4 faces (tri3)")
+ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Penta5 faces")
 hp1 = poly!(ax1,GeometryBasics.Mesh(V,F[1]), color=:white, shading = FastShading, transparency=false, strokecolor=:black, strokewidth=1)
 hp2 = poly!(ax1,GeometryBasics.Mesh(V,F[2]), color=:white, shading = FastShading, transparency=false, strokecolor=:black, strokewidth=1)
 scatter!(ax1,V,color=:black,markersize=10)
 
-ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Tet10 faces (tri6)")
+ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Penta15 faces")
 hp3 = poly!(ax2,GeometryBasics.Mesh(V_penta15,F_penta15[1]), color=:white, shading = FastShading, transparency=false, strokecolor=:black, strokewidth=1)
 hp4 = poly!(ax2,GeometryBasics.Mesh(V_penta15,F_penta15[2]), color=:white, shading = FastShading, transparency=false, strokecolor=:black, strokewidth=1)
 scatter!(ax2,V_penta15,color=:black,markersize=10)

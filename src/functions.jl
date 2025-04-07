@@ -881,11 +881,8 @@ function gunique(X; return_unique=true, return_index=false, return_inverse=false
     # Use required unique function 
     if return_unique && !return_index && !return_inverse && !return_counts
         # UNIQUE
-        if sort_entries && length(X[1])>1
-            return unique(sort.(X))
-        else
-            return unique(X)
-        end
+        X_uni,_ = unique_dict_index(X; sort_entries=sort_entries)
+        return X_uni        
     elseif return_unique && return_index && !return_inverse && !return_counts
         # UNIQUE, INDICES
         return unique_dict_index(X; sort_entries=sort_entries)
@@ -3296,13 +3293,40 @@ function boundaryfaces(F::Vector{NgonFace{N,T}}) where N where T <: Integer
     return F[occursonce(F; sort_entries=true)]
 end
 
-function boundaryfaces(E::Vector{Element{N,T}}) where N where T <: Integer
-    F = element2faces(E)
-    return F[occursonce(F; sort_entries=true)]
+function boundaryfaces(E::Vector{Element{N,T}}; elementLabels=nothing) where N where T <: Integer
+    if isnothing(elementLabels)
+        F = element2faces(E)
+        return F[occursonce(F; sort_entries=true)]
+    else        
+        Fb = Vector{element_facetype(E)}()        
+        for c in unique(elementLabels)                        
+            append!(Fb,boundaryfaces(element2faces(E[elementLabels.==c]))) # Add faces to set
+        end
+        return gunique(Fb; return_unique=true, return_index=false, return_inverse=false, sort_entries=true)
+    end
+end
+
+function element_facetype(E::Vector{Element{N,T}}) where N where T <: Integer
+    element_type = eltype(E)
+    if element_type<:Tet4{T} where T <: Integer
+        return TriangleFace{T}
+    elseif element_type<:Tet10{T} where T <: Integer
+        return NgonFace{6,T}
+    elseif element_type<:Tet15{T} where T <: Integer
+        return NgonFace{6,T}
+    elseif element_type<:Hex8{T} where T <: Integer
+        return QuadFace{T}
+    elseif element_type<:Hex20{T} where T <: Integer
+        return NgonFace{8,T}
+    elseif element_type<:Penta6{T} where T <: Integer
+        return (TriangleFace{T},QuadFace{T})
+    elseif element_type<:Penta15{T} where T <: Integer
+        return (NgonFace{6,T},NgonFace{8,T})    
+    end
 end
 
 """
-    boundaryfaceindices(F::Vector{NgonFace{N,T}}) where N where T <: Integer
+    boundaryfaceindices(F::Vector{NgonFace{N,T}}; elementLabels=nothing) where N where T <: Integer
 
 Returns boundary face indices
 
@@ -3312,8 +3336,26 @@ a vector of faces.
 
 Boundary faces are those faces that occur only once in the mesh. 
 """
-function boundaryfaceindices(F::Vector{NgonFace{N,T}}) where N where T <: Integer
-    return findall(occursonce(F; sort_entries=true))
+function boundaryfaceindices(F::Vector{NgonFace{N,T}}; elementLabels=nothing) where N where T <: Integer
+    if isnothing(elementLabels)
+        return findall(occursonce(F; sort_entries=true))
+    else # Labels provided so loop over labelled regions
+        if length(F) !=  length(elementLabels)
+            elementLabels = repeat(elementLabels,inner=6) # Assume element labels rather than face labels
+        end
+        Fb = Vector{eltype(F)}()        
+        indicesBoundaryFaces = Vector{Int}()        
+        for c in unique(elementLabels)
+            indNow = findall(elementLabels.==c) # Indices of current faces
+            f = F[indNow] # The face set         
+            ind = boundaryfaceindices(f)
+            append!(indicesBoundaryFaces,indNow[ind])       
+            append!(Fb,f[ind]) # Add faces to set
+        end
+        # Find indices of unique boundary faces 
+        _,ind_uni = gunique(Fb; return_unique=true, return_index=true, return_inverse=false, sort_entries=true)        
+        return indicesBoundaryFaces[ind_uni]
+    end
 end
 
 """ 
@@ -4756,6 +4798,16 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
             F[ii+5] = QuadFace{T}(e[5],e[8],e[4],e[1]) # Back
         end
     elseif element_type <: Penta6{T}
+        # Triangles
+        nft = 2
+        Ft = Vector{TriangleFace{T}}(undef,length(E)*nft)
+        for (i,e) in enumerate(E)
+            ii = 1 + (i-1)*nft
+            Ft[ii  ] = TriangleFace{T}(e[3],e[2],e[1]) # Bottom
+            Ft[ii+1] = TriangleFace{T}(e[4],e[5],e[6]) # Top
+        end
+        
+        # Quads
         nfq = 3
         Fq = Vector{QuadFace{T}}(undef,length(E)*nfq)
         for (i,e) in enumerate(E)
@@ -4765,13 +4817,6 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
             Fq[ii+2] = QuadFace{T}(e[3],e[1],e[4],e[6]) # Side 3            
         end
 
-        nft = 2
-        Ft = Vector{TriangleFace{T}}(undef,length(E)*nft)
-        for (i,e) in enumerate(E)
-            ii = 1 + (i-1)*nft
-            Ft[ii  ] = TriangleFace{T}(e[3],e[2],e[1]) # Bottom
-            Ft[ii+1] = TriangleFace{T}(e[4],e[5],e[6]) # Top
-        end
         F = (Ft,Fq) # Collect faces in tuple
     elseif element_type <: Penta15{T}        
         nfq = 3
@@ -5155,7 +5200,7 @@ input parameters are available:
 * `V_holes`, a vector of points inside holes (voids) that should remain empty. 
 * `stringOpt`, the TetGen command string to use. See also the TetGen documentation. 
 """
-function tetgenmesh(F::Array{NgonFace{N,TF}, 1},V::Vector{Point{3,TV}}; facetmarkerlist=nothing, V_regions=nothing,region_vol=nothing,V_holes=nothing,stringOpt="paAqYQ")  where N where TF<:Integer where TV<:Real
+function tetgenmesh(F::Array{NgonFace{N,TF}, 1},V::Vector{Point{3,TV}}; facetmarkerlist=nothing, V_regions=nothing, region_vol=nothing, V_holes=nothing, stringOpt="paAqYQ", element_type=Tet4{TF})  where N where TF<:Integer where TV<:Real
 
     # Initialise TetGen input
     input = TetGen.RawTetGenIO{Cdouble}()
@@ -5209,7 +5254,33 @@ function tetgenmesh(F::Array{NgonFace{N,TF}, 1},V::Vector{Point{3,TV}}; facetmar
     Fb = [TriangleFace{TF}(reverse(f)) for f in eachcol(TET.trifacelist)]
     Cb = TET.trifacemarkerlist
 
-    return E,V,CE,Fb,Cb
+    if element_type <: Tet10{T} where T<:Integer        
+        # Get boundary face indices         
+        F_tet4 = element2faces(E)
+        N_tet4 = facenormal(F_tet4,V)
+        E,V = tet4_tet10(E,V)
+        F = element2faces(E)                
+        Nb = facenormal(Fb,V)
+        Fb_tet10 = Vector{NgonFace{6,Int}}(undef,length(Fb))
+        for (i,fb) in enumerate(Fb)            
+            fbs = sort(fb)
+            for (j,f) in enumerate(F_tet4)
+                if fbs == sort(f)
+                    if dot(Nb[i],N_tet4[j])>0.0
+                        Fb_tet10[i] = F[j]
+                    else
+                        Fb_tet10[i] = reverse(F[j])
+                    end
+                    break
+                end
+            end 
+        end
+        return E,V,CE,Fb_tet10,Cb
+    else
+        return E,V,CE,Fb,Cb
+    end
+    
+    
 end
 
 """
@@ -6662,10 +6733,15 @@ function inpolygon(P::Vector{Point{M,T}}, V::Vector{Point{N,T}}; atol = sqrt(eps
 end
 
 """
-    indexPair2sortedEdge(i,j)
+    _indexPair2sortedEdge(i,j)
 
+Created sorted edge from indices
+
+# Description
+This function takes in a pair of integers `i` and `j` and converts it to a
+LineFace, i.e. a GeometryBasics edge. In addition the indices are sorted.  
 """
-function indexPair2sortedEdge(i,j)
+function _indexPair2sortedEdge(i::Int,j::Int)
     if j>i
         return LineFace{typeof(i)}(i,j)
     else
@@ -6676,6 +6752,11 @@ end
 """
     elementEdges(E::Vector{Element{N,T}}) where N where T 
 
+Returns element edges 
+
+# Description
+This function takes in the element vector `E` (e.g. containing Tet4, Penta6 
+entries) and returns a vector of edges.
 """
 function elementEdges(E::Vector{Element{N,T}}) where N where T    
     element_type = eltype(E)
@@ -6685,28 +6766,51 @@ function elementEdges(E::Vector{Element{N,T}}) where N where T
         elementEdges = Vector{LineFace{T}}(undef,numElements*numElementEdges)        
         for (i,e) in enumerate(E) # Loop over each node/point for the current simplex                               
             j = 1 + (i-1)*numElementEdges
-            elementEdges[j  ] = indexPair2sortedEdge(e[1],e[2])
-            elementEdges[j+1] = indexPair2sortedEdge(e[2],e[3])
-            elementEdges[j+2] = indexPair2sortedEdge(e[3],e[1])
-            elementEdges[j+3] = indexPair2sortedEdge(e[1],e[4])
-            elementEdges[j+4] = indexPair2sortedEdge(e[2],e[4])
-            elementEdges[j+5] = indexPair2sortedEdge(e[3],e[4])           
+            elementEdges[j  ] = _indexPair2sortedEdge(e[1],e[2])
+            elementEdges[j+1] = _indexPair2sortedEdge(e[2],e[3])
+            elementEdges[j+2] = _indexPair2sortedEdge(e[3],e[1])
+            elementEdges[j+3] = _indexPair2sortedEdge(e[1],e[4])
+            elementEdges[j+4] = _indexPair2sortedEdge(e[2],e[4])
+            elementEdges[j+5] = _indexPair2sortedEdge(e[3],e[4])           
         end 
+    # elseif element_type <: Tet10{T}
     elseif element_type <: Penta6{T}
         numElementEdges = 9
         numElements = length(E)
         elementEdges = Vector{LineFace{T}}(undef,numElements*numElementEdges)        
         for (i,e) in enumerate(E) # Loop over each node/point for the current simplex                               
             j = 1 + (i-1)*numElementEdges
-            elementEdges[j  ] = indexPair2sortedEdge(e[1],e[2])
-            elementEdges[j+1] = indexPair2sortedEdge(e[2],e[3])
-            elementEdges[j+2] = indexPair2sortedEdge(e[3],e[1])
-            elementEdges[j+3] = indexPair2sortedEdge(e[4],e[5])
-            elementEdges[j+4] = indexPair2sortedEdge(e[5],e[6])
-            elementEdges[j+5] = indexPair2sortedEdge(e[6],e[4])           
-            elementEdges[j+6] = indexPair2sortedEdge(e[1],e[4])           
-            elementEdges[j+7] = indexPair2sortedEdge(e[2],e[5])           
-            elementEdges[j+8] = indexPair2sortedEdge(e[3],e[6])                       
+            elementEdges[j  ] = _indexPair2sortedEdge(e[1],e[2])
+            elementEdges[j+1] = _indexPair2sortedEdge(e[2],e[3])
+            elementEdges[j+2] = _indexPair2sortedEdge(e[3],e[1])
+            elementEdges[j+3] = _indexPair2sortedEdge(e[4],e[5])
+            elementEdges[j+4] = _indexPair2sortedEdge(e[5],e[6])
+            elementEdges[j+5] = _indexPair2sortedEdge(e[6],e[4])           
+            elementEdges[j+6] = _indexPair2sortedEdge(e[1],e[4])           
+            elementEdges[j+7] = _indexPair2sortedEdge(e[2],e[5])           
+            elementEdges[j+8] = _indexPair2sortedEdge(e[3],e[6])                       
+        end 
+    # elseif element_type <: Penta15{T}
+    elseif element_type <: Hex8{T}
+        numElementEdges = 12
+        numElements = length(E)
+        elementEdges = Vector{LineFace{T}}(undef,numElements*numElementEdges)        
+        for (i,e) in enumerate(E) # Loop over each node/point for the current simplex                               
+            j = 1 + (i-1)*numElementEdges
+            elementEdges[j  ] = _indexPair2sortedEdge(e[1],e[2])
+            elementEdges[j+1] = _indexPair2sortedEdge(e[2],e[3])
+            elementEdges[j+2] = _indexPair2sortedEdge(e[3],e[4])
+            elementEdges[j+3] = _indexPair2sortedEdge(e[4],e[1])
+
+            elementEdges[j+4] = _indexPair2sortedEdge(e[5],e[6])
+            elementEdges[j+5] = _indexPair2sortedEdge(e[6],e[7])           
+            elementEdges[j+6] = _indexPair2sortedEdge(e[7],e[8])
+            elementEdges[j+7] = _indexPair2sortedEdge(e[8],e[5])
+
+            elementEdges[j+8]  = _indexPair2sortedEdge(e[1],e[5])
+            elementEdges[j+9]  = _indexPair2sortedEdge(e[2],e[6])           
+            elementEdges[j+10] = _indexPair2sortedEdge(e[3],e[7])
+            elementEdges[j+11] = _indexPair2sortedEdge(e[4],e[8])
         end 
     end 
     return elementEdges
@@ -6714,6 +6818,14 @@ end
 
 """
     tet4_tet10(E,V)
+
+Converts linear to quadratic tetrahedra
+
+# Description
+This function converts the input linear 4-noded tetrahedral elements, defined by 
+the element vector `E` and vertices `V`, to 10 noded quadratic tetrahedral 
+elements, defined by the output element vector `E_tet10` and vertices 
+`V_tet10`.
 """
 function tet4_tet10(E,V)
     tetEdges = elementEdges(E)
@@ -6730,6 +6842,14 @@ end
 
 """
     penta6_penta15(E,V)
+
+Converts linear to quadratic pentahedra
+
+# Description
+This function converts the input linear 6-noded pentahedral elements, defined by 
+the element vector `E` and vertices `V`, to 15 noded quadratic pentahedral
+elements, defined by the output element vector `E_penta15` and vertices 
+`V_penta15`.
 """
 function penta6_penta15(E,V)
     pentaEdges = elementEdges(E)
@@ -6744,20 +6864,24 @@ function penta6_penta15(E,V)
     return E_penta15, V_penta15
 end
 
-# function tet4_tet15(E,V)
-#     tetEdges = elementEdges(E)
-#     tetEdgesUnique,_,indReverse = gunique(tetEdges; return_unique=true, return_index=true, return_inverse=true, sort_entries=false)
 
-#     F = element2faces(E)
-#     Vn1 = simplexcenter(tetEdgesUnique,V)
-#     Vn2 = simplexcenter(E,V)
-#     Vn3 = simplexcenter(F,V)
-    
-#     V_tet10 = [V; Vn1; Vn2; Vn3;]  # Old and new mid-edge points          
-#     E_tet10 = Vector{Tet10{Int}}(undef,length(E))        
-#     for (i,e) in enumerate(E)
-#         indNew = indReverse[1+(i-1)*6:i*6].+length(V)
-#         E_tet10[i] = Tet10{Int}(e[1],e[2],e[3],e[4],indNew[1],indNew[2],indNew[3],indNew[4],indNew[5],indNew[6])
-#     end
-#     return E_tet10, V_tet10
-# end
+"""
+    findindexin(a, b::AbstractArray; missingIndex=0)
+
+Finds indices from one to another indexable 
+
+# Description
+This function is the same as Julia's `indexin`. However here by default the 
+"index" returned for a missing entry is 0 rather than `nothing`. This means that
+the output is by default a `Vector{Int64}` rather than a 
+`Vector{Union{Nothing, Int64}}`. To return something other than 0, the user can 
+set the optional attribute `missingIndex`. 
+"""
+function findindexin(a, b::AbstractArray; missingIndex=0)
+    inds = keys(b)
+    bdict = Dict{eltype(b),eltype(inds)}()
+    for (val, ind) in zip(b, inds)
+        get!(bdict, val, ind)
+    end
+    return [get(bdict, i, missingIndex) for i in a]
+end

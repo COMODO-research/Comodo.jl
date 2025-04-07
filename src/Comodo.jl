@@ -70,7 +70,8 @@ export rhombicdodecahedronfoam, kelvinfoam, truncatedoctahedron, ntrapezohedron,
 export mag, indexmap!, indexmap, minp, maxp, spacing2numvertices
 export joingeom, quadbox, tribox, tetbox, pad3, getisosurface 
 export randangle, stepfunc, perlin_noise, removepoints, inpolygon
-export tet4_tet10, penta6_penta15
+export elementEdges, tet4_tet10, penta6_penta15
+export findindexin
 
 # Export functions: Visualization related
 export slidercontrol, slider2anim, dirplot, normalplot
