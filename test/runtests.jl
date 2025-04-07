@@ -3054,7 +3054,20 @@ end
         @test isapprox(d,fill(r,n),atol=eps_level)
         @test isapprox(V[ind], Point3{Float64}[[2.0, 0.0, 0.0], [1.2246467991473532e-16, -2.0, 0.0], 
         [-1.9753766811902753, -0.31286893008046196, 0.0], [-0.31286893008046207, 1.9753766811902753, 0.0], 
-        [1.9753766811902753, 0.31286893008046224, 0.0]], atol=eps_level)
+        [1.9753766811902753, 0.31286893008046224, 0.0]], atol=eps_level)       
+    end
+
+    @testset "with tuple (ellipse)" begin
+        n = 44
+        r = (2.0,3.0)
+        V = circlepoints(r, n; dir=:cw)
+        xMax = maximum([v[1] for v in V])
+        yMax = maximum([v[2] for v in V])
+        ind = round.(Int,range(1,length(V),5))        
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == n
+        @test isapprox(xMax,r[1],atol=eps_level)
+        @test isapprox(yMax,r[2],atol=eps_level)
     end
 
     @testset "with function" begin
@@ -3756,6 +3769,24 @@ end
         @test typeof(Fb2) == typeof(F)
         @test Fb1 == Fb2
     end
+
+    @testset "Hex. mesh with element labels" begin        
+        sampleSize = 10
+        pointSpacing = 2.0
+        boxDim = sampleSize.*[1.0,1.0,1.0] # Dimensionsions for the box in each direction
+        boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
+        E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl) 
+        VE = simplexcenter(E,V)
+        elementLabels = [v[3]<=eps(0.0) for v in VE]
+
+        # Get boundary faces from either the total set of element faces or the elements    
+        Fb_normal = boundaryfaces(E)
+        Fb = boundaryfaces(E; elementLabels=elementLabels)
+
+        # Check for added boundary faces between label layer *will be boxEl[1]*boxEl[2]
+        @test length(Fb) == length(Fb_normal) + boxEl[1]*boxEl[2]
+    end
+
 end
 
 @testset "boundaryfaceindices" verbose = true begin
@@ -3818,7 +3849,18 @@ end
     end
 end
 
-@testset "edges2curve" begin
+@testset "_element_facetype" verbose = true begin
+    T = Int
+    @test Comodo._element_facetype(Vector{Tet4{T}}(undef,3))  == TriangleFace{T}
+    @test Comodo._element_facetype(Vector{Tet10{T}}(undef,3))  == NgonFace{6,T}
+    # @test Comodo._element_facetype(Vector{Tet15{T}}(undef,3))  == NgonFace{6,T}
+    @test Comodo._element_facetype(Vector{Hex8{T}}(undef,3))  == QuadFace{T}
+    @test Comodo._element_facetype(Vector{Hex20{T}}(undef,3))  == NgonFace{8,T}
+    @test Comodo._element_facetype(Vector{Penta6{T}}(undef,3))  == (TriangleFace{T},QuadFace{T})
+    @test Comodo._element_facetype(Vector{Penta15{T}}(undef,3))  == (NgonFace{6,T},NgonFace{8,T})            
+end
+
+@testset "edges2curve" verbose = true begin
 
     # Empty input
     E = LineFace{Int}[]
@@ -4401,6 +4443,18 @@ end
         @test typeof(Fn) == typeof(F)
         @test length(Fn) == length(F)    
         @test length(Vn) == length(F)*length(F[1])
+    end
+
+    @testset "Quadrilateral face mesh with scale factor" begin
+        F,V = cube(1.0)        
+        Fn, Vn = separate_vertices(F, V; scaleFactor = 0.5)    
+
+        ind = round.(Int,range(1,length(Vn),5))
+        @test Vn isa Vector{Point3{Float64}}
+        @test typeof(Fn) == typeof(F)
+        @test length(Fn) == length(F)    
+        @test length(Vn) == length(F)*length(F[1])
+        @test Vn[ind] == Point{3, Float64}[[-0.2886751345948129, -0.2886751345948129, -0.5773502691896258], [-0.2886751345948129, 0.2886751345948129, 0.5773502691896258], [-0.5773502691896258, -0.2886751345948129, -0.2886751345948129], [0.5773502691896258, -0.2886751345948129, 0.2886751345948129], [0.2886751345948129, -0.5773502691896258, -0.2886751345948129]]
     end
 
     @testset "Triangulated mesh" begin
@@ -5404,6 +5458,27 @@ end
         @test F[1][1] == [3,2,1]
     end
 
+    @testset "penta15" begin
+        E = [Penta15{Int}(collect(1:15))]
+        F = element2faces(E)
+        @test isa(F,Tuple)
+        @test length(F[1]) == length(E)*2
+        @test length(F[2]) == length(E)*3
+        @test isa(F[1],Vector{NgonFace{6,Int}})
+        @test isa(F[2],Vector{NgonFace{8,Int}})
+        @test F[1][1] == NgonFace{6, Int64}(3, 8, 2, 7, 1, 9)
+
+        E = [Penta15{Int}(collect(1:15)),Penta15{Int}(collect(16:30)),Penta15{Int}(collect(31:45))]
+        F = element2faces(E)
+        @test isa(F,Tuple)
+        @test length(F[1]) == length(E)*2
+        @test length(F[2]) == length(E)*3
+        @test isa(F[1],Vector{NgonFace{6,Int}})
+        @test isa(F[2],Vector{NgonFace{8,Int}})
+        @test F[1][1] == NgonFace{6, Int64}(3, 8, 2, 7, 1, 9)
+    end
+
+
     @testset "Rhombicdodeca14" begin
         nf = 12
         E = [Rhombicdodeca14{Int}(1:14)]
@@ -5672,6 +5747,17 @@ end
         
         @test isa(E,Vector{Tet4{eltype(F1[1])}})
         @test isa(V,typeof(V1))
+    end
+
+    @testset "One region sphere Tet10" begin
+        r = pi/2
+        F1,V1 = geosphere(3,r)                
+        element_type = Tet10{Int}
+        E,V,CE,Fb,Cb = tetgenmesh(F1,V1; element_type=element_type)
+        
+        @test isa(E,Vector{Tet10{eltype(F1[1])}})
+        @test isa(V,typeof(V1))
+        @test length(Fb) == length(F1)        
     end
 
     @testset "Two region sphere" begin
@@ -6707,6 +6793,27 @@ end
 
     F,V = getisosurface(A; level = level, cap = false)
     @test length(boundaryedges(F)) > 0 # Is not merged/closed
+
+    gyroid(v) = cos(v[1])*sin(v[2])+cos(v[2])*sin(v[3])+cos(v[3])*sin(v[1])    
+    nSteps = 50
+    np = 3 # Number of "periods"
+    xr,yr,zr = ntuple(_->range(0,2*pi*np,nSteps),3)
+    A = [gyroid((x,y,z)) for x in xr, y in yr, z in zr]
+    
+    level = 0.0
+    cap = true
+    F,V = getisosurface(A; level = level, cap = cap)
+    @test length(boundaryedges(F)) == 0 # Is merged/closed due to caps
+
+    level = -0.1
+    cap = true
+    F,V = getisosurface(A; level = level, cap = cap)
+    @test length(boundaryedges(F)) == 0 # Is merged/closed due to caps
+
+    level = 0.1
+    cap = true
+    F,V = getisosurface(A; level = level, cap = cap)
+    @test length(boundaryedges(F)) == 0 # Is merged/closed due to caps
 end
 
 

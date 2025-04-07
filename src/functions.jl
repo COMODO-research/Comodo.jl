@@ -5,7 +5,7 @@ GeometryBasics.@fixed_vector Element = AbstractElement
 
 const Tet4{T} = Element{4,T} where T<:Integer
 const Tet10{T} = Element{10,T} where T<:Integer
-const Tet15{T} = Element{15,T} where T<:Integer
+# const Tet15{T} = Element{15,T} where T<:Integer
 const Hex8{T} = Element{8,T} where T<:Integer
 const Hex20{T} = Element{20,T} where T<:Integer
 const Penta6{T} = Element{6,T} where T<:Integer
@@ -1423,11 +1423,6 @@ end
 
 function topoints(VM::Vector{Point{ND,TV}}) where ND where TV <: Real        
     return VM
-end
-
-#TEMP FIX
-function topoints(VM)
-    [Point{3,Float64}(v) for v in coordinates(VM)]
 end
 
 """
@@ -3298,7 +3293,7 @@ function boundaryfaces(E::Vector{Element{N,T}}; elementLabels=nothing) where N w
         F = element2faces(E)
         return F[occursonce(F; sort_entries=true)]
     else        
-        Fb = Vector{element_facetype(E)}()        
+        Fb = Vector{_element_facetype(E)}()        
         for c in unique(elementLabels)                        
             append!(Fb,boundaryfaces(element2faces(E[elementLabels.==c]))) # Add faces to set
         end
@@ -3306,14 +3301,14 @@ function boundaryfaces(E::Vector{Element{N,T}}; elementLabels=nothing) where N w
     end
 end
 
-function element_facetype(E::Vector{Element{N,T}}) where N where T <: Integer
+function _element_facetype(E::Vector{Element{N,T}}) where N where T <: Integer
     element_type = eltype(E)
     if element_type<:Tet4{T} where T <: Integer
         return TriangleFace{T}
     elseif element_type<:Tet10{T} where T <: Integer
         return NgonFace{6,T}
-    elseif element_type<:Tet15{T} where T <: Integer
-        return NgonFace{6,T}
+    # elseif element_type<:Tet15{T} where T <: Integer
+    #     return NgonFace{6,T}
     elseif element_type<:Hex8{T} where T <: Integer
         return QuadFace{T}
     elseif element_type<:Hex20{T} where T <: Integer
