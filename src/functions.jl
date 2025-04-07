@@ -561,14 +561,11 @@ parameter `sort_entries` (default is false) is true, then each entry will be
 sorted, in this case and entry [3,1,2] is viewed as the same as [1,3,2] and 
 [1,2,3] and so on. 
 """
-
-function occursonce(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N   
-    d = Dict{T,Int}() # Use dict to keep track of used values    
-    B = Vector{Bool}(undef,length(X)) 
-    for (i,x) in enumerate(X)         
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end
+function occursonce(X; sort_entries=false)  
+    d = Dict{eltype(X), Int}()
+    B = falses(length(X))
+    for (i,x) in enumerate(X)    
+        sort_entries && (x = _sort(x)) 
         if !haskey(d, x)            
             d[x] = i # index in dict            
             B[i] = true             

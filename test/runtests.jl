@@ -622,6 +622,8 @@ end
         A = [3,2,3,4,2,5,6]
         B_true = Bool[0, 0, 0, 1, 0, 1, 1]
         @test occursonce(A) == B_true
+        @test occursonce(A) isa BitVector
+        @inferred occursonce(A)
 
         # Vector of floats
         A = [3.1,2.0,3.1,4.5,2.0,5.0,6.0]
