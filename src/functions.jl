@@ -1004,7 +1004,7 @@ special integer type `OffsetInteger{-1, TF}` is converted to `Int`.
 If the intput is already of the right type this function leaves the input 
 unchanged.
 """
-function tofaces(FM::Vector{Vector{TF}}) where TF<:Integer
+function tofaces(FM::Vector{Vector{TF}}) where {TF}
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)    
     m = length(FM[1]) # Get number of points from first
     if m == 2 # Edges
@@ -1019,7 +1019,7 @@ function tofaces(FM::Vector{Vector{TF}}) where TF<:Integer
     return F
 end
 
-function tofaces(FM::Matrix{TF})  where TF<:Integer
+function tofaces(FM::Matrix{TF})  where {TF}
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)
     m = size(FM,2) # number of points per face
     if m == 2 # Edges
@@ -1034,21 +1034,21 @@ function tofaces(FM::Matrix{TF})  where TF<:Integer
     return F
 end
 
-function tofaces(FM::Vector{NgonFace{m, OffsetInteger{-1, TF}}} ) where m where TF <: Integer
+function tofaces(FM::Vector{<:NgonFace{M, <:OffsetInteger}} ) where {M}
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)    
-    if m == 2 # Edges
+    if M == 2 # Edges
         F = [LineFace{Int}(f) for f in FM]
-    elseif m == 3 # Triangles
+    elseif M == 3 # Triangles
         F = [TriangleFace{Int}(f) for f in FM]
-    elseif m == 4 # Quads
+    elseif M == 4 # Quads
         F = [QuadFace{Int}(f) for f in FM]
     else # Other mesh type
-        F = [NgonFace{m,Int}(f) for f in FM]
+        F = [NgonFace{M,Int}(f) for f in FM]
     end
     return F
 end
 
-function tofaces(FM::Vector{NgonFace{m, TF}} ) where m where TF <: Integer    
+function tofaces(FM::Vector{<:NgonFace} )
     return FM
 end
 
