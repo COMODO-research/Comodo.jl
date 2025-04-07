@@ -523,12 +523,12 @@ end
 
 @testset "unique_dict_index" begin 
     arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
-    result1, result2 = gunique(arr; compute_index = Val(true))
+    result1, result2 = gunique(arr; return_index = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 2, 3, 6, 9]
 
     arr = [[1, 2, 3], [3,2,1],[4,5,6]]
-    result1, result2 = gunique(arr; compute_index = Val(true), sort_entries = true)
+    result1, result2 = gunique(arr; return_index = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 3]
 end 
@@ -536,13 +536,13 @@ end
 
 @testset "unique_dict_index_inverse" begin 
     arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
-    result1, result2, result3 = gunique(arr; compute_index = Val(true), compute_inverse = Val(true))
+    result1, result2, result3 = gunique(arr; return_index = Val(true), return_inverse = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 2, 3, 6, 9]
     @test result3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
 
     arr = [[1, 2, 3], [3,2,1],[4,5,6]]
-    result1, result2, result3 = gunique(arr; compute_index = Val(true), compute_inverse = Val(true), sort_entries = true)
+    result1, result2, result3 = gunique(arr; return_index = Val(true), return_inverse = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 3]
     @test result3 == [1, 1, 2]
@@ -551,13 +551,13 @@ end
 
 @testset "unique_dict_index_count" begin 
     arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
-    result1, result2, result3 = gunique(arr; compute_index = Val(true), compute_counts = Val(true))
+    result1, result2, result3 = gunique(arr; return_index = Val(true), return_counts = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 2, 3, 6, 9]
     @test result3 == [1, 1, 3, 3, 1]
 
     arr = [[1, 2, 3], [3,2,1],[4,5,6]]
-    result1, result2, result3 = gunique(arr; compute_index = Val(true), compute_counts = Val(true), sort_entries = true)
+    result1, result2, result3 = gunique(arr; return_index = Val(true), return_counts = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 3]
     @test result3 == [2, 1]
@@ -566,14 +566,14 @@ end
 
 @testset "unique_dict_index_inverse_count" begin 
     arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
-    result1, result2, result3, result4 = gunique(arr, compute_index = Val(true), compute_inverse = Val(true), compute_counts = Val(true))
+    result1, result2, result3, result4 = gunique(arr, return_index = Val(true), return_inverse = Val(true), return_counts = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 2, 3, 6, 9]
     @test result3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
     @test result4 == [1, 1, 3, 3, 1]
 
     arr = [[1, 2, 3], [3,2,1],[4,5,6]]
-    result1, result2, result3, result4 = gunique(arr, compute_index = Val(true), compute_inverse = Val(true), compute_counts = Val(true), sort_entries = true)
+    result1, result2, result3, result4 = gunique(arr, return_index = Val(true), return_inverse = Val(true), return_counts = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 3]
     @test result3 == [1, 1, 2]
@@ -583,12 +583,12 @@ end
 
 @testset "unique_dict_count" begin 
     arr = [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
-    result1, result2 = gunique(arr; compute_counts = Val(true))
+    result1, result2 = gunique(arr; return_counts = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [3, 4, 2, 1, 1]
 
     arr = [[1, 2, 3], [3,2,1],[4,5,6]]
-    result1, result2 = gunique(arr; compute_counts = Val(true), sort_entries = true)
+    result1, result2 = gunique(arr; return_counts = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [2,1]
 end
@@ -596,12 +596,12 @@ end
 
 @testset "unique_dict_inverse" begin 
     arr = [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
-    result1, result2 = gunique(arr; compute_inverse = Val(true))
+    result1, result2 = gunique(arr; return_inverse = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
 
     arr = [[1, 2, 3], [3,2,1],[4,5,6]]
-    result1, result2 = gunique(arr; compute_inverse = Val(true), sort_entries = true)
+    result1, result2 = gunique(arr; return_inverse = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 1, 2]
 end 
@@ -609,7 +609,7 @@ end
 
 @testset "unique_dict" begin 
     arr = [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
-    result1, result2, result3 = gunique(arr; compute_index=Val(true), compute_inverse=Val(true))
+    result1, result2, result3 = gunique(arr; return_index=Val(true), return_inverse=Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 4, 8, 10, 11]
     @test result3 == [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
@@ -688,30 +688,30 @@ end
 end
 
 @testset "gunique" begin     
-    r1, r2, r3, r4 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index = true, return_inverse = true, return_counts = true, sort_entries = false)
+    r1, r2, r3, r4 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), return_counts = Val(true), sort_entries = false)
     @test r1 == [1, 2, 3, 4, 5]
     @test r2 == [1, 2, 3, 6, 9]
     @test r3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
     @test r4 == [1, 1, 3, 3, 1]
 
-    r1, r2, r3 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index = true, return_inverse = true, return_counts = false, sort_entries = false)
+    r1, r2, r3 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), return_counts = Val(false), sort_entries = false)
     @test r1 == [1, 2, 3, 4, 5]
     @test r2 == [1, 2, 3, 6, 9]
     @test r3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
 
-    r1, r2 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index = false, return_inverse = false, return_counts = true, sort_entries = false)
+    r1, r2 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=Val(true), return_index = Val(false), return_inverse = Val(false), return_counts = Val(true), sort_entries = false)
     @test r1 == [1, 2, 3, 4, 5]
     @test r2 == [1, 1, 3, 3, 1]
 
-    r1, r2 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index = false, return_inverse = true, return_counts = false, sort_entries = false)
+    r1, r2 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=Val(true), return_index = Val(false), return_inverse = Val(true), return_counts = Val(false), sort_entries = false)
     @test r1 == [1, 2, 3, 4, 5]
     @test r2 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
 
-    r1, r2 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index = true, return_inverse = false, return_counts = false, sort_entries = false)
+    r1, r2 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=Val(true), return_index = Val(true), return_inverse = Val(false), return_counts = Val(false), sort_entries = false)
     @test r1 == [1, 2, 3, 4, 5]
     @test r2 == [1, 2, 3, 6, 9]
 
-    r1 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index = false, return_inverse = false, return_counts = false, sort_entries = false)
+    r1 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=Val(true), return_index = Val(false), return_inverse = Val(false), return_counts = Val(false), sort_entries = false)
     @test r1 == [1, 2, 3, 4, 5]
 end 
 

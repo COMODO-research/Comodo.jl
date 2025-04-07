@@ -594,7 +594,7 @@ The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
 be seen as the same as [2,1] for instance.  
 """
-function gunique(X; compute_unique::Val{CompUnique}=Val(true), compute_index::Val{CompIdx}=Val(false), compute_inverse::Val{CompInv}=Val(false), compute_counts::Val{CompCounts}=Val(false), sort_entries=false) where {CompUnique,CompIdx,CompInv,CompCounts}
+function gunique(X; return_unique::Val{CompUnique}=Val(true), return_index::Val{CompIdx}=Val(false), return_inverse::Val{CompInv}=Val(false), return_counts::Val{CompCounts}=Val(false), sort_entries=false) where {CompUnique,CompIdx,CompInv,CompCounts}
     if CompUnique && !(CompIdx || CompInv || CompCounts)
         return sort_entries ? unique(_sort, X) : unique(X)
     else
@@ -635,7 +635,7 @@ end
 """
     unique_simplices(F,V=nothing)
 
-Returns unique simplices (such as faces), independant of node order
+Returns unique simplices (such as faces), independent of node order
 
 # Description
     
@@ -649,6 +649,9 @@ function unique_simplices(F,V=nothing)
     else
         n = length(V)
     end
+
+
+
     virtualFaceIndices = sub2ind(n.*ones(Int,length(F[1])),sort.(F))    
     _, ind1, ind2 = unique_dict(virtualFaceIndices) 
 
