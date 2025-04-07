@@ -502,19 +502,19 @@ end
     @test isapprox(D, [3.7416573867739413, 0.0, 10.775880678677236], atol = eps_level)
     
     # Also outputting index
-    D,ind = mindist(V1, V2; getIndex=true)    
+    D,ind = mindist(V1, V2; getIndex=Val(true))    
     @test D isa Vector{Float64}
     @test isapprox(D, [3.7416573867739413, 0.0, 10.775880678677236], atol = eps_level)
     @test ind == [2,2,2]
 
     # Snap to self for self distances
-    D,ind = mindist(V1, V1; getIndex=true,skipSelf = false)    
+    D,ind = mindist(V1, V1; getIndex=Val(true),skipSelf = false)    
     @test D isa Vector{Float64}
     @test isapprox(D, [0.0,0.0,0.0], atol = eps_level)
     @test ind == [1,2,3]
 
     # Do not snap to self if self is avoided
-    D,ind = mindist(V1, V1; getIndex = true, skipSelf = true)    
+    D,ind = mindist(V1, V1; getIndex = Val(true), skipSelf = true)    
     @test D isa Vector{Float64}
     @test isapprox(D, [3.7416573867739413, 3.7416573867739413, 10.775880678677236], atol = eps_level)
     @test ind == [2,1,2]

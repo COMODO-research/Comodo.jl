@@ -523,7 +523,8 @@ t0 `true` (default is `false`) if "self distances" (e.g. the nth point to the
 nth point) are to be avoided.  
 """
 function mindist(V1,V2; getIndex::Val{B1}=Val(false), skipSelf = false ) where {B1}
-    D, d = similar(V1), similar(V2)
+    T = promote_type(eltype(eltype(V1)), eltype(eltype(V2)))
+    D, d = similar(V1, T), similar(V2, T)
     if B1
         I = Vector{Int}(undef,length(V1))
     end
