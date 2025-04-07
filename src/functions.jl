@@ -1127,11 +1127,11 @@ function edgecrossproduct(F::Union{Vector{NgonFace{NF,TF}},Vector{Vector{TF}}},V
 
     C = Vector{GeometryBasics.Vec{ND, TV}}(undef,length(F)) # Allocate array cross-product vectors      
     @inbounds for (q,f) in enumerate(F) # Loop over all faces
-        c = zeros(Vec{3,Float64})
+        c = zero(Vec{3,Float64})
         @inbounds for q in 1:N # Loop from first to end-1            
-            c  += cross(V[f[q]],V[f[mod1(q+1,N)]]) # Add next edge contribution          
+            c  += cross(V[f[q]],V[f[mod1(q+1,N)]]) / 2 # Add next edge contribution          
         end
-        C[q] = c./2 # Length = face area, direction is along normal vector
+        C[q] = c # Length = face area, direction is along normal vector
     end
     return C
 end
@@ -1145,9 +1145,9 @@ function edgecrossproduct(f::Union{NgonFace{NF,TF},Vector{TF}},V::Vector{Point{N
 
     c = zeros(Vec{3,TV})
     @inbounds for q in 1:N # Loop from first to end-1            
-        c += cross(V[f[q]],V[f[mod1(q+1,N)]]) # Add next edge contribution          
+        c += cross(V[f[q]],V[f[mod1(q+1,N)]]) / 2 # Add next edge contribution          
     end
-    return c./2 # Length = face area, direction is along normal vector
+    return c # Length = face area, direction is along normal vector
 end
 
 """
@@ -1231,7 +1231,7 @@ vector of vertices.
 Alternatively the input mesh can be a GeometryBasics mesh `M`.
 """
 function edgelengths(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
-    if eltype(F)<:LineFace{T} where T<:Integer # Already edges 
+    if eltype(F)<:LineFace
         return [norm(V[e[1]]-V[e[2]]) for e in F]
     else # Need to compute edges
         return edgelengths(meshedges(F; unique_only=true),V)
