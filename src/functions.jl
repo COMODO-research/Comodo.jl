@@ -653,7 +653,7 @@ function unique_simplices(F,V=nothing)
 
 
     virtualFaceIndices = sub2ind(n.*ones(Int,length(F[1])),sort.(F))    
-    _, ind1, ind2 = unique_dict(virtualFaceIndices) 
+    ind1, ind2 = gunique(virtualFaceIndices; return_unique = Val(false), return_index = Val(true), return_inverse = Val(true)) 
 
     return F[ind1], ind1, ind2
 end
