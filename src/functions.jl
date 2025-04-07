@@ -1067,21 +1067,21 @@ defined by `VM` to the "standard" format:
 For matrix input each row is considered a point. For vector input each vector 
 entry is considered a point.     
 """
-function topoints(VM::Matrix{T}) where T<: Real
+function topoints(VM::Matrix{T}) where {T}
     m = size(VM,2)
     return [Point{m, T}(v) for v in eachrow(VM)]
 end
 
-function topoints(VM::Array{Vec{N, T}, 1}) where T <: Real where N   
+function topoints(VM::Array{Vec{N, T}, 1}) where {T, N}
     return [Point{N, T}(v) for v in VM]
 end
 
-function topoints(VM::Vector{Vector{T}}) where T <: Real    
-        m = length(VM[1])
-        return [Point{m, T}(v) for v in VM]
+function topoints(VM::Vector{Vector{T}}) where {T}
+    m = length(VM[1])
+    return [Point{m, T}(v) for v in VM]
 end
 
-function topoints(VM::Vector{Point{ND,TV}}) where ND where TV <: Real        
+function topoints(VM::Vector{Point{ND,TV}}) where {TV, ND}
     return VM
 end
 
