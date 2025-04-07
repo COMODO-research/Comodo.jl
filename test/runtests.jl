@@ -786,25 +786,6 @@ end
     end
 end
 
-@testset "ind2sub_" verbose = true begin
-    ind = 6
-    @testset "1D i.e. Vector" begin
-        A = rand(30)        
-        @test Comodo.ind2sub_(6,length(size(A)),cumprod(size(A))) == [6]
-    end
-
-    @testset "2D i.e. 2D Matrix" begin
-        B = rand(5,6)         
-        @test Comodo.ind2sub_(6,length(size(B)),cumprod(size(B))) == [1,2]
-    end
-
-    @testset "3D i.e. 3D matrix" begin
-        C = rand(3,5,2)        
-        @test Comodo.ind2sub_(6,length(size(C)),cumprod(size(C))) == [3,2,1]
-    end
-end
-
-
 @testset "sub2ind" verbose = true begin
     ind = [1,2,3,4,8,12,30]
     A = rand(30)
@@ -815,34 +796,29 @@ end
     IJK_C = [[1, 1, 1], [2, 1, 1], [3, 1, 1], [1, 2, 1], [2, 3, 1], [3, 4, 1], [3, 5, 2]]
 
     @testset "Errors" begin
-        @test_throws DomainError sub2ind(size(A),[[-1]])
-        @test_throws DomainError sub2ind(size(A),[-1]) 
-        @test_throws DomainError sub2ind(size(A),[length(A)+1]) 
-        @test_throws DimensionMismatch sub2ind(size(A),[1,2,3,4]) 
+        @test_throws BoundsError sub2ind(size(A),[[-1]])
+        @test_throws BoundsError sub2ind(size(A),[-1]) 
+        @test_throws BoundsError sub2ind(size(A),[length(A)+1]) 
 
-        @test_throws DomainError sub2ind(size(B),[[-1,1]])
-        @test_throws DomainError sub2ind(size(B),[-1,1]) 
-        @test_throws DomainError sub2ind(size(B),[1,length(B)+1]) 
-        @test_throws DimensionMismatch sub2ind(size(B),[1,2,3,4]) 
-        @test_throws DimensionMismatch sub2ind(size(B),[[1,2,3,4]])
+        @test_throws BoundsError sub2ind(size(B),[[-1,1]])
+        @test_throws BoundsError sub2ind(size(B),[-1,1]) 
+        @test_throws BoundsError sub2ind(size(B),[1,length(B)+1]) 
 
-        @test_throws DomainError sub2ind(size(C),[[-1,1,1]])
-        @test_throws DomainError sub2ind(size(C),[-1,1,1]) 
-        @test_throws DomainError sub2ind(size(C),[length(C)+1,1,1]) 
-        @test_throws DimensionMismatch sub2ind(size(C),[1,2,3,4]) 
-        @test_throws DimensionMismatch sub2ind(size(B),[[1,2,3,4]])
+        @test_throws BoundsError sub2ind(size(C),[[-1,1,1]])
+        @test_throws BoundsError sub2ind(size(C),[-1,1,1]) 
+        @test_throws BoundsError sub2ind(size(C),[length(C)+1,1,1]) 
     end
 
     @testset "1D i.e. Vector" begin        
-        @test sub2ind(size(A),IJK_A)==ind
+        @test [A[i] for i in sub2ind(size(A),IJK_A)]==A[ind]
     end
 
     @testset "2D i.e. 2D Matrix" begin    
-        @test sub2ind(size(B),IJK_B)==ind
+        @test [B[i] for i in sub2ind(size(B),IJK_B)]==B[ind]
     end
 
     @testset "3D i.e. 3D matrix" begin        
-        @test sub2ind(size(C),IJK_C)==ind
+        @test [C[i] for i in sub2ind(size(C),IJK_C)]==C[ind]
     end
 
     @testset "Vector specifying indices 1D" begin        
@@ -853,26 +829,6 @@ end
         @test sub2ind(collect(size(C)),IJK_C)==ind
     end
 end
-
-
-@testset "sub2ind_" verbose = true begin
-
-    @testset "1D i.e. Vector" begin
-        A = rand(30)        
-        @test Comodo.sub2ind_([6],length(size(A)),cumprod(size(A))) == 6
-    end
-
-    @testset "2D i.e. 2D Matrix" begin
-        B = rand(5,6)         
-        @test Comodo.sub2ind_([1,2],length(size(B)),cumprod(size(B))) == 6
-    end
-
-    @testset "3D i.e. 3D matrix" begin
-        C = rand(3,5,2)        
-        @test Comodo.sub2ind_([3,2,1],length(size(C)),cumprod(size(C))) == 6
-    end
-end
-
 
 @testset "meshedges" verbose = true begin
     @testset "Single triangle" begin

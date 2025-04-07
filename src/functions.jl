@@ -662,100 +662,32 @@ end
 """
     ind2sub(siz,ind)
 
-Converts linear indices to subscript indices. 
+Converts linear indices to subscript indices. Assumes one-based indexing.
 
 # Description
 
 Converts the linear indices in `ind`, for a matrix/array with size `siz`, to the 
 equivalent subscript indices.  
 """
-function ind2sub(siz::Union{Tuple{Vararg{Int, N}}, Array{Int, N}},ind::Union{Int,Tuple{Vararg{Int, M}}, Array{Int, M}}) where N where M
-    if !isempty(ind) # Not empty so subscript indices will be derived
-        numDim = length(siz) # Number of dimensions from length of size
-        k = cumprod(siz) # Cumulative product of size
-        m = prod(siz) # Number of elements   
-        if any(ind.>m) || any(ind.<1)
-            throw(BoundsError("Encountered index value out of valid range 1:$m"))
-        end
-        if isa(ind,Union{Array,Tuple}) # Potentially multiple indices so loop over them
-            A = [ind2sub_(ind_i,numDim,k) for ind_i in ind]
-        else # This should be a single integer
-            A = ind2sub_(ind,numDim,k)      
-        end
-    else # Empty so return an empty vector
-        A = Vector{Int}[]
-    end
-    return A
+function ind2sub(siz, ind)
+    ci = CartesianIndices(Tuple(Base.OneTo.(siz)))
+    return map(i -> Tuple(ci[i]), ind)
 end
-
-# ind2sub helper function to parse just a single linear index and produce a single subscript index set 
-function ind2sub_(ind::Int,numDim::Int,k::Union{Int,Array{Int, N},Tuple{Vararg{Int, N}}}) where N
-    a = Vector{Int}(undef,numDim) # Initialise a
-    for q in numDim:-1:1   # For all dimensions     
-        if isone(q) # First 1st dimension
-            a[1] = rem(ind-1,k[1]) + 1        
-        else       
-            p = rem(ind-1,k[q-1]) + 1 # "previous"
-            a[q] = (ind - p)./k[q-1] + 1 # Current        
-            ind = p # Set indices as "previous"          
-        end            
-    end    
-    return a
-end
-
 
 """
     sub2ind(siz,A)
 
-Converts subscript indices to linear indices. 
+Converts subscript indices to linear indices. Assumes one-based indexing.
 
 # Description
 
 Converts the subscript indices in `A`, for a matrix/array with size `siz`, to 
 the equivalent linear indices.  
 """
-function sub2ind(siz::Union{Tuple{Vararg{Int, N}}, Array{Int, N}},A::Union{Vector{Vector{Int}}, Array{NgonFace{M, Int}, 1}}) where N where M
-    numDim = length(siz)
-    k = cumprod([siz[i] for i in eachindex(siz)],dims=1)        
-    ind = Vector{Int}(undef,length(A))
-    for i in eachindex(A)        
-        a = A[i]
-        if length(a)==numDim
-            if any(a.>siz) || any(a.<1)
-                throw(DomainError(A[i],"Indices in A[$i] exceed bounds implied by size provided"))
-            end    
-        else                
-            throw(DimensionMismatch("Incorrect number of indices in  A[$i], size implies number of indices should be $numDim"))
-        end            
-        ind[i] = sub2ind_(a,numDim,k)
-    end                    
-    return ind
+function sub2ind(siz, A)
+    li = LinearIndices(Tuple(Base.OneTo.(siz)))
+    return map(i -> li[CartesianIndex(Tuple(i))], A)
 end
-
-function sub2ind(siz::Union{Tuple{Vararg{Int, N}}, Vector{Int}},A::Vector{Int})  where N  
-    numDim = length(siz)  
-    if length(A)==numDim
-        if any(A.>siz) || any(A.<1)
-            throw(DomainError(A,"Indices in A exceed bounds implied by size provided"))
-        end 
-    else                
-        throw(DimensionMismatch("Incorrect number of indices in  A, size implies number of indices should be $numDim"))
-    end 
-    return sub2ind(siz,[A])[1]
-end
-
-function sub2ind_(a::Union{Tuple{Vararg{Int, N}}, Vector{Int},NgonFace{M, Int}},numDim::Int,k::Union{Int,Vector{Int},Tuple{Vararg{Int, N}}})  where N where M
-    if numDim==1 
-        ind = a[1]
-    else        
-        ind = a[1]
-        for i=2:numDim
-            ind += (a[i].-1).*k[i-1]
-        end 
-    end
-    return ind
-end
-
 
 """
     meshedges(F::Array{NgonFace{N,T},1}; unique_only=false) where N where T<:Integer   
