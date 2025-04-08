@@ -1276,13 +1276,13 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
         return F,V
     elseif isone(n)
         E = meshedges(F)
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        Eu,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
         # Check for boundary edges        
         count_E2F = count_edge_face(F,Eu,indReverse)
         B_boundary = isone.(count_E2F)
         if any(B_boundary)
             treatBoundary = true
-            Eb = Eu[B_boundary]
+            Eb = @view Eu[B_boundary]
             indB = unique(reduce(vcat,Eb))
             con_V2V = con_vertex_vertex(Eb,V)
         else
@@ -1294,9 +1294,9 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
         Fm3 = Vector{TriangleFace{TF}}(undef,length(Fm1))
         Fm4 = Vector{TriangleFace{TF}}(undef,length(Fm1))        
         for i in eachindex(F)                        
-            Fm2[i] = TriangleFace{TF}([Fm1[i][1], Fm1[i][3], F[i][1]])
-            Fm3[i] = TriangleFace{TF}([Fm1[i][2], Fm1[i][1], F[i][2]])
-            Fm4[i] = TriangleFace{TF}([Fm1[i][3], Fm1[i][2], F[i][3]])
+            Fm2[i] = TriangleFace{TF}(Fm1[i][1], Fm1[i][3], F[i][1])
+            Fm3[i] = TriangleFace{TF}(Fm1[i][2], Fm1[i][1], F[i][2])
+            Fm4[i] = TriangleFace{TF}(Fm1[i][3], Fm1[i][2], F[i][3])
         end
 
         # Create combined face set
@@ -1335,11 +1335,11 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
                         Vv[i] = 6/8*V[i] + 1/8*(V[con_V2V[i][1]]+V[con_V2V[i][2]]) 
                     end
                 else
-                    B_vert_face = [any(f.==i) for f in F]
+                    B_vert_face = [any(==(i), f) for f in F]
                     F_touch = F[B_vert_face] 
                     indVerticesTouch = Vector{TF}()
                     for f in F_touch                
-                        indTouch = f[f.!=i]        
+                        indTouch = filter(!=(i), f)    
                         for i in indTouch 
                             if i ∉ indVerticesTouch 
                                 push!(indVerticesTouch,i)
@@ -1347,13 +1347,13 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
                         end
                     end
                     N = length(indVerticesTouch)                
-                    v_sum = sum(V[indVerticesTouch],dims=1)[1]                
-                    β = 1/N * (5/8-(3/8 +1/4*cos((2*π)/N))^2)        
+                    v_sum = sum(@view(V[indVerticesTouch]),dims=1)[1]                
+                    β = 1/N * (5/8-(3/8 +1/4*cos((2π)/N))^2)        
                     Vv[i] = (1-N*β) .* V[i] .+ β*v_sum                
                 end
             end    
             # Create complete point set
-            Vn = [Vv;Vm] # Updated orignals and new "mid-edge-ish" points
+            Vn = [Vv;Vm] # Updated originals and new "mid-edge-ish" points
         else
             throw(ArgumentError("Incorrect method :$method. Use :linear or :Loop"))
         end
@@ -1403,7 +1403,7 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
 
         # Get edges
         E = meshedges(F) # Non-unique edges
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        Eu,indReverse = gunique(E; return_unique=Val(true), return_inverse=true, sort_entries=true)
         # Check for boundary edges        
         count_E2F = count_edge_face(F,Eu,indReverse)
         B_boundary = isone.(count_E2F)
