@@ -1371,8 +1371,8 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
 end
 
 """
-subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; method=:linear) where TF<:Integer where ND where TV <: Real
-subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; method=:Catmull_Clark) where TF<:Integer where ND where TV <: Real
+    subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; method=:linear) where TF<:Integer where ND where TV <: Real
+    subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; method=:Catmull_Clark) where TF<:Integer where ND where TV <: Real
 
 Refines quadrangulations through splitting.
 
@@ -1403,7 +1403,7 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
 
         # Get edges
         E = meshedges(F) # Non-unique edges
-        Eu,indReverse = gunique(E; return_unique=Val(true), return_inverse=true, sort_entries=true)
+        Eu,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
         # Check for boundary edges        
         count_E2F = count_edge_face(F,Eu,indReverse)
         B_boundary = isone.(count_E2F)
@@ -1467,7 +1467,7 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
         ne = length(Eu)
         for q in eachindex(F)            
             for ii = 0:3
-                Fn[q+ii*length(F)] = QuadFace{TF}([F[q][ii+1], con_F2E[q][ii+1]+nv, q+nv+ne, con_F2E[q][1+mod(3+ii,4)]+nv])                
+                Fn[q+ii*length(F)] = QuadFace{TF}(F[q][ii+1], con_F2E[q][ii+1]+nv, q+nv+ne, con_F2E[q][1+mod(3+ii,4)]+nv)                
             end            
         end
 
