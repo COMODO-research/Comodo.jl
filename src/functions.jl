@@ -1575,9 +1575,11 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
         
         # Add base
         indTopFaces = 1:length(F) # Indices of top
-        append!(F, [f .+ length(V) for f in Fb])
         append!(V,Vb)
-        append!(C,fill(2,length(Fb)))
+        for f in Fb 
+            push!(F, f .+ length(V)) # Add base faces
+            push!(C, 2)
+        end
 
         # Merge nodes
         V,_,indMap = mergevertices(V; pointSpacing = ((pi/2)*r)/(1+2^n))
@@ -1601,7 +1603,7 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
             if closed
                 indTopFaces = [j .+ i*nf  for i = 0:3 for j in indTopFaces]
                 indPush = Vector{Int}()
-                for f in F[indTopFaces]
+                for f in @view F[indTopFaces]
                     for i in f
                         if i>nv
                             push!(indPush,i)
@@ -2081,10 +2083,10 @@ function mergevertices(V::Vector{Point{ND,TV}}; roundVertices = true, pointSpaci
         VR = [round.(v,digits = numDigitsMerge)+Point{ND,TV}(0.0,0.0,0.0) for v in V]
 
         # Get unique indices and reverse for rounded vertices
-        _,indUnique,indMap = gunique(VR; return_index=true, return_inverse=true,sort_entries=false)
+        indUnique,indMap = gunique(VR; return_unique=Val(false),return_index=Val(true), return_inverse=Val(true),sort_entries=false)
         V = V[indUnique] # The unique node set
     else
-        V,indUnique,indMap = gunique(V; return_index=true, return_inverse=true,sort_entries=false)
+        V,indUnique,indMap = gunique(V; return_index=Val(true), return_inverse=Val(true),sort_entries=false)
     end
     return V,indUnique,indMap
 end
@@ -2800,8 +2802,8 @@ function remove_unused_vertices(F,V::Vector{Point{ND,TV}}) where ND where TV<:Re
         indUsed = elements2indices(F) # Indices used
         Vc = V[indUsed] # Remove unused points    
         indFix = zeros(Int,length(V))
-        indFix[indUsed] .= 1:length(indUsed)
-        Fc = [(eltype(F))(indFix[f]) for f in F] # Fix indices in F         
+        @views indFix[indUsed] .= 1:length(indUsed)
+        Fc = [eltype(F)(indFix[f]) for f in F] # Fix indices in F         
     end
     return Fc, Vc, indFix
 end
