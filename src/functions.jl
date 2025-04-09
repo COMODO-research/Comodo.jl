@@ -1703,7 +1703,7 @@ lists. For triangles the output contains 3 edges per faces, for quads 4 per face
 and so on.   
 """
 function con_face_edge(F,E_uni=nothing,indReverse=nothing)
-    if isnothing(E_uni) | isnothing(indReverse)
+    if isnothing(E_uni) || isnothing(indReverse)
         E = meshedges(F)
         E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
     end
