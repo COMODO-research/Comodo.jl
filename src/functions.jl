@@ -1560,9 +1560,9 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
 
     # Now cut off bottom hemisphere    
     searchTol = r./1000.0 # Tolerance for cropping hemisphere (safe, somewhat arbitrary if much smaller then mesh edge lengths)
-    F = [F[i] for i in findall(map(f-> mean([V[j][3] for j in f])>=-searchTol,F))] # Remove faces below equator
-    F,V,_ = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
-    C = fill(1,length(F))
+    filter!(f -> mean((V[j][3] for j in f)) ≥ -searchTol, F) # Remove faces below equator
+    F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
+    C = ones(Int, length(F))
 
     if closed
         if face_type == :tri           
@@ -1575,11 +1575,11 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
         
         # Add base
         indTopFaces = 1:length(F) # Indices of top
-        append!(V,Vb)
         for f in Fb 
             push!(F, f .+ length(V)) # Add base faces
             push!(C, 2)
         end
+        append!(V,Vb)
 
         # Merge nodes
         V,_,indMap = mergevertices(V; pointSpacing = ((pi/2)*r)/(1+2^n))
