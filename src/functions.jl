@@ -135,13 +135,14 @@ Hence any suitable vector containing vectors of numbers permitted by
 """
 function elements2indices(F)
     if isempty(F)
-        return Set{eltype(eltype(F))}()
+        return eltype(eltype(F))[]
     else
         f = first(F)
-        S = Set{eltype(f)}()
+        S = eltype(f)[]
+        seen = BitSet()
         for f in F 
             for j in f 
-                push!(S, j)
+                j ∉ seen && (push!(S, j); push!(seen, j))
             end
         end
         return S 
@@ -1637,14 +1638,14 @@ function hexbox(boxDim,boxEl)
 
     # Create hexahedral element description 
     ind1 = 1:numElements
-    ijk_shift = [[0,0,0], 
-                [1,0,0],
-                [1,1,0],
-                [0,1,0],
-                [0,0,1],
-                [1,0,1],
-                [1,1,1],
-                [0,1,1]]
+    ijk_shift =((0,0,0), 
+                (1,0,0),
+                (1,1,0),
+                (0,1,0),
+                (0,0,1),
+                (1,0,1),
+                (1,1,1),
+                (0,1,1))
                 
     
     E = Vector{Hex8{Int}}(undef,numElements) # Allocate elements
@@ -1664,7 +1665,7 @@ function hexbox(boxDim,boxEl)
     end
 
     # Create vertices aka nodal coordinates
-    indNodes = collect(Int,1:numNodes)
+    indNodes = 1:numNodes
     IJK_nodes = ind2sub(boxNod,indNodes)
 
     V = convert(Vector{Point{3, Float64}},IJK_nodes)
@@ -1674,9 +1675,9 @@ function hexbox(boxDim,boxEl)
 
     # Create face sets from elements
     F = element2faces(E) 
-    CF_type = repeat(collect(1:6),numElements) # Allocate face color/label data
+    CF_type = repeat(1:6,numElements) # Allocate face color/label data
 
-    F_uni,indUni,c_uni = gunique(F,return_index=true, return_inverse=false,return_counts=true,sort_entries=true)
+    F_uni,indUni,c_uni = gunique(F,return_index=Val(true),return_counts=Val(true),sort_entries=true)
     Lb = isone.(c_uni)
     Fb = F_uni[Lb]
     CF_type_uni = CF_type[indUni]

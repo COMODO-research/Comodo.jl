@@ -58,7 +58,7 @@ end
         F[2] = TriangleFace{Int}(1, 5, 9)
         F[3] = TriangleFace{Int}(1, 8, 5)
         result = elements2indices(F)
-        @test result == Set([1, 4, 5, 8, 9])
+        @test sort(result) == sort([1, 4, 5, 8, 9])
         @test empty(result) == elements2indices(empty(F))
     end
 
@@ -71,7 +71,7 @@ end
         F[5] = QuadFace{Int}(7, 8, 4, 3)
         F[6] = QuadFace{Int}(8, 5, 1, 4)
         result = elements2indices(F)
-        @test result == Set([1, 2, 3, 4, 5, 6, 7, 8])
+        @test sort(result) == sort([1, 2, 3, 4, 5, 6, 7, 8])
         @test empty(result) == elements2indices(empty(F))
     end
 end
