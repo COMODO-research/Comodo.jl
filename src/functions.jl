@@ -273,7 +273,7 @@ Interpolates 1D (curve) data using biharmonic spline interpolation
 # Description
 
 This function uses biharmonic spline interpolation [1], which features radial basis 
-functions. The input is assumed to represent ordered data, i.e. consequtive 
+functions. The input is assumed to represent ordered data, i.e. consecutive 
 unique points on a curve. The curve x-, and y-coordinates are provided through 
 the input parameters `x` and `y` respectively. The third input `xi` defines the 
 sites at which to interpolate. Each of in the input parameters can be either a 
@@ -345,8 +345,8 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
             yi = interp_biharmonic(xx,yy,xi)
         end
     elseif extrapolate_method==:constant
-        # Simple constant extrapolation (last/first value is repeated indefinately)
-        Ls = xi.<x[1] # Boolean for points preceeding the start
+        # Simple constant extrapolation (last/first value is repeated indefinitely)
+        Ls = xi.<x[1] # Boolean for points preceding the start
         Ll = xi.>x[end] # Boolean for points after the end
         if any(Ls .|| Ll) # If any points outside of the range were encountered
             yi = Vector{Float64}(undef,length(xi)) # Initialise yi
@@ -406,7 +406,7 @@ end
 """
     nbezier(P,n)
 
-Returns a Bezier spline for the control points P whose order matches the numbe 
+Returns a Bezier spline for the control points P whose order matches the number 
 of control points provided. 
 
 # Description 
@@ -578,7 +578,7 @@ be seen as the same as [2,1] for instance.
 """
 function unique_dict_index(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to seperately be tracked. 
+    # Hence the unique indices need to separately be tracked. 
     # T = eltype(X)
     d = Dict{T,Nothing}() # Use dict to keep track of used values
     xUni = Vector{T}()
@@ -612,7 +612,7 @@ be seen as the same as [2,1] for instance.
 """
 function unique_dict_index_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to seperately be tracked. 
+    # Hence the unique indices need to separately be tracked. 
     # T = eltype(X)
     d = Dict{T,Int}() # Use dict to keep track of used values
     xUni = Vector{T}()
@@ -645,14 +645,14 @@ Returns unique values, indices, and counts
 # Description
     
 Returns the unique entries in `X` as well as the indices for them and the counts 
-in terms of how often they occured. 
+in terms of how often they occurred. 
 The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
 be seen as the same as [2,1] for instance.  
 """
 function unique_dict_index_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to seperately be tracked. 
+    # Hence the unique indices need to separately be tracked. 
     
     # T = eltype(X)
     d = Dict{T,Int}() # Use dict to keep track of used values
@@ -688,14 +688,14 @@ Returns unique values, indices, inverse indices, and counts
     
 Returns the unique entries in `X` as well as the indices for them and the reverse 
 indices to retrieve the original from the unique entries, and also the counts in 
-terms of how often they occured. 
+terms of how often they occurred. 
 The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
 be seen as the same as [2,1] for instance.  
 """
 function unique_dict_index_inverse_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to seperately be tracked. 
+    # Hence the unique indices need to separately be tracked. 
     # T = eltype(X)
     d = Dict{T,Int}() # Use dict to keep track of used values
     xUni = Vector{T}()
@@ -732,14 +732,14 @@ Returns unique values and counts
 # Description
     
 Returns the unique entries in `X` as well as the counts in terms of how often 
-they occured. 
+they occurred. 
 The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
 be seen as the same as [2,1] for instance.  
 """
 function unique_dict_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to seperately be tracked. 
+    # Hence the unique indices need to separately be tracked. 
     # T = eltype(X)
     d = Dict{T,Int}() # Use dict to keep track of used values
     xUni = Vector{T}()
@@ -777,7 +777,7 @@ be seen as the same as [2,1] for instance.
 """
 function unique_dict_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
     # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to seperately be tracked. 
+    # Hence the unique indices need to separately be tracked. 
     # T = eltype(X)
     d = Dict{T,Int}() # Use dict to keep track of used values
     xUni = Vector{T}()
@@ -871,7 +871,7 @@ Returns unique values and allows users to choose if they also want: sorting, ind
 
 Returns the unique entries in `X`. Depending on the optional parameter choices
 the indices for the unique entries, the reverse indices to retrieve the original
-from the unique entries, as well as counts in terms of how often they occured, 
+from the unique entries, as well as counts in terms of how often they occurred, 
 can be returned. 
 The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
@@ -908,7 +908,7 @@ end
 """
     unique_simplices(F,V=nothing)
 
-Returns unique simplices (such as faces), independant of node order
+Returns unique simplices (such as faces), independent of node order
 
 # Description
     
@@ -1341,7 +1341,7 @@ considered a face
 * `FM::Matrix{TF} where TF<:Integer`, whereby each row is considered a face
 * `Vector{NgonFace{m, OffsetInteger{-1, TF}}} where TF<:Integer`, whereby the 
 special integer type `OffsetInteger{-1, TF}` is converted to `Int`.  
-If the intput is already of the right type this function leaves the input 
+If the input is already of the right type this function leaves the input 
 unchanged.
 """
 function tofaces(FM::Vector{Vector{TF}}) where TF<:Integer
@@ -1446,7 +1446,7 @@ end
 """
     edgecrossproduct(F,V::Vector{Point{ND,T}}) where ND where T<:Real  
 
-Returns the edge cross product, useful for nomal direction and area computations. 
+Returns the edge cross product, useful for normal direction and area computations. 
 
     # Description
 
@@ -1832,7 +1832,7 @@ Returns a geodesic sphere triangulation
 
 This function returns a geodesic sphere triangulation based on the number of
 refinement iterations `n` and the radius `r`. Geodesic spheres (aka Buckminster-Fuller
- spheres) are triangulations of a sphere that have near uniform edge lenghts. 
+ spheres) are triangulations of a sphere that have near uniform edge lengths. 
 The algorithm starts with a regular icosahedron. Next this icosahedron is refined 
 `n` times, while nodes are pushed to a sphere surface with radius `r` at each
 iteration. Two methods are available, i.e. `:linear` (default) and `:Loop` 
@@ -1869,7 +1869,7 @@ Returns a geodesic sphere triangulation
 
 This function returns a geodesic hemispherephere triangulation based on the number of
 refinement iterations `n` and the radius `r`. Geodesic spheres (aka Buckminster-Fuller
- spheres) are triangulations of a sphere that have near uniform edge lenghts. 
+ spheres) are triangulations of a sphere that have near uniform edge lengths. 
 The algorithm starts with a regular icosahedron that is adjusted to generate a half icosahedron. 
 Next this icosahedron is refined  `n` times, while nodes are pushed to a sphere surface with radius `r` at each
 iteration. 
@@ -2129,7 +2129,7 @@ This function computes the face-face connectivity for each face. The input faces
 `F` are used to create a list of faces connected to each face by a shared vertex.
 Additional optional inputs include: the vertices `V`, and the vertex-face 
 connectivity `con_V2F`. In terms of vertices only the number of vertices, i.e. 
-`length(V)` is neede, if `V` is not provided it is assumed that `length(V)` 
+`length(V)` is needed, if `V` is not provided it is assumed that `length(V)` 
 corresponds to the largest index in `F`. The vertex-face connectivity if not
 supplied, will be computed by this function, hence computational time may be saved 
 if it was already computed. 
@@ -3126,7 +3126,7 @@ function quad2tri(F::Vector{QuadFace{TF}},V::Vector{Point{ND,TV}}; convert_metho
 end
 
 function remove_unused_vertices(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
-    if isempty(F) # If the face set is empty, return all emtpy outputs
+    if isempty(F) # If the face set is empty, return all empty outputs
         Fc = F
         Vc = Vector{Point{ND,TV}}()
         indFix = Vector{Int}()
@@ -3360,8 +3360,8 @@ Converts boundary edges to a curve
 
 # Description
 This function takes a set of boundary edges `Eb`, which may not be ordered e.g.
-consequtively, and returns an ordered set of indices `ind` defining a curve of 
-consequtive points. The function returns empty output if the input edges do not 
+consecutively, and returns an ordered set of indices `ind` defining a curve of 
+consecutive points. The function returns empty output if the input edges do not 
 for a proper curve. 
 """
 function edges2curve(Eb::Vector{LineFace{T}}; remove_last = false) where T <: Integer
@@ -3393,7 +3393,7 @@ function edges2curve(Eb::Vector{LineFace{T}}; remove_last = false) where T <: In
         ind = [Eb[i][1]] # Add first edge point and grow this list
         while !all(seen) # loop until all edges have been visited        
             push!(ind,Eb[i][2]) # Add edge end point (start is already in list)
-            seen[i] = true # Lable current edge as visited       
+            seen[i] = true # Label current edge as visited       
             e_ind = con_E2E[i] # Indices for connected edges
             if length(e_ind)>2 # Branch point detected
                 throw(ErrorException("Invalid edges or branch point detected. Current edge is connected to more than two edges."))    
@@ -3506,7 +3506,7 @@ function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive,
     end
     
     # Create offset point depending on direction of extrude
-    if direction == :positive # Allong n from V1
+    if direction == :positive # Along n from V1
         p = extent.*n
     elseif direction == :negative # Against n from V1
         p = -extent.*n
@@ -3532,7 +3532,7 @@ Groups connected mesh features
  
 # Description
 This function uses the connectivity `con_type` to create a group label `C` for
-each entitiy in `F`. E.g. `C.==1` for the first group and `C.==2`` for the 
+each entity in `F`. E.g. `C.==1` for the first group and `C.==2`` for the 
 second and so on.     
 """
 function meshgroup(F; con_type = :v, indStart=1, stop_at = nothing)
@@ -3604,7 +3604,7 @@ end
 Compute on surface distance
 
 # Description
-This function computes allong mesh-edge distances for the points with the 
+This function computes along mesh-edge distances for the points with the 
 indices contained in `indStart`. 
 """
 function distmarch(F,V::Vector{Point{ND,TV}},indStart; d=nothing, dd=nothing, dist_tol=1e-3,con_V2V=nothing,l=nothing) where ND where TV<:Real
@@ -3703,10 +3703,10 @@ required inputs are as follows:
 `ray_vector` The ray vector which can be `Vector{Point{3, Float64}}` or `Vec3{Float64}`
 
 The following optional input parameters can be provided: 
-`rayType = :ray` (default) or `:line`. This defines wether the vector is treated as a ray (extends indefinately) or as a line (finite length)
+`rayType = :ray` (default) or `:line`. This defines whether the vector is treated as a ray (extends indefinitely) or as a line (finite length)
 `triSide = 1` (default) or `0` or `-1`. 
 When `triSide=1` only the inward intersections are considered, e.g. when the ray or line enters the shape (ray/line is pointing against face normal)
-When `triSide=-1` only the outward intersections are considered, e.g. when the ray or line exits the shape (ray/line is pointing allong face normal)
+When `triSide=-1` only the outward intersections are considered, e.g. when the ray or line exits the shape (ray/line is pointing along face normal)
 When `triSide=0` both inward and outward intersections are considered.
 `tolEps = eps(Float64)` (default) 
 
@@ -3740,7 +3740,7 @@ function ray_triangle_intersect(f::TriangleFace{Int},V::Vector{Point{ND,TV1}},ra
         boolDet = det_vec>tolEps
     elseif triSide == 0 # Both ways
         boolDet = abs(det_vec)>tolEps
-    elseif triSide == -1 # Pointing allong face normals
+    elseif triSide == -1 # Pointing along face normals
         boolDet = det_vec<tolEps
     end
 
@@ -3752,7 +3752,7 @@ function ray_triangle_intersect(f::TriangleFace{Int},V::Vector{Point{ND,TV1}},ra
             s_cross_e1 = cross(s,vec_edge_1)
             v = dot(ray_vector,s_cross_e1)/det_vec
             if v >= 0 && (u+v) <= 1 # On triangle according to both u and v
-                # Allong ray/line coordinates i.e. intersection is at ray_origin + t.*ray_vector 
+                # Along ray/line coordinates i.e. intersection is at ray_origin + t.*ray_vector 
                 t = dot(vec_edge_2,s_cross_e1)/det_vec                      
                 if rayType == :ray || (rayType == :line && t>=0 && t<=1.0)                                                   
                     p = ray_origin .+ t.*ray_vector # same as: push!(P, P1 .+ u.*P21 .+ v.*P31)            
@@ -3897,7 +3897,7 @@ end
     curve_length(V::Vector{Point{ND,TV}}; close_loop=false) where ND where TV<:Real
 
 This function computes the stepwise length of the input curve defined by the ND 
-points in `V`. The output is a vector containining the distance for each point, 
+points in `V`. The output is a vector containing the distance for each point, 
 and the total length therefore the last entry. 
 
 If the optional parameter `close_loop` is set to `true` then it is assumed that
@@ -3927,7 +3927,7 @@ spline interpolator `S` used. The output points can also be retriebed by using:
 Note that the even sampling is defined in terms of the curve length for a 4th 
 order natural B-spline that interpolates the input data. Hence if significant 
 curvature exists for the B-spline between two adjacent data points then the 
-spacing between points in the output may be non-uniform (despite the allong 
+spacing between points in the output may be non-uniform (despite the along 
 B-spline distance being uniform). 
 """
 function evenly_sample(V::Vector{Point{ND,TV}}, n::Int; rtol=1e-8, niter=1, spline_order=4, close_loop=false) where ND where TV<:Real
@@ -4095,7 +4095,7 @@ end
     F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist = 0, close_loop=true)   
 
 # Description
-This function implements swept lofting. The start curve `V1` is pulled allong the 
+This function implements swept lofting. The start curve `V1` is pulled along the 
 guide curve `Vc` while also gradually (linearly) morphing into the end curve 
 `V2`. 
 The optional parameter `face_type` (default :quad) defines the type of mesh 
@@ -4144,7 +4144,7 @@ function sweeploft(Vc::Vector{Point{ND,TV}},V1::Vector{Point{ND,TV}},V2::Vector{
     # Rotate V2b to start orientation
     V2b = [Q12*v for v in V2b] 
 
-    # Linearly loft "alligned" sections to create draft intermediate sections
+    # Linearly loft "aligned" sections to create draft intermediate sections
     F,V = loftlinear(V1b,V2b;num_steps=nc,close_loop=close_loop,face_type=face_type)
     
     # Rotating and positioning all sections 
@@ -4254,9 +4254,9 @@ end
 The `batman` function creates points on the curve for the Batman logo. The curve
 is useful for testing surface meshing algorithms since it contains sharp 
 transitions and pointy features. The user requests `n` points on the curve. The
-default forces exactly `n` points which may result in an assymetric curve. To 
+default forces exactly `n` points which may result in an asymmetric curve. To 
 instead force symmetry the user can set the optional parameter `symmetric=true`. 
-In this case the output will be symmetric allong the y-axis, however the number
+In this case the output will be symmetric along the y-axis, however the number
 of points on the curve may have increased (if the input `n` is not even). The
 second optional input is the direction of the curve, i.e. if it is clockwise, 
 `dir=:cw` or anti-clockwise `dir=:acw`. 
@@ -4432,7 +4432,7 @@ end
 
 Generates a multi-region triangle mesh for the input regions. The boundary 
 curves for all regions are contained in the tuple `VT`. Each region to be meshed
-is next defined using a tuple `R` containing indices into the curve typle `VT`. 
+is next defined using a tuple `R` containing indices into the curve tuple `VT`. 
 If an entry in `R` contains only one index then the entire curve domain is 
 meshed. If `R` contains multiple indices then the first index is assumed to be 
 for the outer boundary curve, while all subsequent indices are for boundaries 
@@ -4676,9 +4676,9 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
         Fq = Vector{QuadFace{Int}}(undef,length(E_Fs))
         for i in eachindex(E_Fs)
             ii = indReverse[i]
-            if E[i][1] == Eu[ii][1] # A first occurance edge, order matches
+            if E[i][1] == Eu[ii][1] # A first occurrence edge, order matches
                 Fq[i] = (E_Fs[i][2],E_Fs[i][1],Es[ii][1],Es[ii][2])
-            else # A second occurance edge, needs inversion
+            else # A second occurrence edge, needs inversion
                 Fq[i] = (E_Fs[i][2],E_Fs[i][1],Es[ii][2],Es[ii][1])
             end
         end
@@ -5764,7 +5764,7 @@ function eulerchar(F,V=nothing,E=nothing)
 end
 
 """
-    rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :allign) where T<:Real
+    rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :align) where T<:Real
 
 Creates a rhombicdodecahedron foam
 
@@ -5774,9 +5774,9 @@ of cells in each direction. The input is the cell width `w` and a 1-by-3 tuple
 `n` defining the number of cells in each direction. The output consists of the 
 set of rhombic dodecahedron elements `E` and their vertex coordinates `V`. 
 """
-function rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :allign) where T<:Real
+function rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :align) where T<:Real
 
-    if orientation == :allign
+    if orientation == :align
         # Create vertices of single rhombic dodecahedron with "radius" 1
         a = sqrt(2)/2
         b = sqrt(2)/4
@@ -6652,7 +6652,7 @@ input `V`. For a single point the output is a single integer which is:
 If the input is instead a vector of points then the output consists of a 
 corresponding vector of such integers. 
 This implementation differs from [1] in terms of the use of `atol` for 
-approximate equivalance. This helps in more robust labelling of "on polygon" 
+approximate equivalence. This helps in more robust labelling of "on polygon" 
 points.  
 
 # References

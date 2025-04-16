@@ -35,7 +35,7 @@ elseif testCase==3
 elseif testCase==4
     r = 1.0
     F,V = quadsphere(3,r)    
-elseif testCase==5 # Unmerged STL, each triangle is seperate group
+elseif testCase==5 # Unmerged STL, each triangle is separate group
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
     M = load(fileName_mesh)

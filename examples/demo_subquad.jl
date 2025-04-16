@@ -21,7 +21,7 @@ elseif testCase == 3 # Quadrangulated hemi-sphere
     n = 1
     r = 1.0
     F,V = quadsphere(n,r)
-    VC = simplexcenter(F,V) # Finding triangle centre coordiantes
+    VC = simplexcenter(F,V) # Finding triangle centre coordinates
     F = [F[i] for i in findall(map(v-> v[3]>0,VC))] # Remove some faces using z of central coordinates
     F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
     M = GeometryBasics.Mesh(V,F)
