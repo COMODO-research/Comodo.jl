@@ -25,7 +25,7 @@ To get started install the package, study the documentation, and test some of th
 [Functional Documentation](https://comodo-research.github.io/Comodo.jl/dev/)
 
 # Combining with finite element analysis
-For finite element analysis users are encouraged to combine the Comodo capabilities with the open source C++ solver [FEBio](https://febio.org/), e.g. based on the Julia wrapper [FEBio.jl](https://github.com/febiosoftware/FEBio.jl). In addition, users may want to explore the Julia packages [Gridap.jl](https://github.com/gridap/Gridap.jl) and [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl).
+For finite element analysis users are encouraged to combine the Comodo capabilities with the open source C++ software [FEBio](https://febio.org/), e.g. based on the Julia wrapper [FEBio.jl](https://github.com/febiosoftware/FEBio.jl). In addition, users may want to explore the Julia packages [Gridap.jl](https://github.com/gridap/Gridap.jl) and [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl).
 
 <img src="https://github.com/COMODO-research/Comodo_data_docs/blob/main/img_anim/febio_example_01.gif" alt="febio functionality" width="50%"/>
 
@@ -38,7 +38,7 @@ The source for the tests is [`runtests.jl`, found in the `test` folder](https://
 
 # Roadmap
 New functionality to add:
-- [ ] Levelset methods
+- [x] Levelset methods
 - [ ] Lattice structure creation: 
 	- Element based conversions 
 	- Triply periodic minimal and spinodoid surfaces
