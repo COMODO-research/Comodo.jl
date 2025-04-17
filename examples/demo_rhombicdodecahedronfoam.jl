@@ -4,7 +4,7 @@ using Comodo.GeometryBasics
 
 w = 1.0
 n = (3,4,5)
-E,V = rhombicdodecahedronfoam(w,n; merge=false, orientation=:allign)
+E,V = rhombicdodecahedronfoam(w,n; merge=false, orientation=:align)
 F = element2faces(E)
 
 ## Visualize mesh

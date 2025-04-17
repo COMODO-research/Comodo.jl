@@ -1,6 +1,6 @@
 module Comodo
 
-# Import required functions and modules from dependancy libraries
+# Import required functions and modules from dependency libraries
 using Statistics: mean, Statistics
 using Distances: euclidean, Distances
 using QuadGK: quadgk, QuadGK

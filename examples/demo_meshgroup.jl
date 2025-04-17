@@ -63,7 +63,7 @@ elseif testCase==5
             end
         end
     end
-elseif testCase==6 # Unmerged STL, each triangle is seperate group
+elseif testCase==6 # Unmerged STL, each triangle is separate group
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
     M = load(fileName_mesh)

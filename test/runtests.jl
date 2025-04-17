@@ -4596,7 +4596,7 @@ end
     Vn = evenly_space(V, pointSpacing; close_loop = false, spline_order = 4) 
     @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
 
-    # Must poins in open curve
+    # Must points in open curve
     must_points = [2]
     Vn = evenly_space(V, pointSpacing; close_loop = false, spline_order = 4, must_points = must_points) 
     @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
@@ -4660,7 +4660,7 @@ end
     R_kabsch_backward = kabsch_rot(V2,V1)
     V1r = [R_kabsch_backward*v for v in V2]
     @test isapprox(R_kabsch_forward,R_true,atol=eps_level) # Able to retrieve forward rotation
-    @test isapprox(V1r,V1,atol=eps_level) # Check if backward rotation is succesful   
+    @test isapprox(V1r,V1,atol=eps_level) # Check if backward rotation is successful   
 end
 
 @testset "sweeploft" verbose = true begin
@@ -5973,7 +5973,7 @@ end
         [0.0, 0.0, 2.0], [1.0, 1.0, 2.0]],atol=eps_level)        
     end
 
-    @testset "Vector of TriangeFaces" begin       
+    @testset "Vector of TriangleFaces" begin       
         F = TriangleFace{Int}[ [1,2,3], [2,4,3] ]
         V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0], [2.0,0.0,0.0]]
 
@@ -6480,7 +6480,7 @@ end
 
 @testset "rhombicdodecahedronfoam" verbose = true begin
 
-    # rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :allign) where T<:Real
+    # rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :align) where T<:Real
     w = 2.1
     n = (3,4,5)
     E,V = rhombicdodecahedronfoam(w,n)
@@ -6492,7 +6492,7 @@ end
     @test isa(V,Vector{Point{3,Float64}})
     @test length(E) == k
 
-    E,V = rhombicdodecahedronfoam(w,n; merge = false, orientation = :allign)
+    E,V = rhombicdodecahedronfoam(w,n; merge = false, orientation = :align)
     @test length(E) == k
     @test length(V) == k*14
     
