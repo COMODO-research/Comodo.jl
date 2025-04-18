@@ -6,7 +6,7 @@ using Comodo.GLMakie
 using Comodo.Rotations
 using Comodo.BSplineKit
 
-@testset "comododir" begin
+@testset "comododir" verbose = true begin
     f = comododir()
     @test any(contains.(readdir(f),"src"))
     @test any(contains.(readdir(f),"assets"))
@@ -7108,4 +7108,52 @@ end
     indOri = indexin(a,b)
     @test ind == [3,1]
     @test ind == indOri
+end
+
+@testset "hexagonline" verbose = true begin
+    r = 2.5
+    n1 = 11
+    n2 = 20
+    V1 = hexagonline(r,n1; type=:ufdf)
+    V12 = hexagonline(r,n1)
+    V2 = hexagonline(r,n2; type=:zigzag)    
+    q = r*sqrt(3)/2.0
+    @test V1 == V12 
+    @test length(V1) == n1
+    @test length(V2) == n2
+    @test isa(V1,Vector{Point{3,Float64}})
+    @test V1[2][2] == q
+    @test V2[2][1] == q
+    @test_throws Exception hexagonline(r,n1; type=:wrong)
+end
+
+@testset "hexagongrid" verbose = true begin
+    r = 2.5
+    n = (4,7)
+    V = hexagongrid(r,n)
+    q = r*sqrt(3)/2.0
+    w = r/2.0
+    Vw = hexagongrid(r,n; weave=w)
+    z = [v[3] for v in Vw]
+    @test isa(V,Vector{Point{3,Float64}})
+    @test V[2][1] == q
+    @test maximum(z) == w
+    @test minimum(z) == -w
+end
+
+@testset "hexagonmesh" verbose = true begin
+    r = 2.5
+    n = (4,7)
+    F,V = hexagonmesh(r,n)
+    q = r*sqrt(3)/2.0
+    w = r/2.0
+    Fw,Vw = hexagonmesh(r,n; weave=w)
+    z = [v[3] for v in Vw]
+    @test isa(V,Vector{Point{3,Float64}})
+    @test isa(F,Vector{NgonFace{6,Int}})
+    @test F == Fw
+    @test length(F) == prod(n)
+    @test V[2][1] == q
+    @test maximum(z) == w
+    @test minimum(z) == -w
 end

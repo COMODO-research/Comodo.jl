@@ -6880,3 +6880,157 @@ function findindexin(a, b::AbstractArray; missingIndex=0)
     end
     return [get(bdict, i, missingIndex) for i in a]
 end
+
+
+"""
+    hexagonline(r::T,n::Int; type=:ufdf) where T<:Real
+
+Returns hexagon mesh edge lines
+
+# Description
+This function returns a honeycomb mesh edge lines e.g. a connected set of edges. 
+"""
+function hexagonline(r::T,n::Int; type=:ufdf) where T<:Real
+    q = r*sqrt(3)/2.0
+    V = Vector{Point{3,Float64}}(undef,n)
+    if type == :ufdf # Upward, forward, downward, forward       
+        xShift = 0.0
+        for i in eachindex(V)
+            nPrev = ceil(i./4).-1        
+            m4 = mod(i,4)        
+            if m4 == 1                
+                xShift = (nPrev*3.0*r)            
+            elseif m4 == 2 
+                xShift = (nPrev*3.0*r)+0.5*r
+            elseif m4 == 3
+                xShift = (nPrev*3.0*r)+1.5*r
+            elseif m4 == 0             
+                xShift = (nPrev*3.0*r)+2.0*r                     
+            end
+            if m4==0 || m4==1
+                yShift = 0.0                        
+            else    
+                yShift = q
+            end
+            V[i] = Point{3,Float64}(xShift,yShift,0.0)
+        end
+    elseif type == :zigzag 
+        for i in eachindex(V)
+            if iseven(i)
+                V[i] = Point{3,Float64}(q*(i-1),-r/2.0,0.0)
+            else
+                V[i] = Point{3,Float64}(q*(i-1),0.0,0.0)
+            end
+        end
+    else 
+        throw(ArgumentError("Invalid type=:$type, valid options are :ufdf, and :zigzag"))
+    end
+    return V
+end
+
+"""
+    hexagongrid(r::T,n::Tuple{TI, TI}; weave=0.0) where T<:Real where TI <:Integer    
+
+Returns honeycomb vertex grid
+
+# Description
+This function returns the vertices for a `n[1]` by `n[2]` honeycomb grid, where 
+the cells have a radius `r`. 
+"""
+function hexagongrid(r::T,n::Tuple{TI, TI}; weave=0.0) where T<:Real where TI <:Integer    
+    q = r*sqrt(3)/2.0
+    V = Vector{Point{3,Float64}}(undef,prod(n))    
+    c = 1
+    for j in 1:n[2]
+        q = r*sqrt(3)/2.0
+        y = (j-1)*(1.5*r)
+        if iseven(j)
+            dy = r/4.0
+        else
+            dy = -r/4.0
+        end
+        for i in 1:n[1]
+            if iseven(j)
+                s=1
+            else
+                s=-1
+            end
+            if iseven(i)
+                V[c] = Point{3,Float64}(q*(i-1),y+dy,s*weave)
+            else
+                V[c] = Point{3,Float64}(q*(i-1),y-dy,s*-weave)
+            end
+            c+=1
+        end
+    end
+    return V
+end
+
+"""
+    hexagonmesh(r::T,nf::Tuple{Int, Int}; weave=0.0) where T<:Real
+
+Returns a hexagon mesh
+
+# Description
+This function returns the faces `F` and vertices `V` for a hexagon mesh.The 
+hexagon cells are defined with a radius `r` and the tuple `nf` defines the 
+number of cells in the x- and y-direction.  
+"""
+function hexagonmesh(r::T,nf::Tuple{TI, TI}; weave=0.0) where T<:Real where TI <:Integer
+    numNodes_x = 2*nf[1] + 2
+    numNodes_y = nf[2] + 1
+    n = (numNodes_x,numNodes_y)
+
+    # Create grid
+    V = hexagongrid(r,n; weave=weave)
+
+    # Remove unused points (indices are corrected later)
+    if iseven(nf[2])
+        fixFlag = true
+        deleteat!(V,[numNodes_x,length(V)-numNodes_x+1]) 
+    else
+        fixFlag = false
+        deleteat!(V,[numNodes_x,length(V)])
+    end
+    
+    # Create faces
+    ij2ind(i,j) = i + ((j-1)*numNodes_x) # function to convert subscript to linear indices    
+    c = 1
+    F = Vector{NgonFace{6,Int}}(undef,prod(nf))
+    for j = 1:nf[2]
+        if iseven(j)
+            i = 2
+        else
+            i = 1
+        end
+        for _ = 1:nf[1] 
+            if j==1
+                F[c] = NgonFace{6,Int}( ij2ind(i  ,j  ),
+                                        ij2ind(i+1,j  ),
+                                        ij2ind(i+2,j  ),
+                                        ij2ind(i+2,j+1)-1,
+                                        ij2ind(i+1,j+1)-1,
+                                        ij2ind(i  ,j+1)-1)
+            else
+                if fixFlag && j==nf[2]
+                    F[c] = NgonFace{6,Int}( ij2ind(i  ,j  ) -1,
+                                            ij2ind(i+1,j  ) -1,
+                                            ij2ind(i+2,j  ) -1,
+                                            ij2ind(i+2,j+1) -2,
+                                            ij2ind(i+1,j+1) -2,
+                                            ij2ind(i  ,j+1) -2)
+                else
+                F[c] = NgonFace{6,Int}( ij2ind(i  ,j  ) -1,
+                                        ij2ind(i+1,j  ) -1,
+                                        ij2ind(i+2,j  ) -1,
+                                        ij2ind(i+2,j+1) -1,
+                                        ij2ind(i+1,j+1) -1,
+                                        ij2ind(i  ,j+1) -1)
+                end
+            end
+            c += 1
+            i += 2
+        end
+    end
+    return F, V
+end
