@@ -1,17 +1,24 @@
 # Define types
-abstract type AbstractElement{N,T} <: StaticVector{N,T} end
+abstract type AbstractElement{N,T<:Integer} <: StaticVector{N,T} end
 
-GeometryBasics.@fixed_vector Element = AbstractElement
+GeometryBasics.@fixed_vector TetrahedronElement = AbstractElement
+GeometryBasics.@fixed_vector PentahedronElement = AbstractElement
+GeometryBasics.@fixed_vector HexahedronElement = AbstractElement
+GeometryBasics.@fixed_vector TruncatedoctahedronElement = AbstractElement
+GeometryBasics.@fixed_vector RhombicdodecahedronElement = AbstractElement
 
-const Tet4{T} = Element{4,T} where T<:Integer
-const Tet10{T} = Element{10,T} where T<:Integer
-# const Tet15{T} = Element{15,T} where T<:Integer
-const Hex8{T} = Element{8,T} where T<:Integer
-const Hex20{T} = Element{20,T} where T<:Integer
-const Penta6{T} = Element{6,T} where T<:Integer
-const Penta15{T} = Element{15,T} where T<:Integer
-const Rhombicdodeca14{T} = Element{14,T} where T<:Integer
-const Truncatedocta24{T} = Element{24,T} where T<:Integer
+const Tet4{T} = TetrahedronElement{4,T} where T<:Integer
+const Tet10{T} = TetrahedronElement{10,T} where T<:Integer
+const Tet15{T} = TetrahedronElement{15,T} where T<:Integer
+
+const Penta6{T} = PentahedronElement{6,T} where T<:Integer
+const Penta15{T} = PentahedronElement{15,T} where T<:Integer
+
+const Hex8{T} = HexahedronElement{8,T} where T<:Integer
+const Hex20{T} = HexahedronElement{20,T} where T<:Integer
+
+const Truncatedocta24{T} = TruncatedoctahedronElement{24,T} where T<:Integer
+const Rhombicdodeca14{T} = RhombicdodecahedronElement{14,T} where T<:Integer
 
 
 """
@@ -2679,7 +2686,7 @@ function quadsphere(n::Int,r::T) where T <: Real
     return F,V
 end
 
-function simplex2vertexdata(F::Union{Vector{NgonFace{NF,TF}},Vector{Element{NE,TE}}},DF,V::Union{Nothing,Vector{Point{ND,TV}}}=nothing; con_V2F=nothing, weighting=:none) where NF where TF<:Integer where NE where TE<:Integer where ND where TV<:Real    
+function simplex2vertexdata(F::Union{Vector{NgonFace{NF,TF}},Vector{<: AbstractElement{NE, TE}}},DF,V::Union{Nothing,Vector{Point{ND,TV}}}=nothing; con_V2F=nothing, weighting=:none) where NF where TF<:Integer where NE where TE<:Integer where ND where TV<:Real    
     if isnothing(con_V2F)
         con_V2F = con_vertex_face(F,V)
     end
@@ -3274,7 +3281,7 @@ end
 
 """
     boundaryfaces(F::Vector{NgonFace{N,TF}}) where N where TF <: Integer
-    boundaryfaces(E::Vector{Element{N,T}}) where N where T <: Integer
+    boundaryfaces(E::Vector{<: AbstractElement{N, T}}) where N where T <: Integer
 
 Returns boundary faces
 
@@ -3288,7 +3295,7 @@ function boundaryfaces(F::Vector{NgonFace{N,T}}) where N where T <: Integer
     return F[occursonce(F; sort_entries=true)]
 end
 
-function boundaryfaces(E::Vector{Element{N,T}}; elementLabels=nothing) where N where T <: Integer
+function boundaryfaces(E::Vector{<: AbstractElement{N, T}}; elementLabels=nothing) where N where T <: Integer
     if isnothing(elementLabels)
         F = element2faces(E)
         return F[occursonce(F; sort_entries=true)]
@@ -3301,7 +3308,7 @@ function boundaryfaces(E::Vector{Element{N,T}}; elementLabels=nothing) where N w
     end
 end
 
-function _element_facetype(E::Vector{Element{N,T}}) where N where T <: Integer
+function _element_facetype(E::Vector{<: AbstractElement{N, T}}) where N where T <: Integer
     element_type = eltype(E)
     if element_type<:Tet4{T} where T <: Integer
         return TriangleFace{T}
@@ -3871,7 +3878,7 @@ unshared vertices. Note that any unused points are not returned in the output
 point array `Vn`. Indices for the mapping are not created here but can simply be
 obtained using `reduce(vcat,F)`.
 """
-function separate_vertices(F::Union{Vector{NgonFace{N, TF}},Vector{Element{N, TF}}},V::Vector{Point{ND,TV}}; scaleFactor = nothing) where N where TF<:Integer where ND where TV<:Real
+function separate_vertices(F::Union{Vector{NgonFace{N, TF}},Vector{<: AbstractElement{N, TF}}},V::Vector{Point{ND,TV}}; scaleFactor = nothing) where N where TF<:Integer where ND where TV<:Real
     Vn = Vector{eltype(V)}(undef,length(F)*N)
     Fn = Vector{eltype(F)}(undef,length(F))
     for (i,f) in enumerate(F)   
@@ -4750,7 +4757,7 @@ function tet2hex(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer wh
 end
 
 """
-    element2faces(E::Vector{Element{N,T}}) where N where T 
+    element2faces(E::Vector{<: AbstractElement{N, T}}) where N where T 
 
 Returns element faces
 
@@ -4758,7 +4765,7 @@ Returns element faces
 This function computes the faces for the input elements defined by `E`. The elements
 should be Vectors consisting of `Tet4`, `Hex8` elements. 
 """
-function element2faces(E::Vector{Element{N,T}}) where N where T 
+function element2faces(E::Vector{<: AbstractElement{N, T}}) where N where T 
     element_type = eltype(E)
     if element_type <: Tet4{T}
         nf = 4
@@ -6745,7 +6752,7 @@ function _indexPair2sortedEdge(i::Int,j::Int)
 end
 
 """
-    elementEdges(E::Vector{Element{N,T}}) where N where T 
+    elementEdges(E::Vector{<: AbstractElement{N, T}}) where N where T 
 
 Returns element edges 
 
@@ -6753,7 +6760,7 @@ Returns element edges
 This function takes in the element vector `E` (e.g. containing Tet4, Penta6 
 entries) and returns a vector of edges.
 """
-function elementEdges(E::Vector{Element{N,T}}) where N where T    
+function elementEdges(E::Vector{<: AbstractElement{N, T}}) where N where T    
     element_type = eltype(E)
     if element_type <: Tet4{T}
         numElementEdges = 6

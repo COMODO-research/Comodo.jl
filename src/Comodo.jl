@@ -36,8 +36,9 @@ export LinearAlgebra
 export GeometryBasics
 export DataStructures
 
-# Export types
-export Element, Tet4, Tet10, Hex8, Hex20, Penta6, Penta15, Rhombicdodeca14, Truncatedocta24 # Volumetric elements (polyhedra)
+# Export (finite) element types
+export AbstractElement, TetrahedronElement, PentahedronElement, HexahedronElement, TruncatedoctahedronElement, RhombicdodecahedronElement
+export Tet4, Tet10, Tet15, Hex8, Hex20, Penta6, Penta15, Rhombicdodeca14, Truncatedocta24 
 
 # Export types/structs
 export ConnectivitySet
