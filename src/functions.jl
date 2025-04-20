@@ -1803,9 +1803,9 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
         nv = length(V)
         nf = length(F)
         ne = length(Eu)
-        for i in eachindex(F)            
+        for (i,f_i) in enumerate(F)            
             for j = 1:4
-                Fn[i+(j-1)*nf] = QuadFace{TF}([F[i][j], con_F2E[i][j]+nv, i+nv+ne, con_F2E[i][mod1(j+3,4)]+nv])                
+                Fn[i+(j-1)*nf] = QuadFace{TF}([f_i[j], con_F2E[i][j]+nv, i+nv+ne, con_F2E[i][mod1(j+3,4)]+nv])                
             end            
         end
 
@@ -2143,10 +2143,10 @@ function con_face_face_v(F,V=nothing,con_V2F=nothing)
             con_V2F = con_vertex_face(F,V)  # VERTEX-FACE connectivity
         end
         con_F2F = [Vector{Int}() for _ in 1:length(F)]
-        for i_f in eachindex(F)
-            for i in unique(reduce(vcat,con_V2F[F[i_f]]))    
-                if i!=i_f     
-                    push!(con_F2F[i_f],i)
+        for (i,f) in enumerate(F)
+            for j in unique(reduce(vcat,con_V2F[f]))    
+                if j != i
+                    push!(con_F2F[i],j)
                 end 
             end
         end
@@ -2177,9 +2177,9 @@ function con_vertex_simplex(F,V=nothing)
         n = length(V)
     end
     con_V2F = [Vector{Int}() for _ in 1:n]
-    for i_f in eachindex(F)
-        for i in F[i_f]
-            push!(con_V2F[i],i_f)
+    for (i,f) in enumerate(F)
+        for j in f
+            push!(con_V2F[j],i)
         end
     end
     return con_V2F
@@ -2237,10 +2237,10 @@ function con_edge_edge(E_uni,con_V2E=nothing)
         con_V2E = con_vertex_edge(E_uni) 
     end    
     con_E2E = [Vector{Int}() for _ in 1:length(E_uni)]
-    for i_e in eachindex(E_uni)
-        for i in reduce(vcat,con_V2E[E_uni[i_e]])    
-            if i!=i_e     
-                push!(con_E2E[i_e],i)
+    for (i,e) in enumerate(E_uni)
+        for j in reduce(vcat,con_V2E[e])    
+            if j != i     
+                push!(con_E2E[i],j)
             end 
         end
     end
@@ -2513,7 +2513,7 @@ function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}},
             c = 0
             while c<n             
                 Vs = deepcopy(V)
-                @inbounds for i in indSmooth # eachindex(V)
+                @inbounds for i in indSmooth 
                     Vs[i] = (1.0-λ).*Vs[i] .+ λ*mean(V[con_V2V[i]]) # Linear blend between original and pure Laplacian
                 end
                 if !isnothing(constrained_points)
@@ -2521,7 +2521,7 @@ function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}},
                 end
                 if !isnothing(tolDist) # Include tolerance based termination
                     d = 0.0
-                    @inbounds for i in indSmooth # eachindex(V)
+                    @inbounds for i in indSmooth
                         d+=sqrt(sum((V[i].-Vs[i]).^2)) # Sum of distances
                     end
                     if d<tolDist # Sum of distance smaller than tolerance?
@@ -2585,14 +2585,14 @@ function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, �
         c = 0
         while c<n       
             Q = deepcopy(P) # Reset Q as P for this iteration
-            @inbounds for i in indSmooth # eachindex(V)
+            @inbounds for i in indSmooth
                 P[i] = mean(Q[con_V2V[i]]) # Laplacian 
                 # Compute different vector between P and a point between original 
                 # point and Q (which is P before laplacian)
                 B[i] = P[i] .- (α.*V[i] .+ (1.0-α).*Q[i])
             end
             
-            @inbounds for i in indSmooth # eachindex(V)      
+            @inbounds for i in indSmooth    
                 # Push points back based on blending between pure difference vector
                 # B and the Laplacian mean of these      
                 P[i] = P[i] .- (β.*B[i] .+ (1.0-β).* mean(B[con_V2V[i]]))
@@ -2604,7 +2604,7 @@ function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, �
 
             if !isnothing(tolDist) # Include tolerance based termination
                 d = 0.0
-                @inbounds for i in indSmooth #eachindex(V)
+                @inbounds for i in indSmooth
                     d+=sqrt(sum((P[i].-Q[i]).^2)) # Sum of distances
                 end
                 if d<tolDist # Sum of distance smaller than tolerance?
@@ -2696,28 +2696,23 @@ function simplex2vertexdata(F::Union{Vector{NgonFace{NF,TF}},Vector{<: AbstractE
     
     DV = (typeof(DF))(undef,length(con_V2F))
     T = eltype(DV)
-    for q in eachindex(DV)
-        if !isempty(con_V2F[q])
-            if weighting==:none || length(con_V2F[q])==1 
-                DV[q] = mean(T,DF[con_V2F[q]])
+    for i in eachindex(DV)
+        if !isempty(con_V2F[i])
+            if weighting==:none || length(con_V2F[i])==1 
+                DV[i] = mean(T,DF[con_V2F[i]])
             elseif weighting==:area            
-                a = A[con_V2F[q]]                
-                DV[q] = sum(T,DF[con_V2F[q]].*a)./sum(a)
+                a = A[con_V2F[i]]                
+                DV[i] = sum(T,DF[con_V2F[i]].*a)./sum(a)
             end
         else
-            DV[q] = T(NaN)
+            DV[i] = T(NaN)
         end
     end
     return DV
 end
 
 function vertex2simplexdata(F,DV)
-    T = eltype(DV) # Element type of data in DV
-    DF =  (typeof(DV))(undef,length(F)) # Allocate data for F
-    @inbounds for (i,f) in enumerate(F)        
-        DF[i] = mean(view(DV,f)) # The mean of the vertex data for each entry in F
-    end
-    return DF
+    return [mean(view(DV,f)) for f in F]
 end
 
 function simplexcenter(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
@@ -2769,7 +2764,7 @@ latter, triangles are formed by slashing the quads.
 function loftlinear(V1::Vector{Point{ND,TV}}, V2::Vector{Point{ND,TV}}; num_steps=nothing, close_loop=true, face_type=:quad) where ND where TV<:Real
     # Derive num_steps from distance and mean curve point spacing if missing    
     if isnothing(num_steps)
-        d = mean([norm(V1[i]-V2[i]) for i in eachindex(V1)])
+        d = mean([norm(V2[i]-v1) for (i,v1) in enumerate(V1)])
         dp = 0.5* (pointspacingmean(V1)+pointspacingmean(V2))
         num_steps = ceil(Int,d/dp)                
         if num_steps < 2
@@ -3620,11 +3615,11 @@ function distmarch(F,V::Vector{Point{ND,TV}},indStart; d=nothing, dd=nothing, di
     # Compute "Laplacian umbrella" distances
     if isnothing(dd)
         dd = Dict{Vector{Int},Float64}()  
-        for i in eachindex(V)
-            for ii in con_V2V[i]
-                k = sort([i,ii])
+        for (i,v) in enumerate(V)
+            for j in con_V2V[i]
+                k = sort([i,j])
                 if !haskey(dd,k)
-                    dd[sort(k)] = norm(V[i]-V[ii])
+                    dd[sort(k)] = norm(v-V[j])
                 end 
             end
         end
@@ -3650,12 +3645,12 @@ function distmarch(F,V::Vector{Point{ND,TV}},indStart; d=nothing, dd=nothing, di
     count_inf_previous = length(d)-length(indStart) # number of Inf values currently
     while true                          
         for i in eachindex(V) # For each point            
-            for ii in con_V2V[i] # Check umbrella neighbourhood
+            for j in con_V2V[i] # Check umbrella neighbourhood
                 # Get closest point and distance from umbrella
-                minVal,minInd = findmin([d[ii],dd[sort([i,ii])]+d[i]])            
+                minVal,minInd = findmin([d[j],dd[sort([i,j])]+d[i]])            
                 if minInd==2
-                    d[ii] = minVal # Distance                          
-                    l[ii] = l[i] # Index
+                    d[j] = minVal # Distance                          
+                    l[j] = l[i] # Index
                 end
             end            
         end
@@ -4015,8 +4010,7 @@ function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8
 
         Vn = Vector{eltype(V)}()
         l1 = 0.0 # Effectively makes first point a must point
-        for i in eachindex(must_points)          
-            j = must_points[i]          
+        for (i,j) in enumerate(must_points)          
             if j==1 # i.e. last step when close_loop == true
                 l2 = D  
             else
@@ -4293,11 +4287,11 @@ function batman(n::Int; symmetric = false, dir=:acw)
         else
             m = ceil(Int,n/2)+1 
         end
-        V = evenly_sample([Point{3, Float64}(x[i]/22,y[i]/22,0.0) for i in eachindex(x)],m)
+        V = evenly_sample([Point{3, Float64}(xy[1]/22.0,xy[2]/22.0,0.0) for xy in zip(x,y)],m)
         V2 = [Point{3, Float64}(-V[i][1],V[i][2],0.0) for i in length(V)-1:-1:2]
         append!(V,V2)    
     else
-        V = [Point{3, Float64}(x[i]/22,y[i]/22,0.0) for i in eachindex(x)]    
+        V = [Point{3, Float64}(xy[1]/22.0,xy[2]/22.0,0.0) for xy in zip(x,y)]    
         V2 = [Point{3, Float64}(-V[i][1],V[i][2],0.0) for i in length(V)-1:-1:2]
         append!(V,V2) 
         V = evenly_sample(V,n)
@@ -4454,10 +4448,10 @@ function regiontrimesh(VT,R,P)
         # Creating constraints
         constrained_segments = Vector{Vector{Vector{Int}}}()
         n = 1        
-        for i in eachindex(r)
-            m = length(VT[r[i]])            
+        for (i,r_i) in enumerate(r)
+            m = length(VT[r_i])            
             ind = append!(collect(n:(n-1)+m),n)
-            if i>1 #&& i==length(r)
+            if i>1
                 reverse!(ind)
             end
             append!(constrained_segments,[[ind]])
@@ -4677,12 +4671,12 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
         append!(Vs,V_Es) # Append boundary edge points 
         
         Fq = Vector{QuadFace{Int}}(undef,length(E_Fs))
-        for i in eachindex(E_Fs)
-            ii = indReverse[i]
-            if E[i][1] == Eu[ii][1] # A first occurrence edge, order matches
-                Fq[i] = (E_Fs[i][2],E_Fs[i][1],Es[ii][1],Es[ii][2])
+        for (i,e_i) in enumerate(E_Fs)
+            j = indReverse[i]
+            if E[i][1] == Eu[j][1] # A first occurrence edge, order matches
+                Fq[i] = (e_i[2],e_i[1],Es[j][1],Es[j][2])
             else # A second occurrence edge, needs inversion
-                Fq[i] = (E_Fs[i][2],E_Fs[i][1],Es[ii][2],Es[ii][1])
+                Fq[i] = (e_i[2],e_i[1],Es[j][2],Es[j][1])
             end
         end
     end
@@ -4736,17 +4730,17 @@ function tet2hex(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer wh
     inv_Ft = inv_Ft .+ offset_F
     inv_Et = inv_Et .+ offset_E
     Eh = Vector{Hex8{T}}(undef,length(E)*4) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
-    for i = eachindex(E)
+    for (i,e) in enumerate(E)
         i_e = 1 + (i-1)*6 # index of first edge
         i_f = 1 + (i-1)*4 # index of first face (which happens to also be the first hex element for tetrahedra)        
         i_vc = i+offset_Vc
-        Eh[i_f  ] = Hex8{T}(      E[i][1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+2],
+        Eh[i_f  ] = Hex8{T}(      e[1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+2],
                             inv_Et[i_e+3], inv_Ft[i_f+1],          i_vc, inv_Ft[i_f+3])
-        Eh[i_f+1] = Hex8{T}(      E[i][2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e  ],
+        Eh[i_f+1] = Hex8{T}(      e[2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e  ],
                             inv_Et[i_e+4], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+1])
-        Eh[i_f+2] = Hex8{T}(      E[i][3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
+        Eh[i_f+2] = Hex8{T}(      e[3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
                             inv_Et[i_e+5], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+2])                             
-        Eh[i_f+3] = Hex8{T}(      E[i][4], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+3],
+        Eh[i_f+3] = Hex8{T}(      e[4], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+3],
                             inv_Et[i_e+5], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+3])                             
     end    
     return Eh,Vh
@@ -4982,33 +4976,33 @@ function subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int; direction=0) 
             inv_Ft = inv_Ft .+ offset_F
             inv_Et = inv_Et .+ offset_E  
             Eh = Vector{Hex8{T}}(undef,length(E)*8) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
-            for i = eachindex(E)
+            for (i,e) in enumerate(E)
                 i_e = 1 + (i-1)*12 # index of first edge
                 i_f = 1 + (i-1)*6 # index of first face 
                 i_vc = i + offset_Vc        
                 ii = 1 + (i-1)*8 
-                Eh[ii  ] = Hex8{T}(        E[i][1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+3],
+                Eh[ii  ] = Hex8{T}(        e[1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+3],
                                     inv_Et[i_e+8 ], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+5] )   
 
-                Eh[ii+1] = Hex8{T}(        E[i][2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e],
+                Eh[ii+1] = Hex8{T}(        e[2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e],
                                     inv_Et[i_e+9 ], inv_Ft[i_f+4],          i_vc, inv_Ft[i_f+2] )   
 
-                Eh[ii+2] = Hex8{T}(        E[i][3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
+                Eh[ii+2] = Hex8{T}(        e[3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
                                     inv_Et[i_e+10], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+4] )   
 
-                Eh[ii+3] = Hex8{T}(        E[i][4], inv_Et[i_e+3], inv_Ft[i_f  ], inv_Et[i_e+2],
+                Eh[ii+3] = Hex8{T}(        e[4], inv_Et[i_e+3], inv_Ft[i_f  ], inv_Et[i_e+2],
                                     inv_Et[i_e+11], inv_Ft[i_f+5],          i_vc, inv_Ft[i_f+3] )   
             
-                Eh[ii+4] = Hex8{T}(        E[i][5], inv_Et[i_e+7], inv_Ft[i_f+1], inv_Et[i_e+4],
+                Eh[ii+4] = Hex8{T}(        e[5], inv_Et[i_e+7], inv_Ft[i_f+1], inv_Et[i_e+4],
                                     inv_Et[i_e+8 ], inv_Ft[i_f+5],          i_vc, inv_Ft[i_f+2] )   
 
-                Eh[ii+5] = Hex8{T}(        E[i][6], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+5],
+                Eh[ii+5] = Hex8{T}(        e[6], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+5],
                                     inv_Et[i_e+9 ], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+4] )   
 
-                Eh[ii+6] = Hex8{T}(        E[i][7], inv_Et[i_e+5], inv_Ft[i_f+1], inv_Et[i_e+6],
+                Eh[ii+6] = Hex8{T}(        e[7], inv_Et[i_e+5], inv_Ft[i_f+1], inv_Et[i_e+6],
                                     inv_Et[i_e+10], inv_Ft[i_f+4],          i_vc, inv_Ft[i_f+3] )   
                                     
-                Eh[ii+7] = Hex8{T}(        E[i][8], inv_Et[i_e+6], inv_Ft[i_f+1], inv_Et[i_e+7],
+                Eh[ii+7] = Hex8{T}(        e[8], inv_Et[i_e+6], inv_Ft[i_f+1], inv_Et[i_e+7],
                                     inv_Et[i_e+11], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+5] )  
             end
         elseif isone(direction) # Split in 1st-direction
@@ -5650,7 +5644,7 @@ function edgefaceangles(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=
                 i2 = findfirst(F[i_f1].==e[2]) # The index of the second edge point                           
                 n1 = facenormal(F[con_E2F[i_e][1]],V) # The normal direction for the first face 
                 n2 = facenormal(F[con_E2F[i_e][2]],V)  # The normal direction for the second face         
-                ne = V[E_uni[i_e][2]]-V[E_uni[i_e][1]] # Current edge vector                     
+                ne = V[e[2]]-V[e[1]] # Current edge vector                     
                 if i2==mod1(i1+1,length(F[1])) # If the second point is "next" for the current edge
                     s = sign(dot(cross(n2,n1),ne))    
                 else # Inverse situation
