@@ -1154,7 +1154,7 @@ end
     end
 
     @testset "Vector Vec3" begin
-        Vv = Vector{Vec3{Float64}}(undef,5)       
+        Vv = rand(Vec{3,Float64},5)      
         V = topoints(Vv)
         @test isa(V,Vector{GeometryBasics.Point3{Float64}})
         @test length(V) == 5
@@ -1162,13 +1162,13 @@ end
 
     @testset "Vector Vec{m,Float64}}" begin
         m = 4
-        Vv = Vector{Vec{m,Float64}}(undef,5)       
+        Vv = rand(Vec{m,Float64},5)       
         V = topoints(Vv)
         @test isa(V,Vector{GeometryBasics.Point{m,Float64}})
         @test length(V) == 5
 
         m = 5
-        Vv = Vector{Vec{m,Float64}}(undef,5)       
+        Vv = rand(Vec{m,Float64},5)      
         V = topoints(Vv)
         @test isa(V,Vector{GeometryBasics.Point{m,Float64}})
         @test length(V) == 5
@@ -1225,7 +1225,7 @@ end
             n = 10 
             m = 3
             k = 5
-            V = Vector{Vec3{Float64}}(undef,n)
+            V = rand(Vec{3,Float64},n)
             F = [rand(1:n,m) for i=1:k]
             M = togeometrybasics_mesh(V,F)
             @test isa(M,GeometryBasics.Mesh)
@@ -1237,7 +1237,7 @@ end
             n = 12 
             m = 4
             k = 6
-            V = Vector{Vec3{Float64}}(undef,n)
+            V = rand(Vec{3,Float64},n)
             F = [rand(1:n,m) for i=1:k]
             M = togeometrybasics_mesh(V,F)
             @test isa(M,GeometryBasics.Mesh)
@@ -6894,7 +6894,7 @@ end
 
 @testset "removepoints" verbose = true begin            
     n = 15
-    V = Vector{Point{3,Float64}}(undef,n)
+    V =  rand(Point{3,Float64},n)
     V_ori = deepcopy(V)
     indRemove = [1,5,10] # Indices to remove
     V,indFix = removepoints(V,indRemove)

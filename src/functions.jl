@@ -225,12 +225,12 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
     V = Vector{Point{3,Float64}}(undef,length(xRange)*length(yRange))    
     c = 1
     sx = pointSpacingReal_X/4
-    for j in eachindex(yRange)
-        for i in eachindex(xRange)                 
+    for (j,y) in enumerate(yRange)
+        for (i,x) in enumerate(xRange)                 
             if iseven(j) # Shift over every second row of points
-                x = xRange[i]+sx
+                x += sx
             else
-                x = xRange[i]-sx
+                x -= sx
             end                    
             if rectangular
                 if isone(i)
@@ -239,7 +239,7 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
                     x = maxX
                 end
             end
-            V[c] = Point{3}{Float64}(x,yRange[j],0.0)
+            V[c] = Point{3}{Float64}(x,y,0.0)
             c += 1
         end
     end
@@ -465,8 +465,8 @@ function lerp(x::Union{T,Vector{T}, AbstractRange{T}},y,xi::Union{T,Vector{T}, A
         yi = lerp_(x,y,xi)
     else # Loop over all data sites
         yi = Vector{eltype(y)}(undef,length(xi))
-        for q in eachindex(xi)
-            yi[q] = lerp_(x,y,xi[q])
+        for (i,xii) in enumerate(xi)
+            yi[i] = lerp_(x,y,xii)
         end
     end 
     return yi
@@ -504,9 +504,9 @@ See also: https://github.com/JuliaStats/Distances.jl
 """
 function dist(V1,V2)
     D = Matrix{Float64}(undef,length(V1),length(V2))   
-    for i in eachindex(V1)
-        for j in eachindex(V2)          
-            D[i,j] = euclidean(V1[i],V2[j]) # norm(V1[i]-V2[j])       
+    for (i,v1) in enumerate(V1)
+        for (j,v2) in enumerate(V2)          
+            D[i,j] = euclidean(v1,v2) # norm(V1[i]-V2[j])       
         end
     end
     return D
@@ -514,16 +514,16 @@ end
 
 function dist(V1::Vector{T},v2::T) where T <: AbstractVector
     D = Matrix{Float64}(undef,length(V1),1)   
-    for i in eachindex(V1)        
-        D[i,1] = euclidean(V1[i],v2)
+    for (i,v1) in enumerate(V1)      
+        D[i,1] = euclidean(v1,v2)
     end
     return D
 end
 
 function dist(v1::T,V2::Vector{T}) where T <: AbstractVector
     D = Matrix{Float64}(undef,1,length(V2))   
-    for j in eachindex(V2)        
-        D[1,j] = euclidean(v1,V2[j])
+    for (j,v2) in enumerate(V2)        
+        D[1,j] = euclidean(v1,v2)
     end
     return D
 end
@@ -549,12 +549,12 @@ function mindist(V1,V2; getIndex=false, skipSelf = false )
     if getIndex
         I = Vector{Int}(undef,length(V1))
     end
-    for i in eachindex(V1)
-        for j in eachindex(V2)
+    for (i,v1) in enumerate(V1)
+        for (j,v2) in enumerate(V2) 
             if skipSelf && i==j
                 d[j] = Inf
             else
-                d[j] = euclidean(V1[i],V2[j]) # norm(V1[i]-V2[j]) 
+                d[j] = euclidean(v1,v2) # norm(v1,v2) 
             end       
         end
         if getIndex
@@ -993,10 +993,9 @@ the equivalent linear indices.
 """
 function sub2ind(siz::Union{Tuple{Vararg{Int, N}}, Array{Int, N}},A::Union{Vector{Vector{Int}}, Array{NgonFace{M, Int}, 1}}) where N where M
     numDim = length(siz)
-    k = cumprod([siz[i] for i in eachindex(siz)],dims=1)        
+    k = cumprod([s for s in siz],dims=1)        
     ind = Vector{Int}(undef,length(A))
-    for i in eachindex(A)        
-        a = A[i]
+    for (i,a) in enumerate(A)      
         if length(a)==numDim
             if any(a.>siz) || any(a.<1)
                 throw(DomainError(A[i],"Indices in A[$i] exceed bounds implied by size provided"))
@@ -1613,7 +1612,6 @@ method both refines and smoothes the geometry through spline approximation.
 2. [Jos Stam, Charles Loop, _Quad/Triangle Subdivision_, doi: 10.1111/1467-8659.t01-2-00647](https://doi.org/10.1111/1467-8659.t01-2-00647)
 """
 function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method = :linear, constrain_boundary=false) where TF<:Integer where ND where TV <: Real
-    
     if iszero(n)
         return F,V
     elseif isone(n)
@@ -1631,18 +1629,15 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
             treatBoundary = false
         end
 
-        Fm1 = [TriangleFace{TF}(a.+length(V)) for a in eachrow(reshape(indReverse,length(F),length(F[1])))] 
-        Fm2 = Vector{TriangleFace{TF}}(undef,length(Fm1))
-        Fm3 = Vector{TriangleFace{TF}}(undef,length(Fm1))
-        Fm4 = Vector{TriangleFace{TF}}(undef,length(Fm1))        
-        for i in eachindex(F)                        
-            Fm2[i] = TriangleFace{TF}([Fm1[i][1], Fm1[i][3], F[i][1]])
-            Fm3[i] = TriangleFace{TF}([Fm1[i][2], Fm1[i][1], F[i][2]])
-            Fm4[i] = TriangleFace{TF}([Fm1[i][3], Fm1[i][2], F[i][3]])
+        nv = length(V)
+        nf = length(F)
+        Fn = Vector{TriangleFace{TF}}(undef,4*nf)        
+        for (i,f) in enumerate(F)                        
+            Fn[i]      = TriangleFace{TF}(indReverse[i],indReverse[i+nf],indReverse[i+2*nf]) .+ nv
+            Fn[i+nf]   = TriangleFace{TF}(Fn[i][1], Fn[i][3], f[1])
+            Fn[i+2*nf] = TriangleFace{TF}(Fn[i][2], Fn[i][1], f[2])
+            Fn[i+3*nf] = TriangleFace{TF}(Fn[i][3], Fn[i][2], f[3])
         end
-
-        # Create combined face set
-        Fn = [Fm1; Fm2; Fm3; Fm4]        
 
         con_E2F = con_edge_face(F,Eu,indReverse)
 
@@ -1653,28 +1648,28 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
         elseif method == :Loop #Loop subdivision 
             # New mid-edge like vertices
             Vm = Vector{Point{ND,TV}}(undef,length(Eu)) 
-            for i in eachindex(Eu) # For each edge index       
+            for (i,e) in enumerate(Eu) # For each edge index       
                 if treatBoundary && B_boundary[i]              
-                    Vm[i] = 1/2 .*(V[Eu[i][1]] .+ V[Eu[i][2]]) # Normal mid-edge point
+                    Vm[i] = 1/2 .*(V[e[1]] .+ V[e[2]]) # Normal mid-edge point
                 else
                     F_touch = F[con_E2F[i]] 
                     indVerticesTouch = Vector{TF}() 
                     for f in F_touch        
-                        b = f.!=Eu[i][1] .&& f.!=Eu[i][2]      
+                        b = f.!=e[1] .&& f.!=e[2]      
                         if any(b)  
                             append!(indVerticesTouch,f[b])           
                         end
                     end                   
-                    Vm[i] = 3/8 .*(V[Eu[i][1]] .+ V[Eu[i][2]])  .+ 1/8 .* (V[indVerticesTouch[1]] .+ V[indVerticesTouch[2]])
+                    Vm[i] = 3/8 .*(V[e[1]] .+ V[e[2]])  .+ 1/8 .* (V[indVerticesTouch[1]] .+ V[indVerticesTouch[2]])
                 end
             end
     
             # Modified vertices for original vertices
             Vv = deepcopy(V)
-            for i in eachindex(V)            
+            for (i,v_i) in enumerate(V)            
                 if treatBoundary && in(i,indB)
                     if !constrain_boundary
-                        Vv[i] = 6/8*V[i] + 1/8*(V[con_V2V[i][1]]+V[con_V2V[i][2]]) 
+                        Vv[i] = 6/8*v_i + 1/8*(V[con_V2V[i][1]]+V[con_V2V[i][2]]) 
                     end
                 else
                     B_vert_face = [any(f.==i) for f in F]
@@ -1691,7 +1686,7 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
                     N = length(indVerticesTouch)                
                     v_sum = sum(V[indVerticesTouch],dims=1)[1]                
                     β = 1/N * (5/8-(3/8 +1/4*cos((2*π)/N))^2)        
-                    Vv[i] = (1-N*β) .* V[i] .+ β*v_sum                
+                    Vv[i] = (1-N*β) .* v_i .+ β*v_sum                
                 end
             end    
             # Create complete point set
@@ -1775,26 +1770,26 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
 
             # Edge points 
             Ve = Vector{Point{ND,TV}}(undef,length(Eu)) # Initialize edge points
-            for q in eachindex(Eu)      
-                if treatBoundary && B_boundary[q]              
-                    Ve[q] = Ve_mid[q] # Normal mid-edge point
+            for i in eachindex(Eu)      
+                if treatBoundary && B_boundary[i]              
+                    Ve[i] = Ve_mid[i] # Normal mid-edge point
                 else                   
-                    Ve[q] = (mean(Vf[con_E2F[q]],dims=1)[1] .+ Ve_mid[q])./2.0
+                    Ve[i] = (mean(Vf[con_E2F[i]],dims=1)[1] .+ Ve_mid[i])./2.0
                 end
             end
 
             # Vertex points 
             Vv = deepcopy(V) # Initialize vertex points
-            for q in eachindex(V) # Loop over all vertices
-                if treatBoundary && in(q,indB)
+            for (i,v_i) in enumerate(V) # Loop over all vertices
+                if treatBoundary && in(i,indB)
                     if !constrain_boundary
-                        Vv[q] = 6/8*V[q] + 1/8*(V[con_V2V[q][1]]+V[con_V2V[q][2]]) 
+                        Vv[i] = 6/8*V[i] + 1/8*(V[con_V2V[i][1]]+V[con_V2V[i][2]]) 
                     end
                 else
-                    indF = con_V2F[q]
-                    indE = con_V2E[q]
+                    indF = con_V2F[i]
+                    indE = con_V2E[i]
                     N = length(indF) # Number of faces (or edges) touching this vertex                    
-                    Vv[q] = (mean(Vf[indF],dims=1)[1] .+ 2.0.*mean(Ve_mid[indE],dims=1)[1] .+ (N-3.0).*V[q])./N
+                    Vv[i] = (mean(Vf[indF],dims=1)[1] .+ 2.0.*mean(Ve_mid[indE],dims=1)[1] .+ (N-3.0).*v_i)./N
                 end
             end
 
@@ -1806,10 +1801,11 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
         # Define faces
         Fn = Vector{QuadFace{TF}}(undef,length(F)*4)        
         nv = length(V)
+        nf = length(F)
         ne = length(Eu)
-        for q in eachindex(F)            
-            for ii = 0:3
-                Fn[q+ii*length(F)] = QuadFace{TF}([F[q][ii+1], con_F2E[q][ii+1]+nv, q+nv+ne, con_F2E[q][1+mod(3+ii,4)]+nv])                
+        for i in eachindex(F)            
+            for j = 1:4
+                Fn[i+(j-1)*nf] = QuadFace{TF}([F[i][j], con_F2E[i][j]+nv, i+nv+ne, con_F2E[i][mod1(j+3,4)]+nv])                
             end            
         end
 
@@ -2010,8 +2006,8 @@ function hexbox(boxDim,boxEl)
     IJK_nodes = ind2sub(boxNod,indNodes)
 
     V = convert(Vector{Point{3, Float64}},IJK_nodes)
-    for q in eachindex(V)
-        V[q] = ((V[q] .- Point{3, Float64}(1.0,1.0,1.0)).*(boxDim./boxEl)) .- Point{3, Float64}(boxDim/2.0)
+    for (i,v_i) in enumerate(V)
+        V[i] = ((v_i .- Point{3, Float64}(1.0,1.0,1.0)).*(boxDim./boxEl)) .- Point{3, Float64}(boxDim/2.0)
     end
 
     # Create face sets from elements
