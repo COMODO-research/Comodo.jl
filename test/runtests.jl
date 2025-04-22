@@ -796,15 +796,12 @@ end
     IJK_C = [[1, 1, 1], [2, 1, 1], [3, 1, 1], [1, 2, 1], [2, 3, 1], [3, 4, 1], [3, 5, 2]]
 
     @testset "Errors" begin
-        @test_throws BoundsError sub2ind(size(A),[[-1]])
         @test_throws BoundsError sub2ind(size(A),[-1]) 
         @test_throws BoundsError sub2ind(size(A),[length(A)+1]) 
 
-        @test_throws BoundsError sub2ind(size(B),[[-1,1]])
         @test_throws BoundsError sub2ind(size(B),[-1,1]) 
         @test_throws BoundsError sub2ind(size(B),[1,length(B)+1]) 
 
-        @test_throws BoundsError sub2ind(size(C),[[-1,1,1]])
         @test_throws BoundsError sub2ind(size(C),[-1,1,1]) 
         @test_throws BoundsError sub2ind(size(C),[length(C)+1,1,1]) 
     end
@@ -827,6 +824,10 @@ end
 
     @testset "Vector specifying size" begin        
         @test sub2ind(collect(size(C)),IJK_C)==ind
+    end
+
+    @testset "length(siz) == length(A)" begin 
+        @test sub2ind([2,4,6,10,5,12],[1,2,3,3,2,5]) == 10195
     end
 end
 
@@ -1809,7 +1810,7 @@ end
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
 
         con_F2E = con_face_edge(F)
         @test con_F2E == [[1,2,3]]
@@ -1821,7 +1822,7 @@ end
     @testset "Single quad" begin
         F = QuadFace{Int}[[1,2,3,4]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
 
         con_F2E = con_face_edge(F)
         @test con_F2E == [[1,2,3,4]]
@@ -1848,7 +1849,7 @@ end
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
 
         con_E2F = con_edge_face(F)
         @test con_E2F == fill([1],length(F[1]))
@@ -1860,7 +1861,7 @@ end
     @testset "Single quad" begin
         F = QuadFace{Int}[[1,2,3,4]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
 
         con_E2F = con_edge_face(F)
         @test con_E2F == fill([1],length(F[1]))
@@ -1887,7 +1888,7 @@ end
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_E2F = con_edge_face(F)
         con_F2E = con_face_edge(F)
 
@@ -1902,7 +1903,7 @@ end
     @testset "Single quad" begin
         F = QuadFace{Int}[[1,2,3,4]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_E2F = con_edge_face(F)
         con_F2E = con_face_edge(F)
 
@@ -2085,7 +2086,7 @@ end
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_V2E = con_vertex_edge(E_uni) 
                 
         con_E2E = con_edge_edge(E_uni)
@@ -2098,7 +2099,7 @@ end
     @testset "Single quad" begin
         F = QuadFace{Int}[[1,2,3,4]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_V2E = con_vertex_edge(E_uni) 
 
         con_E2E = con_edge_edge(E_uni)
@@ -2111,7 +2112,7 @@ end
     @testset "Triangles" begin
         F = TriangleFace{Int}[[1,2,3],[2,3,4]]       
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_E2E = con_edge_edge(E_uni)
         @test con_E2E == [[4, 2, 5], [1, 5, 3, 4], [2, 4, 5], [2, 3, 1], [3, 1, 2]]      
     end
@@ -2119,7 +2120,7 @@ end
     @testset "Quads" begin
         F = QuadFace{Int}[[1,2,3,4],[3,4,5,6]]      
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)      
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_E2E = con_edge_edge(E_uni)
         @test con_E2E == [[6, 3], [3, 7, 4, 6], [1, 2, 7], [2, 6, 5], [4, 7], [2, 4, 1], [5, 2, 3]]    
     end

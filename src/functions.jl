@@ -597,7 +597,7 @@ be seen as the same as [2,1] for instance.
 """
 function gunique(X; return_unique::Val{CompUnique}=Val(true), return_index::Val{CompIdx}=Val(false), return_inverse::Val{CompInv}=Val(false), return_counts::Val{CompCounts}=Val(false), sort_entries=false) where {CompUnique,CompIdx,CompInv,CompCounts}
     if CompUnique && !(CompIdx || CompInv || CompCounts)
-        return sort_entries ? unique(Iterators.map(_sort, X)) : unique(X)
+        return sort_entries ? unique(_sort, X) : unique(X)
     else
         CompIdx && (unique_indices = Int[]; sizehint!(unique_indices, length(X)))
         CompInv && (inverse_indices = similar(X, Int))
@@ -608,16 +608,16 @@ function gunique(X; return_unique::Val{CompUnique}=Val(true), return_index::Val{
 
         nunique = 0
         for (i, x) in enumerate(X)
-            sort_entries && (x = _sort(x))
-            if !haskey(seen, x)
+            xs = sort_entries ? _sort(x) : x
+            if !haskey(seen, xs)
                 nunique += 1
-                seen[x] = nunique
+                seen[xs] = nunique
                 CompUnique && (push!(unique_values, x))
                 CompIdx && (push!(unique_indices, i))
                 CompInv && (inverse_indices[i] = nunique)
                 CompCounts && (push!(counts, 1))
             elseif CompInv || CompCounts
-                idx = seen[x]
+                idx = seen[xs]
                 CompInv && (inverse_indices[i] = idx)
                 CompCounts && (counts[idx] += 1)
             end
@@ -685,7 +685,11 @@ the equivalent linear indices.
 """
 function sub2ind(siz, A)
     li = LinearIndices(Tuple(Base.OneTo.(siz)))
-    return map(i -> li[CartesianIndex(Tuple(i))], A)
+    if length(siz) == length(A)
+        return only(map(i -> li[CartesianIndex(Tuple(i))], (A,)))
+    else
+        return map(i -> li[CartesianIndex(Tuple(i))], A)
+    end 
 end
 
 """
@@ -1649,7 +1653,51 @@ function hexbox(boxDim,boxEl)
                 (1,1,1),
                 (0,1,1))
                 
+     boxNod = boxEl.+1 # Number of nodes in each direction
+    numElements = prod(boxEl) # Total number of elements
+    numNodes = prod(boxNod) # Total number of nodes
+
+    # Create hexahedral element description 
+    ind1 = 1:numElements
+    ijk_shift =((0,0,0), 
+                (1,0,0),
+                (1,1,0),
+                (0,1,0),
+                (0,0,1),
+                (1,0,1),
+                (1,1,1),
+                (0,1,1))
+                
     
+    E = Vector{Hex8{Int}}(undef,numElements) # Allocate elements
+
+    @inbounds for q in 1:numElements
+        ijk_1 = ind2sub(boxEl,ind1[q])    
+        ijk_2 = ijk_1 .+ ijk_shift[2]
+        ijk_3 = ijk_1 .+ ijk_shift[3]
+        ijk_4 = ijk_1 .+ ijk_shift[4]
+        ijk_5 = ijk_1 .+ ijk_shift[5]
+        ijk_6 = ijk_1 .+ ijk_shift[6]
+        ijk_7 = ijk_1 .+ ijk_shift[7]
+        ijk_8 = ijk_1 .+ ijk_shift[8]
+        
+        E[q] = Hex8{Int}( sub2ind(boxNod,ijk_1),sub2ind(boxNod,ijk_2),sub2ind(boxNod,ijk_3),sub2ind(boxNod,ijk_4),
+                            sub2ind(boxNod,ijk_5),sub2ind(boxNod,ijk_6),sub2ind(boxNod,ijk_7),sub2ind(boxNod,ijk_8) )
+    end
+
+    # Create vertices aka nodal coordinates
+    indNodes = 1:numNodes
+    IJK_nodes = ind2sub(boxNod,indNodes)
+
+    V = convert(Vector{Point{3, Float64}},IJK_nodes)
+    for q in eachindex(V)
+        V[q] = ((V[q] .- Point{3, Float64}(1.0,1.0,1.0)).*(boxDim./boxEl)) .- Point{3, Float64}(boxDim/2.0)
+    end
+
+    # Create face sets from elements
+    F = element2faces(E) 
+    CF_type = repeat(1:6,numElements) # Allocate face color/label data
+
     E = Vector{Hex8{Int}}(undef,numElements) # Allocate elements
 
     @inbounds for q in 1:numElements
@@ -1705,14 +1753,14 @@ and so on.
 function con_face_edge(F,E_uni=nothing,indReverse=nothing)
     if isnothing(E_uni) || isnothing(indReverse)
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)    
     end
     return [Vector{Int}(a) for a in eachrow(reshape(indReverse,length(F),length(F[1])))] 
 end
 
 
 """
-con_edge_face(F,E_uni=nothing,indReverse=nothing)
+    con_edge_face(F,E_uni=nothing,indReverse=nothing)
 
 Returns the faces connected to each edge.
 
@@ -1728,14 +1776,14 @@ Boundary edges connect to just 1 face.
 function con_edge_face(F,E_uni=nothing,indReverse=nothing)
     if isnothing(E_uni) || isnothing(indReverse)
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)    
     end
     con_F2E = con_face_edge(F,E_uni,indReverse)
     
     con_E2F = [Vector{Int}() for _ in 1:length(E_uni)]
     for i_f in eachindex(F)
         for i in con_F2E[i_f]
-            push!(con_E2F[i],i_f)
+            push!(@views(con_E2F[i]),i_f)
         end
     end 
     return con_E2F
@@ -1761,9 +1809,9 @@ connectivity and supplying them if already computed therefore save time.
 """
 function con_face_face(F,E_uni=nothing,indReverse=nothing,con_E2F=nothing,con_F2E=nothing)
     if length(F)>1 # More than one face so compute connectivity
-        if isnothing(E_uni)| isnothing(indReverse)
+        if isnothing(E_uni) || isnothing(indReverse)
             E = meshedges(F)
-            E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+            E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)    
         end    
         if isnothing(con_E2F) 
             con_E2F = con_edge_face(F,E_uni)
@@ -1772,11 +1820,11 @@ function con_face_face(F,E_uni=nothing,indReverse=nothing,con_E2F=nothing,con_F2
             con_F2E = con_face_edge(F,E_uni,indReverse)                 
         end
         
-        con_F2F = [Vector{Int}() for _ in 1:length(F)]        
+        con_F2F = [Vector{Int}() for _ in eachindex(F)]        
         for i_f in eachindex(F)
-            for i in reduce(vcat,con_E2F[con_F2E[i_f]])    
+            for i in @views reduce(vcat,con_E2F[con_F2E[i_f]])    
                 if i!=i_f     
-                    push!(con_F2F[i_f],i)
+                    push!(@views(con_F2F[i_f]),i)
                 end 
             end
         end        
@@ -1809,9 +1857,9 @@ function con_face_face_v(F,V=nothing,con_V2F=nothing)
         end
         con_F2F = [Vector{Int}() for _ in 1:length(F)]
         for i_f in eachindex(F)
-            for i in unique(reduce(vcat,con_V2F[F[i_f]]))    
+            for i in @views unique(reduce(vcat,con_V2F[F[i_f]]))    
                 if i!=i_f     
-                    push!(con_F2F[i_f],i)
+                    push!(@views(con_F2F[i_f]),i)
                 end 
             end
         end
@@ -1843,8 +1891,8 @@ function con_vertex_simplex(F,V=nothing)
     end
     con_V2F = [Vector{Int}() for _ in 1:n]
     for i_f in eachindex(F)
-        for i in F[i_f]
-            push!(con_V2F[i],i_f)
+        for i in @views F[i_f]
+            push!(@views(con_V2F[i]),i_f)
         end
     end
     return con_V2F
@@ -1903,9 +1951,9 @@ function con_edge_edge(E_uni,con_V2E=nothing)
     end    
     con_E2E = [Vector{Int}() for _ in 1:length(E_uni)]
     for i_e in eachindex(E_uni)
-        for i in reduce(vcat,con_V2E[E_uni[i_e]])    
+        for i in @views reduce(vcat,con_V2E[E_uni[i_e]])    
             if i!=i_e     
-                push!(con_E2E[i_e],i)
+                push!(@views(con_E2E[i_e]),i)
             end 
         end
     end
@@ -1941,9 +1989,9 @@ function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
     con_V2V = [Vector{Int}() for _ in 1:n]
     @inbounds for i_v in 1:n
         if !isempty(con_V2F[i_v])
-            for i in unique(reduce(vcat,F[con_V2F[i_v]]))
+            for i in @views unique(reduce(vcat,F[con_V2F[i_v]]))
                 if i_v!=i
-                    push!(con_V2V[i_v],i)
+                    push!(@views(con_V2V[i_v]),i)
                 end
             end
         end
@@ -1982,7 +2030,7 @@ function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
         if !isempty(con_V2E[i_v])
             for i in unique(reduce(vcat,E[con_V2E[i_v]]))
                 if i_v!=i
-                    push!(con_V2V[i_v],i)
+                    push!(@views(con_V2V[i_v]),i)
                 end
             end
         end
