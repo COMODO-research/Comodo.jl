@@ -860,8 +860,8 @@ end
         F, V = cube(1.0)
         M = GeometryBasics.Mesh(V,F)
         E = meshedges(M,unique_only=true)
-        @test E == LineFace{Int}[[1, 2], [7, 8], [5, 6], [6, 7], [5, 8], [2, 3], 
-        [2, 6], [3, 7], [4, 8], [1, 5], [3, 4], [1, 4]]
+        @test E == LineFace{Int}[[1, 2], [8,7], [5, 6], [6, 7], [8, 5], [2, 3], 
+        [6, 2], [7, 3], [8, 4], [5, 1], [3, 4], [1, 4]]
     end
 end
 
@@ -2165,13 +2165,12 @@ end
     end
 end
 
-
 @testset "con_vertex_vertex" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]        
         V = [Point3{Float64}(rand(3)) for _ in 1:3]        
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_V2E = con_vertex_edge(E_uni) 
 
         con_V2V = con_vertex_vertex(E)
@@ -2185,7 +2184,7 @@ end
         F = QuadFace{Int}[[1,2,3,4]]        
         V = [Point3{Float64}(rand(4)) for _ in 1:4]        
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_V2E = con_vertex_edge(E_uni) 
 
         con_V2V = con_vertex_vertex(E)
@@ -2210,7 +2209,6 @@ end
     end
 end
 
-
 @testset "meshconnectivity" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]        
@@ -2218,7 +2216,7 @@ end
 
         # EDGE-VERTEX connectivity
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
 
         # FACE-EDGE connectivity
         con_F2E = con_face_edge(F,E_uni,indReverse)    
@@ -2268,7 +2266,7 @@ end
 
         # EDGE-VERTEX connectivity
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
 
         # FACE-EDGE connectivity
         con_F2E = con_face_edge(F,E_uni,indReverse)    
@@ -2318,7 +2316,7 @@ end
 
         # EDGE-VERTEX connectivity
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
 
         # FACE-EDGE connectivity
         con_F2E = con_face_edge(F,E_uni,indReverse)    
@@ -2368,7 +2366,7 @@ end
         
         # EDGE-VERTEX connectivity
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
 
         # FACE-EDGE connectivity
         con_F2E = con_face_edge(F,E_uni,indReverse)    
@@ -3621,7 +3619,7 @@ end
     @testset "Single triangle" begin
         F = [TriangleFace{Int}(1, 2, 3)]       
         E = meshedges(F)
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        Eu,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
         count_E2F = count_edge_face(F,Eu,indReverse)
         @test count_E2F == [1,1,1]
 
@@ -3634,7 +3632,7 @@ end
     @testset "Single quad" begin
         F = [QuadFace{Int}(1, 2, 3, 4)]       
         E = meshedges(F)
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        Eu,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
         count_E2F = count_edge_face(F,Eu,indReverse)
         @test count_E2F == [1,1,1,1]
     end
@@ -3642,7 +3640,7 @@ end
     @testset "Triangles" begin
         F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
         E = meshedges(F)
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        Eu,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
         count_E2F = count_edge_face(F,Eu,indReverse)
         @test count_E2F == [1,1,1,1,2]
     end
@@ -3650,7 +3648,7 @@ end
     @testset "Quads" begin
         F = [QuadFace{Int}(1, 2, 3, 4),QuadFace{Int}(6, 5, 4, 3)]
         E = meshedges(F)
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        Eu,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
         count_E2F = count_edge_face(F,Eu,indReverse)
         @test count_E2F == [1,1,1,1,2,1,1] 
     end
@@ -6816,7 +6814,7 @@ end
     np=7
     xRange = range(-1.0-w,1.0+w,np)
     yRange = range(-1.0,1.0,np)
-    Vq = gridpoints(xRange, yRange,[0.0])
+    Vq = collect(gridpoints(xRange, yRange,[0.0]))
         
     # Add some co-linear on edge points 
     Vq_add = [(0.25*V[i] + 0.75*V[i+1]) for i in 1:length(V)-1]

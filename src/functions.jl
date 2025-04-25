@@ -2062,7 +2062,7 @@ function meshconnectivity(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) whe
 
     # EDGE-VERTEX connectivity
     E = meshedges(F)
-    E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+    E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
 
     # FACE-EDGE connectivity
     con_F2E = con_face_edge(F,E_uni,indReverse)    
@@ -2289,7 +2289,7 @@ function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, Î
         # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if nothing
         if isnothing(con_V2V)
             E = meshedges(F)
-            E_uni,_ = gunique(E; return_unique=true, return_index=true, return_inverse=false, sort_entries=true)    
+            E_uni  = gunique(E; return_unique=Val(true), sort_entries=true)    
             # E_uni,_,_ = unique_simplices(E)
             con_V2V = con_vertex_vertex(E_uni)
         end
@@ -2363,9 +2363,9 @@ function quadplate(plateDim,plateElem; orientation=:up)
     end
     
     if orientation == :up
-        return F, V
+        return F, collect(V)
     else#if orientation == :down
-        return invert_faces(F), V    
+        return invert_faces(F), collect(V) # TODO: Remove collect    
     end    
 end
 
@@ -2953,7 +2953,7 @@ end
 function count_edge_face(F,E_uni=nothing,indReverse=nothing)::Vector{Int}
     if isnothing(E_uni) || isnothing(indReverse)
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)    
     end
     con_F2E = con_face_edge(F,E_uni,indReverse)
     
@@ -3213,7 +3213,7 @@ function meshgroup(F; con_type = :v, indStart=1, stop_at = nothing)
     elseif con_type == :e # Group based on edge connectivity
         # EDGE-VERTEX connectivity
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
 
         # FACE-EDGE connectivity
         con_F2E = con_face_edge(F,E_uni,indReverse)    
@@ -4032,11 +4032,11 @@ function triplate(plateDim,pointSpacing::T; orientation=:up) where T <: Real
         throw(ArgumentError("Orientation not supported. Use :up or :down"))
     end 
 
-    F, V = gridpoints_equilateral((-plateDim[1]/2,plateDim[1]/2),(-plateDim[2]/2,plateDim[2]/2),pointSpacing; return_faces = true, rectangular=true, force_equilateral=false)
+    F, V = gridpoints_equilateral((-plateDim[1]/2,plateDim[1]/2),(-plateDim[2]/2,plateDim[2]/2),pointSpacing; return_faces = Val(true), rectangular=Val(true), force_equilateral=Val(false))
     if orientation == :down
-        return invert_faces(F), V
+        return invert_faces(F), collect(V)
     else
-        return F,V
+        return F,collect(V) # TODO: Remove collect
     end
 end
 
@@ -4338,7 +4338,7 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
             end
         end
     elseif connectivity == :edge
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        Eu,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
 
         Es,V_Es = scalesimplex(Eu,V,s)
         Es = [e.+length(Vs) for e in Es]
@@ -4374,7 +4374,7 @@ function tet2hex(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer wh
     Ft = element2faces(E)      
     
     # Unique faces and inverse mapping 
-    Ftu,_,inv_Ft = gunique(Ft; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+    Ftu,inv_Ft = gunique(Ft; return_unique=Val(true),  return_inverse=Val(true), sort_entries=true)
 
     # Non-unique structured (element by element) tet element edges
     Et = Vector{LineFace{T}}(undef,length(E)*6)
@@ -4389,7 +4389,7 @@ function tet2hex(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer wh
     end
 
     #Unique edges and inverse mapping 
-    Etu,_,inv_Et = gunique(Et; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+    Etu,inv_Et = gunique(Et; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
     
     # Create new coordinates
     Vc = simplexcenter(E,V) # Element centres
@@ -4610,14 +4610,14 @@ function subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int; direction=0) 
             end
         end
         #Unique edges and inverse mapping 
-        Etu,_,inv_Et = gunique(Et; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        Etu,inv_Et = gunique(Et; return_unique=Val(true),  return_inverse=Val(true), sort_entries=true)
         
         # Create mid-edge coordinates
         Ve = simplexcenter(Etu,V) # Edge centres           
 
         if iszero(direction)
             # Unique faces and inverse mapping 
-            Ftu,_,inv_Ft = gunique(Ft; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+            Ftu,inv_Ft = gunique(Ft; return_unique=Val(true),  return_inverse=Val(true), sort_entries=true)
             Vf = simplexcenter(Ftu,V) # Face centres
             Vc = simplexcenter(E,V) # Element centres
             Vh = [V;Vc;Vf;Ve] # Append vertices
@@ -4779,7 +4779,7 @@ triangle edge is used to construct a rhombic quadrilateral face.
 function tri2quad(F,V; method=:split)
     # Get mesh edges 
     E = meshedges(F) # Non-unique edges
-    Eu,_,inv_E = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+    Eu,inv_E = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
     Vf = simplexcenter(F,V) # Mid face points
 
     if method == :split
@@ -5258,7 +5258,7 @@ the unique edge vector `E_uni` as well as the edge-to-face connectivity vector
 """
 function edgefaceangles(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=false) where NF where TF<:Integer where ND where TV<:Real 
     E = meshedges(F) # The non-unique mesh edges 
-    E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true) # Unique mesh edges and inverse indices
+    E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true) # Unique mesh edges and inverse indices
     con_E2F = con_edge_face(F,E_uni,indReverse) # The edge-to-face connectivity
 
     if length(F)>1 # More than one face so compute connectivity
@@ -5705,7 +5705,9 @@ This function computes the minimum coordinates for all points. Points can be
 N-dimensional and the output is another point of the same dimensionality but 
 with the lowest coordinate value for each direction. 
 """
-function minp(V::Vector{Point{N,T}}) where N where T <:Real   
+function minp(V)  
+    T = eltype(eltype(V))
+    N = length(V[1])
     m = fill(T(Inf),N)
     @inbounds for v in V
         @inbounds for j = 1:N            
@@ -5725,7 +5727,9 @@ This function computes the maximum coordinates for all points. Points can be
 N-dimensional and the output is another point of the same dimensionality but 
 with the highest coordinate value for each direction. 
 """
-function maxp(V::Vector{Point{N,T}}) where N where T <:Real   
+function maxp(V)  
+    T = eltype(eltype(V))
+    N = length(V[1])
     m = fill(T(-Inf),N)
     @inbounds for v in V
         @inbounds for j = 1:N            
