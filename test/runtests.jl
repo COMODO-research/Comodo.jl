@@ -7157,3 +7157,154 @@ end
     @test maximum(z) == w
     @test minimum(z) == -w
 end
+
+@testset "fromtomesh" verbose = true begin
+    @testset "matched correspondence" verbose = true begin                
+        # Quads 
+        h = 2.5
+        plateDim1 = [2.0,4.0]    
+        plateElem1 = [3,5]
+        orientation1 = :up
+        F1,V1 = quadplate(plateDim1,plateElem1; orientation=orientation1)    
+        p = eltype(V1)(0.0,0.0,h)
+        V2 = [v+p for v in V1]
+        numSteps = 8
+        correspondence = :match
+    
+        En,Vn = fromtomesh(F1, V1, V2, numSteps; correspondence = correspondence)       
+        Enp = fromtomesh!(F1, V1, V2, numSteps; correspondence = correspondence)        
+        
+        @test isa(En,Vector{Hex8{Int}})
+        @test En == Enp
+        @test Vn == Vn
+        @test En[1] == [1, 2, 6, 5, 25, 26, 30, 29]
+    end
+
+    @testset "matched correspondence" verbose = true begin                
+        # Quads 
+        h = 2.5
+        plateDim1 = [2.0,4.0]    
+        plateElem1 = [3,5]
+        orientation1 = :up
+        F1,V1 = quadplate(plateDim1,plateElem1; orientation=orientation1)    
+        p = eltype(V1)(0.0,0.0,h)
+        V2 = [v+p for v in V1]
+        numSteps = 8
+        correspondence = :match
+    
+        @test_throws Exception fromtomesh(F1, V1, V2, numSteps; correspondence = :wrong)
+
+        En,Vn = fromtomesh(F1, V1, V2, numSteps; correspondence = correspondence)       
+        Enp = fromtomesh!(F1, V1, V2, numSteps; correspondence = correspondence)        
+        
+        @test isa(En,Vector{Hex8{Int}})
+        @test length(En) == length(F1)*(numSteps-1)
+        @test En == Enp
+        @test Vn == Vn
+        @test En[1] == [1, 2, 6, 5, 25, 26, 30, 29]                
+    end
+
+    @testset "faces correspondence" verbose = true begin                
+        # Triangles 
+        plateDim1 = [2.0,4.0]      
+        pointSpacing = 0.5              
+        F1,V1 = triplate(plateDim1,pointSpacing)
+        ind1 = unique(reduce(vcat,F1))
+        p = eltype(V1)(0.0,0.0,15.0)
+        V2 = [v+p for v in V1[ind1]]
+
+        numSteps = 8
+        correspondence = :faces
+        
+        En,Vn = fromtomesh(F1, V1, V2, numSteps; correspondence = correspondence)       
+        Enp = fromtomesh!(F1, V1, V2, numSteps; correspondence = correspondence)        
+        
+        @test isa(En,Vector{Penta6{Int}})
+        @test length(En) == length(F1)*(numSteps-1)
+        @test En == Enp
+        @test Vn == Vn
+        @test En[1] == [1, 2, 6, 56,57,58]                
+    end    
+end
+
+@testset "vectorpair_angle" verbose = true begin                
+    eps_level = 1e-6
+
+    v1 = Point{3,Float64}(1.0,0.0,0.0)
+    v2 = Point{3,Float64}(0.0,1.0,0.0)
+    n = Vec{3,Float64}(0.0,0.0,1.0)
+    
+    a = vectorpair_angle(v1,v2,n; deg = false)
+    @test isapprox(a,pi/2.0,atol=eps_level)
+
+    a = vectorpair_angle(v1,v2,n; deg = true)
+    @test isapprox(a,90.0,atol=eps_level)
+
+    v1 = Point{3,Float64}(1.0,0.0,0.0)
+    v2 = Point{3,Float64}(1.0,1.0,0.0)
+    n = Vec{3,Float64}(0.0,0.0,1.0)
+
+    a = vectorpair_angle(v1,v2,n; deg = true)
+    @test isapprox(a,45.0,atol=eps_level)
+
+    a = vectorpair_angle(v1,v2,-n; deg = true)
+    @test isapprox(a,315.0,atol=eps_level)
+end    
+
+@testset "triangulateboundary" verbose = true begin                
+    @testset "Open loop" verbose = true begin                
+        eps_level = 1e-6
+        n = 13
+        V1 = collect(range(Point{3,Float64}(0.0,0.0,0.0),Point{3,Float64}(n,0.0,0.0),n))
+        for i in 2:2:n
+            V1[i] = Point{3,Float64}(V1[i][1],1.0,0.0)
+        end
+        ind1 = collect(1:length(V1))
+        N1 = fill(Vec{3,Float64}(0.0,0.0,1.0),length(ind1))
+
+        V2 = V1
+        ind2 = ind1
+        N2 = fill(Vec{3,Float64}(0.0,0.0,-1.0),length(ind2))
+
+        close_loop = false
+        anglethreshold = 140.0
+        
+        F1n = triangulateboundary(V1, ind1, N1, anglethreshold; deg = true, close_loop=close_loop)
+        F1n2 = triangulateboundary(V1, ind1, N1, anglethreshold*(pi/180); deg = false, close_loop=close_loop)
+        F2n = triangulateboundary(V2, ind2, N2, anglethreshold; deg = true, close_loop=close_loop)
+
+        @test isa(F1n,Vector{TriangleFace{Int}})
+        @test length(F1n) == 6
+        @test length(F2n) == 5
+        @test F1n == F1n2
+    end
+
+    @testset "Close loop" verbose = true begin                
+        eps_level = 1e-6
+        
+        r = 2.0
+        n = 16
+        V1 = circlepoints(r,n; dir=:acw)
+        for i in 1:2:n  
+            V1[i]/=2.0
+        end
+        ind1 = collect(1:length(V1))
+        N1 = fill(Vec{3,Float64}(0.0,0.0,1.0),length(ind1))
+
+        V2 = V1
+        ind2 = ind1
+        N2 = fill(Vec{3,Float64}(0.0,0.0,-1.0),length(ind2))
+
+        close_loop = true
+        anglethreshold = 90.0
+                
+        F1n = triangulateboundary(V1, ind1, N1, anglethreshold; deg = true, close_loop=close_loop)
+        F1n2 = triangulateboundary(V1, ind1, N1, anglethreshold*(pi/180); deg = false, close_loop=close_loop)
+        F2n = triangulateboundary(V2, ind2, N2, anglethreshold; deg = true, close_loop=close_loop)
+
+        @test isa(F1n,Vector{TriangleFace{Int}})
+        @test length(F1n) == n/2
+        @test length(F2n) == n/2
+        @test F1n == F1n2
+    end
+end

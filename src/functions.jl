@@ -10,13 +10,10 @@ GeometryBasics.@fixed_vector RhombicdodecahedronElement = AbstractElement
 const Tet4{T} = TetrahedronElement{4,T} where T<:Integer
 const Tet10{T} = TetrahedronElement{10,T} where T<:Integer
 const Tet15{T} = TetrahedronElement{15,T} where T<:Integer
-
 const Penta6{T} = PentahedronElement{6,T} where T<:Integer
 const Penta15{T} = PentahedronElement{15,T} where T<:Integer
-
 const Hex8{T} = HexahedronElement{8,T} where T<:Integer
 const Hex20{T} = HexahedronElement{20,T} where T<:Integer
-
 const Truncatedocta24{T} = TruncatedoctahedronElement{24,T} where T<:Integer
 const Rhombicdodeca14{T} = RhombicdodecahedronElement{14,T} where T<:Integer
 
@@ -3299,24 +3296,29 @@ function boundaryfaces(E::Vector{<: AbstractElement{N, T}}; elementLabels=nothin
     end
 end
 
-function _element_facetype(E::Vector{<: AbstractElement{N, T}}) where N where T <: Integer
-    element_type = eltype(E)
-    if element_type<:Tet4{T} where T <: Integer
-        return TriangleFace{T}
-    elseif element_type<:Tet10{T} where T <: Integer
-        return NgonFace{6,T}
-    # elseif element_type<:Tet15{T} where T <: Integer
-    #     return NgonFace{6,T}
-    elseif element_type<:Hex8{T} where T <: Integer
-        return QuadFace{T}
-    elseif element_type<:Hex20{T} where T <: Integer
-        return NgonFace{8,T}
-    elseif element_type<:Penta6{T} where T <: Integer
-        return (TriangleFace{T},QuadFace{T})
-    elseif element_type<:Penta15{T} where T <: Integer
-        return (NgonFace{6,T},NgonFace{8,T})    
-    end
-end
+"""
+    _element_facetype(E::Vector{<: Tet4{<: Integer}}) = TriangleFace{Int}
+    _element_facetype(E::Vector{<: Tet10{T<: Integer}}) where {T} = NgonFace{6,T}
+    _element_facetype(E::Vector{<: Tet15{T<: Integer}}) where {T} = NgonFace{6,T}
+    _element_facetype(E::Vector{<: Hex8{T<: Integer}}) where {T} = QuadFace{T}
+    _element_facetype(E::Vector{<: Hex20{T<: Integer}}) where {T} = NgonFace{8,T}
+    _element_facetype(E::Vector{<: Penta6{T<: Integer}}) where {T} = (TriangleFace{T},QuadFace{T})
+    _element_facetype(E::Vector{<: Penta6{T<: Integer}}) where {T} = (NgonFace{6,T},NgonFace{8,T}) 
+
+Returns element face type
+
+# Description
+This function returns the element face type. For most elements this is a single 
+type, e.g. TriangleFace for Tet4, but for Pentahedral elements a Tuple 
+containing the types of the triangular and quadrilateral sides is returned. 
+"""
+_element_facetype(E::Vector{<: Tet4{T}}) where {T<: Integer} = TriangleFace{T}
+_element_facetype(E::Vector{<: Tet10{T}}) where {T<: Integer} = NgonFace{6,T}
+_element_facetype(E::Vector{<: Tet15{T}}) where {T<: Integer} = NgonFace{6,T}
+_element_facetype(E::Vector{<: Hex8{T}}) where {T<: Integer} = QuadFace{T}
+_element_facetype(E::Vector{<: Hex20{T}}) where {T<: Integer} = NgonFace{8,T}
+_element_facetype(E::Vector{<: Penta6{T}}) where {T<: Integer} = (TriangleFace{T},QuadFace{T})
+_element_facetype(E::Vector{<: Penta15{T}}) where {T<: Integer} = (NgonFace{6,T},NgonFace{8,T}) 
 
 """
     boundaryfaceindices(F::Vector{NgonFace{N,T}}; elementLabels=nothing) where N where T <: Integer
@@ -4480,8 +4482,6 @@ function regiontrimesh(VT,R,P)
         TRn = triangulate(Vn; boundary_nodes=constrained_segments, delete_ghosts=true)
         Fn = [TriangleFace{Int}(tr) for tr in each_solid_triangle(TRn)] 
         Vn = get_points(TRn)
-        # Fn,Vn,indFix = remove_unused_vertices(Fn,Vn)
-        # constrained_segments = [[indFix[c[1]]] for c in constrained_segments_ori] # Fix indices after point removal 
     
         # Check if new boundary points were introduced and remove if needed 
         Eb = boundaryedges(Fn)
@@ -5667,7 +5667,7 @@ end
 
 
 """
-    faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV; deg=false, angleThreshold = pi/8, indStart = 1)  where NF where TF<:Integer where ND where TV<:Real 
+    faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=false, angleThreshold = pi/8, indStart = 1)  where NF where TF<:Integer where ND where TV<:Real 
 
 Segments surfaces using face angles
 
@@ -7030,4 +7030,149 @@ function hexagonmesh(r::T,nf::Tuple{TI, TI}; weave=0.0) where T<:Real where TI <
         end
     end
     return F, V
+end
+
+function fromtomesh!(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},numSteps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
+    n1 = length(V1)
+    m = length(F1)  
+    if correspondence == :faces 
+        ind1 = unique(reduce(vcat,F1)) # Indices of points in input set for base of feature
+        indMap = zeros(Int,length(V1))
+        indMap[ind1] .= 1:length(ind1)   
+    elseif correspondence == :match
+        ind1 = 1:n1 
+    else
+        throw(ArgumentError("Invalid correspondence option provided, valid options are :match and :faces"))
+    end
+    n = length(ind1)
+      
+    face_type = eltype(F1)
+    if face_type == QuadFace{TF}
+        element_type = Hex8{TF}
+    elseif face_type == TriangleFace{TF}
+        element_type = Penta6{TF}
+    else
+        throw(ArgumentError("$face_type face type not supported. Supported types are QuadFace and TriangleFace."))
+    end
+    En = Vector{element_type}(undef,(numSteps-1)*m)               
+    c = 1    
+    for (i,q) in enumerate(range(1.0/(numSteps-1),1.0,numSteps-1)) # Loop element layers
+        # Treat points
+        if i == numSteps-1 # Simply add the end points
+            append!(V1,V2) 
+        else
+            for k = 1:n # Add lerped intermediate points 
+                push!(V1, (1.0-q).*V1[ind1[k]] + (q.*V2[k]) )
+            end
+        end
+        # Treat faces                 
+        for f in F1  
+            if correspondence == :match              
+                ff = f.+n1
+            elseif correspondence == :faces    
+                ff = indMap[f].+n1
+            end
+            if i==1 # First layer refers to base
+                En[c] = element_type([f; ff])                
+            else # Subsequent layers refer to all new points 
+                En[c] = element_type([ff .+ (i-2)*n; ff .+ (i-1)*n])
+            end            
+            c+=1
+        end        
+    end
+    return En
+end
+
+function fromtomesh(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},numSteps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
+    Vn = deepcopy(V1) # Copy points first 
+    En = fromtomesh!(F1,Vn,V2,numSteps; correspondence=correspondence)
+    return En, Vn
+end
+
+function vectorpair_angle(v1,v2,n=nothing; deg = false)    
+    # Normalise vectors 
+    n1 = normalizevector(v1)
+    n2 = normalizevector(v2)            
+    
+    # Compute angle 
+    a = acos(clamp(dot(n1,n2),-1.0,1.0))
+
+    # Use otherside based on normal if provided 
+    if !isnothing(n) && dot(n,cross(n1,n2)) < 0.0        
+        a = 2.0*pi - a
+    end
+
+    # Output in desired format
+    if deg
+        return a * (180.0/pi)
+    else
+        return a
+    end
+end
+
+function triangulateboundary(V, ind, N, anglethreshold; deg = false, close_loop=false)    
+    n = length(ind) # The number of points to parse 
+    if n<3 # Less than 3 points so stop and return empty face set 
+        return Vector{TriangleFace{Int}}()
+    else
+        indParse = deepcopy(ind) # Copy as this function deletes entries        
+        if close_loop == true # Compute all angles        
+            A = Vector{Float64}(undef,n)
+            for i in eachindex(indParse) # Loop over all points 
+                i_prev = mod1(i-1,n)
+                i_next = mod1(i+1,n)                        
+                A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N[i]; deg=deg) 
+            end
+        else # close_loop == false, compute non-end point angles only 
+            A = fill(NaN,n) # Initialise as NaN (stays that way for end points)
+            for i in 2:lastindex(ind)-1 # Loop over non-end points
+                i_prev = i-1
+                i_next = i+1                
+                A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N[i]; deg=deg) 
+            end
+        end    
+
+        F = Vector{TriangleFace{Int}}()
+        while true # keep adding triangles until angles are no longer too small       
+            aMax,i = findmin(a -> !isnan(a) ? a : +Inf, A) # Find non-nan minimum
+            if aMax<anglethreshold # If the current angle is below the threshold                               
+                # Build and add triangle based on previous and next point
+                i_prev = mod1(i-1,n)
+                i_next = mod1(i+1,n)
+                push!(F,TriangleFace{Int}(indParse[i],indParse[i_prev],indParse[i_next]))
+                
+                # New triangle excludes i-th point so removal and updating is needed 
+                deleteat!(indParse,i) # Remove i from the boundary list 
+                deleteat!(A,i) # Also remove the corresponding angle 
+                n -= 1 # Reduce n by 1 since point i has been removed                
+                i = mod1(i,n) # After deletion i is now for previous "next", update it now in case we have wrapped around 
+
+                if n < 3 # Less than 3 points left, so stop
+                    break
+                else # Still enough points so also update the angles now after triangle insertion
+                    # fix next, due to deletion, i now points at what was previously "i_next"                
+                    if close_loop==true || (close_loop==false && !isnan(A[i])) 
+                        # Closed loop or not a closed loop but point i is not an end point                    
+                        i_prev = mod1(i-1,n)
+                        i_next = mod1(i+1,n)                    
+                        A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N[i]; deg=deg) 
+                        # else case is when the loop is not closed and we are at an end point, A[i] is now left as NaN
+                    end
+
+                    # fix previous 
+                    i = mod1(i-1,n)
+                    if close_loop==true || (close_loop==false && !isnan(A[i]))           
+                        # Closed loop or not a closed loop but point i is not an end point         
+                        i_prev = mod1(i-1,n)
+                        i_next = mod1(i+1,n)                    
+                        A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N[i]; deg=deg) 
+                        # else case is when the loop is not closed and we are at an end point, A[i] is now left as NaN
+                    end
+                end            
+            else # Smallest angle is now large enough so stop
+                break
+            end
+        end
+        return F
+    end
 end

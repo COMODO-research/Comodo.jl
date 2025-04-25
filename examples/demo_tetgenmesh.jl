@@ -4,12 +4,17 @@ using Comodo.GeometryBasics
 using Comodo.Statistics
 using FileIO
 
-testCase = 6
+GLMakie.closeall()
+
+for testCase = 1:6
 
 if testCase == 1
     r = 1.0
     Fb,Vb = geosphere(3,r)
     E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb)    
+
+    V_regions = Vector{Point{3,Float64}}()
+    V_holes = Vector{Point{3,Float64}}()
 elseif testCase == 2
     r1 = 2.0
     r2 = r1/2
@@ -28,8 +33,10 @@ elseif testCase == 2
     v_hole = Point{3,Float64}(0.0, 0.0, 0.0)
     v_region = Point{3,Float64}(r2+((r1-r2)/2), 0.0, 0.0)
 
+    V_regions = [v_region]
+    V_holes = Vector{Point{3,Float64}}()
     stringOpt = "paAqY"
-    E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=[v_region],region_vol=vol1,V_holes=[v_hole], stringOpt)
+    E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions,region_vol=vol1,V_holes=[v_hole], stringOpt)
 elseif testCase == 3
     r1 = 2.0
     r2 = r1/2
@@ -54,8 +61,10 @@ elseif testCase == 3
 
     region_vol = [vol1,vol2]
 
+    V_regions = [v_region1,v_region2]
+    V_holes = Vector{Point{3,Float64}}()
     stringOpt = "paAqY"
-    E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=[v_region1,v_region2],region_vol=region_vol, stringOpt)
+    E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions,region_vol=region_vol, stringOpt)
 elseif testCase == 4
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
@@ -80,10 +89,10 @@ elseif testCase == 4
     Cb = ones(length(Fb))
     Cb[length(F1)+1:end] .+= 1
 
-    v_region = Point{3,Float64}(-50.0, 0.0, 0.0)
-
+    V_regions = [Point{3,Float64}(-50.0, 0.0, 0.0)]
+    V_holes = [v_hole]
     stringOpt = "paAqYQ"
-    E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=[v_region],V_holes=[v_hole], region_vol=vol1, stringOpt)
+    E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions, V_holes=V_holes, region_vol=vol1, stringOpt)
 elseif testCase == 5
     # Loading a mesh
     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
@@ -182,7 +191,7 @@ M = GeometryBasics.Mesh(Vs,Fs)
 
 strokewidth = 1 
 
-fig = Figure(size=(1500,1500))
+fig = Figure(size=(800,800))
 
 ax1 = Axis3(fig[1, 1][1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary surfaces")
 hp1 = mesh!(ax1,GeometryBasics.Mesh(Vbs,Fbs), color=Cbs_V, shading = FastShading, transparency=true, overdraw=false,colorrange = (1,3),colormap=cmap)
@@ -228,7 +237,10 @@ end
 # hSlider.selected_index[]+=1
 slidercontrol(hSlider,ax2)
 
-fig
+screen = display(GLMakie.Screen(), fig)
+GLMakie.set_title!(screen, "testCase = $testCase")
+
+end
 
 # fileName = comododir()*"/assets/img/TetGen_example_01.mp4"
 # slider2anim(fig,hSlider,fileName; backforth=true, duration=6)
