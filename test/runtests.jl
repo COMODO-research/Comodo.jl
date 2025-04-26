@@ -7156,6 +7156,30 @@ end
     @test V[2][1] == q
     @test maximum(z) == w
     @test minimum(z) == -w
+
+    r = 2.5
+    n = (7,4)
+    F,V = hexagonmesh(r,n)    
+    @test isa(V,Vector{Point{3,Float64}})
+    @test isa(F,Vector{NgonFace{6,Int}})    
+    @test length(F) == prod(n)
+    @test V[2][1] == q    
+
+    r = 2.5
+    n = (4,4)
+    F,V = hexagonmesh(r,n)    
+    @test isa(V,Vector{Point{3,Float64}})
+    @test isa(F,Vector{NgonFace{6,Int}})    
+    @test length(F) == prod(n)
+    @test V[2][1] == q    
+
+    r = 2.5
+    n = (5,5)
+    F,V = hexagonmesh(r,n)    
+    @test isa(V,Vector{Point{3,Float64}})
+    @test isa(F,Vector{NgonFace{6,Int}})    
+    @test length(F) == prod(n)
+    @test V[2][1] == q    
 end
 
 @testset "fromtomesh" verbose = true begin

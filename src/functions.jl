@@ -37,8 +37,7 @@ struct ConnectivitySet{N}
     vertex_vertex::Vector{Vector{Int}}
     vertex_vertex_f::Vector{Vector{Int}}
     face_face_v::Vector{Vector{Int}}
- end
-
+end
 
 """
     comododir()
@@ -7017,12 +7016,12 @@ function hexagonmesh(r::T,nf::Tuple{TI, TI}; weave=0.0) where T<:Real where TI <
                                             ij2ind(i+1,j+1) -2,
                                             ij2ind(i  ,j+1) -2)
                 else
-                F[c] = NgonFace{6,Int}( ij2ind(i  ,j  ) -1,
-                                        ij2ind(i+1,j  ) -1,
-                                        ij2ind(i+2,j  ) -1,
-                                        ij2ind(i+2,j+1) -1,
-                                        ij2ind(i+1,j+1) -1,
-                                        ij2ind(i  ,j+1) -1)
+                    F[c] = NgonFace{6,Int}( ij2ind(i  ,j  ) -1,
+                                            ij2ind(i+1,j  ) -1,
+                                            ij2ind(i+2,j  ) -1,
+                                            ij2ind(i+2,j+1) -1,
+                                            ij2ind(i+1,j+1) -1,
+                                            ij2ind(i  ,j+1) -1)
                 end
             end
             c += 1

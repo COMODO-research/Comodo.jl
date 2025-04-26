@@ -3,7 +3,7 @@ using Comodo.GLMakie
 using Comodo.GeometryBasics
 using Comodo.Rotations
 using Comodo.LinearAlgebra
-
+ 
 GLMakie.closeall()
 
 for testCase = 1:6
