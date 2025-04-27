@@ -20,7 +20,7 @@ F,V = geosphere(1,r)
 Fn,Vn = geosphere(n,r)  # Subdevide/refine the mesh linearly 
 
 # Compute nearest point distances
-Dn,indMin = mindist(Vn,V; getIndex = true)
+Dn,indMin = mindist(Vn,V; getIndex = Val(true))
 
 # Visualization
 fig = Figure(size = (1200,500))

@@ -37,7 +37,7 @@ elseif testCase == 3 # Same as 2 but higher angular/general resolution
 end
 
 # E = meshedges(F)
-# E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)        
+# E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)        
 # con_E2F = con_edge_face(F,E_uni)
 # con_F2E = con_face_edge(F,E_uni,indReverse)   
 

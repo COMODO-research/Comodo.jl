@@ -33,8 +33,8 @@ elseif testCase == 3
     np = 50 # Number of section points
 
     # Section 1
-    f(t) = 3 + 0.25.*sin(3*t)
-    V1 = circlepoints(f,np; dir=:cw)
+    fn(t) = 3 + 0.25.*sin(3*t)
+    V1 = circlepoints(fn,np; dir=:cw)
     V1 = evenly_sample(V1, np)
     V1_ori = deepcopy(V1)
 
@@ -55,8 +55,8 @@ elseif testCase == 3
     V1= [v .+ Vc[1] for v ∈ V1] 
 
     # Section 2
-    f(t) = 5 + 0.5*sin(5*t)
-    V2 = circlepoints(f,np; dir=:cw)
+    fn(t) = 5 + 0.5*sin(5*t)
+    V2 = circlepoints(fn,np; dir=:cw)
     V2 = evenly_sample(V2, np)    
     V2_ori = deepcopy(V2)
 

@@ -5,6 +5,7 @@ using Comodo.LinearAlgebra
 using Comodo.GLMakie
 using Comodo.Rotations
 using Comodo.BSplineKit
+using Pkg
 
 @testset "comododir" begin
     f = comododir()
@@ -6850,4 +6851,18 @@ end
     @test F == [0, 0, 0, 0, 0, 0, 0, -1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, -1, 0, -1, 0, -1, -1, 0, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0]
 
 
+end
+ 
+@testset "Demos" begin
+    demo_path = joinpath(@__FILE__, "../..", "examples")
+    demos = filter!(startswith("demo"), readdir(demo_path))
+    function rundemo(demo_path, demo)
+        Pkg.activate(demo_path; io = devnull)
+        include(joinpath(demo_path, demo)) # Could also use a temporarily module, similar to SafeTestsets or DelaunayTriangulation.jl's testsets
+        Pkg.activate(joinpath(@__FILE__, ".."); io = devnull)
+    end
+    foreach(demos) do demo
+        println("Running demo: $demo")
+        rundemo(demo_path, demo)
+    end
 end

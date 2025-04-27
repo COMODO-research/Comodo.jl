@@ -12,8 +12,8 @@ xSpan = [-5,5]
 ySpan = [-5,5]
 
 V1 = gridpoints_equilateral(xSpan,ySpan,pointSpacing)
-F2,V2 = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = true)
-F3,V3 = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = true, rectangular = true)
+F2,V2 = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(true))
+F3,V3 = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(true), rectangular = Val(true))
 
 # Visualisation
 fig = Figure(size=(1600,400))
