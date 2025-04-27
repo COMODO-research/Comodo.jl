@@ -52,7 +52,4 @@ poly!(ax2,M2,strokewidth=2,color=:white, shading = FastShading)
 
 fig[2, :]=hSlider
 
-# fileName = comododir()*"/assets/temp/mergevertices_anim.mp4"
-# slider2anim(fig,hSlider,fileName; backforth=true, duration=2)
-
 fig

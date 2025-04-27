@@ -35,8 +35,6 @@ end
 F,V,C = makeMesh(1.0)
 
 #########
-
-
 # Visualization
 
 cMap = :Spectral
@@ -60,6 +58,3 @@ on(hSlider1.value) do τ
 end
 
 fig
-
-# fileName = comododir()*"/assets/img/sweep_loft_squircle_anim_02.mp4"
-# slider2anim(fig,hSlider1,fileName; backforth=true, duration=4)
