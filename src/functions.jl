@@ -7032,7 +7032,7 @@ function hexagonmesh(r::T,nf::Tuple{TI, TI}; weave=0.0) where T<:Real where TI <
 end
 
 """
-    fromtomesh!(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},numSteps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
+    fromtomesh!(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},num_steps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
 
 Creates mesh to points 
 
@@ -7040,7 +7040,7 @@ Creates mesh to points
 This function return volumetric elements formed by extruding the faces `F1` from 
 their coordinates in `V1` up to the coordinates in `V2`. The user can specify 
 the number of node layers (1 + number of element layers) used with the input 
-`numSteps`. The optional argument `correspondence` can be set to `:match` 
+`num_steps`. The optional argument `correspondence` can be set to `:match` 
 (default) or `:faces`. For the former the points in `V1` and `V2` are assumed to
 fully correspond, while for the latter it is assumed the points in `V2` 
 correspond to a subset in `V1`, namely with the consecutive point indices in 
@@ -7048,7 +7048,7 @@ correspond to a subset in `V1`, namely with the consecutive point indices in
 extruded to form hexahedral elements, and Triangular faces are extruded to form
 pentahedral elements),a and the new points are appended to the input vector `V1`. 
 """
-function fromtomesh!(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},numSteps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
+function fromtomesh!(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},num_steps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
     # Check if num_steps is okay
     if num_steps<2
         throw(ArgumentError("num_steps=$num_steps is not valid. num_steps should be larger than 1"))
@@ -7075,11 +7075,11 @@ function fromtomesh!(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Ve
     else
         throw(ArgumentError("$face_type face type not supported. Supported types are QuadFace and TriangleFace."))
     end
-    En = Vector{element_type}(undef,(numSteps-1)*m)               
+    En = Vector{element_type}(undef,(num_steps-1)*m)               
     c = 1    
-    for (i,q) in enumerate(range(1.0/(numSteps-1),1.0,numSteps-1)) # Loop element layers
+    for (i,q) in enumerate(range(1.0/(num_steps-1),1.0,num_steps-1)) # Loop element layers
         # Treat points
-        if i == numSteps-1 # Simply add the end points
+        if i == num_steps-1 # Simply add the end points
             append!(V1,V2) 
         else
             for k = 1:n # Add lerped intermediate points 
@@ -7106,7 +7106,7 @@ end
 
 
 """
-    fromtomesh(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},numSteps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
+    fromtomesh(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},num_steps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
 
 Creates mesh to points 
 
@@ -7115,9 +7115,9 @@ This function is the same as `fromtomesh!`, however the output consists of
 the elements `En` and the total point set `Vn`(i.e. the input vector `V1` is not 
 perturbed). 
 """
-function fromtomesh(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},numSteps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
+function fromtomesh(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},num_steps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
     Vn = deepcopy(V1) # Copy points first 
-    En = fromtomesh!(F1,Vn,V2,numSteps; correspondence=correspondence)
+    En = fromtomesh!(F1,Vn,V2,num_steps; correspondence=correspondence)
     return En, Vn
 end
 

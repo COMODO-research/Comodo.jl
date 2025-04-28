@@ -7192,11 +7192,11 @@ end
         F1,V1 = quadplate(plateDim1,plateElem1; orientation=orientation1)    
         p = eltype(V1)(0.0,0.0,h)
         V2 = [v+p for v in V1]
-        numSteps = 8
+        num_steps = 8
         correspondence = :match
     
-        En,Vn = fromtomesh(F1, V1, V2, numSteps; correspondence = correspondence)       
-        Enp = fromtomesh!(F1, V1, V2, numSteps; correspondence = correspondence)        
+        En,Vn = fromtomesh(F1, V1, V2, num_steps; correspondence = correspondence)       
+        Enp = fromtomesh!(F1, V1, V2, num_steps; correspondence = correspondence)        
         
         @test isa(En,Vector{Hex8{Int}})
         @test En == Enp
@@ -7213,16 +7213,16 @@ end
         F1,V1 = quadplate(plateDim1,plateElem1; orientation=orientation1)    
         p = eltype(V1)(0.0,0.0,h)
         V2 = [v+p for v in V1]
-        numSteps = 8
+        num_steps = 8
         correspondence = :match
     
-        @test_throws Exception fromtomesh(F1, V1, V2, numSteps; correspondence = :wrong)
+        @test_throws Exception fromtomesh(F1, V1, V2, num_steps; correspondence = :wrong)
 
-        En,Vn = fromtomesh(F1, V1, V2, numSteps; correspondence = correspondence)       
-        Enp = fromtomesh!(F1, V1, V2, numSteps; correspondence = correspondence)        
+        En,Vn = fromtomesh(F1, V1, V2, num_steps; correspondence = correspondence)       
+        Enp = fromtomesh!(F1, V1, V2, num_steps; correspondence = correspondence)        
         
         @test isa(En,Vector{Hex8{Int}})
-        @test length(En) == length(F1)*(numSteps-1)
+        @test length(En) == length(F1)*(num_steps-1)
         @test En == Enp
         @test Vn == Vn
         @test En[1] == [1, 2, 6, 5, 25, 26, 30, 29]                
@@ -7237,14 +7237,14 @@ end
         p = eltype(V1)(0.0,0.0,15.0)
         V2 = [v+p for v in V1[ind1]]
 
-        numSteps = 8
+        num_steps = 8
         correspondence = :faces
         
-        En,Vn = fromtomesh(F1, V1, V2, numSteps; correspondence = correspondence)       
-        Enp = fromtomesh!(F1, V1, V2, numSteps; correspondence = correspondence)        
+        En,Vn = fromtomesh(F1, V1, V2, num_steps; correspondence = correspondence)       
+        Enp = fromtomesh!(F1, V1, V2, num_steps; correspondence = correspondence)        
         
         @test isa(En,Vector{Penta6{Int}})
-        @test length(En) == length(F1)*(numSteps-1)
+        @test length(En) == length(F1)*(num_steps-1)
         @test En == Enp
         @test Vn == Vn
         @test En[1] == [1, 2, 6, 56,57,58]                

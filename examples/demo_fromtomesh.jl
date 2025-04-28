@@ -21,10 +21,10 @@ for testCase = 1:5
         p = eltype(V2)(0.0,0.0,15.0)
         V2 = [v+p for v in V2]
 
-        numSteps = 8
+        num_steps = 8
         correspondence = :match
 
-        E = fromtomesh!(F1, V1, V2, numSteps; correspondence = correspondence)
+        E = fromtomesh!(F1, V1, V2, num_steps; correspondence = correspondence)
     elseif testCase == 2
         plateDim1 = [20.0,24.0]
         plateElem1 = [11,16]
@@ -34,10 +34,10 @@ for testCase = 1:5
         p = eltype(V2)(0.0,0.0,15.0)
         V2 = [v+p for v in V2]
 
-        numSteps = 8
+        num_steps = 8
         correspondence = :match
         # Non input manipulating function test
-        E,V1 = fromtomesh(F1, V1, V2, numSteps; correspondence = correspondence)       
+        E,V1 = fromtomesh(F1, V1, V2, num_steps; correspondence = correspondence)       
     elseif testCase == 3
         plateDim1 = [20.0,24.0]
         plateElem1 = [11,16]
@@ -47,10 +47,10 @@ for testCase = 1:5
         p = eltype(V1)(0.0,0.0,15.0)
         V2 = [v+p for v in V1[ind1]]
 
-        numSteps = 8
+        num_steps = 8
         correspondence = :faces
 
-        E = fromtomesh!(F1, V1, V2, numSteps; correspondence = correspondence)
+        E = fromtomesh!(F1, V1, V2, num_steps; correspondence = correspondence)
     elseif testCase == 4
         r = 1.0
         f = 0.4
@@ -61,10 +61,10 @@ for testCase = 1:5
         F1,V1,C1 = quadbox(boxDim,boxEl)        
         V2 = [v.* (r/norm(v)) for v in V1]
         
-        numSteps = 5   
+        num_steps = 5   
         correspondence = :match
 
-        E = fromtomesh!(F1, V1, V2, numSteps; correspondence = correspondence)
+        E = fromtomesh!(F1, V1, V2, num_steps; correspondence = correspondence)
     elseif testCase == 5
         r = 1.0
         f = 0.4
@@ -74,13 +74,13 @@ for testCase = 1:5
         F1,V1,C1 = tribox(boxDim,pointSpacing)
         V2 = [v.* (r/norm(v)) for v in V1]
 
-        numSteps = 5   
+        num_steps = 5   
         correspondence = :match
 
-        E = fromtomesh!(F1, V1, V2, numSteps; correspondence = correspondence)
+        E = fromtomesh!(F1, V1, V2, num_steps; correspondence = correspondence)
     end
 
-    # append!(E,fromtomesh!(F, V, V2, numSteps))
+    # append!(E,fromtomesh!(F, V, V2, num_steps))
     
     Fn = element2faces(E)
 
