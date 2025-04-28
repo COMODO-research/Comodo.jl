@@ -5342,8 +5342,8 @@ function extrudefaces(F::Union{NgonFace{NF,TF},Vector{NgonFace{NF,TF}}},V::Vecto
     end
 
     # Check if num_steps is okay
-    if num_steps<1
-        throw(ArgumentError("num_steps=$num_steps is not valid. num_steps should be larger than 0."))
+    if num_steps<2
+        throw(ArgumentError("num_steps=$num_steps is not valid. num_steps should be larger than 1"))
     end
 
     # Set element type
@@ -7031,7 +7031,29 @@ function hexagonmesh(r::T,nf::Tuple{TI, TI}; weave=0.0) where T<:Real where TI <
     return F, V
 end
 
+"""
+    fromtomesh!(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},numSteps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
+
+Creates mesh to points 
+
+# Description
+This function return volumetric elements formed by extruding the faces `F1` from 
+their coordinates in `V1` up to the coordinates in `V2`. The user can specify 
+the number of node layers (1 + number of element layers) used with the input 
+`numSteps`. The optional argument `correspondence` can be set to `:match` 
+(default) or `:faces`. For the former the points in `V1` and `V2` are assumed to
+fully correspond, while for the latter it is assumed the points in `V2` 
+correspond to a subset in `V1`, namely with the consecutive point indices in 
+`F2`. For `fromtomesh!` the ouput is `En` the elements (Quadrilateral faces are 
+extruded to form hexahedral elements, and Triangular faces are extruded to form
+pentahedral elements),a and the new points are appended to the input vector `V1`. 
+"""
 function fromtomesh!(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},numSteps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
+    # Check if num_steps is okay
+    if num_steps<2
+        throw(ArgumentError("num_steps=$num_steps is not valid. num_steps should be larger than 1"))
+    end
+
     n1 = length(V1)
     m = length(F1)  
     if correspondence == :faces 
@@ -7082,6 +7104,17 @@ function fromtomesh!(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Ve
     return En
 end
 
+
+"""
+    fromtomesh(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},numSteps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
+
+Creates mesh to points 
+
+# Description
+This function is the same as `fromtomesh!`, however the output consists of 
+the elements `En` and the total point set `Vn`(i.e. the input vector `V1` is not 
+perturbed). 
+"""
 function fromtomesh(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},numSteps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
     Vn = deepcopy(V1) # Copy points first 
     En = fromtomesh!(F1,Vn,V2,numSteps; correspondence=correspondence)
@@ -7109,6 +7142,24 @@ function vectorpair_angle(v1,v2,n=nothing; deg = false)
     end
 end
 
+"""
+    triangulateboundary(V, ind, N, anglethreshold; deg = false, close_loop=false)    
+
+Forms triangles on boundary
+
+# Description
+This function computes angles on the curve (which could be a mesh boundary) 
+defined by the points `V[ind]`, where `V` is a vector of points and `ind` a 
+vector of point indices. The vector `N` contains the normal direction for each 
+point in `V[ind]`. If at a given point the adjacent curve segments form an angle 
+that is smaller than `angleThreshold` then a triangular face is formed for these
+segments. This function can hence be used to partially cure a jagged boundary by 
+closing sharp inward pointing regions with triangles. 
+The optional argument `deg` (default is `false`) sets wether the threshold is
+set in degrees (if `deg==true`) or radians (default). 
+The optional argument `close_loop` set wether the curve should be seen as
+closed.
+"""
 function triangulateboundary(V, ind, N, anglethreshold; deg = false, close_loop=false)    
     n = length(ind) # The number of points to parse 
     if n<3 # Less than 3 points so stop and return empty face set 
@@ -7173,5 +7224,35 @@ function triangulateboundary(V, ind, N, anglethreshold; deg = false, close_loop=
             end
         end
         return F
+    end
+end
+
+"""
+    faceinteriorpoint(F,V, indFace; w=0.5)
+
+Returns interior point for given face
+
+# Description
+This function takes in the `F`, the points `V`, and a face index `indFace`, and 
+returns a point that is between the face center and the opposing side of the 
+surface. The default behaviour, when the optional argument `w=0.5`, returns a 
+point mid-way between the face centre and the opposite side. If `w=0.0` is used 
+the face centre is returned while with `w=1.0` the opposing point is returned. 
+"""
+function faceinteriorpoint(F,V, indFace; w=0.5)
+    ray_vector = facenormal(F[indFace],V)
+    ray_origin = mean(V[F[indFace]])
+    P,_ = ray_triangle_intersect(F,V,ray_origin,-ray_vector; rayType = :ray, triSide = -1)    
+    if isempty(P)
+        throw(ErrorException("Insufficient ray intersection points (surface may not be closed)"))
+    else
+        d = [dot(p.-ray_origin,-ray_vector) for p in P]          
+        sortOrder = sortperm(d)
+        i2 = findfirst(d[sortOrder].>0.0)        
+        if isnothing(i2)
+            throw(ErrorException("No opposing intersections found (surface may not be closed)"))
+        else
+            return (1.0-w)*ray_origin + w*P[sortOrder[i2]]        
+        end
     end
 end
