@@ -7121,6 +7121,17 @@ function fromtomesh(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vec
     return En, Vn
 end
 
+"""
+    vectorpair_angle(v1,v2,n=nothing; deg = false)    
+
+Returns angle between vector pair
+
+# Description
+This function computes the angle between the two vectors `v1` and `v2`. The 
+optional argument `n` (default is `nothign`) is a vector that should define the 
+normal direction for the vector pair. The optional argument `deg` sets wether 
+the angle is returned in degrees (if `deg=true`) or radians. 
+"""
 function vectorpair_angle(v1,v2,n=nothing; deg = false)    
     # Normalise vectors 
     n1 = normalizevector(v1)

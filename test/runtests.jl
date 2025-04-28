@@ -7332,3 +7332,30 @@ end
         @test F1n == F1n2
     end
 end
+
+@testset "faceinteriorpoint" verbose = true begin                       
+    @testset "sphere" verbose = true begin                       
+        n = 5 
+        r = 2.0
+        F,V = geosphere(4,r)
+        eps_level = r./100
+
+        indFace = 1
+        P_on1 = faceinteriorpoint(F,V, indFace; w=0.0) # mean of face
+        P_in = faceinteriorpoint(F,V, indFace; w=0.5) # Mid-point around mean
+        P_on2 = faceinteriorpoint(F,V, indFace; w=1.0) # other side
+
+        @test isa(P_in,Point{3,Float64})
+        @test isapprox(P_in,mean(V),atol=eps_level)
+        @test isapprox(norm(P_on1-P_on2),2.0*r,atol=eps_level)
+    end
+
+    @testset "Errors" verbose = true begin                       
+        t = range(0.0,0.5*pi,10)
+        Vc = [Point{3,Float64}(cos(t),sin(t),0.0) for t in t]
+        n = normalizevector(Vec{3, Float64}(0.0,0.0,1.0)) # Extrusion direction
+        F,V = extrudecurve(Vc; extent=0.25, direction=:both, n=n, close_loop=false,face_type=:tri)
+        indFace = 1
+        @test_throws Exception faceinteriorpoint(F,V, indFace)
+    end
+end

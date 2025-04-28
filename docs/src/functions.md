@@ -575,3 +575,28 @@ Comodo.hexagongrid
 ```@docs 
 Comodo.hexagonmesh
 ```
+
+## `fromtomesh!`
+```@docs 
+Comodo.fromtomesh!
+```
+
+## `fromtomesh`
+```@docs 
+Comodo.fromtomesh
+```
+
+## `vectorpair_angle`
+```@docs 
+Comodo.vectorpair_angle
+```
+
+## `triangulateboundary`
+```@docs 
+Comodo.triangulateboundary
+```
+
+## `faceinteriorpoint`
+```@docs 
+Comodo.faceinteriorpoint
+```
