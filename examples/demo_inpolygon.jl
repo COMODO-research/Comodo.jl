@@ -16,7 +16,7 @@ for testCase = 1:3
         np=7
         xRange = range(-1.0-w,1.0+w,np)
         yRange = range(-1.0,1.0,np)
-        Vq = gridpoints(xRange, yRange,[0.0])   
+        Vq = collect(gridpoints(xRange, yRange,[0.0]))   
     elseif testCase == 2
         w = 0.1
         V = [Point{3,Float64}(-w, 0.0, 0.0), Point{3,Float64}(-1-w, 1.0, 0.0), 

@@ -14,7 +14,7 @@ This demo shows the use of the dualclag function.
 
 GLMakie.closeall()
 
-for testCase = 1:8
+for testCase = 1:7
     if testCase == 1 
         F,V = geosphere(2,1.0)
         con_type = :face
@@ -39,16 +39,6 @@ for testCase = 1:8
         F,V = tetrahedron(√3)     
         con_type = :face   
     elseif testCase == 6
-        # Loading a mesh
-        fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")
-        M = load(fileName_mesh)
-
-        # Obtain mesh faces and vertices
-        F = tofaces(faces(M))
-        V = topoints(coordinates(M))
-        F,V,_ = mergevertices(F,V)
-        con_type = :face
-    elseif testCase == 7
         fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
         M = load(fileName_mesh)
 
@@ -59,7 +49,7 @@ for testCase = 1:8
         # n = 1
         # F,V = subtri(F,V,n; method=:Loop)
         con_type = :face
-    elseif testCase == 8
+    elseif testCase == 7
         fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
         M = load(fileName_mesh)
 
@@ -72,6 +62,16 @@ for testCase = 1:8
         F = F[BF]
         F,V = remove_unused_vertices(F,V)    
         con_type = :face
+    # elseif testCase == 8
+    #     # Loading a mesh
+    #     fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")
+    #     M = load(fileName_mesh)
+
+    #     # Obtain mesh faces and vertices
+    #     F = tofaces(faces(M))
+    #     V = topoints(coordinates(M))
+    #     F,V,_ = mergevertices(F,V)
+    #     con_type = :face
     end
 
     s = 0.5

@@ -2521,8 +2521,10 @@ Optional inputs include the following:
 `periodicity[2]==true` it is assumed the grid is periodic in the second 
 direction, i.e. that the grid should be closed in the second direction.
 """
-function grid2surf(V::Vector{Point{ND,TV}},num_steps; face_type=:quad, periodicity=(false,false), tri_dir=1) where ND where TV<:Real
-    
+function grid2surf(V::Union{Vector{Point{ND,TV}},Grid3D{TV}},num_steps; face_type=:quad, periodicity=(false,false), tri_dir=1) where ND where TV<:Real
+    if isa(V,Grid3D)
+       V = collect(V)
+    end
     # Get number of points in each offset curve
     nc = length(V)/num_steps # Number of points in curve
     if !isinteger(nc) || nc<1
@@ -4334,13 +4336,13 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
     E_Fs = meshedges(Fs;unique_only=false)
 
     if connectivity == :face 
-        # Compute dict to find partner edges, unique edges as well as reverse indices for unique mapping
-        E_sort = sort.(E) 
+        # Compute dict to find partner edges, unique edges as well as reverse indices for unique mapping        
         d = Dict{eltype(E),Vector{Int}}() # Use dict to keep track of used values    
         Eu = Vector{eltype(E)}()
         indReverse = Vector{Int}(undef,length(E)) 
         j=0
-        for (i,e) in enumerate(E_sort)          
+        for (i,e) in enumerate(E)                      
+            e = sort(e)
             if !haskey(d, e)    
                 j+=1 # Increment counter        
                 d[e]= [i]  
@@ -4354,6 +4356,10 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
 
         # Check for boundary faces 
         count_E2F = count_edge_face(F,Eu,indReverse)
+        if any(count_E2F.>2)        
+            throw(ErrorException("Surface contains non-manifold (some edges are connected to >2 faces)"))
+        end
+
         indBoundary = findall(isone.(count_E2F))
         Eb = Eu[indBoundary]
 
@@ -4370,12 +4376,12 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
 
         Fq = Vector{QuadFace{Int}}(undef,length(Eu))
         for (i,e) in enumerate(Eu)
-            ii = d[sort(e)]
-            if length(ii)==2
+            ii = d[sort(e)]            
+            if length(ii)==2 # Embedded manifold edge
                 Fq[i] = (E_Fs[ii[1]][2],E_Fs[ii[1]][1],E_Fs[ii[2]][2],E_Fs[ii[2]][1])
-            else
+            elseif length(ii)==1 # Manifold boundary edge               
                 ii_b = indX_E[ii[1]]
-                Fq[i] = (E_Fs[ii[1]][2],E_Fs[ii[1]][1],Ebs[ii_b][1],Ebs[ii_b][2])
+                Fq[i] = (E_Fs[ii[1]][2],E_Fs[ii[1]][1],Ebs[ii_b][1],Ebs[ii_b][2])            
             end
         end
     elseif connectivity == :edge

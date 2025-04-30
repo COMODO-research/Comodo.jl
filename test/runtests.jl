@@ -7345,7 +7345,7 @@ end
     
 if get(ENV, "CI", "false") != "true"
     @testset "Demos" begin
-        demo_path = joinpath(@__FILE__, "../..", "examples")
+        demo_path = joinpath(comododir(), "examples")
         demos = filter!(startswith("demo"), readdir(demo_path))
         
         function rundemo(demo_path, demo)
