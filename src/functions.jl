@@ -4366,8 +4366,6 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
             Ebs,Vbs,_ = remove_unused_vertices(Ebs,Vbs)
             Ebs = [e.+length(Vs) for e in Ebs]
             append!(Vs,Vbs) # Append boundary edge points 
-        else 
-            Ebs 
         end
 
         Fq = Vector{QuadFace{Int}}(undef,length(Eu))
