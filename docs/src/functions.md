@@ -60,41 +60,6 @@ Comodo.dist
 Comodo.mindist
 ```
 
-## `unique_dict_index`
-```@docs
-Comodo.unique_dict_index
-```
-
-## `unique_dict_index_inverse`
-```@docs
-Comodo.unique_dict_index_inverse
-```
-
-## `unique_dict_index_count`
-```@docs
-Comodo.unique_dict_index_count
-```
-
-## `unique_dict_index_inverse_count`
-```@docs
-Comodo.unique_dict_index_inverse_count
-```
-
-## `unique_dict_count`
-```@docs
-Comodo.unique_dict_count
-```
-
-## `unique_dict_inverse`
-```@docs
-Comodo.unique_dict_inverse
-```
-
-## `unique_dict`
-```@docs
-Comodo.unique_dict
-```
-
 ## `gunique`
 ```@docs
 Comodo.gunique
