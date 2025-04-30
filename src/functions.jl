@@ -3007,7 +3007,7 @@ function boundaryfaces(E::Vector{<: AbstractElement{N, T}}; elementLabels=nothin
         for c in unique(elementLabels)                        
             append!(Fb,boundaryfaces(element2faces(E[elementLabels.==c]))) # Add faces to set
         end
-        return gunique(Fb; return_unique=true, return_index=false, return_inverse=false, sort_entries=true)
+        return gunique(Fb; return_unique=Val(true), return_index=Val(false), return_inverse=Val(false), sort_entries=true)
     end
 end
 
@@ -3063,7 +3063,7 @@ function boundaryfaceindices(F::Vector{NgonFace{N,T}}; elementLabels=nothing) wh
             append!(Fb,f[ind]) # Add faces to set
         end
         # Find indices of unique boundary faces 
-        _,ind_uni = gunique(Fb; return_unique=true, return_index=true, return_inverse=false, sort_entries=true)        
+        ind_uni = gunique(Fb; return_unique=Val(false), return_index=Val(true), sort_entries=true)        
         return indicesBoundaryFaces[ind_uni]
     end
 end
@@ -6540,7 +6540,7 @@ elements, defined by the output element vector `E_tet10` and vertices
 """
 function tet4_tet10(E,V)
     tetEdges = elementEdges(E)
-    tetEdgesUnique,_,indReverse = gunique(tetEdges; return_unique=true, return_index=true, return_inverse=true, sort_entries=false)
+    tetEdgesUnique,indReverse = gunique(tetEdges; return_unique=Val(true), return_inverse=Val(true), sort_entries=false)
     Vn = simplexcenter(tetEdgesUnique,V)
     V_tet10 = [V; Vn]  # Old and new mid-edge points          
     E_tet10 = Vector{Tet10{Int}}(undef,length(E))        
@@ -6564,7 +6564,7 @@ elements, defined by the output element vector `E_penta15` and vertices
 """
 function penta6_penta15(E,V)
     pentaEdges = elementEdges(E)
-    pentaEdgesUnique,_,indReverse = gunique(pentaEdges; return_unique=true, return_index=true, return_inverse=true, sort_entries=false)
+    pentaEdgesUnique,indReverse = gunique(pentaEdges; return_unique=Val(true), return_index=Val(false), return_inverse=Val(true), sort_entries=false)
     Vn = simplexcenter(pentaEdgesUnique,V)
     V_penta15 = [V; Vn]  # Old and new mid-edge points          
     E_penta15 = Vector{Penta15{Int}}(undef,length(E))        
