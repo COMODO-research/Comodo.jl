@@ -36,7 +36,7 @@ jobs:
           version: '1'
           include-all-prereleases: false
           arch: x64
-      - uses: julia-actions/cache@v1
+      - uses: julia-actions/cache@v2
       - name: Testing        
         env:
           GITHUB_TOKEN: ${{ secrets.BENCHMARK_KEY }}
