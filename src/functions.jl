@@ -3063,7 +3063,7 @@ function boundaryfaceindices(F::Vector{NgonFace{N,T}}; elementLabels=nothing) wh
             append!(Fb,f[ind]) # Add faces to set
         end
         # Find indices of unique boundary faces 
-        ind_uni = gunique(Fb; return_unique=Val(false), return_index=Val(true), sort_entries=true)        
+        ind_uni = only(gunique(Fb; return_unique=Val(false), return_index=Val(true), sort_entries=true))
         return indicesBoundaryFaces[ind_uni]
     end
 end
@@ -4366,6 +4366,8 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
             Ebs,Vbs,_ = remove_unused_vertices(Ebs,Vbs)
             Ebs = [e.+length(Vs) for e in Ebs]
             append!(Vs,Vbs) # Append boundary edge points 
+        else 
+            Ebs 
         end
 
         Fq = Vector{QuadFace{Int}}(undef,length(Eu))
