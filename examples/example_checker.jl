@@ -40,7 +40,7 @@ function main()
         @info "Here is the list of problematic files:"
         display(problems)
     else
-        @info "All demos completed succesfully."
+        @info "All demos completed successfully."
     end
 end
 

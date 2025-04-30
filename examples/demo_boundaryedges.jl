@@ -6,7 +6,7 @@ using Comodo.GeometryBasics
 nSub = 3 # Number of refinement steps of the geodesic sphere
 r = 1.0 # Sphere radius
 F,V = geosphere(nSub,r) # Creating the faces and vertices of a full sphere
-VC = simplexcenter(F,V) # Finding triangle centre coordiantes
+VC = simplexcenter(F,V) # Finding triangle centre coordinates
 F = [F[i] for i in findall(map(v-> v[3]>0,VC))] # Remove some faces using z of central coordinates
 F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
 

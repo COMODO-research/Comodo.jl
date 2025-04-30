@@ -6,8 +6,8 @@ using FileIO
 
 #=
 This demo is for the `kabsch_rot` function. The Kabsch method allows one to 
-determine the rotation that occured between two meshes (or point sets) with 
-point-to-point correspondance. In this demo a triangulated surface is loaded 
+determine the rotation that occurred between two meshes (or point sets) with 
+point-to-point correspondence. In this demo a triangulated surface is loaded 
 from an STL file. Next the coordinates are rotated, and the Kabsch method is 
 used to retrieve the rotation performed, allowing one to "unrotate" the data.  
 =#

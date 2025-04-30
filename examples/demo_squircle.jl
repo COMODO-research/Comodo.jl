@@ -41,6 +41,3 @@ end
 Colorbar(fig[1, 2], limits = (0, 1), colormap = cMap)
 
 fig
-
-# fileName = comododir()*"/assets/img/squircle.mp4"
-# slider2anim(fig,hSlider1,fileName; backforth=true, duration=3)

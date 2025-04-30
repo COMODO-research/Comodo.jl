@@ -1,15 +1,21 @@
 # Define types
-abstract type AbstractElement{N,T} <: StaticVector{N,T} end
+abstract type AbstractElement{N,T<:Integer} <: StaticVector{N,T} end
 
-GeometryBasics.@fixed_vector Element = AbstractElement
+GeometryBasics.@fixed_vector TetrahedronElement = AbstractElement
+GeometryBasics.@fixed_vector PentahedronElement = AbstractElement
+GeometryBasics.@fixed_vector HexahedronElement = AbstractElement
+GeometryBasics.@fixed_vector TruncatedoctahedronElement = AbstractElement
+GeometryBasics.@fixed_vector RhombicdodecahedronElement = AbstractElement
 
-const Tet4{T} = Element{4,T} where T<:Integer
-const Tet10{T} = Element{10,T} where T<:Integer
-const Hex8{T} = Element{8,T} where T<:Integer
-const Hex20{T} = Element{20,T} where T<:Integer
-const Penta6{T} = Element{6,T} where T<:Integer
-const Rhombicdodeca14{T} = Element{14,T} where T<:Integer
-const Truncatedocta24{T} = Element{24,T} where T<:Integer
+const Tet4{T} = TetrahedronElement{4,T} where T<:Integer
+const Tet10{T} = TetrahedronElement{10,T} where T<:Integer
+const Tet15{T} = TetrahedronElement{15,T} where T<:Integer
+const Penta6{T} = PentahedronElement{6,T} where T<:Integer
+const Penta15{T} = PentahedronElement{15,T} where T<:Integer
+const Hex8{T} = HexahedronElement{8,T} where T<:Integer
+const Hex20{T} = HexahedronElement{20,T} where T<:Integer
+const Truncatedocta24{T} = TruncatedoctahedronElement{24,T} where T<:Integer
+const Rhombicdodeca14{T} = RhombicdodecahedronElement{14,T} where T<:Integer
 
 
 """
@@ -31,8 +37,7 @@ struct ConnectivitySet{N}
     vertex_vertex::Vector{Vector{Int}}
     vertex_vertex_f::Vector{Vector{Int}}
     face_face_v::Vector{Vector{Int}}
- end
-
+end
 
 """
     comododir()
@@ -234,12 +239,12 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
     V = Vector{Point{3,Float64}}(undef,length(xRange)*length(yRange))    
     c = 1
     sx = pointSpacingReal_X/4
-    for j in eachindex(yRange)
-        for i in eachindex(xRange)                 
+    for (j,y) in enumerate(yRange)
+        for (i,x) in enumerate(xRange)                 
             if iseven(j) # Shift over every second row of points
-                x = xRange[i]+sx
+                x += sx
             else
-                x = xRange[i]-sx
+                x -= sx
             end                    
             if B2
                 if isone(i)
@@ -248,7 +253,7 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
                     x = maxX
                 end
             end
-            V[c] = Point{3}{Float64}(x,yRange[j],0.0)
+            V[c] = Point{3}{Float64}(x,y,0.0)
             c += 1
         end
     end
@@ -289,7 +294,7 @@ Interpolates 1D (curve) data using biharmonic spline interpolation
 # Description
 
 This function uses biharmonic spline interpolation [1], which features radial basis 
-functions. The input is assumed to represent ordered data, i.e. consequtive 
+functions. The input is assumed to represent ordered data, i.e. consecutive 
 unique points on a curve. The curve x-, and y-coordinates are provided through 
 the input parameters `x` and `y` respectively. The third input `xi` defines the 
 sites at which to interpolate. Each of in the input parameters can be either a 
@@ -362,8 +367,8 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
             yi = interp_biharmonic(xx,yy,xi)
         end
     elseif extrapolate_method==:constant
-        # Simple constant extrapolation (last/first value is repeated indefinately)
-        Ls = xi.<x[1] # Boolean for points preceeding the start
+        # Simple constant extrapolation (last/first value is repeated indefinitely)
+        Ls = xi.<x[1] # Boolean for points preceding the start
         Ll = xi.>x[end] # Boolean for points after the end
         # TODO: Optimise to remove need for masks
         if any(_x -> _x < x[1] || _x > x[end], xi) # If any points outside of the range were encountered
@@ -421,7 +426,7 @@ end
 """
     nbezier(P,n)
 
-Returns a Bezier spline for the control points P whose order matches the numbe 
+Returns a Bezier spline for the control points P whose order matches the number 
 of control points provided. 
 
 # Description 
@@ -529,12 +534,12 @@ function mindist(V1,V2; getIndex::Val{B1}=Val(false), skipSelf = false ) where {
     if B1
         I = Vector{Int}(undef,length(V1))
     end
-    for i in eachindex(V1)
-        for j in eachindex(V2)
+    for (i,v1) in enumerate(V1)
+        for (j,v2) in enumerate(V2) 
             if skipSelf && i==j
                 d[j] = Inf
             else
-                d[j] = euclidean(V1[i],V2[j]) # norm(V1[i]-V2[j]) 
+                d[j] = euclidean(v1,v2) # norm(v1,v2) 
             end       
         end
         if B1
@@ -1006,7 +1011,7 @@ considered a face
 * `FM::Matrix{TF} where TF<:Integer`, whereby each row is considered a face
 * `Vector{NgonFace{m, OffsetInteger{-1, TF}}} where TF<:Integer`, whereby the 
 special integer type `OffsetInteger{-1, TF}` is converted to `Int`.  
-If the intput is already of the right type this function leaves the input 
+If the input is already of the right type this function leaves the input 
 unchanged.
 """
 function tofaces(FM::Vector{Vector{TF}}) where {TF}
@@ -1090,11 +1095,6 @@ function topoints(VM::Vector{Point{ND,TV}}) where {TV, ND}
     return VM
 end
 
-#TEMP FIX
-function topoints(VM)
-    [Point{3,Float64}(v) for v in coordinates(VM)]
-end
-
 """
     togeometrybasics_mesh
 
@@ -1116,7 +1116,7 @@ end
 """
     edgecrossproduct(F,V::Vector{Point{ND,T}}) where ND where T<:Real  
 
-Returns the edge cross product, useful for nomal direction and area computations. 
+Returns the edge cross product, useful for normal direction and area computations. 
 
     # Description
 
@@ -1276,7 +1276,6 @@ method both refines and smoothes the geometry through spline approximation.
 2. [Jos Stam, Charles Loop, _Quad/Triangle Subdivision_, doi: 10.1111/1467-8659.t01-2-00647](https://doi.org/10.1111/1467-8659.t01-2-00647)
 """
 function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method = :linear, constrain_boundary=false) where TF<:Integer where ND where TV <: Real
-    
     if iszero(n)
         return F,V
     elseif isone(n)
@@ -1294,18 +1293,15 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
             treatBoundary = false
         end
 
-        Fm1 = [TriangleFace{TF}(a.+length(V)) for a in eachrow(reshape(indReverse,length(F),length(F[1])))] 
-        Fm2 = Vector{TriangleFace{TF}}(undef,length(Fm1))
-        Fm3 = Vector{TriangleFace{TF}}(undef,length(Fm1))
-        Fm4 = Vector{TriangleFace{TF}}(undef,length(Fm1))        
-        for i in eachindex(F)                        
-            Fm2[i] = TriangleFace{TF}(Fm1[i][1], Fm1[i][3], F[i][1])
-            Fm3[i] = TriangleFace{TF}(Fm1[i][2], Fm1[i][1], F[i][2])
-            Fm4[i] = TriangleFace{TF}(Fm1[i][3], Fm1[i][2], F[i][3])
+        nv = length(V)
+        nf = length(F)
+        Fn = Vector{TriangleFace{TF}}(undef,4*nf)        
+        for (i,f) in enumerate(F)                        
+            Fn[i]      = TriangleFace{TF}(indReverse[i],indReverse[i+nf],indReverse[i+2*nf]) .+ nv
+            Fn[i+nf]   = TriangleFace{TF}(Fn[i][1], Fn[i][3], f[1])
+            Fn[i+2*nf] = TriangleFace{TF}(Fn[i][2], Fn[i][1], f[2])
+            Fn[i+3*nf] = TriangleFace{TF}(Fn[i][3], Fn[i][2], f[3])
         end
-
-        # Create combined face set
-        Fn = [Fm1; Fm2; Fm3; Fm4]        
 
         con_E2F = con_edge_face(F,Eu,indReverse)
 
@@ -1316,28 +1312,28 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
         elseif method == :Loop #Loop subdivision 
             # New mid-edge like vertices
             Vm = Vector{Point{ND,TV}}(undef,length(Eu)) 
-            for i in eachindex(Eu) # For each edge index       
+            for (i,e) in enumerate(Eu) # For each edge index       
                 if treatBoundary && B_boundary[i]              
-                    Vm[i] = 1/2 .*(V[Eu[i][1]] .+ V[Eu[i][2]]) # Normal mid-edge point
+                    Vm[i] = 1/2 .*(V[e[1]] .+ V[e[2]]) # Normal mid-edge point
                 else
                     F_touch = F[con_E2F[i]] 
                     indVerticesTouch = Vector{TF}() 
                     for f in F_touch        
-                        b = f.!=Eu[i][1] .&& f.!=Eu[i][2]      
+                        b = f.!=e[1] .&& f.!=e[2]      
                         if any(b)  
                             append!(indVerticesTouch,f[b])           
                         end
                     end                   
-                    Vm[i] = 3/8 .*(V[Eu[i][1]] .+ V[Eu[i][2]])  .+ 1/8 .* (V[indVerticesTouch[1]] .+ V[indVerticesTouch[2]])
+                    Vm[i] = 3/8 .*(V[e[1]] .+ V[e[2]])  .+ 1/8 .* (V[indVerticesTouch[1]] .+ V[indVerticesTouch[2]])
                 end
             end
     
             # Modified vertices for original vertices
             Vv = deepcopy(V)
-            for i in eachindex(V)            
+            for (i,v_i) in enumerate(V)            
                 if treatBoundary && in(i,indB)
                     if !constrain_boundary
-                        Vv[i] = 6/8*V[i] + 1/8*(V[con_V2V[i][1]]+V[con_V2V[i][2]]) 
+                        Vv[i] = 6/8*v_i + 1/8*(V[con_V2V[i][1]]+V[con_V2V[i][2]]) 
                     end
                 else
                     B_vert_face = [any(==(i), f) for f in F]
@@ -1352,9 +1348,10 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
                         end
                     end
                     N = length(indVerticesTouch)                
+
                     v_sum = sum(@view(V[indVerticesTouch]),dims=1)[1]                
-                    β = 1/N * (5/8-(3/8 +1/4*cos((2π)/N))^2)        
-                    Vv[i] = (1-N*β) .* V[i] .+ β*v_sum                
+                    β = 1/N * (5/8-(3/8 +1/4*cos((2*π)/N))^2)        
+                    Vv[i] = (1-N*β) .* v_i .+ β*v_sum   
                 end
             end    
             # Create complete point set
@@ -1438,26 +1435,26 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
 
             # Edge points 
             Ve = Vector{Point{ND,TV}}(undef,length(Eu)) # Initialize edge points
-            for q in eachindex(Eu)      
-                if treatBoundary && B_boundary[q]              
-                    Ve[q] = Ve_mid[q] # Normal mid-edge point
+            for i in eachindex(Eu)      
+                if treatBoundary && B_boundary[i]              
+                    Ve[i] = Ve_mid[i] # Normal mid-edge point
                 else                   
-                    Ve[q] = (mean(Vf[con_E2F[q]],dims=1)[1] .+ Ve_mid[q])./2.0
+                    Ve[i] = (mean(Vf[con_E2F[i]],dims=1)[1] .+ Ve_mid[i])./2.0
                 end
             end
 
             # Vertex points 
             Vv = deepcopy(V) # Initialize vertex points
-            for q in eachindex(V) # Loop over all vertices
-                if treatBoundary && in(q,indB)
+            for (i,v_i) in enumerate(V) # Loop over all vertices
+                if treatBoundary && in(i,indB)
                     if !constrain_boundary
-                        Vv[q] = 6/8*V[q] + 1/8*(V[con_V2V[q][1]]+V[con_V2V[q][2]]) 
+                        Vv[i] = 6/8*V[i] + 1/8*(V[con_V2V[i][1]]+V[con_V2V[i][2]]) 
                     end
                 else
-                    indF = con_V2F[q]
-                    indE = con_V2E[q]
+                    indF = con_V2F[i]
+                    indE = con_V2E[i]
                     N = length(indF) # Number of faces (or edges) touching this vertex                    
-                    Vv[q] = (mean(Vf[indF],dims=1)[1] .+ 2.0.*mean(Ve_mid[indE],dims=1)[1] .+ (N-3.0).*V[q])./N
+                    Vv[i] = (mean(Vf[indF],dims=1)[1] .+ 2.0.*mean(Ve_mid[indE],dims=1)[1] .+ (N-3.0).*v_i)./N
                 end
             end
 
@@ -1469,10 +1466,11 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
         # Define faces
         Fn = Vector{QuadFace{TF}}(undef,length(F)*4)        
         nv = length(V)
+        nf = length(F)
         ne = length(Eu)
-        for q in eachindex(F)            
-            for ii = 0:3
-                Fn[q+ii*length(F)] = QuadFace{TF}(F[q][ii+1], con_F2E[q][ii+1]+nv, q+nv+ne, con_F2E[q][1+mod(3+ii,4)]+nv)                
+        for (i,f_i) in enumerate(F)            
+            for j = 1:4
+                Fn[i+(j-1)*nf] = QuadFace{TF}([f_i[j], con_F2E[i][j]+nv, i+nv+ne, con_F2E[i][mod1(j+3,4)]+nv])                
             end            
         end
 
@@ -1502,7 +1500,7 @@ Returns a geodesic sphere triangulation
 
 This function returns a geodesic sphere triangulation based on the number of
 refinement iterations `n` and the radius `r`. Geodesic spheres (aka Buckminster-Fuller
- spheres) are triangulations of a sphere that have near uniform edge lenghts. 
+ spheres) are triangulations of a sphere that have near uniform edge lengths. 
 The algorithm starts with a regular icosahedron. Next this icosahedron is refined 
 `n` times, while nodes are pushed to a sphere surface with radius `r` at each
 iteration. Two methods are available, i.e. `:linear` (default) and `:Loop` 
@@ -1539,7 +1537,7 @@ Returns a geodesic sphere triangulation
 
 This function returns a geodesic hemispherephere triangulation based on the number of
 refinement iterations `n` and the radius `r`. Geodesic spheres (aka Buckminster-Fuller
- spheres) are triangulations of a sphere that have near uniform edge lenghts. 
+ spheres) are triangulations of a sphere that have near uniform edge lengths. 
 The algorithm starts with a regular icosahedron that is adjusted to generate a half icosahedron. 
 Next this icosahedron is refined  `n` times, while nodes are pushed to a sphere surface with radius `r` at each
 iteration. 
@@ -1690,8 +1688,8 @@ function hexbox(boxDim,boxEl)
     IJK_nodes = ind2sub(boxNod,indNodes)
 
     V = convert(Vector{Point{3, Float64}},IJK_nodes)
-    for q in eachindex(V)
-        V[q] = ((V[q] .- Point{3, Float64}(1.0,1.0,1.0)).*(boxDim./boxEl)) .- Point{3, Float64}(boxDim/2.0)
+    for (i,v_i) in enumerate(V)
+        V[i] = ((v_i .- Point{3, Float64}(1.0,1.0,1.0)).*(boxDim./boxEl)) .- Point{3, Float64}(boxDim/2.0)
     end
 
     # Create face sets from elements
@@ -1845,7 +1843,7 @@ This function computes the face-face connectivity for each face. The input faces
 `F` are used to create a list of faces connected to each face by a shared vertex.
 Additional optional inputs include: the vertices `V`, and the vertex-face 
 connectivity `con_V2F`. In terms of vertices only the number of vertices, i.e. 
-`length(V)` is neede, if `V` is not provided it is assumed that `length(V)` 
+`length(V)` is needed, if `V` is not provided it is assumed that `length(V)` 
 corresponds to the largest index in `F`. The vertex-face connectivity if not
 supplied, will be computed by this function, hence computational time may be saved 
 if it was already computed. 
@@ -1856,10 +1854,10 @@ function con_face_face_v(F,V=nothing,con_V2F=nothing)
             con_V2F = con_vertex_face(F,V)  # VERTEX-FACE connectivity
         end
         con_F2F = [Vector{Int}() for _ in 1:length(F)]
-        for i_f in eachindex(F)
-            for i in @views unique(reduce(vcat,con_V2F[F[i_f]]))    
-                if i!=i_f     
-                    push!(@views(con_F2F[i_f]),i)
+        for (i,f) in enumerate(F)
+            for j in unique(reduce(vcat,con_V2F[f]))    
+                if j != i
+                    push!(con_F2F[i],j)
                 end 
             end
         end
@@ -1890,9 +1888,9 @@ function con_vertex_simplex(F,V=nothing)
         n = length(V)
     end
     con_V2F = [Vector{Int}() for _ in 1:n]
-    for i_f in eachindex(F)
-        for i in @views F[i_f]
-            push!(@views(con_V2F[i]),i_f)
+    for (i,f) in enumerate(F)
+        for j in f
+            push!(con_V2F[j],i)
         end
     end
     return con_V2F
@@ -1950,13 +1948,14 @@ function con_edge_edge(E_uni,con_V2E=nothing)
         con_V2E = con_vertex_edge(E_uni) 
     end    
     con_E2E = [Vector{Int}() for _ in 1:length(E_uni)]
-    for i_e in eachindex(E_uni)
-        for i in @views reduce(vcat,con_V2E[E_uni[i_e]])    
-            if i!=i_e     
-                push!(@views(con_E2E[i_e]),i)
+    for (i,e) in enumerate(E_uni)
+        for j in reduce(vcat,con_V2E[e])    
+            if j != i     
+                push!(con_E2E[i],j)
             end 
         end
     end
+                                                                                              +
     return con_E2E
 end
 
@@ -2226,7 +2225,7 @@ function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}},
             c = 0
             while c<n             
                 Vs = deepcopy(V)
-                @inbounds for i in indSmooth # eachindex(V)
+                @inbounds for i in indSmooth 
                     Vs[i] = (1.0-λ).*Vs[i] .+ λ*mean(V[con_V2V[i]]) # Linear blend between original and pure Laplacian
                 end
                 if !isnothing(constrained_points)
@@ -2234,7 +2233,7 @@ function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}},
                 end
                 if !isnothing(tolDist) # Include tolerance based termination
                     d = 0.0
-                    @inbounds for i in indSmooth # eachindex(V)
+                    @inbounds for i in indSmooth
                         d+=sqrt(sum((V[i].-Vs[i]).^2)) # Sum of distances
                     end
                     if d<tolDist # Sum of distance smaller than tolerance?
@@ -2298,14 +2297,14 @@ function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, �
         c = 0
         while c<n       
             Q = deepcopy(P) # Reset Q as P for this iteration
-            @inbounds for i in indSmooth # eachindex(V)
+            @inbounds for i in indSmooth
                 P[i] = mean(Q[con_V2V[i]]) # Laplacian 
                 # Compute different vector between P and a point between original 
                 # point and Q (which is P before laplacian)
                 B[i] = P[i] .- (α.*V[i] .+ (1.0-α).*Q[i])
             end
             
-            @inbounds for i in indSmooth # eachindex(V)      
+            @inbounds for i in indSmooth    
                 # Push points back based on blending between pure difference vector
                 # B and the Laplacian mean of these      
                 P[i] = P[i] .- (β.*B[i] .+ (1.0-β).* mean(B[con_V2V[i]]))
@@ -2317,7 +2316,7 @@ function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, �
 
             if !isnothing(tolDist) # Include tolerance based termination
                 d = 0.0
-                @inbounds for i in indSmooth #eachindex(V)
+                @inbounds for i in indSmooth
                     d+=sqrt(sum((P[i].-Q[i]).^2)) # Sum of distances
                 end
                 if d<tolDist # Sum of distance smaller than tolerance?
@@ -2395,7 +2394,7 @@ function quadsphere(n::Int,r::T) where T <: Real
     return F,V
 end
 
-function simplex2vertexdata(F::Union{Vector{NgonFace{NF,TF}},Vector{Element{NE,TE}}},DF,V::Union{Nothing,Vector{Point{ND,TV}}}=nothing; con_V2F=nothing, weighting=:none) where NF where TF<:Integer where NE where TE<:Integer where ND where TV<:Real    
+function simplex2vertexdata(F::Union{Vector{NgonFace{NF,TF}},Vector{<: AbstractElement{NE, TE}}},DF,V::Union{Nothing,Vector{Point{ND,TV}}}=nothing; con_V2F=nothing, weighting=:none) where NF where TF<:Integer where NE where TE<:Integer where ND where TV<:Real    
     if isnothing(con_V2F)
         con_V2F = con_vertex_face(F,V)
     end
@@ -2409,28 +2408,23 @@ function simplex2vertexdata(F::Union{Vector{NgonFace{NF,TF}},Vector{Element{NE,T
     
     DV = (typeof(DF))(undef,length(con_V2F))
     T = eltype(DV)
-    for q in eachindex(DV)
-        if !isempty(con_V2F[q])
-            if weighting==:none || length(con_V2F[q])==1 
-                DV[q] = mean(T,DF[con_V2F[q]])
+    for i in eachindex(DV)
+        if !isempty(con_V2F[i])
+            if weighting==:none || length(con_V2F[i])==1 
+                DV[i] = mean(T,DF[con_V2F[i]])
             elseif weighting==:area            
-                a = A[con_V2F[q]]                
-                DV[q] = sum(T,DF[con_V2F[q]].*a)./sum(a)
+                a = A[con_V2F[i]]                
+                DV[i] = sum(T,DF[con_V2F[i]].*a)./sum(a)
             end
         else
-            DV[q] = T(NaN)
+            DV[i] = T(NaN)
         end
     end
     return DV
 end
 
 function vertex2simplexdata(F,DV)
-    T = eltype(DV) # Element type of data in DV
-    DF =  (typeof(DV))(undef,length(F)) # Allocate data for F
-    @inbounds for (i,f) in enumerate(F)        
-        DF[i] = mean(view(DV,f)) # The mean of the vertex data for each entry in F
-    end
-    return DF
+    return [mean(view(DV,f)) for f in F]
 end
 
 function simplexcenter(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
@@ -2482,7 +2476,7 @@ latter, triangles are formed by slashing the quads.
 function loftlinear(V1::Vector{Point{ND,TV}}, V2::Vector{Point{ND,TV}}; num_steps=nothing, close_loop=true, face_type=:quad) where ND where TV<:Real
     # Derive num_steps from distance and mean curve point spacing if missing    
     if isnothing(num_steps)
-        d = mean([norm(V1[i]-V2[i]) for i in eachindex(V1)])
+        d = mean([norm(V2[i]-v1) for (i,v1) in enumerate(V1)])
         dp = 0.5* (pointspacingmean(V1)+pointspacingmean(V2))
         num_steps = ceil(Int,d/dp)                
         if num_steps < 2
@@ -2842,7 +2836,7 @@ function quad2tri(F::Vector{QuadFace{TF}},V::Vector{Point{ND,TV}}; convert_metho
 end
 
 function remove_unused_vertices(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
-    if isempty(F) # If the face set is empty, return all emtpy outputs
+    if isempty(F) # If the face set is empty, return all empty outputs
         Fc = F
         Vc = Vector{Point{ND,TV}}()
         indFix = Vector{Int}()
@@ -2990,7 +2984,7 @@ end
 
 """
     boundaryfaces(F::Vector{NgonFace{N,TF}}) where N where TF <: Integer
-    boundaryfaces(E::Vector{Element{N,T}}) where N where T <: Integer
+    boundaryfaces(E::Vector{<: AbstractElement{N, T}}) where N where T <: Integer
 
 Returns boundary faces
 
@@ -3004,13 +2998,45 @@ function boundaryfaces(F::Vector{NgonFace{N,T}}) where N where T <: Integer
     return F[occursonce(F; sort_entries=true)]
 end
 
-function boundaryfaces(E::Vector{Element{N,T}}) where N where T <: Integer
-    F = element2faces(E)
-    return F[occursonce(F; sort_entries=true)]
+function boundaryfaces(E::Vector{<: AbstractElement{N, T}}; elementLabels=nothing) where N where T <: Integer
+    if isnothing(elementLabels)
+        F = element2faces(E)
+        return F[occursonce(F; sort_entries=true)]
+    else        
+        Fb = Vector{_element_facetype(E)}()        
+        for c in unique(elementLabels)                        
+            append!(Fb,boundaryfaces(element2faces(E[elementLabels.==c]))) # Add faces to set
+        end
+        return gunique(Fb; return_unique=true, return_index=false, return_inverse=false, sort_entries=true)
+    end
 end
 
 """
-    boundaryfaceindices(F::Vector{NgonFace{N,T}}) where N where T <: Integer
+    _element_facetype(E::Vector{<: Tet4{<: Integer}}) = TriangleFace{Int}
+    _element_facetype(E::Vector{<: Tet10{T<: Integer}}) where {T} = NgonFace{6,T}
+    _element_facetype(E::Vector{<: Tet15{T<: Integer}}) where {T} = NgonFace{6,T}
+    _element_facetype(E::Vector{<: Hex8{T<: Integer}}) where {T} = QuadFace{T}
+    _element_facetype(E::Vector{<: Hex20{T<: Integer}}) where {T} = NgonFace{8,T}
+    _element_facetype(E::Vector{<: Penta6{T<: Integer}}) where {T} = (TriangleFace{T},QuadFace{T})
+    _element_facetype(E::Vector{<: Penta6{T<: Integer}}) where {T} = (NgonFace{6,T},NgonFace{8,T}) 
+
+Returns element face type
+
+# Description
+This function returns the element face type. For most elements this is a single 
+type, e.g. TriangleFace for Tet4, but for Pentahedral elements a Tuple 
+containing the types of the triangular and quadrilateral sides is returned. 
+"""
+_element_facetype(E::Vector{<: Tet4{T}}) where {T<: Integer} = TriangleFace{T}
+_element_facetype(E::Vector{<: Tet10{T}}) where {T<: Integer} = NgonFace{6,T}
+_element_facetype(E::Vector{<: Tet15{T}}) where {T<: Integer} = NgonFace{6,T}
+_element_facetype(E::Vector{<: Hex8{T}}) where {T<: Integer} = QuadFace{T}
+_element_facetype(E::Vector{<: Hex20{T}}) where {T<: Integer} = NgonFace{8,T}
+_element_facetype(E::Vector{<: Penta6{T}}) where {T<: Integer} = (TriangleFace{T},QuadFace{T})
+_element_facetype(E::Vector{<: Penta15{T}}) where {T<: Integer} = (NgonFace{6,T},NgonFace{8,T}) 
+
+"""
+    boundaryfaceindices(F::Vector{NgonFace{N,T}}; elementLabels=nothing) where N where T <: Integer
 
 Returns boundary face indices
 
@@ -3020,8 +3046,26 @@ a vector of faces.
 
 Boundary faces are those faces that occur only once in the mesh. 
 """
-function boundaryfaceindices(F::Vector{NgonFace{N,T}}) where N where T <: Integer
-    return findall(occursonce(F; sort_entries=true))
+function boundaryfaceindices(F::Vector{NgonFace{N,T}}; elementLabels=nothing) where N where T <: Integer
+    if isnothing(elementLabels)
+        return findall(occursonce(F; sort_entries=true))
+    else # Labels provided so loop over labelled regions
+        if length(F) !=  length(elementLabels)
+            elementLabels = repeat(elementLabels,inner=6) # Assume element labels rather than face labels
+        end
+        Fb = Vector{eltype(F)}()        
+        indicesBoundaryFaces = Vector{Int}()        
+        for c in unique(elementLabels)
+            indNow = findall(elementLabels.==c) # Indices of current faces
+            f = F[indNow] # The face set         
+            ind = boundaryfaceindices(f)
+            append!(indicesBoundaryFaces,indNow[ind])       
+            append!(Fb,f[ind]) # Add faces to set
+        end
+        # Find indices of unique boundary faces 
+        _,ind_uni = gunique(Fb; return_unique=true, return_index=true, return_inverse=false, sort_entries=true)        
+        return indicesBoundaryFaces[ind_uni]
+    end
 end
 
 """ 
@@ -3031,8 +3075,8 @@ Converts boundary edges to a curve
 
 # Description
 This function takes a set of boundary edges `Eb`, which may not be ordered e.g.
-consequtively, and returns an ordered set of indices `ind` defining a curve of 
-consequtive points. The function returns empty output if the input edges do not 
+consecutively, and returns an ordered set of indices `ind` defining a curve of 
+consecutive points. The function returns empty output if the input edges do not 
 for a proper curve. 
 """
 function edges2curve(Eb::Vector{LineFace{T}}; remove_last = false) where T <: Integer
@@ -3064,7 +3108,7 @@ function edges2curve(Eb::Vector{LineFace{T}}; remove_last = false) where T <: In
         ind = [Eb[i][1]] # Add first edge point and grow this list
         while !all(seen) # loop until all edges have been visited        
             push!(ind,Eb[i][2]) # Add edge end point (start is already in list)
-            seen[i] = true # Lable current edge as visited       
+            seen[i] = true # Label current edge as visited       
             e_ind = con_E2E[i] # Indices for connected edges
             if length(e_ind)>2 # Branch point detected
                 throw(ErrorException("Invalid edges or branch point detected. Current edge is connected to more than two edges."))    
@@ -3177,7 +3221,7 @@ function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive,
     end
     
     # Create offset point depending on direction of extrude
-    if direction == :positive # Allong n from V1
+    if direction == :positive # Along n from V1
         p = extent.*n
     elseif direction == :negative # Against n from V1
         p = -extent.*n
@@ -3203,7 +3247,7 @@ Groups connected mesh features
  
 # Description
 This function uses the connectivity `con_type` to create a group label `C` for
-each entitiy in `F`. E.g. `C.==1` for the first group and `C.==2`` for the 
+each entity in `F`. E.g. `C.==1` for the first group and `C.==2`` for the 
 second and so on.     
 """
 function meshgroup(F; con_type = :v, indStart=1, stop_at = nothing)
@@ -3275,7 +3319,7 @@ end
 Compute on surface distance
 
 # Description
-This function computes allong mesh-edge distances for the points with the 
+This function computes along mesh-edge distances for the points with the 
 indices contained in `indStart`. 
 """
 function distmarch(F,V::Vector{Point{ND,TV}},indStart; d=nothing, dd=nothing, dist_tol=1e-3,con_V2V=nothing,l=nothing) where ND where TV<:Real
@@ -3288,11 +3332,11 @@ function distmarch(F,V::Vector{Point{ND,TV}},indStart; d=nothing, dd=nothing, di
     # Compute "Laplacian umbrella" distances
     if isnothing(dd)
         dd = Dict{Vector{Int},Float64}()  
-        for i in eachindex(V)
-            for ii in con_V2V[i]
-                k = sort([i,ii])
+        for (i,v) in enumerate(V)
+            for j in con_V2V[i]
+                k = sort([i,j])
                 if !haskey(dd,k)
-                    dd[sort(k)] = norm(V[i]-V[ii])
+                    dd[sort(k)] = norm(v-V[j])
                 end 
             end
         end
@@ -3318,12 +3362,12 @@ function distmarch(F,V::Vector{Point{ND,TV}},indStart; d=nothing, dd=nothing, di
     count_inf_previous = length(d)-length(indStart) # number of Inf values currently
     while true                          
         for i in eachindex(V) # For each point            
-            for ii in con_V2V[i] # Check umbrella neighbourhood
+            for j in con_V2V[i] # Check umbrella neighbourhood
                 # Get closest point and distance from umbrella
-                minVal,minInd = findmin([d[ii],dd[sort([i,ii])]+d[i]])            
+                minVal,minInd = findmin([d[j],dd[sort([i,j])]+d[i]])            
                 if minInd==2
-                    d[ii] = minVal # Distance                          
-                    l[ii] = l[i] # Index
+                    d[j] = minVal # Distance                          
+                    l[j] = l[i] # Index
                 end
             end            
         end
@@ -3374,10 +3418,10 @@ required inputs are as follows:
 `ray_vector` The ray vector which can be `Vector{Point{3, Float64}}` or `Vec3{Float64}`
 
 The following optional input parameters can be provided: 
-`rayType = :ray` (default) or `:line`. This defines wether the vector is treated as a ray (extends indefinately) or as a line (finite length)
+`rayType = :ray` (default) or `:line`. This defines whether the vector is treated as a ray (extends indefinitely) or as a line (finite length)
 `triSide = 1` (default) or `0` or `-1`. 
 When `triSide=1` only the inward intersections are considered, e.g. when the ray or line enters the shape (ray/line is pointing against face normal)
-When `triSide=-1` only the outward intersections are considered, e.g. when the ray or line exits the shape (ray/line is pointing allong face normal)
+When `triSide=-1` only the outward intersections are considered, e.g. when the ray or line exits the shape (ray/line is pointing along face normal)
 When `triSide=0` both inward and outward intersections are considered.
 `tolEps = eps(Float64)` (default) 
 
@@ -3411,7 +3455,7 @@ function ray_triangle_intersect(f::TriangleFace{Int},V::Vector{Point{ND,TV1}},ra
         boolDet = det_vec>tolEps
     elseif triSide == 0 # Both ways
         boolDet = abs(det_vec)>tolEps
-    elseif triSide == -1 # Pointing allong face normals
+    elseif triSide == -1 # Pointing along face normals
         boolDet = det_vec<tolEps
     end
 
@@ -3423,7 +3467,7 @@ function ray_triangle_intersect(f::TriangleFace{Int},V::Vector{Point{ND,TV1}},ra
             s_cross_e1 = cross(s,vec_edge_1)
             v = dot(ray_vector,s_cross_e1)/det_vec
             if v >= 0 && (u+v) <= 1 # On triangle according to both u and v
-                # Allong ray/line coordinates i.e. intersection is at ray_origin + t.*ray_vector 
+                # Along ray/line coordinates i.e. intersection is at ray_origin + t.*ray_vector 
                 t = dot(vec_edge_2,s_cross_e1)/det_vec                      
                 if rayType == :ray || (rayType == :line && t>=0 && t<=1.0)                                                   
                     p = ray_origin .+ t.*ray_vector # same as: push!(P, P1 .+ u.*P21 .+ v.*P31)            
@@ -3542,7 +3586,7 @@ unshared vertices. Note that any unused points are not returned in the output
 point array `Vn`. Indices for the mapping are not created here but can simply be
 obtained using `reduce(vcat,F)`.
 """
-function separate_vertices(F::Union{Vector{NgonFace{N, TF}},Vector{Element{N, TF}}},V::Vector{Point{ND,TV}}; scaleFactor = nothing) where N where TF<:Integer where ND where TV<:Real
+function separate_vertices(F::Union{Vector{NgonFace{N, TF}},Vector{<: AbstractElement{N, TF}}},V::Vector{Point{ND,TV}}; scaleFactor = nothing) where N where TF<:Integer where ND where TV<:Real
     Vn = Vector{eltype(V)}(undef,length(F)*N)
     Fn = Vector{eltype(F)}(undef,length(F))
     for (i,f) in enumerate(F)   
@@ -3568,7 +3612,7 @@ end
     curve_length(V::Vector{Point{ND,TV}}; close_loop=false) where ND where TV<:Real
 
 This function computes the stepwise length of the input curve defined by the ND 
-points in `V`. The output is a vector containining the distance for each point, 
+points in `V`. The output is a vector containing the distance for each point, 
 and the total length therefore the last entry. 
 
 If the optional parameter `close_loop` is set to `true` then it is assumed that
@@ -3598,7 +3642,7 @@ spline interpolator `S` used. The output points can also be retriebed by using:
 Note that the even sampling is defined in terms of the curve length for a 4th 
 order natural B-spline that interpolates the input data. Hence if significant 
 curvature exists for the B-spline between two adjacent data points then the 
-spacing between points in the output may be non-uniform (despite the allong 
+spacing between points in the output may be non-uniform (despite the along 
 B-spline distance being uniform). 
 """
 function evenly_sample(V::Vector{Point{ND,TV}}, n::Int; rtol=1e-8, niter=1, spline_order=4, close_loop=false) where ND where TV<:Real
@@ -3683,8 +3727,7 @@ function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8
 
         Vn = Vector{eltype(V)}()
         l1 = 0.0 # Effectively makes first point a must point
-        for i in eachindex(must_points)          
-            j = must_points[i]          
+        for (i,j) in enumerate(must_points)          
             if j==1 # i.e. last step when close_loop == true
                 l2 = D  
             else
@@ -3766,7 +3809,7 @@ end
     F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist = 0, close_loop=true)   
 
 # Description
-This function implements swept lofting. The start curve `V1` is pulled allong the 
+This function implements swept lofting. The start curve `V1` is pulled along the 
 guide curve `Vc` while also gradually (linearly) morphing into the end curve 
 `V2`. 
 The optional parameter `face_type` (default :quad) defines the type of mesh 
@@ -3815,7 +3858,7 @@ function sweeploft(Vc::Vector{Point{ND,TV}},V1::Vector{Point{ND,TV}},V2::Vector{
     # Rotate V2b to start orientation
     V2b = [Q12*v for v in V2b] 
 
-    # Linearly loft "alligned" sections to create draft intermediate sections
+    # Linearly loft "aligned" sections to create draft intermediate sections
     F,V = loftlinear(V1b,V2b;num_steps=nc,close_loop=close_loop,face_type=face_type)
     
     # Rotating and positioning all sections 
@@ -3925,9 +3968,9 @@ end
 The `batman` function creates points on the curve for the Batman logo. The curve
 is useful for testing surface meshing algorithms since it contains sharp 
 transitions and pointy features. The user requests `n` points on the curve. The
-default forces exactly `n` points which may result in an assymetric curve. To 
+default forces exactly `n` points which may result in an asymmetric curve. To 
 instead force symmetry the user can set the optional parameter `symmetric=true`. 
-In this case the output will be symmetric allong the y-axis, however the number
+In this case the output will be symmetric along the y-axis, however the number
 of points on the curve may have increased (if the input `n` is not even). The
 second optional input is the direction of the curve, i.e. if it is clockwise, 
 `dir=:cw` or anti-clockwise `dir=:acw`. 
@@ -3961,11 +4004,11 @@ function batman(n::Int; symmetric = false, dir=:acw)
         else
             m = ceil(Int,n/2)+1 
         end
-        V = evenly_sample([Point{3, Float64}(x[i]/22,y[i]/22,0.0) for i in eachindex(x)],m)
+        V = evenly_sample([Point{3, Float64}(xy[1]/22.0,xy[2]/22.0,0.0) for xy in zip(x,y)],m)
         V2 = [Point{3, Float64}(-V[i][1],V[i][2],0.0) for i in length(V)-1:-1:2]
         append!(V,V2)    
     else
-        V = [Point{3, Float64}(x[i]/22,y[i]/22,0.0) for i in eachindex(x)]    
+        V = [Point{3, Float64}(xy[1]/22.0,xy[2]/22.0,0.0) for xy in zip(x,y)]    
         V2 = [Point{3, Float64}(-V[i][1],V[i][2],0.0) for i in length(V)-1:-1:2]
         append!(V,V2) 
         V = evenly_sample(V,n)
@@ -4103,7 +4146,7 @@ end
 
 Generates a multi-region triangle mesh for the input regions. The boundary 
 curves for all regions are contained in the tuple `VT`. Each region to be meshed
-is next defined using a tuple `R` containing indices into the curve typle `VT`. 
+is next defined using a tuple `R` containing indices into the curve tuple `VT`. 
 If an entry in `R` contains only one index then the entire curve domain is 
 meshed. If `R` contains multiple indices then the first index is assumed to be 
 for the outer boundary curve, while all subsequent indices are for boundaries 
@@ -4122,10 +4165,10 @@ function regiontrimesh(VT,R,P)
         # Creating constraints
         constrained_segments = Vector{Vector{Vector{Int}}}()
         n = 1        
-        for i in eachindex(r)
-            m = length(VT[r[i]])            
+        for (i,r_i) in enumerate(r)
+            m = length(VT[r_i])            
             ind = append!(collect(n:(n-1)+m),n)
-            if i>1 #&& i==length(r)
+            if i>1
                 reverse!(ind)
             end
             append!(constrained_segments,[[ind]])
@@ -4154,8 +4197,6 @@ function regiontrimesh(VT,R,P)
         TRn = triangulate(Vn; boundary_nodes=constrained_segments, delete_ghosts=true)
         Fn = [TriangleFace{Int}(tr) for tr in each_solid_triangle(TRn)] 
         Vn = get_points(TRn)
-        # Fn,Vn,indFix = remove_unused_vertices(Fn,Vn)
-        # constrained_segments = [[indFix[c[1]]] for c in constrained_segments_ori] # Fix indices after point removal 
     
         # Check if new boundary points were introduced and remove if needed 
         Eb = boundaryedges(Fn)
@@ -4345,12 +4386,12 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
         append!(Vs,V_Es) # Append boundary edge points 
         
         Fq = Vector{QuadFace{Int}}(undef,length(E_Fs))
-        for i in eachindex(E_Fs)
-            ii = indReverse[i]
-            if E[i][1] == Eu[ii][1] # A first occurance edge, order matches
-                Fq[i] = (E_Fs[i][2],E_Fs[i][1],Es[ii][1],Es[ii][2])
-            else # A second occurance edge, needs inversion
-                Fq[i] = (E_Fs[i][2],E_Fs[i][1],Es[ii][2],Es[ii][1])
+        for (i,e_i) in enumerate(E_Fs)
+            j = indReverse[i]
+            if E[i][1] == Eu[j][1] # A first occurrence edge, order matches
+                Fq[i] = (e_i[2],e_i[1],Es[j][1],Es[j][2])
+            else # A second occurrence edge, needs inversion
+                Fq[i] = (e_i[2],e_i[1],Es[j][2],Es[j][1])
             end
         end
     end
@@ -4404,24 +4445,24 @@ function tet2hex(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer wh
     inv_Ft = inv_Ft .+ offset_F
     inv_Et = inv_Et .+ offset_E
     Eh = Vector{Hex8{T}}(undef,length(E)*4) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
-    for i = eachindex(E)
+    for (i,e) in enumerate(E)
         i_e = 1 + (i-1)*6 # index of first edge
         i_f = 1 + (i-1)*4 # index of first face (which happens to also be the first hex element for tetrahedra)        
         i_vc = i+offset_Vc
-        Eh[i_f  ] = Hex8{T}(      E[i][1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+2],
+        Eh[i_f  ] = Hex8{T}(      e[1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+2],
                             inv_Et[i_e+3], inv_Ft[i_f+1],          i_vc, inv_Ft[i_f+3])
-        Eh[i_f+1] = Hex8{T}(      E[i][2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e  ],
+        Eh[i_f+1] = Hex8{T}(      e[2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e  ],
                             inv_Et[i_e+4], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+1])
-        Eh[i_f+2] = Hex8{T}(      E[i][3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
+        Eh[i_f+2] = Hex8{T}(      e[3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
                             inv_Et[i_e+5], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+2])                             
-        Eh[i_f+3] = Hex8{T}(      E[i][4], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+3],
+        Eh[i_f+3] = Hex8{T}(      e[4], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+3],
                             inv_Et[i_e+5], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+3])                             
     end    
     return Eh,Vh
 end
 
 """
-    element2faces(E::Vector{Element{N,T}}) where N where T 
+    element2faces(E::Vector{<: AbstractElement{N, T}}) where N where T 
 
 Returns element faces
 
@@ -4429,7 +4470,7 @@ Returns element faces
 This function computes the faces for the input elements defined by `E`. The elements
 should be Vectors consisting of `Tet4`, `Hex8` elements. 
 """
-function element2faces(E::Vector{Element{N,T}}) where N where T 
+function element2faces(E::Vector{<: AbstractElement{N, T}}) where N where T 
     element_type = eltype(E)
     if element_type <: Tet4{T}
         nf = 4
@@ -4443,13 +4484,13 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
         end
     elseif element_type <: Tet10{T}
         nf = 4        
-        F = Vector{NgonFace{6,Int}}(undef,length(E)*nf)
+        F = Vector{NgonFace{6,T}}(undef,length(E)*nf)
         for (i,e) in enumerate(E)
             ii = 1 + (i-1)*nf 
-            F[ii  ] = NgonFace{6,Int}(e[3],e[6],e[2],e[5 ],e[1],e[7 ])
-            F[ii+1] = NgonFace{6,Int}(e[1],e[5],e[2],e[9 ],e[4],e[8 ])
-            F[ii+2] = NgonFace{6,Int}(e[2],e[6],e[3],e[10],e[4],e[9 ])
-            F[ii+3] = NgonFace{6,Int}(e[3],e[7],e[1],e[8 ],e[4],e[10])
+            F[ii  ] = NgonFace{6,T}(e[3],e[6],e[2],e[5 ],e[1],e[7 ])
+            F[ii+1] = NgonFace{6,T}(e[1],e[5],e[2],e[9 ],e[4],e[8 ])
+            F[ii+2] = NgonFace{6,T}(e[2],e[6],e[3],e[10],e[4],e[9 ])
+            F[ii+3] = NgonFace{6,T}(e[3],e[7],e[1],e[8 ],e[4],e[10])
         end
     elseif element_type <: Hex8{T}
         nf = 6
@@ -4464,6 +4505,16 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
             F[ii+5] = QuadFace{T}(e[5],e[8],e[4],e[1]) # Back
         end
     elseif element_type <: Penta6{T}
+        # Triangles
+        nft = 2
+        Ft = Vector{TriangleFace{T}}(undef,length(E)*nft)
+        for (i,e) in enumerate(E)
+            ii = 1 + (i-1)*nft
+            Ft[ii  ] = TriangleFace{T}(e[3],e[2],e[1]) # Bottom
+            Ft[ii+1] = TriangleFace{T}(e[4],e[5],e[6]) # Top
+        end
+        
+        # Quads
         nfq = 3
         Fq = Vector{QuadFace{T}}(undef,length(E)*nfq)
         for (i,e) in enumerate(E)
@@ -4473,12 +4524,23 @@ function element2faces(E::Vector{Element{N,T}}) where N where T
             Fq[ii+2] = QuadFace{T}(e[3],e[1],e[4],e[6]) # Side 3            
         end
 
+        F = (Ft,Fq) # Collect faces in tuple
+    elseif element_type <: Penta15{T}        
+        nfq = 3
+        Fq = Vector{NgonFace{8,T}}(undef,length(E)*nfq)
+        for (i,e) in enumerate(E)
+            ii = 1 + (i-1)*nfq
+            Fq[ii  ] = NgonFace{8,T}(e[[1,7,2,14,5,10,4,13]]) # Side 1
+            Fq[ii+1] = NgonFace{8,T}(e[[2,8,3,15,6,11,5,14]]) # Side 2
+            Fq[ii+2] = NgonFace{8,T}(e[[3,9,1,13,4,12,6,15]]) # Side 3            
+        end
+
         nft = 2
-        Ft = Vector{TriangleFace{T}}(undef,length(E)*nft)
+        Ft = Vector{NgonFace{6,T}}(undef,length(E)*nft)
         for (i,e) in enumerate(E)
             ii = 1 + (i-1)*nft
-            Ft[ii  ] = TriangleFace{T}(e[3],e[2],e[1]) # Bottom
-            Ft[ii+1] = TriangleFace{T}(e[4],e[5],e[6]) # Top
+            Ft[ii  ] = NgonFace{6,T}(e[[3,  8, 2,  7, 1,  9]]) # Bottom
+            Ft[ii+1] = NgonFace{6,T}(e[[4, 10, 5, 11, 6, 12]]) # Top
         end
         F = (Ft,Fq) # Collect faces in tuple
     elseif element_type <: Rhombicdodeca14{T}
@@ -4629,33 +4691,33 @@ function subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int; direction=0) 
             inv_Ft = inv_Ft .+ offset_F
             inv_Et = inv_Et .+ offset_E  
             Eh = Vector{Hex8{T}}(undef,length(E)*8) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
-            for i = eachindex(E)
+            for (i,e) in enumerate(E)
                 i_e = 1 + (i-1)*12 # index of first edge
                 i_f = 1 + (i-1)*6 # index of first face 
                 i_vc = i + offset_Vc        
                 ii = 1 + (i-1)*8 
-                Eh[ii  ] = Hex8{T}(        E[i][1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+3],
+                Eh[ii  ] = Hex8{T}(        e[1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+3],
                                     inv_Et[i_e+8 ], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+5] )   
 
-                Eh[ii+1] = Hex8{T}(        E[i][2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e],
+                Eh[ii+1] = Hex8{T}(        e[2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e],
                                     inv_Et[i_e+9 ], inv_Ft[i_f+4],          i_vc, inv_Ft[i_f+2] )   
 
-                Eh[ii+2] = Hex8{T}(        E[i][3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
+                Eh[ii+2] = Hex8{T}(        e[3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
                                     inv_Et[i_e+10], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+4] )   
 
-                Eh[ii+3] = Hex8{T}(        E[i][4], inv_Et[i_e+3], inv_Ft[i_f  ], inv_Et[i_e+2],
+                Eh[ii+3] = Hex8{T}(        e[4], inv_Et[i_e+3], inv_Ft[i_f  ], inv_Et[i_e+2],
                                     inv_Et[i_e+11], inv_Ft[i_f+5],          i_vc, inv_Ft[i_f+3] )   
             
-                Eh[ii+4] = Hex8{T}(        E[i][5], inv_Et[i_e+7], inv_Ft[i_f+1], inv_Et[i_e+4],
+                Eh[ii+4] = Hex8{T}(        e[5], inv_Et[i_e+7], inv_Ft[i_f+1], inv_Et[i_e+4],
                                     inv_Et[i_e+8 ], inv_Ft[i_f+5],          i_vc, inv_Ft[i_f+2] )   
 
-                Eh[ii+5] = Hex8{T}(        E[i][6], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+5],
+                Eh[ii+5] = Hex8{T}(        e[6], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+5],
                                     inv_Et[i_e+9 ], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+4] )   
 
-                Eh[ii+6] = Hex8{T}(        E[i][7], inv_Et[i_e+5], inv_Ft[i_f+1], inv_Et[i_e+6],
+                Eh[ii+6] = Hex8{T}(        e[7], inv_Et[i_e+5], inv_Ft[i_f+1], inv_Et[i_e+6],
                                     inv_Et[i_e+10], inv_Ft[i_f+4],          i_vc, inv_Ft[i_f+3] )   
                                     
-                Eh[ii+7] = Hex8{T}(        E[i][8], inv_Et[i_e+6], inv_Ft[i_f+1], inv_Et[i_e+7],
+                Eh[ii+7] = Hex8{T}(        e[8], inv_Et[i_e+6], inv_Ft[i_f+1], inv_Et[i_e+7],
                                     inv_Et[i_e+11], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+5] )  
             end
         elseif isone(direction) # Split in 1st-direction
@@ -4845,7 +4907,7 @@ input parameters are available:
 * `V_holes`, a vector of points inside holes (voids) that should remain empty. 
 * `stringOpt`, the TetGen command string to use. See also the TetGen documentation. 
 """
-function tetgenmesh(F::Array{NgonFace{N,TF}, 1},V::Vector{Point{3,TV}}; facetmarkerlist=nothing, V_regions=nothing,region_vol=nothing,V_holes=nothing,stringOpt="paAqYQ")  where N where TF<:Integer where TV<:Real
+function tetgenmesh(F::Array{NgonFace{N,TF}, 1},V::Vector{Point{3,TV}}; facetmarkerlist=nothing, V_regions=nothing, region_vol=nothing, V_holes=nothing, stringOpt="paAqYQ", element_type=Tet4{TF})  where N where TF<:Integer where TV<:Real
 
     # Initialise TetGen input
     input = TetGen.RawTetGenIO{Cdouble}()
@@ -4899,7 +4961,33 @@ function tetgenmesh(F::Array{NgonFace{N,TF}, 1},V::Vector{Point{3,TV}}; facetmar
     Fb = [TriangleFace{TF}(reverse(f)) for f in eachcol(TET.trifacelist)]
     Cb = TET.trifacemarkerlist
 
-    return E,V,CE,Fb,Cb
+    if element_type <: Tet10{T} where T<:Integer        
+        # Get boundary face indices         
+        F_tet4 = element2faces(E)
+        N_tet4 = facenormal(F_tet4,V)
+        E,V = tet4_tet10(E,V)
+        F = element2faces(E)                
+        Nb = facenormal(Fb,V)
+        Fb_tet10 = Vector{NgonFace{6,Int}}(undef,length(Fb))
+        for (i,fb) in enumerate(Fb)            
+            fbs = sort(fb)
+            for (j,f) in enumerate(F_tet4)
+                if fbs == sort(f)
+                    if dot(Nb[i],N_tet4[j])>0.0
+                        Fb_tet10[i] = F[j]
+                    else
+                        Fb_tet10[i] = reverse(F[j])
+                    end
+                    break
+                end
+            end 
+        end
+        return E,V,CE,Fb_tet10,Cb
+    else
+        return E,V,CE,Fb,Cb
+    end
+    
+    
 end
 
 """
@@ -4970,8 +5058,8 @@ function extrudefaces(F::Union{NgonFace{NF,TF},Vector{NgonFace{NF,TF}}},V::Vecto
     end
 
     # Check if num_steps is okay
-    if num_steps<1
-        throw(ArgumentError("num_steps=$num_steps is not valid. num_steps should be larger than 0."))
+    if num_steps<2
+        throw(ArgumentError("num_steps=$num_steps is not valid. num_steps should be larger than 1"))
     end
 
     # Set element type
@@ -5271,7 +5359,7 @@ function edgefaceangles(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=
                 i2 = findfirst(F[i_f1].==e[2]) # The index of the second edge point                           
                 n1 = facenormal(F[con_E2F[i_e][1]],V) # The normal direction for the first face 
                 n2 = facenormal(F[con_E2F[i_e][2]],V)  # The normal direction for the second face         
-                ne = V[E_uni[i_e][2]]-V[E_uni[i_e][1]] # Current edge vector                     
+                ne = V[e[2]]-V[e[1]] # Current edge vector                     
                 if i2==mod1(i1+1,length(F[1])) # If the second point is "next" for the current edge
                     s = sign(dot(cross(n2,n1),ne))    
                 else # Inverse situation
@@ -5294,7 +5382,7 @@ end
 
 
 """
-    faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV; deg=false, angleThreshold = pi/8, indStart = 1)  where NF where TF<:Integer where ND where TV<:Real 
+    faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=false, angleThreshold = pi/8, indStart = 1)  where NF where TF<:Integer where ND where TV<:Real 
 
 Segments surfaces using face angles
 
@@ -5388,7 +5476,7 @@ function eulerchar(F,V=nothing,E=nothing)
 end
 
 """
-    rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :allign) where T<:Real
+    rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :align) where T<:Real
 
 Creates a rhombicdodecahedron foam
 
@@ -5398,9 +5486,9 @@ of cells in each direction. The input is the cell width `w` and a 1-by-3 tuple
 `n` defining the number of cells in each direction. The output consists of the 
 set of rhombic dodecahedron elements `E` and their vertex coordinates `V`. 
 """
-function rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :allign) where T<:Real
+function rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :align) where T<:Real
 
-    if orientation == :allign
+    if orientation == :align
         # Create vertices of single rhombic dodecahedron with "radius" 1
         a = sqrt(2)/2
         b = sqrt(2)/4
@@ -6280,7 +6368,7 @@ input `V`. For a single point the output is a single integer which is:
 If the input is instead a vector of points then the output consists of a 
 corresponding vector of such integers. 
 This implementation differs from [1] in terms of the use of `atol` for 
-approximate equivalance. This helps in more robust labelling of "on polygon" 
+approximate equivalence. This helps in more robust labelling of "on polygon" 
 points.  
 
 # References
@@ -6353,4 +6441,549 @@ end
 
 function inpolygon(P::Vector{Point{M,T}}, V::Vector{Point{N,T}}; atol = sqrt(eps(T)), in_flag::TP=1, on_flag::TP=0, out_flag::TP=-1) where {TP} where N where M where T<:Real
     return [inpolygon(p,V; atol = atol, in_flag=in_flag, on_flag=on_flag, out_flag=out_flag) for p in P]
+end
+
+"""
+    _indexPair2sortedEdge(i,j)
+
+Created sorted edge from indices
+
+# Description
+This function takes in a pair of integers `i` and `j` and converts it to a
+LineFace, i.e. a GeometryBasics edge. In addition the indices are sorted.  
+"""
+function _indexPair2sortedEdge(i::Int,j::Int)
+    if j>i
+        return LineFace{typeof(i)}(i,j)
+    else
+        return LineFace{typeof(i)}(j,i)
+    end
+end
+
+"""
+    elementEdges(E::Vector{<: AbstractElement{N, T}}) where N where T 
+
+Returns element edges 
+
+# Description
+This function takes in the element vector `E` (e.g. containing Tet4, Penta6 
+entries) and returns a vector of edges.
+"""
+function elementEdges(E::Vector{<: AbstractElement{N, T}}) where N where T    
+    element_type = eltype(E)
+    if element_type <: Tet4{T}
+        numElementEdges = 6
+        numElements = length(E)
+        elementEdges = Vector{LineFace{T}}(undef,numElements*numElementEdges)        
+        for (i,e) in enumerate(E) # Loop over each node/point for the current simplex                               
+            j = 1 + (i-1)*numElementEdges
+            elementEdges[j  ] = _indexPair2sortedEdge(e[1],e[2])
+            elementEdges[j+1] = _indexPair2sortedEdge(e[2],e[3])
+            elementEdges[j+2] = _indexPair2sortedEdge(e[3],e[1])
+            elementEdges[j+3] = _indexPair2sortedEdge(e[1],e[4])
+            elementEdges[j+4] = _indexPair2sortedEdge(e[2],e[4])
+            elementEdges[j+5] = _indexPair2sortedEdge(e[3],e[4])           
+        end 
+    # elseif element_type <: Tet10{T}
+    elseif element_type <: Penta6{T}
+        numElementEdges = 9
+        numElements = length(E)
+        elementEdges = Vector{LineFace{T}}(undef,numElements*numElementEdges)        
+        for (i,e) in enumerate(E) # Loop over each node/point for the current simplex                               
+            j = 1 + (i-1)*numElementEdges
+            elementEdges[j  ] = _indexPair2sortedEdge(e[1],e[2])
+            elementEdges[j+1] = _indexPair2sortedEdge(e[2],e[3])
+            elementEdges[j+2] = _indexPair2sortedEdge(e[3],e[1])
+            elementEdges[j+3] = _indexPair2sortedEdge(e[4],e[5])
+            elementEdges[j+4] = _indexPair2sortedEdge(e[5],e[6])
+            elementEdges[j+5] = _indexPair2sortedEdge(e[6],e[4])           
+            elementEdges[j+6] = _indexPair2sortedEdge(e[1],e[4])           
+            elementEdges[j+7] = _indexPair2sortedEdge(e[2],e[5])           
+            elementEdges[j+8] = _indexPair2sortedEdge(e[3],e[6])                       
+        end 
+    # elseif element_type <: Penta15{T}
+    elseif element_type <: Hex8{T}
+        numElementEdges = 12
+        numElements = length(E)
+        elementEdges = Vector{LineFace{T}}(undef,numElements*numElementEdges)        
+        for (i,e) in enumerate(E) # Loop over each node/point for the current simplex                               
+            j = 1 + (i-1)*numElementEdges
+            elementEdges[j  ] = _indexPair2sortedEdge(e[1],e[2])
+            elementEdges[j+1] = _indexPair2sortedEdge(e[2],e[3])
+            elementEdges[j+2] = _indexPair2sortedEdge(e[3],e[4])
+            elementEdges[j+3] = _indexPair2sortedEdge(e[4],e[1])
+
+            elementEdges[j+4] = _indexPair2sortedEdge(e[5],e[6])
+            elementEdges[j+5] = _indexPair2sortedEdge(e[6],e[7])           
+            elementEdges[j+6] = _indexPair2sortedEdge(e[7],e[8])
+            elementEdges[j+7] = _indexPair2sortedEdge(e[8],e[5])
+
+            elementEdges[j+8]  = _indexPair2sortedEdge(e[1],e[5])
+            elementEdges[j+9]  = _indexPair2sortedEdge(e[2],e[6])           
+            elementEdges[j+10] = _indexPair2sortedEdge(e[3],e[7])
+            elementEdges[j+11] = _indexPair2sortedEdge(e[4],e[8])
+        end 
+    end 
+    return elementEdges
+end
+
+"""
+    tet4_tet10(E,V)
+
+Converts linear to quadratic tetrahedra
+
+# Description
+This function converts the input linear 4-noded tetrahedral elements, defined by 
+the element vector `E` and vertices `V`, to 10 noded quadratic tetrahedral 
+elements, defined by the output element vector `E_tet10` and vertices 
+`V_tet10`.
+"""
+function tet4_tet10(E,V)
+    tetEdges = elementEdges(E)
+    tetEdgesUnique,_,indReverse = gunique(tetEdges; return_unique=true, return_index=true, return_inverse=true, sort_entries=false)
+    Vn = simplexcenter(tetEdgesUnique,V)
+    V_tet10 = [V; Vn]  # Old and new mid-edge points          
+    E_tet10 = Vector{Tet10{Int}}(undef,length(E))        
+    for (i,e) in enumerate(E)
+        indNew = indReverse[1+(i-1)*6:i*6] .+ length(V)
+        E_tet10[i] = Tet10{Int}(e[1],e[2],e[3],e[4],indNew[1],indNew[2],indNew[3],indNew[4],indNew[5],indNew[6])
+    end
+    return E_tet10, V_tet10
+end
+
+"""
+    penta6_penta15(E,V)
+
+Converts linear to quadratic pentahedra
+
+# Description
+This function converts the input linear 6-noded pentahedral elements, defined by 
+the element vector `E` and vertices `V`, to 15 noded quadratic pentahedral
+elements, defined by the output element vector `E_penta15` and vertices 
+`V_penta15`.
+"""
+function penta6_penta15(E,V)
+    pentaEdges = elementEdges(E)
+    pentaEdgesUnique,_,indReverse = gunique(pentaEdges; return_unique=true, return_index=true, return_inverse=true, sort_entries=false)
+    Vn = simplexcenter(pentaEdgesUnique,V)
+    V_penta15 = [V; Vn]  # Old and new mid-edge points          
+    E_penta15 = Vector{Penta15{Int}}(undef,length(E))        
+    for (i,e) in enumerate(E)
+        indNew = indReverse[1+(i-1)*9:i*9] .+ length(V)
+        E_penta15[i] = Penta15{Int}(e[1],e[2],e[3],e[4],e[5],e[6],indNew[1],indNew[2],indNew[3],indNew[4],indNew[5],indNew[6],indNew[7],indNew[8],indNew[9])
+    end
+    return E_penta15, V_penta15
+end
+
+
+"""
+    findindexin(a, b::AbstractArray; missingIndex=0)
+
+Finds indices from one to another indexable 
+
+# Description
+This function is the same as Julia's `indexin`. However here by default the 
+"index" returned for a missing entry is 0 rather than `nothing`. This means that
+the output is by default a `Vector{Int64}` rather than a 
+`Vector{Union{Nothing, Int64}}`. To return something other than 0, the user can 
+set the optional attribute `missingIndex`. 
+"""
+function findindexin(a, b::AbstractArray; missingIndex=0)
+    inds = keys(b)
+    bdict = Dict{eltype(b),eltype(inds)}()
+    for (val, ind) in zip(b, inds)
+        get!(bdict, val, ind)
+    end
+    return [get(bdict, i, missingIndex) for i in a]
+end
+
+
+"""
+    hexagonline(r::T,n::Int; type=:ufdf) where T<:Real
+
+Returns hexagon mesh edge lines
+
+# Description
+This function returns a honeycomb mesh edge lines e.g. a connected set of edges. 
+"""
+function hexagonline(r::T,n::Int; type=:ufdf) where T<:Real
+    q = r*sqrt(3)/2.0
+    V = Vector{Point{3,Float64}}(undef,n)
+    if type == :ufdf # Upward, forward, downward, forward       
+        xShift = 0.0
+        for i in eachindex(V)
+            nPrev = ceil(i./4).-1        
+            m4 = mod(i,4)        
+            if m4 == 1                
+                xShift = (nPrev*3.0*r)            
+            elseif m4 == 2 
+                xShift = (nPrev*3.0*r)+0.5*r
+            elseif m4 == 3
+                xShift = (nPrev*3.0*r)+1.5*r
+            elseif m4 == 0             
+                xShift = (nPrev*3.0*r)+2.0*r                     
+            end
+            if m4==0 || m4==1
+                yShift = 0.0                        
+            else    
+                yShift = q
+            end
+            V[i] = Point{3,Float64}(xShift,yShift,0.0)
+        end
+    elseif type == :zigzag 
+        for i in eachindex(V)
+            if iseven(i)
+                V[i] = Point{3,Float64}(q*(i-1),-r/2.0,0.0)
+            else
+                V[i] = Point{3,Float64}(q*(i-1),0.0,0.0)
+            end
+        end
+    else 
+        throw(ArgumentError("Invalid type=:$type, valid options are :ufdf, and :zigzag"))
+    end
+    return V
+end
+
+"""
+    hexagongrid(r::T,n::Tuple{TI, TI}; weave=0.0) where T<:Real where TI <:Integer    
+
+Returns honeycomb vertex grid
+
+# Description
+This function returns the vertices for a `n[1]` by `n[2]` honeycomb grid, where 
+the cells have a radius `r`. 
+"""
+function hexagongrid(r::T,n::Tuple{TI, TI}; weave=0.0) where T<:Real where TI <:Integer    
+    q = r*sqrt(3)/2.0
+    V = Vector{Point{3,Float64}}(undef,prod(n))    
+    c = 1
+    for j in 1:n[2]
+        q = r*sqrt(3)/2.0
+        y = (j-1)*(1.5*r)
+        if iseven(j)
+            dy = r/4.0
+        else
+            dy = -r/4.0
+        end
+        for i in 1:n[1]
+            if iseven(j)
+                s=1
+            else
+                s=-1
+            end
+            if iseven(i)
+                V[c] = Point{3,Float64}(q*(i-1),y+dy,s*weave)
+            else
+                V[c] = Point{3,Float64}(q*(i-1),y-dy,s*-weave)
+            end
+            c+=1
+        end
+    end
+    return V
+end
+
+"""
+    hexagonmesh(r::T,nf::Tuple{Int, Int}; weave=0.0) where T<:Real
+
+Returns a hexagon mesh
+
+# Description
+This function returns the faces `F` and vertices `V` for a hexagon mesh.The 
+hexagon cells are defined with a radius `r` and the tuple `nf` defines the 
+number of cells in the x- and y-direction.  
+"""
+function hexagonmesh(r::T,nf::Tuple{TI, TI}; weave=0.0) where T<:Real where TI <:Integer
+    numNodes_x = 2*nf[1] + 2
+    numNodes_y = nf[2] + 1
+    n = (numNodes_x,numNodes_y)
+
+    # Create grid
+    V = hexagongrid(r,n; weave=weave)
+
+    # Remove unused points (indices are corrected later)
+    if iseven(nf[2])
+        fixFlag = true
+        deleteat!(V,[numNodes_x,length(V)-numNodes_x+1]) 
+    else
+        fixFlag = false
+        deleteat!(V,[numNodes_x,length(V)])
+    end
+    
+    # Create faces
+    ij2ind(i,j) = i + ((j-1)*numNodes_x) # function to convert subscript to linear indices    
+    c = 1
+    F = Vector{NgonFace{6,Int}}(undef,prod(nf))
+    for j = 1:nf[2]
+        if iseven(j)
+            i = 2
+        else
+            i = 1
+        end
+        for _ = 1:nf[1] 
+            if j==1
+                F[c] = NgonFace{6,Int}( ij2ind(i  ,j  ),
+                                        ij2ind(i+1,j  ),
+                                        ij2ind(i+2,j  ),
+                                        ij2ind(i+2,j+1)-1,
+                                        ij2ind(i+1,j+1)-1,
+                                        ij2ind(i  ,j+1)-1)
+            else
+                if fixFlag && j==nf[2]
+                    F[c] = NgonFace{6,Int}( ij2ind(i  ,j  ) -1,
+                                            ij2ind(i+1,j  ) -1,
+                                            ij2ind(i+2,j  ) -1,
+                                            ij2ind(i+2,j+1) -2,
+                                            ij2ind(i+1,j+1) -2,
+                                            ij2ind(i  ,j+1) -2)
+                else
+                    F[c] = NgonFace{6,Int}( ij2ind(i  ,j  ) -1,
+                                            ij2ind(i+1,j  ) -1,
+                                            ij2ind(i+2,j  ) -1,
+                                            ij2ind(i+2,j+1) -1,
+                                            ij2ind(i+1,j+1) -1,
+                                            ij2ind(i  ,j+1) -1)
+                end
+            end
+            c += 1
+            i += 2
+        end
+    end
+    return F, V
+end
+
+"""
+    fromtomesh!(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},num_steps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
+
+Creates mesh to points 
+
+# Description
+This function return volumetric elements formed by extruding the faces `F1` from 
+their coordinates in `V1` up to the coordinates in `V2`. The user can specify 
+the number of node layers (1 + number of element layers) used with the input 
+`num_steps`. The optional argument `correspondence` can be set to `:match` 
+(default) or `:faces`. For the former the points in `V1` and `V2` are assumed to
+fully correspond, while for the latter it is assumed the points in `V2` 
+correspond to a subset in `V1`, namely with the consecutive point indices in 
+`F2`. For `fromtomesh!` the ouput is `En` the elements (Quadrilateral faces are 
+extruded to form hexahedral elements, and Triangular faces are extruded to form
+pentahedral elements),a and the new points are appended to the input vector `V1`. 
+"""
+function fromtomesh!(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},num_steps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
+    # Check if num_steps is okay
+    if num_steps<2
+        throw(ArgumentError("num_steps=$num_steps is not valid. num_steps should be larger than 1"))
+    end
+
+    n1 = length(V1)
+    m = length(F1)  
+    if correspondence == :faces 
+        ind1 = unique(reduce(vcat,F1)) # Indices of points in input set for base of feature
+        indMap = zeros(Int,length(V1))
+        indMap[ind1] .= 1:length(ind1)   
+    elseif correspondence == :match
+        ind1 = 1:n1 
+    else
+        throw(ArgumentError("Invalid correspondence option provided, valid options are :match and :faces"))
+    end
+    n = length(ind1)
+      
+    face_type = eltype(F1)
+    if face_type == QuadFace{TF}
+        element_type = Hex8{TF}
+    elseif face_type == TriangleFace{TF}
+        element_type = Penta6{TF}
+    else
+        throw(ArgumentError("$face_type face type not supported. Supported types are QuadFace and TriangleFace."))
+    end
+    En = Vector{element_type}(undef,(num_steps-1)*m)               
+    c = 1    
+    for (i,q) in enumerate(range(1.0/(num_steps-1),1.0,num_steps-1)) # Loop element layers
+        # Treat points
+        if i == num_steps-1 # Simply add the end points
+            append!(V1,V2) 
+        else
+            for k = 1:n # Add lerped intermediate points 
+                push!(V1, (1.0-q).*V1[ind1[k]] + (q.*V2[k]) )
+            end
+        end
+        # Treat faces                 
+        for f in F1  
+            if correspondence == :match              
+                ff = f.+n1
+            elseif correspondence == :faces    
+                ff = indMap[f].+n1
+            end
+            if i==1 # First layer refers to base
+                En[c] = element_type([f; ff])                
+            else # Subsequent layers refer to all new points 
+                En[c] = element_type([ff .+ (i-2)*n; ff .+ (i-1)*n])
+            end            
+            c+=1
+        end        
+    end
+    return En
+end
+
+
+"""
+    fromtomesh(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},num_steps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
+
+Creates mesh to points 
+
+# Description
+This function is the same as `fromtomesh!`, however the output consists of 
+the elements `En` and the total point set `Vn`(i.e. the input vector `V1` is not 
+perturbed). 
+"""
+function fromtomesh(F1::Vector{NgonFace{NF,TF}},V1::Vector{Point{ND,TV}},V2::Vector{Point{ND,TV}},num_steps; correspondence=:match) where NF where TF<:Integer where ND where TV<:Real    
+    Vn = deepcopy(V1) # Copy points first 
+    En = fromtomesh!(F1,Vn,V2,num_steps; correspondence=correspondence)
+    return En, Vn
+end
+
+"""
+    vectorpair_angle(v1,v2,n=nothing; deg = false)    
+
+Returns angle between vector pair
+
+# Description
+This function computes the angle between the two vectors `v1` and `v2`. The 
+optional argument `n` (default is `nothign`) is a vector that should define the 
+normal direction for the vector pair. The optional argument `deg` sets wether 
+the angle is returned in degrees (if `deg=true`) or radians. 
+"""
+function vectorpair_angle(v1,v2,n=nothing; deg = false)    
+    # Normalise vectors 
+    n1 = normalizevector(v1)
+    n2 = normalizevector(v2)            
+    
+    # Compute angle 
+    a = acos(clamp(dot(n1,n2),-1.0,1.0))
+
+    # Use otherside based on normal if provided 
+    if !isnothing(n) && dot(n,cross(n1,n2)) < 0.0        
+        a = 2.0*pi - a
+    end
+
+    # Output in desired format
+    if deg
+        return a * (180.0/pi)
+    else
+        return a
+    end
+end
+
+"""
+    triangulateboundary(V, ind, N, anglethreshold; deg = false, close_loop=false)    
+
+Forms triangles on boundary
+
+# Description
+This function computes angles on the curve (which could be a mesh boundary) 
+defined by the points `V[ind]`, where `V` is a vector of points and `ind` a 
+vector of point indices. The vector `N` contains the normal direction for each 
+point in `V[ind]`. If at a given point the adjacent curve segments form an angle 
+that is smaller than `angleThreshold` then a triangular face is formed for these
+segments. This function can hence be used to partially cure a jagged boundary by 
+closing sharp inward pointing regions with triangles. 
+The optional argument `deg` (default is `false`) sets wether the threshold is
+set in degrees (if `deg==true`) or radians (default). 
+The optional argument `close_loop` set wether the curve should be seen as
+closed.
+"""
+function triangulateboundary(V, ind, N, anglethreshold; deg = false, close_loop=false)    
+    n = length(ind) # The number of points to parse 
+    if n<3 # Less than 3 points so stop and return empty face set 
+        return Vector{TriangleFace{Int}}()
+    else
+        indParse = deepcopy(ind) # Copy as this function deletes entries        
+        if close_loop == true # Compute all angles        
+            A = Vector{Float64}(undef,n)
+            for i in eachindex(indParse) # Loop over all points 
+                i_prev = mod1(i-1,n)
+                i_next = mod1(i+1,n)                        
+                A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N[i]; deg=deg) 
+            end
+        else # close_loop == false, compute non-end point angles only 
+            A = fill(NaN,n) # Initialise as NaN (stays that way for end points)
+            for i in 2:lastindex(ind)-1 # Loop over non-end points
+                i_prev = i-1
+                i_next = i+1                
+                A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N[i]; deg=deg) 
+            end
+        end    
+
+        F = Vector{TriangleFace{Int}}()
+        while true # keep adding triangles until angles are no longer too small       
+            aMax,i = findmin(a -> !isnan(a) ? a : +Inf, A) # Find non-nan minimum
+            if aMax<anglethreshold # If the current angle is below the threshold                               
+                # Build and add triangle based on previous and next point
+                i_prev = mod1(i-1,n)
+                i_next = mod1(i+1,n)
+                push!(F,TriangleFace{Int}(indParse[i],indParse[i_prev],indParse[i_next]))
+                
+                # New triangle excludes i-th point so removal and updating is needed 
+                deleteat!(indParse,i) # Remove i from the boundary list 
+                deleteat!(A,i) # Also remove the corresponding angle 
+                n -= 1 # Reduce n by 1 since point i has been removed                
+                i = mod1(i,n) # After deletion i is now for previous "next", update it now in case we have wrapped around 
+
+                if n < 3 # Less than 3 points left, so stop
+                    break
+                else # Still enough points so also update the angles now after triangle insertion
+                    # fix next, due to deletion, i now points at what was previously "i_next"                
+                    if close_loop==true || (close_loop==false && !isnan(A[i])) 
+                        # Closed loop or not a closed loop but point i is not an end point                    
+                        i_prev = mod1(i-1,n)
+                        i_next = mod1(i+1,n)                    
+                        A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N[i]; deg=deg) 
+                        # else case is when the loop is not closed and we are at an end point, A[i] is now left as NaN
+                    end
+
+                    # fix previous 
+                    i = mod1(i-1,n)
+                    if close_loop==true || (close_loop==false && !isnan(A[i]))           
+                        # Closed loop or not a closed loop but point i is not an end point         
+                        i_prev = mod1(i-1,n)
+                        i_next = mod1(i+1,n)                    
+                        A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N[i]; deg=deg) 
+                        # else case is when the loop is not closed and we are at an end point, A[i] is now left as NaN
+                    end
+                end            
+            else # Smallest angle is now large enough so stop
+                break
+            end
+        end
+        return F
+    end
+end
+
+"""
+    faceinteriorpoint(F,V, indFace; w=0.5)
+
+Returns interior point for given face
+
+# Description
+This function takes in the `F`, the points `V`, and a face index `indFace`, and 
+returns a point that is between the face center and the opposing side of the 
+surface. The default behaviour, when the optional argument `w=0.5`, returns a 
+point mid-way between the face centre and the opposite side. If `w=0.0` is used 
+the face centre is returned while with `w=1.0` the opposing point is returned. 
+"""
+function faceinteriorpoint(F,V, indFace; w=0.5)
+    ray_vector = facenormal(F[indFace],V)
+    ray_origin = mean(V[F[indFace]])
+    P,_ = ray_triangle_intersect(F,V,ray_origin,-ray_vector; rayType = :ray, triSide = -1)    
+    if isempty(P)
+        throw(ErrorException("Insufficient ray intersection points (surface may not be closed)"))
+    else
+        d = [dot(p.-ray_origin,-ray_vector) for p in P]          
+        sortOrder = sortperm(d)
+        i2 = findfirst(d[sortOrder].>0.0)        
+        if isnothing(i2)
+            throw(ErrorException("No opposing intersections found (surface may not be closed)"))
+        else
+            return (1.0-w)*ray_origin + w*P[sortOrder[i2]]        
+        end
+    end
 end

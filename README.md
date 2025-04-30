@@ -7,7 +7,7 @@ Comodo is a [Julia](https://julialang.org/) package for **computational (bio)mec
 
 Loosely Comodo could stand for **Com**putational **Mo**delling for **D**esign **O**ptimization. A more philosophical angle would be to say that **DO** is like *-do* in the Japanese art *Judo* (ju=柔=gentle, do=道=way), so in this sense Comodo stands for *"the way of computational modelling"*. Comodo is perhaps best defined by its scope. Comodo aims to be a "one-stop-shop" for researchers in computational (bio)mechanics and computational design. It will feature tools for geometry processing, meshing, automated design / topology optimization, finite element analysis, as well as (e.g. medical) image processing and segmentation. 
 
-Comodo.jl started out as a modern re-implementation in Julia of the MATLAB toolbox [GIBBON](https://github.com/gibbonCode/GIBBON). However, rather than literally porting each functional unit, it instead aims to follow a similar philosophy and cover similar but more advanced core functionaly.
+Comodo.jl started out as a modern re-implementation in Julia of the MATLAB toolbox [GIBBON](https://github.com/gibbonCode/GIBBON). However, rather than literally porting each functional unit, it instead aims to follow a similar philosophy and cover similar but more advanced core functionality.
 
 # Installation
 ```julia
@@ -25,7 +25,7 @@ To get started install the package, study the documentation, and test some of th
 [Functional Documentation](https://comodo-research.github.io/Comodo.jl/dev/)
 
 # Combining with finite element analysis
-For finite element analysis users are encouraged to combine the Comodo capabilities with the open source C++ solver [FEBio](https://febio.org/), e.g. based on the Julia wrapper [FEBio.jl](https://github.com/febiosoftware/FEBio.jl). In addition, users may want to explore the Julia packages [Gridap.jl](https://github.com/gridap/Gridap.jl) and [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl).
+For finite element analysis users are encouraged to combine the Comodo capabilities with the open source C++ software [FEBio](https://febio.org/), e.g. based on the Julia wrapper [FEBio.jl](https://github.com/febiosoftware/FEBio.jl). In addition, users may want to explore the Julia packages [Gridap.jl](https://github.com/gridap/Gridap.jl) and [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl).
 
 <img src="https://github.com/COMODO-research/Comodo_data_docs/blob/main/img_anim/febio_example_01.gif" alt="febio functionality" width="50%"/>
 
@@ -38,7 +38,7 @@ The source for the tests is [`runtests.jl`, found in the `test` folder](https://
 
 # Roadmap
 New functionality to add:
-- [ ] Levelset methods
+- [x] Levelset methods
 - [ ] Lattice structure creation: 
 	- Element based conversions 
 	- Triply periodic minimal and spinodoid surfaces
@@ -46,7 +46,7 @@ New functionality to add:
 - [ ] Surface stitching method
 
 # How to contribute? 
-Your help would be greatly appreciated! If you can contribute please do so by posting a pull-request. I am very much open to fully acknowledging your contributions e.g. by listing you as a contributor properly whereever possible, by welcoming you on board as a long term contributor, or by inviting you to be a co-author on publications featuring Comodo functionality. 
+Your help would be greatly appreciated! If you can contribute please do so by posting a pull-request. I am very much open to fully acknowledging your contributions e.g. by listing you as a contributor properly wherever possible, by welcoming you on board as a long term contributor, or by inviting you to be a co-author on publications featuring Comodo functionality. 
 
 # License 
 Comodo.jl is released open source under the [Apache 2.0 license](https://github.com/COMODO-research/Comodo.jl/blob/main/LICENSE).

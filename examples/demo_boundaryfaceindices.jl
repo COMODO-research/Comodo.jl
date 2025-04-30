@@ -3,13 +3,14 @@ using Comodo.GLMakie
 using Comodo.GeometryBasics
 
 #=
-This demo shows the use of `boundaryfaces` to obtain the boundary faces of a 
+This demo shows the use of `boundaryfaceindices` to obtain the indices of boundary faces of a 
 volumetric mesh. 
 =#
 
 GLMakie.closeall()
 
 for testCase = 1:3
+
     if testCase == 1 
         sampleSize = 10
         pointSpacing = 2.0
@@ -17,31 +18,42 @@ for testCase = 1:3
         boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
         E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)    
 
-        # Get boundary faces from either the total set of element faces or the elements
-        # Fb = boundaryfaces(F)
-        Fb = boundaryfaces(E)
-        Cb = ones(length(F))
+        # Get boundary face indices 
+        indBoundaryFaces = boundaryfaceindices(F)
+
+        # Use indices to obtain boundary faces
+        Fb = F[indBoundaryFaces]
+        Cb = ones(length(Fb))
     elseif testCase == 2 
         sampleSize = 10
         pointSpacing = 2.0
         boxDim = sampleSize.*[1.0,1.0,1.0] # Dimensionsions for the box in each direction
         boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
-        E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl) 
+        E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)    
         VE = simplexcenter(E,V)
         elementLabels = [v[3]<=eps(0.0) for v in VE]
 
-        # Get boundary faces from either the total set of element faces or the elements    
-        Fb = boundaryfaces(E; elementLabels=elementLabels)
-        Cb = ones(length(F))
+        # Get boundary face indices 
+        indBoundaryFaces = boundaryfaceindices(F; elementLabels=elementLabels)
+
+        # Use indices to obtain boundary faces
+        Fb = F[indBoundaryFaces]
+        Cb = ones(length(Fb))
     elseif testCase == 3
         F1,V1 = geosphere(3,1.0)
         E,V,CE,Fb,Cb = tetgenmesh(F1,V1)   
         F = element2faces(E)
 
-        # Get boundary faces from either the total set of element faces or the elements
-        Fb = boundaryfaces(F)    
-        Cb = ones(length(F))
+        # Get boundary face indices 
+        indBoundaryFaces = boundaryfaceindices(F)
+
+        # Use indices to obtain boundary faces
+        Fb = F[indBoundaryFaces]
+        Cb = ones(length(Fb))
     end
+
+
+
 
     # Visualisation
     fig = Figure(size=(1600,800))

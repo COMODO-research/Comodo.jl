@@ -3,10 +3,8 @@ using Comodo.GLMakie
 using Comodo.GeometryBasics
 
 #=
-This demo shows the use of dist to compute distances for ND points. A 3D 
-point set is defined on an geodesic sphere. Next another, more refined version
-is created, and the distance from this sphere to the coarser one is computed. 
-Next the minimum distances are visualised on the mesh. 
+This demo shows the use of mindist to compute nearest distances from one 
+pointset to another. 
 =#
 
 # Defining icosahedron
