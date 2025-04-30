@@ -5,6 +5,7 @@ using Comodo.LinearAlgebra
 using Comodo.GLMakie
 using Comodo.Rotations
 using Comodo.BSplineKit
+using Pkg
 
 @testset "comododir" verbose = true begin
     f = comododir()
@@ -51,7 +52,6 @@ end
     rm(fileName) # Clean up
 end
 
-
 @testset "elements2indices" verbose = true begin
     @testset "Tri. faces" begin
         F = Vector{TriangleFace{Int}}(undef, 3)
@@ -59,7 +59,8 @@ end
         F[2] = TriangleFace{Int}(1, 5, 9)
         F[3] = TriangleFace{Int}(1, 8, 5)
         result = elements2indices(F)
-        @test sort(result) == [1, 4, 5, 8, 9]
+        @test sort(result) == sort([1, 4, 5, 8, 9])
+        @test empty(result) == elements2indices(empty(F))
     end
 
     @testset "Quad. faces" begin
@@ -71,7 +72,8 @@ end
         F[5] = QuadFace{Int}(7, 8, 4, 3)
         F[6] = QuadFace{Int}(8, 5, 1, 4)
         result = elements2indices(F)
-        @test sort(result) == [1, 2, 3, 4, 5, 6, 7, 8]
+        @test sort(result) == sort([1, 2, 3, 4, 5, 6, 7, 8])
+        @test empty(result) == elements2indices(empty(F))
     end
 end
 
@@ -88,7 +90,10 @@ end
         @test V == Point3{Float64}[[1.0, 1.0, 0.0], [2.0, 1.0, 0.0], 
         [1.0, 2.0, 0.0], [2.0, 2.0, 0.0], [1.0, 1.0, 0.375], 
         [2.0, 1.0, 0.375], [1.0, 2.0, 0.375], [2.0, 2.0, 0.375],
-         [1.0, 1.0, 0.75], [2.0, 1.0, 0.75], [1.0, 2.0, 0.75], [2.0, 2.0, 0.75]]      
+         [1.0, 1.0, 0.75], [2.0, 1.0, 0.75], [1.0, 2.0, 0.75], [2.0, 2.0, 0.75]] 
+         
+         @inferred V[1]
+         @test typeof(V) <: AbstractVector{Point3{Float64}}
     end
 
     @testset "with 1 vector" begin
@@ -154,6 +159,14 @@ end
 
         @test allequal([result1, result2, result3])
     end
+
+    @testset "Empty input" begin
+        a = Float64[]
+        result = gridpoints(a)
+        @test result == Point3{Float64}[]
+    end
+
+        
 end
 
 
@@ -164,7 +177,8 @@ end
         xSpan = [-3,3]
         ySpan = [-2,2]
         pointSpacing = 0.5
-        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular=false, force_equilateral=true)
+        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(false), rectangular=Val(false), force_equilateral=Val(true))
+        @inferred gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(false), rectangular=Val(false), force_equilateral=Val(true))
         ind = round.(Int,range(1,length(V),10))
         
         @test isa(V,Vector{Point{3,Float64}})
@@ -183,7 +197,8 @@ end
         xSpan = [-3,3]
         ySpan = [-2,2]
         pointSpacing = 0.5
-        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular = true, force_equilateral = false)
+        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(false), rectangular = Val(true), force_equilateral = Val(false))
+        @inferred gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(false), rectangular=Val(true), force_equilateral=Val(false))
         ind = round.(Int,range(1,length(V),10))
         
         @test isa(V,Vector{Point{3,Float64}})
@@ -196,7 +211,8 @@ end
         xSpan = (-3,3)
         ySpan = (-2,2)
         pointSpacing = 1
-        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = false, rectangular = true, force_equilateral = true)
+        V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(false), rectangular = Val(true), force_equilateral = Val(true))
+        @inferred gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(false), rectangular=Val(true), force_equilateral = Val(true))
         ind = round.(Int,range(1,length(V),10))
 
         @test isa(V,Vector{Point{3,Float64}})
@@ -216,7 +232,8 @@ end
         xSpan = (-3,3)
         ySpan = (-2,2)
         pointSpacing = 1
-        F,V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = true, rectangular = true, force_equilateral = true)
+        F,V = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(true), rectangular = Val(true), force_equilateral = Val(true))
+        @inferred gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(true), rectangular=Val(true), force_equilateral = Val(true))
         ind = round.(Int,range(1,length(V),10))
         indF = round.(Int,range(1,length(F),10))
 
@@ -419,13 +436,9 @@ end
         @test lerp([0.0,1.0],[[0.0,10.0,20.0,30.0],[10.0,20.0,30.0,40.0]],[0.0,0.5,1.0]) == [[0.0,10.0,20.0,30.0],[5.0,15.0,25.0,35.0],[10.0,20.0,30.0,40.0]] # Single value interpolation site
     end
 
+    @test Comodo.lerp([0.0, 1.0], [0.0, 10.0],0.5) == 5.0 # Vector input
+    @test Comodo.lerp(range(0.0, 1.0, 3), range(0.0, 10.0, 3),0.5) == 5.0 # range input
 end
-
-@testset "lerp_" begin 
-    @test Comodo.lerp_([0.0, 1.0], [0.0, 10.0],0.5) == 5.0 # Vector input
-    @test Comodo.lerp_(range(0.0, 1.0, 3), range(0.0, 10.0, 3),0.5) == 5.0 # range input
-end
-
 
 @testset "dist" verbose = true begin
     eps_level = 1e-4
@@ -490,19 +503,19 @@ end
     @test isapprox(D, [3.7416573867739413, 0.0, 10.775880678677236], atol = eps_level)
     
     # Also outputting index
-    D,ind = mindist(V1, V2; getIndex=true)    
+    D,ind = mindist(V1, V2; getIndex=Val(true))    
     @test D isa Vector{Float64}
     @test isapprox(D, [3.7416573867739413, 0.0, 10.775880678677236], atol = eps_level)
     @test ind == [2,2,2]
 
     # Snap to self for self distances
-    D,ind = mindist(V1, V1; getIndex=true,skipSelf = false)    
+    D,ind = mindist(V1, V1; getIndex=Val(true),skipSelf = false)    
     @test D isa Vector{Float64}
     @test isapprox(D, [0.0,0.0,0.0], atol = eps_level)
     @test ind == [1,2,3]
 
     # Do not snap to self if self is avoided
-    D,ind = mindist(V1, V1; getIndex = true, skipSelf = true)    
+    D,ind = mindist(V1, V1; getIndex = Val(true), skipSelf = true)    
     @test D isa Vector{Float64}
     @test isapprox(D, [3.7416573867739413, 3.7416573867739413, 10.775880678677236], atol = eps_level)
     @test ind == [2,1,2]
@@ -510,23 +523,27 @@ end
 
 
 @testset "unique_dict_index" begin 
-    result1, result2 = Comodo.unique_dict_index([1, 2, 3, 3, 3, 4, 4, 4, 5])
+    arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    result1, result2 = gunique(arr; return_index = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 2, 3, 6, 9]
 
-    result1, result2 = Comodo.unique_dict_index([[1, 2, 3], [3,2,1],[4,5,6]], sort_entries = true)
+    arr = [[1, 2, 3], [3,2,1],[4,5,6]]
+    result1, result2 = gunique(arr; return_index = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 3]
 end 
 
 
 @testset "unique_dict_index_inverse" begin 
-    result1, result2, result3 = Comodo.unique_dict_index_inverse([1, 2, 3, 3, 3, 4, 4, 4, 5])
+    arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    result1, result2, result3 = gunique(arr; return_index = Val(true), return_inverse = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 2, 3, 6, 9]
     @test result3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
 
-    result1, result2, result3 = Comodo.unique_dict_index_inverse([[1, 2, 3], [3,2,1],[4,5,6]],sort_entries = true)
+    arr = [[1, 2, 3], [3,2,1],[4,5,6]]
+    result1, result2, result3 = gunique(arr; return_index = Val(true), return_inverse = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 3]
     @test result3 == [1, 1, 2]
@@ -534,12 +551,14 @@ end
 
 
 @testset "unique_dict_index_count" begin 
-    result1, result2, result3 = Comodo.unique_dict_index_count([1, 2, 3, 3, 3, 4, 4, 4, 5])
+    arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    result1, result2, result3 = gunique(arr; return_index = Val(true), return_counts = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 2, 3, 6, 9]
     @test result3 == [1, 1, 3, 3, 1]
 
-    result1, result2, result3 = Comodo.unique_dict_index_count([[1, 2, 3], [3,2,1],[4,5,6]], sort_entries = true)
+    arr = [[1, 2, 3], [3,2,1],[4,5,6]]
+    result1, result2, result3 = gunique(arr; return_index = Val(true), return_counts = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 3]
     @test result3 == [2, 1]
@@ -547,44 +566,51 @@ end
 
 
 @testset "unique_dict_index_inverse_count" begin 
-    r1, r2, r3, r4 = Comodo.unique_dict_index_inverse_count([1, 2, 3, 3, 3, 4, 4, 4, 5])
-    @test r1 == [1, 2, 3, 4, 5]
-    @test r2 == [1, 2, 3, 6, 9]
-    @test r3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
-    @test r4 == [1, 1, 3, 3, 1]
+    arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    result1, result2, result3, result4 = gunique(arr, return_index = Val(true), return_inverse = Val(true), return_counts = Val(true))
+    @test result1 == [1, 2, 3, 4, 5]
+    @test result2 == [1, 2, 3, 6, 9]
+    @test result3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
+    @test result4 == [1, 1, 3, 3, 1]
 
-    r1, r2, r3, r4 = Comodo.unique_dict_index_inverse_count([[1, 2, 3], [3,2,1],[4,5,6]], sort_entries = true)
-    @test r1 == [[1, 2, 3], [4, 5,6]]
-    @test r2 == [1, 3]
-    @test r3 == [1, 1, 2]
-    @test r4 == [2,1]
+    arr = [[1, 2, 3], [3,2,1],[4,5,6]]
+    result1, result2, result3, result4 = gunique(arr, return_index = Val(true), return_inverse = Val(true), return_counts = Val(true), sort_entries = true)
+    @test result1 == [[1, 2, 3], [4, 5,6]]
+    @test result2 == [1, 3]
+    @test result3 == [1, 1, 2]
+    @test result4 == [2, 1]
 end 
 
 
 @testset "unique_dict_count" begin 
-    result1, result2 = Comodo.unique_dict_count([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
+    arr = [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
+    result1, result2 = gunique(arr; return_counts = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [3, 4, 2, 1, 1]
 
-    result1, result2 = Comodo.unique_dict_count([[1, 2, 3], [3,2,1],[4,5,6]], sort_entries = true)
+    arr = [[1, 2, 3], [3,2,1],[4,5,6]]
+    result1, result2 = gunique(arr; return_counts = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [2,1]
 end
 
 
 @testset "unique_dict_inverse" begin 
-    result1, result2 = Comodo.unique_dict_inverse([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
+    arr = [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
+    result1, result2 = gunique(arr; return_inverse = Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
 
-    result1, result2 = Comodo.unique_dict_inverse([[1, 2, 3], [3,2,1],[4,5,6]], sort_entries = true)
+    arr = [[1, 2, 3], [3,2,1],[4,5,6]]
+    result1, result2 = gunique(arr; return_inverse = Val(true), sort_entries = true)
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 1, 2]
 end 
 
 
 @testset "unique_dict" begin 
-    result1, result2, result3 = unique_dict([1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5])
+    arr = [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
+    result1, result2, result3 = gunique(arr; return_index=Val(true), return_inverse=Val(true))
     @test result1 == [1, 2, 3, 4, 5]
     @test result2 == [1, 4, 8, 10, 11]
     @test result3 == [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
@@ -597,6 +623,8 @@ end
         A = [3,2,3,4,2,5,6]
         B_true = Bool[0, 0, 0, 1, 0, 1, 1]
         @test occursonce(A) == B_true
+        @test occursonce(A) isa BitVector
+        @inferred occursonce(A)
 
         # Vector of floats
         A = [3.1,2.0,3.1,4.5,2.0,5.0,6.0]
@@ -661,30 +689,30 @@ end
 end
 
 @testset "gunique" begin     
-    r1, r2, r3, r4 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index = true, return_inverse = true, return_counts = true, sort_entries = false)
+    r1, r2, r3, r4 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), return_counts = Val(true), sort_entries = false)
     @test r1 == [1, 2, 3, 4, 5]
     @test r2 == [1, 2, 3, 6, 9]
     @test r3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
     @test r4 == [1, 1, 3, 3, 1]
 
-    r1, r2, r3 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index = true, return_inverse = true, return_counts = false, sort_entries = false)
+    r1, r2, r3 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), return_counts = Val(false), sort_entries = false)
     @test r1 == [1, 2, 3, 4, 5]
     @test r2 == [1, 2, 3, 6, 9]
     @test r3 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
 
-    r1, r2 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index = false, return_inverse = false, return_counts = true, sort_entries = false)
+    r1, r2 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=Val(true), return_index = Val(false), return_inverse = Val(false), return_counts = Val(true), sort_entries = false)
     @test r1 == [1, 2, 3, 4, 5]
     @test r2 == [1, 1, 3, 3, 1]
 
-    r1, r2 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index = false, return_inverse = true, return_counts = false, sort_entries = false)
+    r1, r2 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=Val(true), return_index = Val(false), return_inverse = Val(true), return_counts = Val(false), sort_entries = false)
     @test r1 == [1, 2, 3, 4, 5]
     @test r2 == [1, 2, 3, 3, 3, 4, 4, 4, 5]
 
-    r1, r2 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index = true, return_inverse = false, return_counts = false, sort_entries = false)
+    r1, r2 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=Val(true), return_index = Val(true), return_inverse = Val(false), return_counts = Val(false), sort_entries = false)
     @test r1 == [1, 2, 3, 4, 5]
     @test r2 == [1, 2, 3, 6, 9]
 
-    r1 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=true, return_index = false, return_inverse = false, return_counts = false, sort_entries = false)
+    r1 = gunique([1, 2, 3, 3, 3, 4, 4, 4, 5]; return_unique=Val(true), return_index = Val(false), return_inverse = Val(false), return_counts = Val(false), sort_entries = false)
     @test r1 == [1, 2, 3, 4, 5]
 end 
 
@@ -759,25 +787,6 @@ end
     end
 end
 
-@testset "ind2sub_" verbose = true begin
-    ind = 6
-    @testset "1D i.e. Vector" begin
-        A = rand(30)        
-        @test Comodo.ind2sub_(6,length(size(A)),cumprod(size(A))) == [6]
-    end
-
-    @testset "2D i.e. 2D Matrix" begin
-        B = rand(5,6)         
-        @test Comodo.ind2sub_(6,length(size(B)),cumprod(size(B))) == [1,2]
-    end
-
-    @testset "3D i.e. 3D matrix" begin
-        C = rand(3,5,2)        
-        @test Comodo.ind2sub_(6,length(size(C)),cumprod(size(C))) == [3,2,1]
-    end
-end
-
-
 @testset "sub2ind" verbose = true begin
     ind = [1,2,3,4,8,12,30]
     A = rand(30)
@@ -788,34 +797,26 @@ end
     IJK_C = [[1, 1, 1], [2, 1, 1], [3, 1, 1], [1, 2, 1], [2, 3, 1], [3, 4, 1], [3, 5, 2]]
 
     @testset "Errors" begin
-        @test_throws DomainError sub2ind(size(A),[[-1]])
-        @test_throws DomainError sub2ind(size(A),[-1]) 
-        @test_throws DomainError sub2ind(size(A),[length(A)+1]) 
-        @test_throws DimensionMismatch sub2ind(size(A),[1,2,3,4]) 
+        @test_throws BoundsError sub2ind(size(A),[-1]) 
+        @test_throws BoundsError sub2ind(size(A),[length(A)+1]) 
 
-        @test_throws DomainError sub2ind(size(B),[[-1,1]])
-        @test_throws DomainError sub2ind(size(B),[-1,1]) 
-        @test_throws DomainError sub2ind(size(B),[1,length(B)+1]) 
-        @test_throws DimensionMismatch sub2ind(size(B),[1,2,3,4]) 
-        @test_throws DimensionMismatch sub2ind(size(B),[[1,2,3,4]])
+        @test_throws BoundsError sub2ind(size(B),[-1,1]) 
+        @test_throws BoundsError sub2ind(size(B),[1,length(B)+1]) 
 
-        @test_throws DomainError sub2ind(size(C),[[-1,1,1]])
-        @test_throws DomainError sub2ind(size(C),[-1,1,1]) 
-        @test_throws DomainError sub2ind(size(C),[length(C)+1,1,1]) 
-        @test_throws DimensionMismatch sub2ind(size(C),[1,2,3,4]) 
-        @test_throws DimensionMismatch sub2ind(size(B),[[1,2,3,4]])
+        @test_throws BoundsError sub2ind(size(C),[-1,1,1]) 
+        @test_throws BoundsError sub2ind(size(C),[length(C)+1,1,1]) 
     end
 
     @testset "1D i.e. Vector" begin        
-        @test sub2ind(size(A),IJK_A)==ind
+        @test [A[i] for i in sub2ind(size(A),IJK_A)]==A[ind]
     end
 
     @testset "2D i.e. 2D Matrix" begin    
-        @test sub2ind(size(B),IJK_B)==ind
+        @test [B[i] for i in sub2ind(size(B),IJK_B)]==B[ind]
     end
 
     @testset "3D i.e. 3D matrix" begin        
-        @test sub2ind(size(C),IJK_C)==ind
+        @test [C[i] for i in sub2ind(size(C),IJK_C)]==C[ind]
     end
 
     @testset "Vector specifying indices 1D" begin        
@@ -825,27 +826,11 @@ end
     @testset "Vector specifying size" begin        
         @test sub2ind(collect(size(C)),IJK_C)==ind
     end
-end
 
-
-@testset "sub2ind_" verbose = true begin
-
-    @testset "1D i.e. Vector" begin
-        A = rand(30)        
-        @test Comodo.sub2ind_([6],length(size(A)),cumprod(size(A))) == 6
-    end
-
-    @testset "2D i.e. 2D Matrix" begin
-        B = rand(5,6)         
-        @test Comodo.sub2ind_([1,2],length(size(B)),cumprod(size(B))) == 6
-    end
-
-    @testset "3D i.e. 3D matrix" begin
-        C = rand(3,5,2)        
-        @test Comodo.sub2ind_([3,2,1],length(size(C)),cumprod(size(C))) == 6
+    @testset "length(siz) == length(A)" begin 
+        @test sub2ind([2,4,6,10,5,12],[1,2,3,3,2,5]) == 10195
     end
 end
-
 
 @testset "meshedges" verbose = true begin
     @testset "Single triangle" begin
@@ -1826,7 +1811,7 @@ end
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
 
         con_F2E = con_face_edge(F)
         @test con_F2E == [[1,2,3]]
@@ -1838,7 +1823,7 @@ end
     @testset "Single quad" begin
         F = QuadFace{Int}[[1,2,3,4]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
 
         con_F2E = con_face_edge(F)
         @test con_F2E == [[1,2,3,4]]
@@ -1865,7 +1850,7 @@ end
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
 
         con_E2F = con_edge_face(F)
         @test con_E2F == fill([1],length(F[1]))
@@ -1877,7 +1862,7 @@ end
     @testset "Single quad" begin
         F = QuadFace{Int}[[1,2,3,4]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
 
         con_E2F = con_edge_face(F)
         @test con_E2F == fill([1],length(F[1]))
@@ -1904,7 +1889,7 @@ end
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_E2F = con_edge_face(F)
         con_F2E = con_face_edge(F)
 
@@ -1919,7 +1904,7 @@ end
     @testset "Single quad" begin
         F = QuadFace{Int}[[1,2,3,4]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_E2F = con_edge_face(F)
         con_F2E = con_face_edge(F)
 
@@ -2102,7 +2087,7 @@ end
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_V2E = con_vertex_edge(E_uni) 
                 
         con_E2E = con_edge_edge(E_uni)
@@ -2115,7 +2100,7 @@ end
     @testset "Single quad" begin
         F = QuadFace{Int}[[1,2,3,4]]
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_V2E = con_vertex_edge(E_uni) 
 
         con_E2E = con_edge_edge(E_uni)
@@ -2128,7 +2113,7 @@ end
     @testset "Triangles" begin
         F = TriangleFace{Int}[[1,2,3],[2,3,4]]       
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_E2E = con_edge_edge(E_uni)
         @test con_E2E == [[4, 2, 5], [1, 5, 3, 4], [2, 4, 5], [2, 3, 1], [3, 1, 2]]      
     end
@@ -2136,7 +2121,7 @@ end
     @testset "Quads" begin
         F = QuadFace{Int}[[1,2,3,4],[3,4,5,6]]      
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)      
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_E2E = con_edge_edge(E_uni)
         @test con_E2E == [[6, 3], [3, 7, 4, 6], [1, 2, 7], [2, 6, 5], [4, 7], [2, 4, 1], [5, 2, 3]]    
     end
@@ -2181,13 +2166,12 @@ end
     end
 end
 
-
 @testset "con_vertex_vertex" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]        
         V = [Point3{Float64}(rand(3)) for _ in 1:3]        
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_V2E = con_vertex_edge(E_uni) 
 
         con_V2V = con_vertex_vertex(E)
@@ -2201,7 +2185,7 @@ end
         F = QuadFace{Int}[[1,2,3,4]]        
         V = [Point3{Float64}(rand(4)) for _ in 1:4]        
         E = meshedges(F;unique_only=false)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)    
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)    
         con_V2E = con_vertex_edge(E_uni) 
 
         con_V2V = con_vertex_vertex(E)
@@ -2226,7 +2210,6 @@ end
     end
 end
 
-
 @testset "meshconnectivity" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]        
@@ -2234,7 +2217,7 @@ end
 
         # EDGE-VERTEX connectivity
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
 
         # FACE-EDGE connectivity
         con_F2E = con_face_edge(F,E_uni,indReverse)    
@@ -2284,7 +2267,7 @@ end
 
         # EDGE-VERTEX connectivity
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
 
         # FACE-EDGE connectivity
         con_F2E = con_face_edge(F,E_uni,indReverse)    
@@ -2334,7 +2317,7 @@ end
 
         # EDGE-VERTEX connectivity
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
 
         # FACE-EDGE connectivity
         con_F2E = con_face_edge(F,E_uni,indReverse)    
@@ -2384,7 +2367,7 @@ end
         
         # EDGE-VERTEX connectivity
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        E_uni,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
 
         # FACE-EDGE connectivity
         con_F2E = con_face_edge(F,E_uni,indReverse)    
@@ -3650,7 +3633,7 @@ end
     @testset "Single triangle" begin
         F = [TriangleFace{Int}(1, 2, 3)]       
         E = meshedges(F)
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        Eu,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
         count_E2F = count_edge_face(F,Eu,indReverse)
         @test count_E2F == [1,1,1]
 
@@ -3663,7 +3646,7 @@ end
     @testset "Single quad" begin
         F = [QuadFace{Int}(1, 2, 3, 4)]       
         E = meshedges(F)
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        Eu,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
         count_E2F = count_edge_face(F,Eu,indReverse)
         @test count_E2F == [1,1,1,1]
     end
@@ -3671,7 +3654,7 @@ end
     @testset "Triangles" begin
         F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
         E = meshedges(F)
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        Eu,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
         count_E2F = count_edge_face(F,Eu,indReverse)
         @test count_E2F == [1,1,1,1,2]
     end
@@ -3679,7 +3662,7 @@ end
     @testset "Quads" begin
         F = [QuadFace{Int}(1, 2, 3, 4),QuadFace{Int}(6, 5, 4, 3)]
         E = meshedges(F)
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index = true, return_inverse = true, sort_entries = true)
+        Eu,_,indReverse = gunique(E; return_unique=Val(true), return_index = Val(true), return_inverse = Val(true), sort_entries = true)
         count_E2F = count_edge_face(F,Eu,indReverse)
         @test count_E2F == [1,1,1,1,2,1,1] 
     end
@@ -6960,7 +6943,7 @@ end
     np=7
     xRange = range(-1.0-w,1.0+w,np)
     yRange = range(-1.0,1.0,np)
-    Vq = gridpoints(xRange, yRange,[0.0])
+    Vq = collect(gridpoints(xRange, yRange,[0.0]))
         
     # Add some co-linear on edge points 
     Vq_add = [(0.25*V[i] + 0.75*V[i+1]) for i in 1:length(V)-1]
@@ -7359,3 +7342,24 @@ end
         @test_throws Exception faceinteriorpoint(F,V, indFace)
     end
 end
+    
+if get(ENV, "CI", "false") != "true"
+    @testset "Demos" begin
+        demo_path = joinpath(comododir(), "examples")
+        demos = filter!(startswith("demo"), readdir(demo_path))
+        
+        function rundemo(demo_path, demo)
+            Pkg.activate(demo_path; io = devnull)
+            include(joinpath(demo_path, demo)) # Could also use a temporarily module, similar to SafeTestsets or DelaunayTriangulation.jl's testsets
+            Pkg.activate(joinpath(@__FILE__, ".."); io = devnull)
+        end
+
+        foreach(demos) do demo
+            println("Running demo: $demo")
+            rundemo(demo_path, demo)
+        end
+    end
+else
+    @info "Skipping demo tests on CI"
+end
+    

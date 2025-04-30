@@ -14,7 +14,7 @@ F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces w
 E = meshedges(F)
 
 # Get unique edges
-Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+Eu,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
 
 # Count number of faces touching edges
 C = count_edge_face(F,Eu,indReverse)

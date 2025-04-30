@@ -47,7 +47,7 @@ end
 This function simply returns the string for the Comodo path. This is helpful for instance to load items, such as meshes, from the `assets`` folder. 
 """
 function comododir()
-    joinpath(@__DIR__, "..")
+    pkgdir(@__MODULE__)
 end
 
 
@@ -139,7 +139,37 @@ Hence any suitable vector containing vectors of numbers permitted by
 `reduce(vcat,F)` is supported. 
 """
 function elements2indices(F)
-    return unique(reduce(vcat,F))
+    if isempty(F)
+        return eltype(eltype(F))[]
+    else
+        f = first(F)
+        S = eltype(f)[]
+        seen = BitSet()
+        for f in F 
+            for j in f 
+                j ∉ seen && (push!(S, j); push!(seen, j))
+            end
+        end
+        return S 
+    end
+end
+
+struct Grid3D{T, X, Y, Z} <: AbstractVector{Point{3, T}}
+    x::X
+    y::Y
+    z::Z
+    function Grid3D(x::X, y::Y, z::Z) where {X, Y, Z}
+        T = promote_type(eltype(x), eltype(y), eltype(z))
+        return new{T, X, Y, Z}(x, y, z)
+    end
+end
+Base.length(g::Grid3D) = length(g.x) * length(g.y) * length(g.z)
+Base.size(g::Grid3D) = (length(g),)
+function Base.getindex(g::Grid3D{T}, i::Int) where {T}
+    nx, ny, nz = length(g.x), length(g.y), length(g.z)
+    idx = CartesianIndices((1:nx, 1:ny, 1:nz))
+    ix, iy, iz = Tuple(idx[i])
+    return Point{3, T}(g.x[ix], g.y[iy], g.z[iz])
 end
 
 """
@@ -153,24 +183,12 @@ The `gridpoints` function returns a vector of 3D points which span a grid in 3D
 space. Points are defined as per the input ranges or range vectors. The output 
 point vector contains elements of the type `Point`. 
 """
-function gridpoints(x::Union{Vector{T}, AbstractRange{T}}, y=x, z=x) where T<:Real
-    # reshape([Point{3, Float64}(x, y, z) for x in x, y in y, z in z],length(x)*length(y)*length(z)) # Features more allocations    
-    V = Vector{Point{3,Float64}}(undef,length(x)*length(y)*length(z)) # Allocate point vector 
-    c = 1 # Initiate linear index into V
-    # Create grid with point order x->y->z (important for related meshing functions which assume this order)
-    @inbounds for z in z  
-        @inbounds for y in y
-            @inbounds for x in x                           
-                V[c] = Point{3,Float64}(x,y,z)
-                c += 1 
-            end
-        end
-    end
-    return V
+function gridpoints(x, y=x, z=x) 
+    return Grid3D(x, y, z)
 end  
 
 """
-    gridpoints_equilateral(xSpan,ySpan,pointSpacing::T; return_faces = false, rectangular=false) where T <: Real
+    gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Union{Vector{TT},Tuple{TT,TT}},pointSpacing::T; return_faces::Val{B1} = Val(false), rectangular::Val{B2}=Val(false), force_equilateral::Val{B3}=Val(false)) where {T<:Real, TT<:Real, B1, B2, B3}
 
 Returns a "grid" of 3D points that are located on the corners of an equilateral triangle tesselation.
 
@@ -195,7 +213,7 @@ flat such that all x-coordinates on the left are at the minimum in `xSpan` and
 all on the right are at the maximum in `xSpan`, however, this does result in a 
 non-uniform spacing at these edges.  
 """
-function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Union{Vector{TT},Tuple{TT,TT}},pointSpacing::T; return_faces = false, rectangular=false, force_equilateral=false) where T <: Real where TT <: Real
+function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Union{Vector{TT},Tuple{TT,TT}},pointSpacing::T; return_faces::Val{B1} = Val(false), rectangular::Val{B2}=Val(false), force_equilateral::Val{B3}=Val(false)) where {T<:Real, TT<:Real, B1, B2, B3}
     minX = minimum(xSpan)
     maxX = maximum(xSpan)
     minY = minimum(ySpan)
@@ -209,7 +227,7 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
     
     # Set up y-range
     pointSpacing_Y = pointSpacingReal_X.*0.5*sqrt(3) # Point spacing adjusted for equilateral triangles
-    if force_equilateral # Perfect equilateral grid needed, does not conform to span        
+    if B3 # Perfect equilateral grid needed, does not conform to span        
         yRange = minY:pointSpacing_Y:maxY
     else # Approximate grid, conforms to span
         wy = maxY - minY        
@@ -228,7 +246,7 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
             else
                 x -= sx
             end                    
-            if rectangular
+            if B2
                 if isone(i)
                     x = minX
                 elseif i == nx
@@ -241,8 +259,8 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
     end
 
     # Creat output, including faces if requested
-    if return_faces 
-        plateElem=[length(xRange)-1,length(yRange)-1]
+    if B1
+        plateElem=(length(xRange)-1,length(yRange)-1)
         F = Vector{TriangleFace{Int}}(undef,prod(plateElem)*2)
         num_x = length(xRange)
         ij2ind(i,j) = i + ((j-1)*num_x) # function to convert subscript to linear indices    
@@ -288,13 +306,13 @@ vector or a range.
 function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union{Vector{T}, AbstractRange{T}},xi::Union{Vector{T}, AbstractRange{T}}; extrapolate_method=:linear,pad_data=:linear) where T<:Real
 
     # Pad data if needed
-    if isa(x,AbstractRange{T})
+    if x isa AbstractRange
         xx = collect(x)
     else
         xx = deepcopy(x)
     end
 
-    if isa(y,AbstractRange{T})
+    if y isa AbstractRange
         yy = collect(y)
     else
         yy = deepcopy(y)
@@ -340,9 +358,10 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
     if extrapolate_method==:linear
         # Simple data based linear extrapolation 
         L = [xii<x[1] || xii>x[end] for xii in xi] # Boolean for points to extrapolate for
+        # TODO: Optimise to remove need for masks
         if any(L) # If any points outside of the range were encountered
-            yi = Vector{Float64}(undef,length(xi)) # Initialise yi
-            yi[L] = lerp(xx,yy,xi[L]) # Linearly extrapolate outside of the input range
+            yi = similar(xi) # Initialise yi
+            yi[L] .= lerp(xx,yy,xi[L]) # Linearly extrapolate outside of the input range
             yi[.!L] = interp_biharmonic(xx,yy,xi[.!L]) # Use biharmonic interpolation for points within range
         else # Nothing to extrapolate
             yi = interp_biharmonic(xx,yy,xi)
@@ -351,14 +370,12 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
         # Simple constant extrapolation (last/first value is repeated indefinitely)
         Ls = xi.<x[1] # Boolean for points preceding the start
         Ll = xi.>x[end] # Boolean for points after the end
-        if any(Ls .|| Ll) # If any points outside of the range were encountered
-            yi = Vector{Float64}(undef,length(xi)) # Initialise yi
-            if any(Ls) # If any before start were found 
-                yi[Ls] .= yy[1] # Just copy the start for these
-            end
-            if any(Ll) # If any after the end were found
-                yi[Ll] .= yy[end] # Just copy the end for these
-            end
+        # TODO: Optimise to remove need for masks
+        if any(_x -> _x < x[1] || _x > x[end], xi) # If any points outside of the range were encountered
+            yi = similar(xi) # Initialise yi 
+            copyto!(yi, xi)
+            replace!(_x -> _x < x[1] ? yy[1] : _x > x[end] ? yy[end] : _x, yi) 
+
             L = .!Ls .&& .!Ll # Boolean for points to interpolate using biharmonic interpolation
             yi[L] = interp_biharmonic(xx,yy,xi[L]) # Use biharmonic interpolation for points within range
         else # Nothing to extrapolate
@@ -396,13 +413,13 @@ function interp_biharmonic(x,y,xi)
     # Determine weights for interpolation
     g = (Dxx.^2) .* (log.(Dxx).-1.0)   # Green's function.
     g[1:size(g,1)+1:length(g)] .= 0.0 # Fix values along diagonal
-    g[isnan.(g)] .= 0.0 # Replace NaN entries by zeros 
+    replace!(x -> isnan(x) ? zero(x) : x, g) # Replace NaN entries by zeros
     W = g \ y # Weights  
 
     D = dist(xi,x) # Distance between points in X and XI
 
     G = (D.^2).*(log.(D).-1.0) # Green's function.
-    G[isnan.(G)] .= 0.0 # Replace NaN entries by zeros
+    replace!(x -> isnan(x) ? zero(x) : x, G) # Replace NaN entries by zeros
     return G * W
 end
 
@@ -449,43 +466,29 @@ Linear interpolation
 # Description 
 
 This linearly interpolates (lerps) the input data specified by the sites `x` and 
-data `y` at the specified sites `xi`. 
+data `y` at the specified site `xi`. 
 """
-function lerp(x::Union{T,Vector{T}, AbstractRange{T}},y,xi::Union{T,Vector{T}, AbstractRange{T}}) where T <: Real
-    # Check if the lengths of x and y are the same
-    if length(x)!=length(y)
-        throw(DimensionMismatch("The number of sites in x should match the number of data entries in y"))
+function lerp(x, y, xi::T) where {T<:Real}
+    if length(x) != length(y)
+        throw(DimensionMismatch("x and y must be the same length"))
     end
-
-    if length(xi)==1 # Single site provided
-        yi = lerp_(x,y,xi)
-    else # Loop over all data sites
-        yi = Vector{eltype(y)}(undef,length(xi))
-        for (i,xii) in enumerate(xi)
-            yi[i] = lerp_(x,y,xii)
-        end
-    end 
-    return yi
-end
-
-function lerp_(x::Union{T,Vector{T}, AbstractRange{T}},y,xi::T) where T <: Real
-    j = findfirst(x.>xi)
-    
-    if isnothing(j) # Deal with extrapolation at the end
+    j = findfirst(>(xi), x)
+    if isnothing(j)
         j = length(x)
-        i = j-1 
-    elseif isone(j) # Deal with extrapolation at the start
-        i=1
-        j=2
+        i = j-1
+    elseif isone(j)
+        i = 1
+        j = 2
     else
         i = j-1
-    end    
-    w = abs(x[j]-x[i]) 
+    end
+    w = abs(x[j]-x[i])
     t = (xi-x[i])/w
     yi = (1.0-t)*y[i] + t*y[j]
     return yi
 end
-
+lerp(x, y, xi::AbstractVector) = lerp.((x,), (y,), xi)
+  
 """
     dist(V1,V2)
 
@@ -499,33 +502,19 @@ can be any type supported by the `euclidean` function of `Distances.jl`.
 See also: https://github.com/JuliaStats/Distances.jl
 """
 function dist(V1,V2)
-    D = Matrix{Float64}(undef,length(V1),length(V2))   
-    for (i,v1) in enumerate(V1)
-        for (j,v2) in enumerate(V2)          
-            D[i,j] = euclidean(v1,v2) # norm(V1[i]-V2[j])       
-        end
-    end
-    return D
+    return pairwise(Euclidean(), V1, V2)
 end
 
 function dist(V1::Vector{T},v2::T) where T <: AbstractVector
-    D = Matrix{Float64}(undef,length(V1),1)   
-    for (i,v1) in enumerate(V1)      
-        D[i,1] = euclidean(v1,v2)
-    end
-    return D
+    return pairwise(Euclidean(), V1, (v2,))
 end
 
 function dist(v1::T,V2::Vector{T}) where T <: AbstractVector
-    D = Matrix{Float64}(undef,1,length(V2))   
-    for (j,v2) in enumerate(V2)        
-        D[1,j] = euclidean(v1,v2)
-    end
-    return D
+    return pairwise(Euclidean(), (v1,), V2)
 end
 
 """
-    mindist(V1,V2; getIndex=false, skipSelf = false )
+    mindist(V1,V2; getIndex=Val(false), skipSelf = false )
 
 Returns nearest point distances 
 
@@ -539,10 +528,10 @@ point set is provided twice, then the optional parameter `skipSelf` can be set
 t0 `true` (default is `false`) if "self distances" (e.g. the nth point to the 
 nth point) are to be avoided.  
 """
-function mindist(V1,V2; getIndex=false, skipSelf = false )
-    D = Vector{Float64}(undef,length(V1))
-    d = Vector{Float64}(undef,length(V2))
-    if getIndex
+function mindist(V1,V2; getIndex::Val{B1}=Val(false), skipSelf = false ) where {B1}
+    T = promote_type(eltype(eltype(V1)), eltype(eltype(V2)))
+    D, d = similar(V1, T), similar(V2, T)
+    if B1
         I = Vector{Int}(undef,length(V1))
     end
     for (i,v1) in enumerate(V1)
@@ -553,285 +542,18 @@ function mindist(V1,V2; getIndex=false, skipSelf = false )
                 d[j] = euclidean(v1,v2) # norm(v1,v2) 
             end       
         end
-        if getIndex
+        if B1
             D[i], I[i] = findmin(d)
         else
             D[i] = minimum(d)
         end
     end
-    if getIndex
+    if B1
         return D, I
     else
         return D
     end
 end
-
-
-"""
-    unique_dict_index(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-
-Returns unique values and indices
-
-# Description
-
-Returns the unique entries in `X` as well as the indices for them. 
-The optional parameter `sort_entries` (default is `false`) can be set to `true`
-if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
-be seen as the same as [2,1] for instance.  
-"""
-function unique_dict_index(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-    # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to separately be tracked. 
-    # T = eltype(X)
-    d = Dict{T,Nothing}() # Use dict to keep track of used values
-    xUni = Vector{T}()
-    indUnique = Vector{Int}() 
-    for (i,x) in enumerate(X)        
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end
-        if !haskey(d, x)
-            d[x] = nothing
-            push!(xUni, X[i]) #Grow unique set
-            push!(indUnique, i) #Grow unique indices
-        end
-    end
-    return xUni, indUnique
-end
-
-
-"""
-    unique_dict_index_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-
-Returns unique values, indices, and inverse indices
-
-# Description
-    
-Returns the unique entries in `X` as well as the indices for them and the 
-reverse indices to retrieve the original from the unique entries. 
-The optional parameter `sort_entries` (default is `false`) can be set to `true`
-if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
-be seen as the same as [2,1] for instance.  
-"""
-function unique_dict_index_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-    # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to separately be tracked. 
-    # T = eltype(X)
-    d = Dict{T,Int}() # Use dict to keep track of used values
-    xUni = Vector{T}()
-    indUnique = Vector{Int}() 
-    indInverse = Vector{Int}(undef,length(X)) 
-    j=0
-    for (i,x) in enumerate(X)         
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end
-        if !haskey(d, x)
-            j+=1 # Increment counter
-            d[x] = j # inverse index in dict
-            push!(xUni, X[i]) #Grow unique set
-            push!(indUnique, i) #Grow unique indices
-            indInverse[i] = j  # Store inverse index          
-        else
-            indInverse[i]=d[x]
-        end
-    end
-    return xUni, indUnique, indInverse
-end
-
-
-"""
-    unique_dict_index_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-
-Returns unique values, indices, and counts
-
-# Description
-    
-Returns the unique entries in `X` as well as the indices for them and the counts 
-in terms of how often they occurred. 
-The optional parameter `sort_entries` (default is `false`) can be set to `true`
-if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
-be seen as the same as [2,1] for instance.  
-"""
-function unique_dict_index_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-    # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to separately be tracked. 
-    
-    # T = eltype(X)
-    d = Dict{T,Int}() # Use dict to keep track of used values
-    xUni = Vector{T}()
-    indUnique = Vector{Int}() 
-    c =  Vector{Int}() 
-
-    j=0
-    for (i,x) in enumerate(X)         
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end
-        if !haskey(d, x)
-            j+=1 # Increment counter
-            d[x] = j # inverse index in dict
-            push!(xUni, X[i]) #Grow unique set
-            push!(indUnique, i) #Grow unique indices
-            push!(c,1)
-        else
-            c[d[x]] += 1
-        end
-    end
-    return xUni, indUnique, c
-end
-
-
-"""
-    unique_dict_index_inverse_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-
-Returns unique values, indices, inverse indices, and counts
-
-# Description
-    
-Returns the unique entries in `X` as well as the indices for them and the reverse 
-indices to retrieve the original from the unique entries, and also the counts in 
-terms of how often they occurred. 
-The optional parameter `sort_entries` (default is `false`) can be set to `true`
-if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
-be seen as the same as [2,1] for instance.  
-"""
-function unique_dict_index_inverse_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-    # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to separately be tracked. 
-    # T = eltype(X)
-    d = Dict{T,Int}() # Use dict to keep track of used values
-    xUni = Vector{T}()
-    indUnique = Vector{Int}() 
-    indInverse = Vector{Int}(undef,length(X)) 
-    c =  Vector{Int}() 
-
-    j=0
-    for (i,x) in enumerate(X)         
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end 
-        if !haskey(d, x)
-            j+=1 # Increment counter
-            d[x] = j # inverse index in dict
-            push!(xUni, X[i]) #Grow unique set
-            push!(indUnique, i) #Grow unique indices
-            indInverse[i] = j  # Store inverse index
-            push!(c,1)
-        else
-            indInverse[i]=d[x]
-            c[d[x]] += 1
-        end
-    end
-    return xUni, indUnique, indInverse,c
-end
-
-
-"""
-    unique_dict_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-
-Returns unique values and counts
-
-# Description
-    
-Returns the unique entries in `X` as well as the counts in terms of how often 
-they occurred. 
-The optional parameter `sort_entries` (default is `false`) can be set to `true`
-if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
-be seen as the same as [2,1] for instance.  
-"""
-function unique_dict_count(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-    # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to separately be tracked. 
-    # T = eltype(X)
-    d = Dict{T,Int}() # Use dict to keep track of used values
-    xUni = Vector{T}()
-    c = Vector{Int}()
-    j = 0
-    for (i,x) in enumerate(X)         
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end  
-        if !haskey(d, x)
-            j += 1 # Index in unique array
-            d[x] = j # Store count in dict
-            push!(xUni, X[i]) # Grow unique set
-            push!(c,1) # Grow counting array
-        else
-            c[d[x]] += 1
-        end
-    end
-    return xUni, c
-end
-
-
-"""
-    unique_dict_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-
-Returns unique values and inverse indices
-
-# Description
-
-Returns the unique entries in `X` as well as the reverse indices to retrieve the 
-original from the unique entries. 
-The optional parameter `sort_entries` (default is `false`) can be set to `true`
-if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
-be seen as the same as [2,1] for instance.  
-"""
-function unique_dict_inverse(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N
-    # Here a normal Dict is used to keep track of unique elements. Normal dicts do not maintain element insertion order. 
-    # Hence the unique indices need to separately be tracked. 
-    # T = eltype(X)
-    d = Dict{T,Int}() # Use dict to keep track of used values
-    xUni = Vector{T}()
-    indInverse = Vector{Int}(undef,length(X)) 
-
-    j=0
-    for (i,x) in enumerate(X)         
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end
-        if !haskey(d, x)
-            j+=1 # Increment counter
-            d[x] = j # inverse index in dict
-            push!(xUni, X[i]) #Grow unique set
-            indInverse[i] = j  # Store inverse index
-        else
-            indInverse[i]=d[x]
-        end
-    end
-    return xUni, indInverse
-end 
-
-
-"""
-    unique_dict(X::AbstractVector{T}) where T <: Real    
-
-Returns unique values, indices, and inverse indices. Uses an OrderedDict.
-
-# Description
-    
-Returns the unique entries in `X` as well as the indices for them and the reverse 
-indices to retrieve the original from the unique entries. 
-"""
-function unique_dict(X::AbstractVector{T}) where T <: Real    
-    d = OrderedDict{T ,Int}() # Use dict to keep track of used values    
-    indUnique = Vector{Int}()
-    indReverse = Vector{Int}(undef,length(X))
-    j=0
-    for (i,x) in enumerate(X)        
-        if !haskey(d, x)                                          
-            j+=1
-            d[x] = j # reverse index in dict            
-            push!(indUnique, i)                     
-            indReverse[i] = j 
-        else
-            indReverse[i] = d[x]            
-        end        
-    end
-    return collect(keys(d)), indUnique, indReverse
-end
-
 
 """
     occursonce(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N  
@@ -845,14 +567,11 @@ parameter `sort_entries` (default is false) is true, then each entry will be
 sorted, in this case and entry [3,1,2] is viewed as the same as [1,3,2] and 
 [1,2,3] and so on. 
 """
-
-function occursonce(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N   
-    d = Dict{T,Int}() # Use dict to keep track of used values    
-    B = Vector{Bool}(undef,length(X)) 
-    for (i,x) in enumerate(X)         
-        if sort_entries && length(x)>1
-            x = sort(x) # Note sort!(x) doesn't work for static vectors                    
-        end
+function occursonce(X; sort_entries=false)  
+    d = Dict{eltype(X), Int}()
+    B = falses(length(X))
+    for (i,x) in enumerate(X)    
+        sort_entries && (x = _sort(x)) 
         if !haskey(d, x)            
             d[x] = i # index in dict            
             B[i] = true             
@@ -864,6 +583,7 @@ function occursonce(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=fal
     return B
 end
 
+@inline _sort(x) = length(x) > 1 ? sort(x) : x
 
 """
     gunique(X; return_unique=true, return_index=false, return_inverse=false, return_counts=false, sort_entries=false)
@@ -874,39 +594,49 @@ Returns unique values and allows users to choose if they also want: sorting, ind
 
 Returns the unique entries in `X`. Depending on the optional parameter choices
 the indices for the unique entries, the reverse indices to retrieve the original
-from the unique entries, as well as counts in terms of how often they occurred, 
+from the unique entries, as well as counts in terms of how often they occured, 
 can be returned. 
 The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
 be seen as the same as [2,1] for instance.  
 """
-function gunique(X; return_unique=true, return_index=false, return_inverse=false, return_counts=false, sort_entries=false)
-    # Use required unique function 
-    if return_unique && !return_index && !return_inverse && !return_counts
-        # UNIQUE
-        X_uni,_ = unique_dict_index(X; sort_entries=sort_entries)
-        return X_uni        
-    elseif return_unique && return_index && !return_inverse && !return_counts
-        # UNIQUE, INDICES
-        return unique_dict_index(X; sort_entries=sort_entries)
-    elseif return_unique && !return_index && !return_inverse && return_counts
-        # UNIQUE, COUNTS
-        return unique_dict_count(X; sort_entries=sort_entries)
-    elseif return_unique && !return_index && return_inverse && !return_counts
-        # UNIQUE, INVERSE
-        return unique_dict_inverse(X; sort_entries=sort_entries)
-    elseif return_unique && return_index && return_inverse && !return_counts
-        # UNIQUE, INDICES, INVERSE
-        return unique_dict_index_inverse(X; sort_entries=sort_entries)
-    elseif return_unique && return_index && !return_inverse && return_counts
-        # UNIQUE, INDICES, COUNTS
-        return unique_dict_index_count(X; sort_entries=sort_entries)
-    elseif return_unique && return_index && return_inverse && return_counts
-        # UNIQUE, INDICES, INVERSE, COUNTS
-        return unique_dict_index_inverse_count(X; sort_entries=sort_entries)
+function gunique(X; return_unique::Val{CompUnique}=Val(true), return_index::Val{CompIdx}=Val(false), return_inverse::Val{CompInv}=Val(false), return_counts::Val{CompCounts}=Val(false), sort_entries=false) where {CompUnique,CompIdx,CompInv,CompCounts}
+    if CompUnique && !(CompIdx || CompInv || CompCounts)
+        return sort_entries ? unique(_sort, X) : unique(X)
+    else
+        CompIdx && (unique_indices = Int[]; sizehint!(unique_indices, length(X)))
+        CompInv && (inverse_indices = similar(X, Int))
+        CompUnique && (unique_values = empty(X))
+        CompCounts && (counts = Int[]; sizehint!(counts, length(X)))
+        seen = Dict{eltype(X),Int}()
+        sizehint!(seen, length(X))
+
+        nunique = 0
+        for (i, x) in enumerate(X)
+            xs = sort_entries ? _sort(x) : x
+            if !haskey(seen, xs)
+                nunique += 1
+                seen[xs] = nunique
+                CompUnique && (push!(unique_values, x))
+                CompIdx && (push!(unique_indices, i))
+                CompInv && (inverse_indices[i] = nunique)
+                CompCounts && (push!(counts, 1))
+            elseif CompInv || CompCounts
+                idx = seen[xs]
+                CompInv && (inverse_indices[i] = idx)
+                CompCounts && (counts[idx] += 1)
+            end
+        end
+
+        ret = ()
+        CompUnique && (ret = (unique_values,))
+        CompIdx && (ret = (ret..., unique_indices))
+        CompInv && (ret = (ret..., inverse_indices))
+        CompCounts && (ret = (ret..., counts))
+
+        return ret
     end
 end
-
 
 """
     unique_simplices(F,V=nothing)
@@ -920,114 +650,52 @@ and the reverse indices to retrieve the original faces from the unique faces.
 Entries in F are sorted such that the node order does not matter. 
 """
 function unique_simplices(F,V=nothing)
-    if isnothing(V)
-        n = maximum(reduce(vcat,F)) 
-    else
-        n = length(V)
+    n = !isnothing(V) ? length(V) : maximum(maximum, F)
+    virtual_indices = let n=n 
+        sub2ind(ntuple(i -> n, Val(length(F[1]))), sort.(F))
     end
-    virtualFaceIndices = sub2ind(n.*ones(Int,length(F[1])),sort.(F))    
-    _, ind1, ind2 = unique_dict(virtualFaceIndices) 
-
-    return F[ind1], ind1, ind2
+    unique_indices, inverse_indices = gunique(virtual_indices; return_unique = Val(false), return_index = Val(true), return_inverse = Val(true))
+    unique_faces = F[unique_indices]
+    if !isnothing(V)
+        unique_faces = map(f -> sort(f), unique_faces)
+    end
+    return unique_faces, unique_indices, inverse_indices
 end
 
 
 """
     ind2sub(siz,ind)
 
-Converts linear indices to subscript indices. 
+Converts linear indices to subscript indices. Assumes one-based indexing.
 
 # Description
 
 Converts the linear indices in `ind`, for a matrix/array with size `siz`, to the 
 equivalent subscript indices.  
 """
-function ind2sub(siz::Union{Tuple{Vararg{Int, N}}, Array{Int, N}},ind::Union{Int,Tuple{Vararg{Int, M}}, Array{Int, M}}) where N where M
-    if !isempty(ind) # Not empty so subscript indices will be derived
-        numDim = length(siz) # Number of dimensions from length of size
-        k = cumprod(siz) # Cumulative product of size
-        m = prod(siz) # Number of elements   
-        if any(ind.>m) || any(ind.<1)
-            throw(BoundsError("Encountered index value out of valid range 1:$m"))
-        end
-        if isa(ind,Union{Array,Tuple}) # Potentially multiple indices so loop over them
-            A = [ind2sub_(ind_i,numDim,k) for ind_i in ind]
-        else # This should be a single integer
-            A = ind2sub_(ind,numDim,k)      
-        end
-    else # Empty so return an empty vector
-        A = Vector{Int}[]
-    end
-    return A
+function ind2sub(siz, ind)
+    ci = CartesianIndices(Tuple(Base.OneTo.(siz)))
+    return map(i -> Tuple(ci[i]), ind)
 end
-
-# ind2sub helper function to parse just a single linear index and produce a single subscript index set 
-function ind2sub_(ind::Int,numDim::Int,k::Union{Int,Array{Int, N},Tuple{Vararg{Int, N}}}) where N
-    a = Vector{Int}(undef,numDim) # Initialise a
-    for q in numDim:-1:1   # For all dimensions     
-        if isone(q) # First 1st dimension
-            a[1] = rem(ind-1,k[1]) + 1        
-        else       
-            p = rem(ind-1,k[q-1]) + 1 # "previous"
-            a[q] = (ind - p)./k[q-1] + 1 # Current        
-            ind = p # Set indices as "previous"          
-        end            
-    end    
-    return a
-end
-
 
 """
     sub2ind(siz,A)
 
-Converts subscript indices to linear indices. 
+Converts subscript indices to linear indices. Assumes one-based indexing.
 
 # Description
 
 Converts the subscript indices in `A`, for a matrix/array with size `siz`, to 
 the equivalent linear indices.  
 """
-function sub2ind(siz::Union{Tuple{Vararg{Int, N}}, Array{Int, N}},A::Union{Vector{Vector{Int}}, Array{NgonFace{M, Int}, 1}}) where N where M
-    numDim = length(siz)
-    k = cumprod([s for s in siz],dims=1)        
-    ind = Vector{Int}(undef,length(A))
-    for (i,a) in enumerate(A)      
-        if length(a)==numDim
-            if any(a.>siz) || any(a.<1)
-                throw(DomainError(A[i],"Indices in A[$i] exceed bounds implied by size provided"))
-            end    
-        else                
-            throw(DimensionMismatch("Incorrect number of indices in  A[$i], size implies number of indices should be $numDim"))
-        end            
-        ind[i] = sub2ind_(a,numDim,k)
-    end                    
-    return ind
-end
-
-function sub2ind(siz::Union{Tuple{Vararg{Int, N}}, Vector{Int}},A::Vector{Int})  where N  
-    numDim = length(siz)  
-    if length(A)==numDim
-        if any(A.>siz) || any(A.<1)
-            throw(DomainError(A,"Indices in A exceed bounds implied by size provided"))
-        end 
-    else                
-        throw(DimensionMismatch("Incorrect number of indices in  A, size implies number of indices should be $numDim"))
+function sub2ind(siz, A)
+    li = LinearIndices(Tuple(Base.OneTo.(siz)))
+    if length(siz) == length(A)
+        return only(map(i -> li[CartesianIndex(Tuple(i))], (A,)))
+    else
+        return map(i -> li[CartesianIndex(Tuple(i))], A)
     end 
-    return sub2ind(siz,[A])[1]
 end
-
-function sub2ind_(a::Union{Tuple{Vararg{Int, N}}, Vector{Int},NgonFace{M, Int}},numDim::Int,k::Union{Int,Vector{Int},Tuple{Vararg{Int, N}}})  where N where M
-    if numDim==1 
-        ind = a[1]
-    else        
-        ind = a[1]
-        for i=2:numDim
-            ind += (a[i].-1).*k[i-1]
-        end 
-    end
-    return ind
-end
-
 
 """
     meshedges(F::Array{NgonFace{N,T},1}; unique_only=false) where N where T<:Integer   
@@ -1041,15 +709,15 @@ The input `F` can either represent a vector of faces or a
 GeometryBasics.Mesh. The convention is such that for a face referring to the 
 nodes 1-2-3-4, the edges are 1-2, 2-3, 3-4, 4-1.   
 """
-function meshedges(F::Array{NgonFace{N,T},1}; unique_only=false) where N where T<:Integer        
+function meshedges(F::AbstractVector{NgonFace{N,T}}; unique_only=false) where {N,T}
     nf = length(F)
     E = Vector{LineFace{T}}(undef,N*nf)        
     for (i,f) in enumerate(F) # Loop over each node/point for the current simplex                           
-        E[i:nf:end] = [LineFace{T}(f[j],f[mod1(j+1,N)]) for j in 1:N]        
+        for (j, idx) in enumerate(i:nf:lastindex(E))
+            E[idx] = LineFace{T}(f[j], f[mod1(j+1,N)])
+        end
     end    
-    if unique_only # Remove doubles if requested e.g. 1-2 seen as same as 2-1
-        E = gunique(E; sort_entries=true);
-    end
+    unique_only && (E = gunique(E; sort_entries=true)) # Remove doubles if requested e.g. 1-2 seen as same as 2-1
     return E
 end
 
@@ -1173,41 +841,41 @@ function dodecahedron(r=1.0; h=1.0/Base.MathConstants.golden)
 
     # Create vertices    
     V = Vector{Point{3, Float64}}(undef,20)
-    V[ 1] = Point{3, Float64}([ -s,  -s,  -s])
-    V[ 2] = Point{3, Float64}([  s,  -s,  -s])
-    V[ 3] = Point{3, Float64}([  s,   s,  -s])
-    V[ 4] = Point{3, Float64}([ -s,   s,  -s])
-    V[ 5] = Point{3, Float64}([ -s,  -s,   s])
-    V[ 6] = Point{3, Float64}([  s,  -s,   s])
-    V[ 7] = Point{3, Float64}([  s,   s,   s])
-    V[ 8] = Point{3, Float64}([ -s,   s,   s])
-    V[ 9] = Point{3, Float64}([ -w, 0.0,  -t])
-    V[10] = Point{3, Float64}([  w, 0.0,  -t])
-    V[11] = Point{3, Float64}([ -w, 0.0,   t])
-    V[12] = Point{3, Float64}([  w, 0.0,   t])
-    V[13] = Point{3, Float64}([0.0,  -t,  -w])
-    V[14] = Point{3, Float64}([0.0,  -t,   w])
-    V[15] = Point{3, Float64}([  t,   w, 0.0])
-    V[16] = Point{3, Float64}([  t,  -w, 0.0])
-    V[17] = Point{3, Float64}([0.0,   t,  -w])
-    V[18] = Point{3, Float64}([0.0,   t,   w])
-    V[19] = Point{3, Float64}([ -t,  -w, 0.0])
-    V[20] = Point{3, Float64}([ -t,   w, 0.0])
+    V[ 1] = Point{3, Float64}( -s,  -s,  -s)
+    V[ 2] = Point{3, Float64}(  s,  -s,  -s)
+    V[ 3] = Point{3, Float64}(  s,   s,  -s)
+    V[ 4] = Point{3, Float64}( -s,   s,  -s)
+    V[ 5] = Point{3, Float64}( -s,  -s,   s)
+    V[ 6] = Point{3, Float64}(  s,  -s,   s)
+    V[ 7] = Point{3, Float64}(  s,   s,   s)
+    V[ 8] = Point{3, Float64}( -s,   s,   s)
+    V[ 9] = Point{3, Float64}( -w, 0.0,  -t)
+    V[10] = Point{3, Float64}(  w, 0.0,  -t)
+    V[11] = Point{3, Float64}( -w, 0.0,   t)
+    V[12] = Point{3, Float64}(  w, 0.0,   t)
+    V[13] = Point{3, Float64}(0.0,  -t,  -w)
+    V[14] = Point{3, Float64}(0.0,  -t,   w)
+    V[15] = Point{3, Float64}(  t,   w, 0.0)
+    V[16] = Point{3, Float64}(  t,  -w, 0.0)
+    V[17] = Point{3, Float64}(0.0,   t,  -w)
+    V[18] = Point{3, Float64}(0.0,   t,   w)
+    V[19] = Point{3, Float64}( -t,  -w, 0.0)
+    V[20] = Point{3, Float64}( -t,   w, 0.0)
 
     # Create faces
     F = Vector{NgonFace{5,Int}}(undef,12)
-    F[ 1] = NgonFace{5,Int}([18,  8, 11, 12,  7])
-    F[ 2] = NgonFace{5,Int}([12, 11,  5, 14,  6])
-    F[ 3] = NgonFace{5,Int}([11,  8, 20, 19,  5])
-    F[ 4] = NgonFace{5,Int}([20,  8, 18, 17,  4])
-    F[ 5] = NgonFace{5,Int}([ 9,  1, 19, 20,  4])
-    F[ 6] = NgonFace{5,Int}([19,  1, 13, 14,  5])
-    F[ 7] = NgonFace{5,Int}([13,  1,  9, 10,  2])
-    F[ 8] = NgonFace{5,Int}([13,  2, 16,  6, 14])
-    F[ 9] = NgonFace{5,Int}([ 2, 10,  3, 15, 16])
-    F[10] = NgonFace{5,Int}([ 7, 12,  6, 16, 15])
-    F[11] = NgonFace{5,Int}([ 7, 15,  3, 17, 18])
-    F[12] = NgonFace{5,Int}([10,  9,  4, 17,  3])
+    F[ 1] = NgonFace{5,Int}(18,  8, 11, 12,  7)
+    F[ 2] = NgonFace{5,Int}(12, 11,  5, 14,  6)
+    F[ 3] = NgonFace{5,Int}(11,  8, 20, 19,  5)
+    F[ 4] = NgonFace{5,Int}(20,  8, 18, 17,  4)
+    F[ 5] = NgonFace{5,Int}( 9,  1, 19, 20,  4)
+    F[ 6] = NgonFace{5,Int}(19,  1, 13, 14,  5)
+    F[ 7] = NgonFace{5,Int}(13,  1,  9, 10,  2)
+    F[ 8] = NgonFace{5,Int}(13,  2, 16,  6, 14)
+    F[ 9] = NgonFace{5,Int}( 2, 10,  3, 15, 16)
+    F[10] = NgonFace{5,Int}( 7, 12,  6, 16, 15)
+    F[11] = NgonFace{5,Int}( 7, 15,  3, 17, 18)
+    F[12] = NgonFace{5,Int}(10,  9,  4, 17,  3)
     
     return F, V
 end
@@ -1346,7 +1014,7 @@ special integer type `OffsetInteger{-1, TF}` is converted to `Int`.
 If the input is already of the right type this function leaves the input 
 unchanged.
 """
-function tofaces(FM::Vector{Vector{TF}}) where TF<:Integer
+function tofaces(FM::Vector{Vector{TF}}) where {TF}
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)    
     m = length(FM[1]) # Get number of points from first
     if m == 2 # Edges
@@ -1361,7 +1029,7 @@ function tofaces(FM::Vector{Vector{TF}}) where TF<:Integer
     return F
 end
 
-function tofaces(FM::Matrix{TF})  where TF<:Integer
+function tofaces(FM::Matrix{TF})  where {TF}
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)
     m = size(FM,2) # number of points per face
     if m == 2 # Edges
@@ -1376,21 +1044,21 @@ function tofaces(FM::Matrix{TF})  where TF<:Integer
     return F
 end
 
-function tofaces(FM::Vector{NgonFace{m, OffsetInteger{-1, TF}}} ) where m where TF <: Integer
+function tofaces(FM::Vector{<:NgonFace{M, <:OffsetInteger}} ) where {M}
     # Loop over face matrix and convert to GeometryBasics vector of Faces (e.g. QuadFace, or TriangleFace)    
-    if m == 2 # Edges
+    if M == 2 # Edges
         F = [LineFace{Int}(f) for f in FM]
-    elseif m == 3 # Triangles
+    elseif M == 3 # Triangles
         F = [TriangleFace{Int}(f) for f in FM]
-    elseif m == 4 # Quads
+    elseif M == 4 # Quads
         F = [QuadFace{Int}(f) for f in FM]
     else # Other mesh type
-        F = [NgonFace{m,Int}(f) for f in FM]
+        F = [NgonFace{M,Int}(f) for f in FM]
     end
     return F
 end
 
-function tofaces(FM::Vector{NgonFace{m, TF}} ) where m where TF <: Integer    
+function tofaces(FM::Vector{<:NgonFace} )
     return FM
 end
 
@@ -1409,21 +1077,21 @@ defined by `VM` to the "standard" format:
 For matrix input each row is considered a point. For vector input each vector 
 entry is considered a point.     
 """
-function topoints(VM::Matrix{T}) where T<: Real
+function topoints(VM::Matrix{T}) where {T}
     m = size(VM,2)
     return [Point{m, T}(v) for v in eachrow(VM)]
 end
 
-function topoints(VM::Array{Vec{N, T}, 1}) where T <: Real where N   
+function topoints(VM::Array{Vec{N, T}, 1}) where {T, N}
     return [Point{N, T}(v) for v in VM]
 end
 
-function topoints(VM::Vector{Vector{T}}) where T <: Real    
-        m = length(VM[1])
-        return [Point{m, T}(v) for v in VM]
+function topoints(VM::Vector{Vector{T}}) where {T}
+    m = length(VM[1])
+    return [Point{m, T}(v) for v in VM]
 end
 
-function topoints(VM::Vector{Point{ND,TV}}) where ND where TV <: Real        
+function topoints(VM::Vector{Point{ND,TV}}) where {TV, ND}
     return VM
 end
 
@@ -1464,11 +1132,11 @@ function edgecrossproduct(F::Union{Vector{NgonFace{NF,TF}},Vector{Vector{TF}}},V
 
     C = Vector{GeometryBasics.Vec{ND, TV}}(undef,length(F)) # Allocate array cross-product vectors      
     @inbounds for (q,f) in enumerate(F) # Loop over all faces
-        c = zeros(Vec{3,Float64})
+        c = zero(Vec{3,Float64})
         @inbounds for q in 1:N # Loop from first to end-1            
-            c  += cross(V[f[q]],V[f[mod1(q+1,N)]]) # Add next edge contribution          
+            c  += cross(V[f[q]],V[f[mod1(q+1,N)]]) / 2 # Add next edge contribution          
         end
-        C[q] = c./2 # Length = face area, direction is along normal vector
+        C[q] = c # Length = face area, direction is along normal vector
     end
     return C
 end
@@ -1482,9 +1150,9 @@ function edgecrossproduct(f::Union{NgonFace{NF,TF},Vector{TF}},V::Vector{Point{N
 
     c = zeros(Vec{3,TV})
     @inbounds for q in 1:N # Loop from first to end-1            
-        c += cross(V[f[q]],V[f[mod1(q+1,N)]]) # Add next edge contribution          
+        c += cross(V[f[q]],V[f[mod1(q+1,N)]]) / 2 # Add next edge contribution          
     end
-    return c./2 # Length = face area, direction is along normal vector
+    return c # Length = face area, direction is along normal vector
 end
 
 """
@@ -1568,7 +1236,7 @@ vector of vertices.
 Alternatively the input mesh can be a GeometryBasics mesh `M`.
 """
 function edgelengths(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
-    if eltype(F)<:LineFace{T} where T<:Integer # Already edges 
+    if eltype(F)<:LineFace
         return [norm(V[e[1]]-V[e[2]]) for e in F]
     else # Need to compute edges
         return edgelengths(meshedges(F; unique_only=true),V)
@@ -1612,13 +1280,13 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
         return F,V
     elseif isone(n)
         E = meshedges(F)
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        Eu,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
         # Check for boundary edges        
         count_E2F = count_edge_face(F,Eu,indReverse)
         B_boundary = isone.(count_E2F)
         if any(B_boundary)
             treatBoundary = true
-            Eb = Eu[B_boundary]
+            Eb = @view Eu[B_boundary]
             indB = unique(reduce(vcat,Eb))
             con_V2V = con_vertex_vertex(Eb,V)
         else
@@ -1668,11 +1336,11 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
                         Vv[i] = 6/8*v_i + 1/8*(V[con_V2V[i][1]]+V[con_V2V[i][2]]) 
                     end
                 else
-                    B_vert_face = [any(f.==i) for f in F]
+                    B_vert_face = [any(==(i), f) for f in F]
                     F_touch = F[B_vert_face] 
                     indVerticesTouch = Vector{TF}()
                     for f in F_touch                
-                        indTouch = f[f.!=i]        
+                        indTouch = filter(!=(i), f)    
                         for i in indTouch 
                             if i ∉ indVerticesTouch 
                                 push!(indVerticesTouch,i)
@@ -1680,13 +1348,14 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
                         end
                     end
                     N = length(indVerticesTouch)                
-                    v_sum = sum(V[indVerticesTouch],dims=1)[1]                
+
+                    v_sum = sum(@view(V[indVerticesTouch]),dims=1)[1]                
                     β = 1/N * (5/8-(3/8 +1/4*cos((2*π)/N))^2)        
-                    Vv[i] = (1-N*β) .* v_i .+ β*v_sum                
+                    Vv[i] = (1-N*β) .* v_i .+ β*v_sum   
                 end
             end    
             # Create complete point set
-            Vn = [Vv;Vm] # Updated orignals and new "mid-edge-ish" points
+            Vn = [Vv;Vm] # Updated originals and new "mid-edge-ish" points
         else
             throw(ArgumentError("Incorrect method :$method. Use :linear or :Loop"))
         end
@@ -1704,8 +1373,8 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
 end
 
 """
-subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; method=:linear) where TF<:Integer where ND where TV <: Real
-subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; method=:Catmull_Clark) where TF<:Integer where ND where TV <: Real
+    subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; method=:linear) where TF<:Integer where ND where TV <: Real
+    subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; method=:Catmull_Clark) where TF<:Integer where ND where TV <: Real
 
 Refines quadrangulations through splitting.
 
@@ -1736,7 +1405,7 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
 
         # Get edges
         E = meshedges(F) # Non-unique edges
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        Eu,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
         # Check for boundary edges        
         count_E2F = count_edge_face(F,Eu,indReverse)
         B_boundary = isone.(count_E2F)
@@ -1893,9 +1562,9 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
 
     # Now cut off bottom hemisphere    
     searchTol = r./1000.0 # Tolerance for cropping hemisphere (safe, somewhat arbitrary if much smaller then mesh edge lengths)
-    F = [F[i] for i in findall(map(f-> mean([V[j][3] for j in f])>=-searchTol,F))] # Remove faces below equator
-    F,V,_ = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
-    C = fill(1,length(F))
+    filter!(f -> mean((V[j][3] for j in f)) ≥ -searchTol, F) # Remove faces below equator
+    F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
+    C = ones(Int, length(F))
 
     if closed
         if face_type == :tri           
@@ -1908,9 +1577,11 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
         
         # Add base
         indTopFaces = 1:length(F) # Indices of top
-        append!(F, [f .+ length(V) for f in Fb])
+        for f in Fb 
+            push!(F, f .+ length(V)) # Add base faces
+            push!(C, 2)
+        end
         append!(V,Vb)
-        append!(C,fill(2,length(Fb)))
 
         # Merge nodes
         V,_,indMap = mergevertices(V; pointSpacing = ((pi/2)*r)/(1+2^n))
@@ -1934,7 +1605,7 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
             if closed
                 indTopFaces = [j .+ i*nf  for i = 0:3 for j in indTopFaces]
                 indPush = Vector{Int}()
-                for f in F[indTopFaces]
+                for f in @view F[indTopFaces]
                     for i in f
                         if i>nv
                             push!(indPush,i)
@@ -1971,14 +1642,29 @@ function hexbox(boxDim,boxEl)
 
     # Create hexahedral element description 
     ind1 = 1:numElements
-    ijk_shift = [[0,0,0], 
-                [1,0,0],
-                [1,1,0],
-                [0,1,0],
-                [0,0,1],
-                [1,0,1],
-                [1,1,1],
-                [0,1,1]]
+    ijk_shift =((0,0,0), 
+                (1,0,0),
+                (1,1,0),
+                (0,1,0),
+                (0,0,1),
+                (1,0,1),
+                (1,1,1),
+                (0,1,1))
+                
+     boxNod = boxEl.+1 # Number of nodes in each direction
+    numElements = prod(boxEl) # Total number of elements
+    numNodes = prod(boxNod) # Total number of nodes
+
+    # Create hexahedral element description 
+    ind1 = 1:numElements
+    ijk_shift =((0,0,0), 
+                (1,0,0),
+                (1,1,0),
+                (0,1,0),
+                (0,0,1),
+                (1,0,1),
+                (1,1,1),
+                (0,1,1))
                 
     
     E = Vector{Hex8{Int}}(undef,numElements) # Allocate elements
@@ -1998,7 +1684,7 @@ function hexbox(boxDim,boxEl)
     end
 
     # Create vertices aka nodal coordinates
-    indNodes = collect(Int,1:numNodes)
+    indNodes = 1:numNodes
     IJK_nodes = ind2sub(boxNod,indNodes)
 
     V = convert(Vector{Point{3, Float64}},IJK_nodes)
@@ -2008,9 +1694,38 @@ function hexbox(boxDim,boxEl)
 
     # Create face sets from elements
     F = element2faces(E) 
-    CF_type = repeat(collect(1:6),numElements) # Allocate face color/label data
+    CF_type = repeat(1:6,numElements) # Allocate face color/label data
 
-    F_uni,indUni,c_uni = gunique(F,return_index=true, return_inverse=false,return_counts=true,sort_entries=true)
+    E = Vector{Hex8{Int}}(undef,numElements) # Allocate elements
+
+    @inbounds for q in 1:numElements
+        ijk_1 = ind2sub(boxEl,ind1[q])    
+        ijk_2 = ijk_1 .+ ijk_shift[2]
+        ijk_3 = ijk_1 .+ ijk_shift[3]
+        ijk_4 = ijk_1 .+ ijk_shift[4]
+        ijk_5 = ijk_1 .+ ijk_shift[5]
+        ijk_6 = ijk_1 .+ ijk_shift[6]
+        ijk_7 = ijk_1 .+ ijk_shift[7]
+        ijk_8 = ijk_1 .+ ijk_shift[8]
+        
+        E[q] = Hex8{Int}( sub2ind(boxNod,ijk_1),sub2ind(boxNod,ijk_2),sub2ind(boxNod,ijk_3),sub2ind(boxNod,ijk_4),
+                            sub2ind(boxNod,ijk_5),sub2ind(boxNod,ijk_6),sub2ind(boxNod,ijk_7),sub2ind(boxNod,ijk_8) )
+    end
+
+    # Create vertices aka nodal coordinates
+    indNodes = 1:numNodes
+    IJK_nodes = ind2sub(boxNod,indNodes)
+
+    V = convert(Vector{Point{3, Float64}},IJK_nodes)
+    for q in eachindex(V)
+        V[q] = ((V[q] .- Point{3, Float64}(1.0,1.0,1.0)).*(boxDim./boxEl)) .- Point{3, Float64}(boxDim/2.0)
+    end
+
+    # Create face sets from elements
+    F = element2faces(E) 
+    CF_type = repeat(1:6,numElements) # Allocate face color/label data
+
+    F_uni,indUni,c_uni = gunique(F,return_index=Val(true),return_counts=Val(true),sort_entries=true)
     Lb = isone.(c_uni)
     Fb = F_uni[Lb]
     CF_type_uni = CF_type[indUni]
@@ -2034,16 +1749,16 @@ lists. For triangles the output contains 3 edges per faces, for quads 4 per face
 and so on.   
 """
 function con_face_edge(F,E_uni=nothing,indReverse=nothing)
-    if isnothing(E_uni) | isnothing(indReverse)
+    if isnothing(E_uni) || isnothing(indReverse)
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)    
     end
     return [Vector{Int}(a) for a in eachrow(reshape(indReverse,length(F),length(F[1])))] 
 end
 
 
 """
-con_edge_face(F,E_uni=nothing,indReverse=nothing)
+    con_edge_face(F,E_uni=nothing,indReverse=nothing)
 
 Returns the faces connected to each edge.
 
@@ -2059,14 +1774,14 @@ Boundary edges connect to just 1 face.
 function con_edge_face(F,E_uni=nothing,indReverse=nothing)
     if isnothing(E_uni) || isnothing(indReverse)
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)    
     end
     con_F2E = con_face_edge(F,E_uni,indReverse)
     
     con_E2F = [Vector{Int}() for _ in 1:length(E_uni)]
     for i_f in eachindex(F)
         for i in con_F2E[i_f]
-            push!(con_E2F[i],i_f)
+            push!(@views(con_E2F[i]),i_f)
         end
     end 
     return con_E2F
@@ -2092,9 +1807,9 @@ connectivity and supplying them if already computed therefore save time.
 """
 function con_face_face(F,E_uni=nothing,indReverse=nothing,con_E2F=nothing,con_F2E=nothing)
     if length(F)>1 # More than one face so compute connectivity
-        if isnothing(E_uni)| isnothing(indReverse)
+        if isnothing(E_uni) || isnothing(indReverse)
             E = meshedges(F)
-            E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+            E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)    
         end    
         if isnothing(con_E2F) 
             con_E2F = con_edge_face(F,E_uni)
@@ -2103,11 +1818,11 @@ function con_face_face(F,E_uni=nothing,indReverse=nothing,con_E2F=nothing,con_F2
             con_F2E = con_face_edge(F,E_uni,indReverse)                 
         end
         
-        con_F2F = [Vector{Int}() for _ in 1:length(F)]        
+        con_F2F = [Vector{Int}() for _ in eachindex(F)]        
         for i_f in eachindex(F)
-            for i in reduce(vcat,con_E2F[con_F2E[i_f]])    
+            for i in @views reduce(vcat,con_E2F[con_F2E[i_f]])    
                 if i!=i_f     
-                    push!(con_F2F[i_f],i)
+                    push!(@views(con_F2F[i_f]),i)
                 end 
             end
         end        
@@ -2240,6 +1955,7 @@ function con_edge_edge(E_uni,con_V2E=nothing)
             end 
         end
     end
+                                                                                              +
     return con_E2E
 end
 
@@ -2272,9 +1988,9 @@ function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
     con_V2V = [Vector{Int}() for _ in 1:n]
     @inbounds for i_v in 1:n
         if !isempty(con_V2F[i_v])
-            for i in unique(reduce(vcat,F[con_V2F[i_v]]))
+            for i in @views unique(reduce(vcat,F[con_V2F[i_v]]))
                 if i_v!=i
-                    push!(con_V2V[i_v],i)
+                    push!(@views(con_V2V[i_v]),i)
                 end
             end
         end
@@ -2313,7 +2029,7 @@ function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
         if !isempty(con_V2E[i_v])
             for i in unique(reduce(vcat,E[con_V2E[i_v]]))
                 if i_v!=i
-                    push!(con_V2V[i_v],i)
+                    push!(@views(con_V2V[i_v]),i)
                 end
             end
         end
@@ -2345,7 +2061,7 @@ function meshconnectivity(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}) whe
 
     # EDGE-VERTEX connectivity
     E = meshedges(F)
-    E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+    E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
 
     # FACE-EDGE connectivity
     con_F2E = con_face_edge(F,E_uni,indReverse)    
@@ -2414,10 +2130,10 @@ function mergevertices(V::Vector{Point{ND,TV}}; roundVertices = true, pointSpaci
         VR = [round.(v,digits = numDigitsMerge)+Point{ND,TV}(0.0,0.0,0.0) for v in V]
 
         # Get unique indices and reverse for rounded vertices
-        _,indUnique,indMap = gunique(VR; return_index=true, return_inverse=true,sort_entries=false)
+        indUnique,indMap = gunique(VR; return_unique=Val(false),return_index=Val(true), return_inverse=Val(true),sort_entries=false)
         V = V[indUnique] # The unique node set
     else
-        V,indUnique,indMap = gunique(V; return_index=true, return_inverse=true,sort_entries=false)
+        V,indUnique,indMap = gunique(V; return_index=Val(true), return_inverse=Val(true),sort_entries=false)
     end
     return V,indUnique,indMap
 end
@@ -2572,7 +2288,7 @@ function smoothmesh_hc(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, �
         # Compute vertex-vertex connectivity i.e. "Laplacian umbrellas" if nothing
         if isnothing(con_V2V)
             E = meshedges(F)
-            E_uni,_ = gunique(E; return_unique=true, return_index=true, return_inverse=false, sort_entries=true)    
+            E_uni  = gunique(E; return_unique=Val(true), sort_entries=true)    
             # E_uni,_,_ = unique_simplices(E)
             con_V2V = con_vertex_vertex(E_uni)
         end
@@ -2646,9 +2362,9 @@ function quadplate(plateDim,plateElem; orientation=:up)
     end
     
     if orientation == :up
-        return F, V
+        return F, collect(V)
     else#if orientation == :down
-        return invert_faces(F), V    
+        return invert_faces(F), collect(V) # TODO: Remove collect    
     end    
 end
 
@@ -2805,8 +2521,10 @@ Optional inputs include the following:
 `periodicity[2]==true` it is assumed the grid is periodic in the second 
 direction, i.e. that the grid should be closed in the second direction.
 """
-function grid2surf(V::Vector{Point{ND,TV}},num_steps; face_type=:quad, periodicity=(false,false), tri_dir=1) where ND where TV<:Real
-    
+function grid2surf(V::Union{Vector{Point{ND,TV}},Grid3D{TV}},num_steps; face_type=:quad, periodicity=(false,false), tri_dir=1) where ND where TV<:Real
+    if isa(V,Grid3D)
+       V = collect(V)
+    end
     # Get number of points in each offset curve
     nc = length(V)/num_steps # Number of points in curve
     if !isinteger(nc) || nc<1
@@ -3128,8 +2846,8 @@ function remove_unused_vertices(F,V::Vector{Point{ND,TV}}) where ND where TV<:Re
         indUsed = elements2indices(F) # Indices used
         Vc = V[indUsed] # Remove unused points    
         indFix = zeros(Int,length(V))
-        indFix[indUsed] .= 1:length(indUsed)
-        Fc = [(eltype(F))(indFix[f]) for f in F] # Fix indices in F         
+        @views indFix[indUsed] .= 1:length(indUsed)
+        Fc = [eltype(F)(indFix[f]) for f in F] # Fix indices in F         
     end
     return Fc, Vc, indFix
 end
@@ -3231,7 +2949,7 @@ end
 function count_edge_face(F,E_uni=nothing,indReverse=nothing)::Vector{Int}
     if isnothing(E_uni) || isnothing(indReverse)
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+        E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)    
     end
     con_F2E = con_face_edge(F,E_uni,indReverse)
     
@@ -3291,7 +3009,7 @@ function boundaryfaces(E::Vector{<: AbstractElement{N, T}}; elementLabels=nothin
         for c in unique(elementLabels)                        
             append!(Fb,boundaryfaces(element2faces(E[elementLabels.==c]))) # Add faces to set
         end
-        return gunique(Fb; return_unique=true, return_index=false, return_inverse=false, sort_entries=true)
+        return gunique(Fb; return_unique=Val(true), return_index=Val(false), return_inverse=Val(false), sort_entries=true)
     end
 end
 
@@ -3347,7 +3065,7 @@ function boundaryfaceindices(F::Vector{NgonFace{N,T}}; elementLabels=nothing) wh
             append!(Fb,f[ind]) # Add faces to set
         end
         # Find indices of unique boundary faces 
-        _,ind_uni = gunique(Fb; return_unique=true, return_index=true, return_inverse=false, sort_entries=true)        
+        ind_uni = only(gunique(Fb; return_unique=Val(false), return_index=Val(true), sort_entries=true))
         return indicesBoundaryFaces[ind_uni]
     end
 end
@@ -3541,7 +3259,7 @@ function meshgroup(F; con_type = :v, indStart=1, stop_at = nothing)
     elseif con_type == :e # Group based on edge connectivity
         # EDGE-VERTEX connectivity
         E = meshedges(F)
-        E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
 
         # FACE-EDGE connectivity
         con_F2E = con_face_edge(F,E_uni,indReverse)    
@@ -4359,11 +4077,11 @@ function triplate(plateDim,pointSpacing::T; orientation=:up) where T <: Real
         throw(ArgumentError("Orientation not supported. Use :up or :down"))
     end 
 
-    F, V = gridpoints_equilateral((-plateDim[1]/2,plateDim[1]/2),(-plateDim[2]/2,plateDim[2]/2),pointSpacing; return_faces = true, rectangular=true, force_equilateral=false)
+    F, V = gridpoints_equilateral((-plateDim[1]/2,plateDim[1]/2),(-plateDim[2]/2,plateDim[2]/2),pointSpacing; return_faces = Val(true), rectangular=Val(true), force_equilateral=Val(false))
     if orientation == :down
-        return invert_faces(F), V
+        return invert_faces(F), collect(V)
     else
-        return F,V
+        return F,collect(V) # TODO: Remove collect
     end
 end
 
@@ -4618,13 +4336,13 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
     E_Fs = meshedges(Fs;unique_only=false)
 
     if connectivity == :face 
-        # Compute dict to find partner edges, unique edges as well as reverse indices for unique mapping
-        E_sort = sort.(E) 
+        # Compute dict to find partner edges, unique edges as well as reverse indices for unique mapping        
         d = Dict{eltype(E),Vector{Int}}() # Use dict to keep track of used values    
         Eu = Vector{eltype(E)}()
         indReverse = Vector{Int}(undef,length(E)) 
         j=0
-        for (i,e) in enumerate(E_sort)          
+        for (i,e) in enumerate(E)                      
+            e = sort(e)
             if !haskey(d, e)    
                 j+=1 # Increment counter        
                 d[e]= [i]  
@@ -4638,6 +4356,10 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
 
         # Check for boundary faces 
         count_E2F = count_edge_face(F,Eu,indReverse)
+        if any(count_E2F.>2)        
+            throw(ErrorException("Surface contains non-manifold (some edges are connected to >2 faces)"))
+        end
+
         indBoundary = findall(isone.(count_E2F))
         Eb = Eu[indBoundary]
 
@@ -4654,16 +4376,16 @@ function dualclad(F::Vector{NgonFace{N, TF}},V::Vector{Point{ND,TV}},s; connecti
 
         Fq = Vector{QuadFace{Int}}(undef,length(Eu))
         for (i,e) in enumerate(Eu)
-            ii = d[sort(e)]
-            if length(ii)==2
+            ii = d[sort(e)]            
+            if length(ii)==2 # Embedded manifold edge
                 Fq[i] = (E_Fs[ii[1]][2],E_Fs[ii[1]][1],E_Fs[ii[2]][2],E_Fs[ii[2]][1])
-            else
+            elseif length(ii)==1 # Manifold boundary edge               
                 ii_b = indX_E[ii[1]]
-                Fq[i] = (E_Fs[ii[1]][2],E_Fs[ii[1]][1],Ebs[ii_b][1],Ebs[ii_b][2])
+                Fq[i] = (E_Fs[ii[1]][2],E_Fs[ii[1]][1],Ebs[ii_b][1],Ebs[ii_b][2])            
             end
         end
     elseif connectivity == :edge
-        Eu,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        Eu,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
 
         Es,V_Es = scalesimplex(Eu,V,s)
         Es = [e.+length(Vs) for e in Es]
@@ -4699,7 +4421,7 @@ function tet2hex(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer wh
     Ft = element2faces(E)      
     
     # Unique faces and inverse mapping 
-    Ftu,_,inv_Ft = gunique(Ft; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+    Ftu,inv_Ft = gunique(Ft; return_unique=Val(true),  return_inverse=Val(true), sort_entries=true)
 
     # Non-unique structured (element by element) tet element edges
     Et = Vector{LineFace{T}}(undef,length(E)*6)
@@ -4714,7 +4436,7 @@ function tet2hex(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer wh
     end
 
     #Unique edges and inverse mapping 
-    Etu,_,inv_Et = gunique(Et; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+    Etu,inv_Et = gunique(Et; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
     
     # Create new coordinates
     Vc = simplexcenter(E,V) # Element centres
@@ -4956,14 +4678,14 @@ function subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int; direction=0) 
             end
         end
         #Unique edges and inverse mapping 
-        Etu,_,inv_Et = gunique(Et; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+        Etu,inv_Et = gunique(Et; return_unique=Val(true),  return_inverse=Val(true), sort_entries=true)
         
         # Create mid-edge coordinates
         Ve = simplexcenter(Etu,V) # Edge centres           
 
         if iszero(direction)
             # Unique faces and inverse mapping 
-            Ftu,_,inv_Ft = gunique(Ft; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+            Ftu,inv_Ft = gunique(Ft; return_unique=Val(true),  return_inverse=Val(true), sort_entries=true)
             Vf = simplexcenter(Ftu,V) # Face centres
             Vc = simplexcenter(E,V) # Element centres
             Vh = [V;Vc;Vf;Ve] # Append vertices
@@ -5125,7 +4847,7 @@ triangle edge is used to construct a rhombic quadrilateral face.
 function tri2quad(F,V; method=:split)
     # Get mesh edges 
     E = meshedges(F) # Non-unique edges
-    Eu,_,inv_E = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)
+    Eu,inv_E = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
     Vf = simplexcenter(F,V) # Mid face points
 
     if method == :split
@@ -5630,7 +5352,7 @@ the unique edge vector `E_uni` as well as the edge-to-face connectivity vector
 """
 function edgefaceangles(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=false) where NF where TF<:Integer where ND where TV<:Real 
     E = meshedges(F) # The non-unique mesh edges 
-    E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true) # Unique mesh edges and inverse indices
+    E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true) # Unique mesh edges and inverse indices
     con_E2F = con_edge_face(F,E_uni,indReverse) # The edge-to-face connectivity
 
     if length(F)>1 # More than one face so compute connectivity
@@ -6077,7 +5799,9 @@ This function computes the minimum coordinates for all points. Points can be
 N-dimensional and the output is another point of the same dimensionality but 
 with the lowest coordinate value for each direction. 
 """
-function minp(V::Vector{Point{N,T}}) where N where T <:Real   
+function minp(V)  
+    T = eltype(eltype(V))
+    N = length(V[1])
     m = fill(T(Inf),N)
     @inbounds for v in V
         @inbounds for j = 1:N            
@@ -6097,7 +5821,9 @@ This function computes the maximum coordinates for all points. Points can be
 N-dimensional and the output is another point of the same dimensionality but 
 with the highest coordinate value for each direction. 
 """
-function maxp(V::Vector{Point{N,T}}) where N where T <:Real   
+function maxp(V)  
+    T = eltype(eltype(V))
+    N = length(V[1])
     m = fill(T(-Inf),N)
     @inbounds for v in V
         @inbounds for j = 1:N            
@@ -6820,7 +6546,7 @@ elements, defined by the output element vector `E_tet10` and vertices
 """
 function tet4_tet10(E,V)
     tetEdges = elementEdges(E)
-    tetEdgesUnique,_,indReverse = gunique(tetEdges; return_unique=true, return_index=true, return_inverse=true, sort_entries=false)
+    tetEdgesUnique,indReverse = gunique(tetEdges; return_unique=Val(true), return_inverse=Val(true), sort_entries=false)
     Vn = simplexcenter(tetEdgesUnique,V)
     V_tet10 = [V; Vn]  # Old and new mid-edge points          
     E_tet10 = Vector{Tet10{Int}}(undef,length(E))        
@@ -6844,7 +6570,7 @@ elements, defined by the output element vector `E_penta15` and vertices
 """
 function penta6_penta15(E,V)
     pentaEdges = elementEdges(E)
-    pentaEdgesUnique,_,indReverse = gunique(pentaEdges; return_unique=true, return_index=true, return_inverse=true, sort_entries=false)
+    pentaEdgesUnique,indReverse = gunique(pentaEdges; return_unique=Val(true), return_index=Val(false), return_inverse=Val(true), sort_entries=false)
     Vn = simplexcenter(pentaEdgesUnique,V)
     V_penta15 = [V; Vn]  # Old and new mid-edge points          
     E_penta15 = Vector{Penta15{Int}}(undef,length(E))        

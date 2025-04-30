@@ -17,7 +17,7 @@ for testCase = 1:2
     end
 
     E = meshedges(F)
-    E_uni,_,indReverse = gunique(E; return_unique=true, return_index=true, return_inverse=true, sort_entries=true)    
+    E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)   
 
     C = meshconnectivity(F,V)
 
