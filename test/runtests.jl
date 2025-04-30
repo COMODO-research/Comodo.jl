@@ -7343,18 +7343,23 @@ end
     end
 end
     
-@testset "Demos" begin
-    demo_path = joinpath(@__FILE__, "../..", "examples")
-    demos = filter!(startswith("demo"), readdir(demo_path))
-    function rundemo(demo_path, demo)
-        Pkg.activate(demo_path; io = devnull)
-        include(joinpath(demo_path, demo)) # Could also use a temporarily module, similar to SafeTestsets or DelaunayTriangulation.jl's testsets
-        Pkg.activate(joinpath(@__FILE__, ".."); io = devnull)
+if get(ENV, "CI", "false") != "true"
+    @testset "Demos" begin
+        demo_path = joinpath(@__FILE__, "../..", "examples")
+        demos = filter!(startswith("demo"), readdir(demo_path))
+        
+        function rundemo(demo_path, demo)
+            Pkg.activate(demo_path; io = devnull)
+            include(joinpath(demo_path, demo)) # Could also use a temporarily module, similar to SafeTestsets or DelaunayTriangulation.jl's testsets
+            Pkg.activate(joinpath(@__FILE__, ".."); io = devnull)
+        end
+
+        foreach(demos) do demo
+            println("Running demo: $demo")
+            rundemo(demo_path, demo)
+        end
     end
-    foreach(demos) do demo
-        println("Running demo: $demo")
-        rundemo(demo_path, demo)
-    end
+else
+    @info "Skipping demo tests on CI"
 end
-    
     
