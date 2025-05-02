@@ -1486,44 +1486,43 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
 end
 
 """
-    pushtoradius_(v::Point{N,T},r=1.0) where N where T <: Real 
-    pushtoradius_(V::Vector{Point{N,T}},r=1.0) where N where T <: Real     
+    _pushtoradius(v::Point{N,T},r=1.0) where N where T <: Real 
+    _pushtoradius(V::Vector{Point{N,T}},r=1.0) where N where T <: Real     
 
 Pushes points to a given radius
 
 # Description
 This function pushes the input points to a distance `r` from the origin. 
 """
-function pushtoradius_(v::Point{N,T},r=1.0) where N where T <: Real 
+function _pushtoradius(v::Point{N,T},r=1.0) where N where T <: Real 
     return v*(r/norm(v)) # Push to sphere       
 end
 
-function pushtoradius_(V::Vector{Point{N,T}},r=1.0) where N where T <: Real     
+function _pushtoradius(V::Vector{Point{N,T}},r=1.0) where N where T <: Real     
     Vr = Vector{Point{N,T}}(undef,length(V))
     for (i,v) in enumerate(V)  
-        Vr[i] = pushtoradius_(v,r) # Push to sphere       
+        Vr[i] = _pushtoradius(v,r) # Push to sphere       
     end    
     return Vr
 end
 
-"""
-    pushtoradius!_(v::Point{N,T},r=1.0) where N where T <: Real 
-    pushtoradius!_(V::Vector{Point{N,T}},r=1.0) where N where T <: Real     
+"""    
+    _pushtoradius!(V::Vector{Point{N,T}},r=1.0) where N where T <: Real     
 
 Pushes points to a given radius
 
 # Description
 This function is the same as `pushtoradius_` but overwrites the input. 
 """
-function pushtoradius!_(v::Point{N,T},r=1.0) where N where T <: Real   
-    v *= (r/norm(v)) # Push to sphere       
-end
-
-function pushtoradius!_(V::Vector{Point{N,T}},r=1.0) where N where T <: Real     
+function _pushtoradius!(V::Vector{Point{N,T}},r=1.0) where N where T <: Real     
     for (i,v) in enumerate(V) 
         V[i] *= (r/norm(v)) # Push to sphere       
     end    
 end
+
+# function _pushtoradius!(v::Point{N,T},r=1.0) where N where T <: Real   
+#     v *= (r/norm(v)) # Push to sphere       
+# end
 
 """
     geosphere(n::Int,r::T; method=:linear) where T <: Real
@@ -1556,7 +1555,7 @@ function geosphere(n::Int,r::T; method=:linear) where T <: Real
 
         # Push altered/new points to sphere
         @inbounds for i in s:length(V) 
-            V[i] = pushtoradius_(V[i],r) 
+            V[i] = _pushtoradius(V[i],r) 
         end
     end
     return F,V
@@ -1652,7 +1651,7 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
 
             # Now push newly introduced points to the sphere
             @inbounds for i in indPush
-                V[i] = pushtoradius_(V[i],r) # Overwrite points
+                V[i] = _pushtoradius(V[i],r) # Overwrite points
             end
         end        
     end
@@ -2425,7 +2424,7 @@ function subquadsphere(n::Int,r::T) where T <: Real
         else
             F,V = subquad(F,V,n;method=:Catmull_Clark)
         end
-        pushtoradius!_(V,r)
+        _pushtoradius!(V,r)
     end    
     return F, V
 end
@@ -2448,7 +2447,7 @@ function quadsphere(r,pointSpacing)
     F,V,C = quadbox(boxDim,boxEl)
     for (i,v) in enumerate(V)        
         vp = tan.(v*π/4.0)
-        V[i] = pushtoradius_(vp,r)
+        V[i] = _pushtoradius(vp,r)
     end    
     return F,V,C
 end

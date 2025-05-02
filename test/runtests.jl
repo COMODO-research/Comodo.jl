@@ -1656,6 +1656,33 @@ end
     end
 end
 
+@testset "Comodo._pushtoradius" begin    
+    eps_level = 1e-6
+
+    _,V = geosphere(3,1.0) # Vector of points 
+    v = deepcopy(V[1]) # Single point 
+
+    r = 3.5
+    Vn = Comodo._pushtoradius(V,r)
+    vn = Comodo._pushtoradius(v,r)
+
+    @test all(isapprox.(norm.(Vn),r,atol=eps_level = 1e-6))
+    @test isapprox(norm(vn),r,atol=eps_level = 1e-6)
+end
+
+@testset "Comodo._pushtoradius!" begin    
+    eps_level = 1e-6
+
+    _,V = geosphere(3,1.0) # Vector of points 
+    # v = deepcopy(V[1]) # Single point 
+
+    r = 3.5
+    Comodo._pushtoradius!(V,r)
+    # Comodo._pushtoradius!(v,r)
+
+    @test all(isapprox.(norm.(V),r,atol=eps_level = 1e-6))
+    # @test isapprox(norm(v),r,atol=eps_level = 1e-6)
+end
 
 @testset "geosphere" begin    
     eps_level = 1e-4
@@ -3187,7 +3214,7 @@ end
 end
 
 @testset "grid2surf" verbose = true begin    
-
+    
     nc = 11
     t = range(0,2.0*π-(2.0*π)/nc,nc) 
     V1 = [Point3{Float64}(cos(tt), sin(tt),0.0) for tt in t]
@@ -3202,6 +3229,13 @@ end
         num_steps=4 # i.e. too many
         @test_throws ArgumentError  grid2surf(Vp3,num_steps; periodicity=(false,false),face_type=:quad)
     end    
+
+    @testset "gridpoints" begin
+        num_steps = 5
+        V = gridpoints(range(0.0,2.0*π,num_steps),range(0.0,2.0*π,num_steps),1.0)         
+        F = grid2surf(V,num_steps; face_type=:quad, periodicity=(false,false))
+        @test length(F) == (num_steps-1)^2
+    end
 
     @testset "2 points 2 steps" begin
         # Example curves
@@ -5390,8 +5424,19 @@ end
         [0.8194254478692206, 0.375, 0.36319552381099396]],atol=eps_level)
     end
 
-end
+    @testset "Errors" begin
+        # Loading a mesh
+        fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")
+        M = load(fileName_mesh)
 
+        # Obtain mesh faces and vertices
+        F = tofaces(faces(M))
+        V = topoints(coordinates(M))
+        F,V,_ = mergevertices(F,V)
+
+        @test_throws Exception dualclad(F,V,0.5; connectivity=:face)
+    end
+end
 
 
 @testset "tet2hex" verbose = true begin
@@ -7269,6 +7314,24 @@ end
         @test Vn == Vn
         @test En[1] == [1, 2, 6, 56,57,58]                
     end    
+    @testset "Errors" verbose = true begin                
+         # Triangles 
+         plateDim1 = [2.0,4.0]      
+         pointSpacing = 0.5              
+         F1,V1 = triplate(plateDim1,pointSpacing)
+         ind1 = unique(reduce(vcat,F1))
+         p = eltype(V1)(0.0,0.0,15.0)
+         V2 = [v+p for v in V1[ind1]] 
+         num_steps = 8
+         correspondence = :faces         
+        @test_throws ArgumentError fromtomesh(F1, V1, V2, 0; correspondence = correspondence)       
+
+        F1 = [NgonFace{6,Int}(1,2,3,4,5,6)]
+        V1 = rand(Point{3,Float64},length(F[1]))
+        V2 = V1
+        correspondence = :match         
+        @test_throws ArgumentError fromtomesh(F1, V1, V2, num_steps; correspondence = correspondence)       
+    end
 end
 
 @testset "vectorpair_angle" verbose = true begin                
@@ -7377,6 +7440,14 @@ end
         F,V = extrudecurve(Vc; extent=0.25, direction=:both, n=n, close_loop=false,face_type=:tri)
         indFace = 1
         @test_throws Exception faceinteriorpoint(F,V, indFace)
+
+        Vc = [Point{3,Float64}(x,0.0,0.0) for x in range(0.0,2.0,5)]
+        n = normalizevector(Vec{3, Float64}(0.0,0.0,1.0)) # Extrusion direction
+        F,V = extrudecurve(Vc; extent=3.0, direction=:both, n=n, close_loop=false,face_type=:tri)
+        V2 = V .+ Point{3,Float64}(0.0,2.0,0.0) # Add point in y direction 
+        F,V,_ = joingeom(F,V,F,V2)
+        indFace = 1
+        @test_throws Exception faceinteriorpoint(F,V, indFace)       
     end
 end
     

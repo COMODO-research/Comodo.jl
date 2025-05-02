@@ -166,14 +166,14 @@ Comodo.subtri
 Comodo.subquad
 ```
 
-## `pushtoradius_`
+## `_pushtoradius`
 ```@docs
 Comodo.pushtoradius_
 ```
 
-## `pushtoradius!_`
+## `_pushtoradius!`
 ```@docs
-Comodo.pushtoradius!_
+Comodo._pushtoradius!
 ```
 
 ## `geosphere`
