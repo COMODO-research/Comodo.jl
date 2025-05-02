@@ -7314,6 +7314,7 @@ end
         @test Vn == Vn
         @test En[1] == [1, 2, 6, 56,57,58]                
     end    
+
     @testset "Errors" verbose = true begin                
          # Triangles 
          plateDim1 = [2.0,4.0]      
@@ -7327,7 +7328,7 @@ end
         @test_throws ArgumentError fromtomesh(F1, V1, V2, 0; correspondence = correspondence)       
 
         F1 = [NgonFace{6,Int}(1,2,3,4,5,6)]
-        V1 = rand(Point{3,Float64},length(F[1]))
+        V1 = rand(Point{3,Float64},length(F1[1]))
         V2 = V1
         correspondence = :match         
         @test_throws ArgumentError fromtomesh(F1, V1, V2, num_steps; correspondence = correspondence)       
