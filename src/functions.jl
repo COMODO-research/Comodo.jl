@@ -1200,7 +1200,7 @@ end
 
 
 """
-    vertexnormal(F,V; weighting=:area)
+    vertexnormal(F,V; weighting=:size)
 
 Returns the surface normal at each vertex.
 
@@ -1210,14 +1210,14 @@ This function computes the per vertex surface normal directions for the input
 mesh defined either by the faces `F` and vertices `V` or by the GeometryBasics
 mesh `M`. The optional parameter `weighting` sets how the face normal directions 
 are averaged onto the vertices. If `weighting=:none` a plain average for the 
-surrounding faces is used. If instead `weighting=:area` (default), then the
+surrounding faces is used. If instead `weighting=:size` (default), then the
 average is weighted based on the face areas. 
 """
-function vertexnormal(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; weighting=:area) where N where TF<:Integer where ND where TV<:Real       
+function vertexnormal(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; weighting=:size) where N where TF<:Integer where ND where TV<:Real       
     return normalizevector(simplex2vertexdata(F,facenormal(F,V),V; weighting=weighting))
 end
 
-function vertexnormal(M::GeometryBasics.Mesh; weighting=:area)     
+function vertexnormal(M::GeometryBasics.Mesh; weighting=:size)     
     return normalizevector(vertexnormal(faces(M),coordinates(M); weighting=weighting))
 end
 
@@ -1485,11 +1485,45 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
     end
 end
 
+"""
+    pushtoradius_(v::Point{N,T},r=1.0) where N where T <: Real 
+    pushtoradius_(V::Vector{Point{N,T}},r=1.0) where N where T <: Real     
 
-function pushtoradius_(v,r=1.0)    
-    return v.*(r/norm(v)) # Push to sphere       
+Pushes points to a given radius
+
+# Description
+This function pushes the input points to a distance `r` from the origin. 
+"""
+function pushtoradius_(v::Point{N,T},r=1.0) where N where T <: Real 
+    return v*(r/norm(v)) # Push to sphere       
 end
 
+function pushtoradius_(V::Vector{Point{N,T}},r=1.0) where N where T <: Real     
+    Vr = Vector{Point{N,T}}(undef,length(V))
+    for (i,v) in enumerate(V)  
+        Vr[i] = pushtoradius_(v,r) # Push to sphere       
+    end    
+    return Vr
+end
+
+"""
+    pushtoradius!_(v::Point{N,T},r=1.0) where N where T <: Real 
+    pushtoradius!_(V::Vector{Point{N,T}},r=1.0) where N where T <: Real     
+
+Pushes points to a given radius
+
+# Description
+This function is the same as `pushtoradius_` but overwrites the input. 
+"""
+function pushtoradius!_(v::Point{N,T},r=1.0) where N where T <: Real   
+    v *= (r/norm(v)) # Push to sphere       
+end
+
+function pushtoradius!_(V::Vector{Point{N,T}},r=1.0) where N where T <: Real     
+    for (i,v) in enumerate(V) 
+        V[i] *= (r/norm(v)) # Push to sphere       
+    end    
+end
 
 """
     geosphere(n::Int,r::T; method=:linear) where T <: Real
@@ -1555,7 +1589,7 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
         Q = RotXYZ(0.0,atan(Base.MathConstants.golden),0.0) # Rotation matrix        
         V = [Point{3, Float64}(Q*v) for v in V] # Rotate vertices        
     elseif face_type == :quad        
-        F,V = quadsphere(1,r) # A once refined cube has an "equator" line        
+        F,V = subquadsphere(1,r) # A once refined cube has an "equator" line        
     else
         throw(ArgumentError("face_type should be :tri or :quad"))
     end
@@ -2369,7 +2403,7 @@ function quadplate(plateDim,plateElem; orientation=:up)
 end
 
 """
-    quadsphere(n::Int,r::T) where T <: Real
+    subquadsphere(n::Int,r::T) where T <: Real
 
 Returns a quadrangulated sphere
 
@@ -2378,31 +2412,89 @@ This function creates a quadrilateral mesh (faces `F` and vertices `V`) for a sp
 with a radius defined by the input `r`. The input `n` defines the density of sphere
 mesh. The quad mesh is constructed using `subquad` subdivision of a regular cube, 
 whereby `n` sets the number of splitting iterations to use. Using `n=0` therefore
-returns a cube.
+returns a cube. For subdivision the `:Catmull_Clark` subquad algorithm is used 
+(except when n=1 where linear subdivision produces the same result) prior to 
+pushing nodes to the sphere surface. The ouput consists of the faces `F` and the 
+vertices `V`. 
 """
-function quadsphere(n::Int,r::T) where T <: Real
+function subquadsphere(n::Int,r::T) where T <: Real
     F,V = platonicsolid(2,r)    
-    if n > 0
-        for _ in 1:n
-            numPointsNow = length(V)
-            F,V = subquad(F,V,1)
-            @inbounds for i in numPointsNow+1:length(V)
-                V[i] = pushtoradius_(V[i],r) # Overwrite points
-            end
+    if n>0
+        if n==1
+            F,V = subquad(F,V,1;method=:linear)    
+        else
+            F,V = subquad(F,V,n;method=:Catmull_Clark)
         end
-    end
-    return F,V
+        pushtoradius!_(V,r)
+    end    
+    return F, V
 end
 
-function simplex2vertexdata(F::Union{Vector{NgonFace{NF,TF}},Vector{<: AbstractElement{NE, TE}}},DF,V::Union{Nothing,Vector{Point{ND,TV}}}=nothing; con_V2F=nothing, weighting=:none) where NF where TF<:Integer where NE where TE<:Integer where ND where TV<:Real    
+"""
+    quadsphere(r,pointSpacing)
+
+Returns a quadrangulated sphere
+
+# Description
+This function creates a quadrilateral mesh (faces `F` and vertices `V`) for a sphere
+with a radius defined by the input `r`. The input `pointSpacing` defines desired
+approximate point spacing (which is most accurate for regions away from the 
+original cube corners. The ouput consists of the faces `F`, the vertices `V`, 
+and the underlying cube face boundary labels `C`. 
+"""
+function quadsphere(r,pointSpacing)
+    boxDim = fill(2.0,3)#fill(r/2.0,3) # Dimensions for the box in each direction
+    boxEl = fill(ceil.(Int,(r*π/2.0)./pointSpacing),3) # Number of elements to use in each direction 
+    F,V,C = quadbox(boxDim,boxEl)
+    for (i,v) in enumerate(V)        
+        vp = tan.(v*π/4.0)
+        V[i] = pushtoradius_(vp,r)
+    end    
+    return F,V,C
+end
+
+"""
+    simplex2vertexdata(F::Union{Vector{<: NgonFace},Vector{<: AbstractElement}},DF,V::Union{Nothing,Vector{Point{ND,TV}}}=nothing; con_V2F=nothing, weighting=:none) where ND where TV<:Real    
+
+Samples element data on nodes
+
+# Description
+This function converts the input data `DF` which is for the simplices (edges, 
+faces, or elements) `F`, to the equivalent data for the nodes `V`. To compute 
+this data on a particular node, the average for all simplices sharing the node 
+is computed. The optional kwargs include `con_V2F` (the connectivity for 
+vertices to simplices) which can be provided if already computed, 
+and the `weighting` scheme desired, which can be set to `:none` (default) or 
+`:size`. For the former a plain average of connected simplices is computed while
+for the latter the simplex sizes are taken into account e.g. for edges, faces, 
+and elements, the averaging is weighted to the length, area, or volume of the 
+simplex respectively. 
+"""
+function simplex2vertexdata(F::Union{Vector{<: NgonFace},Vector{<: AbstractElement}},DF,V::Union{Nothing,Vector{Point{ND,TV}}}=nothing; con_V2F=nothing, weighting=:none) where ND where TV<:Real    
+    if !in(weighting,(:none,:size))
+        throw(ArgumentError("Invalid weighting option provided, use one of the following: :none, :size"))
+    end
+
     if isnothing(con_V2F)
         con_V2F = con_vertex_face(F,V)
     end
-    if weighting==:area
+    
+    if weighting==:size
         if isnothing(V)
-           throw(ArgumentError("Vertices need to be provided for area based weighting."))
+           throw(ArgumentError("Vertices need to be provided for size based weighting."))
         else
-            A = facearea(F,V)
+            T = eltype(F)
+            if T <: LineFace # (subtype of NgonFace) Edges -> compute lengths
+                A = edgelengths(F,V)                
+            elseif T <: NgonFace # Faces -> compute areas
+                A = facearea(F,V)
+            elseif eltype(F) <: AbstractElement # Elements -> compute volumes               
+                A = Vector{TV}(undef,length(V))
+                for (i,f) in enumerate(F)
+                    ff = element2faces(f)
+                    A[i] = surfacevolume(ff,V)                                
+                end
+            end
         end
     end    
     
@@ -2412,7 +2504,7 @@ function simplex2vertexdata(F::Union{Vector{NgonFace{NF,TF}},Vector{<: AbstractE
         if !isempty(con_V2F[i])
             if weighting==:none || length(con_V2F[i])==1 
                 DV[i] = mean(T,DF[con_V2F[i]])
-            elseif weighting==:area            
+            elseif weighting==:size            
                 a = A[con_V2F[i]]                
                 DV[i] = sum(T,DF[con_V2F[i]].*a)./sum(a)
             end
@@ -4476,6 +4568,10 @@ Returns element faces
 This function computes the faces for the input elements defined by `E`. The elements
 should be Vectors consisting of `Tet4`, `Hex8` elements. 
 """
+function element2faces(e::AbstractElement{N, T}) where N where T 
+    return element2faces([e]) 
+end
+
 function element2faces(E::Vector{<: AbstractElement{N, T}}) where N where T 
     element_type = eltype(E)
     if element_type <: Tet4{T}
@@ -5060,7 +5156,7 @@ function extrudefaces(F::Union{NgonFace{NF,TF},Vector{NgonFace{NF,TF}}},V::Vecto
 
     # Compute normal directions if not provided
     if isnothing(N)
-        N = vertexnormal(F,V; weighting=:area)
+        N = vertexnormal(F,V; weighting=:size)
     end
 
     # Check if num_steps is okay
@@ -5790,7 +5886,7 @@ function kelvinfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge =
 end
 
 """
-    minp(V::Vector{Point{N,T}}) where N where T <:Real   
+    minp(V) where N where T <:Real   
 
 Returns minimum coordinates
 
@@ -5812,7 +5908,7 @@ function minp(V)
 end
 
 """
-    maxp(V::Vector{Point{N,T}}) where N where T <:Real   
+    maxp(V) where N where T <:Real   
 
 Returns maximum coordinates
 
@@ -6992,4 +7088,66 @@ function faceinteriorpoint(F,V, indFace; w=0.5)
             return (1.0-w)*ray_origin + w*P[sortOrder[i2]]        
         end
     end
+end
+
+"""
+    hexsphere(r=1.0,pointSpacing=r/10.0; f=0.75, nSmooth=5)
+
+Creates hexahedral sphere mesh 
+
+# Description
+This function returns a hexahedral mesh for a sphere. The inputs include the 
+radius `r`, and the point spacing `pointSpacing`. The optional inputs include 
+the factor `f` which sets where width of the central cube, which is defined as:
+`f/sqrt(3.0)*2.0*r`. 
+The output features hexahedral elements `E` and the vertices `V`. 
+"""
+function hexsphere(r=1.0,pointSpacing=r/10.0; f=0.75, nSmooth=5)
+    s = f/sqrt(3.0)*2.0*r
+    boxDim = fill(s,3) # Dimensionsions for the box in each direction
+    boxEl = fill(ceil.(Int,(r*π/2.0)./pointSpacing),3) # Number of elements to use in each direction 
+    E,V,_,Fb,_ = hexbox(boxDim,boxEl)
+    ind = elements2indices(Fb)    
+    V2 = V[ind]
+    for (i,v) in enumerate(V2)        
+        vp = tan.(v/(r*f/sqrt(3.0))*π/4.0)
+        V2[i] = r*vp/norm(vp)        
+    end 
+    numSteps = 1+ceil(Int,(r-s/2.0)/pointSpacing)   
+    append!(E,fromtomesh!(Fb,V,V2,numSteps; correspondence=:faces))
+    if nSmooth > 0
+        F = element2faces(E)
+        Fu = gunique(F; sort_entries=true)
+        Fb = boundaryfaces(F)    
+        indBoundary = elements2indices(Fb)
+        nSmooth = 5
+        V = smoothmesh_laplacian(Fu,V,nSmooth,0.5; constrained_points = indBoundary)
+    end
+    return E,V
+end
+
+"""
+    hexspherehollow(rOut,rIn,pointSpacing; numSteps=nothing)
+
+Creates hollow hexahedral sphere mesh 
+
+# Description
+This function returns a hexahedral mesh for a hollow sphere. The inputs include 
+the outer radius `rOut`, the inner radius `rIn`, and the point spacing 
+`pointSpacing`. 
+The optional inputs include the number of vertex steps to use to go from the 
+inner to the outer surface. 
+The output features hexahedral elements `E` and the vertices `V`. 
+"""
+function hexspherehollow(rOut,rIn,pointSpacing; numSteps=nothing)
+    if rIn>=rOut 
+        throw(ArgumentError("Inner radius is too large as it should be smaller than the outer radius rOut=$rOut."))
+    end
+    F1,V1,_ = quadsphere(rOut,pointSpacing)    
+    V2 = [v*(rIn/rOut) for v in V1] 
+    if isnothing(numSteps)
+        numSteps = 1+ceil(Int,(rOut-rIn)/pointSpacing)
+    end  
+    E,V = fromtomesh(F1,V2,V1,numSteps; correspondence=:match)
+    return E,V
 end

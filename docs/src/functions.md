@@ -166,6 +166,16 @@ Comodo.subtri
 Comodo.subquad
 ```
 
+## `pushtoradius_`
+```@docs
+Comodo.pushtoradius_
+```
+
+## `pushtoradius!_`
+```@docs
+Comodo.pushtoradius!_
+```
+
 ## `geosphere`
 ```@docs
 Comodo.geosphere
@@ -254,6 +264,16 @@ Comodo.quadplate
 ## `quadsphere`
 ```@docs
 Comodo.quadsphere
+```
+
+## `simplex2vertexdata`
+```@docs
+Comodo.simplex2vertexdata
+```
+
+## `subquadsphere`
+```@docs
+Comodo.subquadsphere
 ```
 
 ## `loflinear`
@@ -564,4 +584,14 @@ Comodo.triangulateboundary
 ## `faceinteriorpoint`
 ```@docs 
 Comodo.faceinteriorpoint
+```
+
+## `hexsphere`
+```@docs 
+Comodo.hexsphere
+```
+
+## `hexspherehollow`
+```@docs 
+Comodo.hexspherehollow
 ```

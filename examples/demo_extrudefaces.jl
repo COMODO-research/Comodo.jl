@@ -92,7 +92,7 @@ for testCase = 1:3
         direction=:positive
     end
 
-    N = vertexnormal(F,V; weighting=:area)
+    N = vertexnormal(F,V; weighting=:size)
     E, Ve = extrudefaces(F,V; extent=t, direction=direction, num_steps=n)
 
     FE = element2faces(E)

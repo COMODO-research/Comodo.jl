@@ -36,7 +36,7 @@ for q=1:1:4
     end
 
     # Compute mesh vertex normals
-    NV = vertexnormal(F,V; weighting=:area)
+    NV = vertexnormal(F,V; weighting=:size)
     
     ax1 = Axis3(fig[1, q], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
     hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,shading=FastShading,color=:white, transparency=false, overdraw=false)    

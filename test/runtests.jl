@@ -2689,12 +2689,28 @@ end
 end
 
 
-@testset "quadsphere" begin
+@testset "subquadsphere" begin
     eps_level = 1e-4
+    
+    # Test cube case with no refinement
+    r = 1.5
+    F, V = subquadsphere(0, r)    
+    @test length(V) == 8
+    @test length(F) == 6
+    @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
+    
+    # Test 1-step refinement (uses linear subdivision)
+    r = 2.0
+    F, V = subquadsphere(1, r)
+    @test length(V) == 8+3*4+6
+    @test length(F) == 6*4
+    @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
+
+    # Test >1 step refinement 
     r = 1.0
-    F, V = quadsphere(3, r)
+    F, V = subquadsphere(3, r)
     ind = round.(Int,range(1,length(V),6))
-    V_true = Point{3, Float64}[[-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], [-0.36700100107065714, 0.8547634353587377, 0.36700100107065714], [-0.9807852804032304, 0.0, 0.1950903220161283], [-0.3815651304866988, 0.18679164007781993, 0.9052717461589679], [0.4942387316114103, -0.4942387316114103, -0.7151616267322294], [0.1731315037005652, -0.8165807660291813, -0.550655368608694]]
+    V_true = Point{3, Float64}[[-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], [-0.3689702423132517, 0.8530661876868645, 0.3689702423132517], [-0.9793474352247509, 0.0, 0.20218457191067402], [-0.38513265214423603, 0.18957274057435147, 0.9031805003893055], [0.49847402263276075, -0.49847402263276075, -0.7092582727896994], [0.18095633824105684, -0.8135537030036463, -0.552616662777592]]
     @test V isa Vector{Point3{Float64}}
     @test length(V) == 386
     @test isapprox(V[ind], V_true, atol=eps_level)
@@ -2721,9 +2737,13 @@ end
     # A hexahedral mesh 
     Eh,Vh,_,_,_ = hexbox([1.0,1.0,1.0],[2,2,2])
 
+    # Edges 
+    Lq = meshedges(Fq)
+
     @testset "Errors" begin
         DF = [1.0] # Face data 
-        @test_throws ArgumentError simplex2vertexdata(F1,DF,nothing; weighting=:area)
+        @test_throws ArgumentError simplex2vertexdata(F1,DF,nothing; weighting=:size)
+        @test_throws ArgumentError simplex2vertexdata(F1,DF,V1; weighting=:wrong)
     end
 
     @testset "Vector Float64 data, weighting=:none" begin
@@ -2741,13 +2761,13 @@ end
         @test isnan(DV[end])
         
         # Quads
-        DF = collect(Float64,1:length(Fq)) # Face data (here face numbers)
+        DF = collect(Float64,1:length(Fq)) # Face data (here face numbers)       
         DV = simplex2vertexdata(Fq,DF,Vq; weighting=:none)
         D_true = [13.333333333333334, 14.666666666666666, 17.333333333333332, 20.0, 11.666666666666666, 9.0, 7.666666666666667, 6.333333333333333, 11.0, 6.5, 11.5, 9.0, 10.0, 14.5, 12.5, 13.5, 14.5, 13.5, 18.0, 15.5, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0]
         @test isapprox(DV,D_true, atol=eps_level)
 
         # Triangles
-        DF = collect(Float64,1:length(Ft)) # Face data (here face numbers)
+        DF = collect(Float64,1:length(Ft)) # Face data (here face numbers)      
         DV = simplex2vertexdata(Ft,DF,Vt; weighting=:none)
         D_true = [10.333333333333334, 11.333333333333334, 13.333333333333334, 7.0, 6.833333333333333, 7.166666666666667, 8.166666666666666, 7.666666666666667, 8.666666666666666, 8.5]
         @test isapprox(DV,D_true, atol=eps_level)
@@ -2757,27 +2777,44 @@ end
         DV = simplex2vertexdata(Eh,DF,Vh; weighting=:none)
         D_true = [1.0, 1.5, 2.0, 2.0, 2.5, 3.0, 3.0, 3.5, 4.0, 3.0, 3.5, 4.0, 4.0, 4.5, 5.0, 5.0, 5.5, 6.0, 5.0, 5.5, 6.0, 6.0, 6.5, 7.0, 7.0, 7.5, 8.0]
         @test isapprox(DV,D_true, atol=eps_level)
-        
+
+        # Edges
+        DF = collect(Float64,1:length(Lq))        
+        DV = simplex2vertexdata(Lq,DF,Vq; weighting=:none)
+        D_true = [49.333333333333336, 50.666666666666664, 53.333333333333336, 56.0, 47.666666666666664, 45.0, 43.666666666666664, 42.333333333333336, 47.0, 42.5, 47.5, 45.0, 46.0, 50.5, 48.5, 49.5, 50.5, 49.5, 54.0, 51.5, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0]
+        @test isapprox(DV,D_true, atol=eps_level)
     end
     
-    @testset "Vector Float64 data, weighting=:area" begin
+    @testset "Vector Float64 data, weighting=:size" begin
         # Single element
         DF = [1.0] # Face data 
-        DV = simplex2vertexdata(F1,DF,V1; weighting=:area)
+        DV = simplex2vertexdata(F1,DF,V1; weighting=:size)
         D_true = [1.0, 1.0, 1.0, 1.0]
         @test isapprox(DV,D_true, atol=eps_level)
         
 
         # Quads
         DF = collect(Float64,1:length(Fq)) # Face data (here face numbers)
-        DV = simplex2vertexdata(Fq,DF,Vq; weighting=:area)
+        DV = simplex2vertexdata(Fq,DF,Vq; weighting=:size)
         D_true = [13.333333333333332, 14.666666666666668, 17.333333333333336, 20.0, 11.666666666666666, 9.0, 7.666666666666667, 6.333333333333333, 11.0, 6.500000000000001, 11.5, 9.0, 10.0, 14.5, 12.500000000000002, 13.5, 14.5, 13.5, 18.0, 15.5, 10.0, 10.999999999999998, 12.000000000000002, 13.000000000000002, 14.0, 15.0]
         @test isapprox(DV,D_true, atol=eps_level)
 
         # Triangles
         DF = collect(Float64,1:length(Ft)) # Face data (here face numbers)
-        DV = simplex2vertexdata(Ft,DF,Vt; weighting=:area)
+        DV = simplex2vertexdata(Ft,DF,Vt; weighting=:size)
         D_true = [10.333333333333334, 11.333333333333334, 13.333333333333336, 6.999999999999999, 5.095917942265425, 5.646428199482246, 6.646428199482247, 6.146428199482247, 6.49489742783178, 6.545407685048602]
+        @test isapprox(DV,D_true, atol=eps_level)
+
+        # Hexahedral elements
+        DF = collect(Float64,1:length(Eh)) # Face data (here face numbers)
+        DV = simplex2vertexdata(Eh,DF,Vh; weighting=:size)
+        D_true = [1.0, 1.5, 2.0, 2.0, 2.5, 3.0, 3.0, 3.5, 4.0, 3.0, 3.5, 4.0, 4.0, 4.5, 5.0, 5.0, 5.5, 6.0, 5.0, 5.5, 6.0, 6.0, 6.5, 7.0, 7.0, 7.5, 8.0]
+        @test isapprox(DV,D_true, atol=eps_level)
+
+        # Edges
+        DF = collect(Float64,1:length(Lq))
+        DV = simplex2vertexdata(Lq,DF,Vq; weighting=:size)
+        D_true = [49.33333333333334, 50.66666666666668, 53.333333333333336, 56.00000000000001, 47.66666666666667, 45.00000000000001, 43.66666666666667, 42.333333333333336, 47.00000000000001, 42.5, 47.50000000000001, 45.00000000000001, 46.00000000000001, 50.5, 48.50000000000001, 49.50000000000001, 50.500000000000014, 49.5, 54.00000000000001, 51.500000000000014, 46.0, 46.99999999999999, 48.0, 49.0, 50.0, 51.0]
         @test isapprox(DV,D_true, atol=eps_level)
     end
     
@@ -2814,7 +2851,7 @@ end
 
         # Quads
         DF = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i in eachindex(Fq)] # Matrix data for each face
-        DV = simplex2vertexdata(Fq,DF,Vq; weighting=:area)
+        DV = simplex2vertexdata(Fq,DF,Vq; weighting=:size)
         ind = round.(Int,range(1,length(DV),6))
         D_true = [[13.333333333333332 26.666666666666664 40.0; 53.33333333333333 66.66666666666667 80.0], [9.0 18.0 27.0; 36.0 45.0 54.0], [11.5 23.0 34.5; 46.0 57.5 69.0], [13.5 27.0 40.5; 54.0 67.5 81.0], [10.0 20.0 30.0; 40.0 49.99999999999999 60.0], [15.0 30.0 45.0; 60.0 75.0 90.0]]
         @test isapprox(DV[ind],D_true, atol=eps_level)
@@ -2969,12 +3006,12 @@ end
     end
 
     @testset "Quadrilaterals" begin
-        F, V = quadsphere(2, 1.0)
+        F, V = subquadsphere(2, 1.0)
         VC = simplexcenter(F, V)
         ind = round.(Int,range(1,length(VC),5))
         @test VC isa typeof(V)
         @test length(VC) == length(F)
-        VC_true = Point{3, Float64}[[-0.4802860138667546, -0.4802860138667546, -0.6949720954766154], [-0.532669638325336, -0.16747661189958585, -0.7899092719339054], [0.532669638325336, -0.7899092719339054, -0.16747661189958585], [0.18742110835893674, -0.9256306250953279, -0.18742110835893674], [0.16747661189958585, -0.7899092719339054, -0.532669638325336]]
+        VC_true = Point{3, Float64}[[-0.48624303129694313, -0.48624303129694313, -0.6913184394948764], [-0.5330679123349682, -0.1754002930303379, -0.7870889972738774], [0.5330679123349682, -0.7870889972738774, -0.1754002930303379], [0.18978604606913252, -0.9236437317570111, -0.18978604606913252], [0.1754002930303379, -0.7870889972738774, -0.5330679123349682]]
         @test isapprox(VC[ind], VC_true, atol=eps_level)
     end
 end
@@ -4245,7 +4282,7 @@ end
 
         # Quadrangulated sphere, distance should approximate π 
         r = 1.0
-        F,V = quadsphere(4,r)
+        F,V = subquadsphere(4,r)
         z = [v[3] for v in V]
         indStart =[findmin(z)[2]]
         d,dd,l = distmarch(F,V,indStart)
@@ -4347,7 +4384,7 @@ end
     @testset "Quadrangulated sphere" begin
         r = 10
         k_true = 1.0/r
-        F,V = quadsphere(4,r) 
+        F,V = subquadsphere(4,r) 
         K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V)
         @test isapprox(mean(K1),k_true,atol=eps_level)
         @test isapprox(mean(K2),k_true,atol=eps_level)
@@ -7343,6 +7380,47 @@ end
     end
 end
     
+@testset "hexsphere" verbose = true begin                       
+    eps_level = 1e-6
+    nSmooth = 5
+    r = 2.0
+    f = 0.75
+    pointSpacing = 0.2
+    E,V = hexsphere(r,pointSpacing; f=f, nSmooth=nSmooth)   
+    Fb = boundaryfaces(E)
+    indBoundary = elements2indices(Fb)
+    @test isa(E,Vector{Hex8{Int}}) 
+    @test isa(V,Vector{Point{3,Float64}}) 
+    @test isapprox(norm.(V[indBoundary]),fill(r,length(indBoundary)),atol=eps_level)
+end
+
+@testset "hexspherehollow" verbose = true begin                       
+    eps_level = 1e-6
+    rOut = 2.0
+    rIn = 1.0
+    pointSpacing = 0.2
+
+    # Test error for when the inner radius is too large
+    @test_throws Exception hexspherehollow(rOut,rOut,pointSpacing)   
+    @test_throws Exception hexspherehollow(rOut,2.0*rOut,pointSpacing)   
+
+    # Test default behaviour 
+    E,V = hexspherehollow(rOut,rIn,pointSpacing)       
+    Fb = boundaryfaces(E)
+    indBoundary = elements2indices(Fb)
+    @test isa(E,Vector{Hex8{Int}}) 
+    @test isa(V,Vector{Point{3,Float64}}) 
+    rF = norm.(V[indBoundary])    
+    @test isapprox(minimum(rF),rIn,atol=eps_level)
+    @test isapprox(maximum(rF),rOut,atol=eps_level)
+
+    # Tests for specified number of steps
+    numSteps = 5
+    E,V = hexspherehollow(rOut,rIn,pointSpacing; numSteps = numSteps)       
+    Fb = boundaryfaces(E)
+    @test length(E) == (numSteps-1)*length(Fb)/2
+end
+
 if get(ENV, "CI", "false") != "true"
     @testset "Demos" begin
         demo_path = joinpath(comododir(), "examples")
@@ -7355,8 +7433,11 @@ if get(ENV, "CI", "false") != "true"
         end
 
         foreach(demos) do demo
-            println("Running demo: $demo")
+            println(" ---------------------------")
+            println(" Running demo: $demo ")
+            println(" ---------------------------")
             rundemo(demo_path, demo)
+            sleep(1)
         end
     end
 else

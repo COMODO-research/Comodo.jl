@@ -3,7 +3,6 @@ using Comodo.GLMakie
 using Comodo.GeometryBasics
 
 function makeMesh(τ = 1.0)
-
     nc = 150 # Number of points on guide curve
     r = 5
     Vc = [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0.0) for t ∈ range(0,2*π,nc)]
@@ -28,7 +27,6 @@ function makeMesh(τ = 1.0)
     # F = invert_faces(F)   
     # C = ceil.(collect(1:length(V))./(length(V1)))
     K1,K2,U1,U2,H,G = mesh_curvature_polynomial(F,V; growsteps=2)
-
     return F,V,G
 end
 

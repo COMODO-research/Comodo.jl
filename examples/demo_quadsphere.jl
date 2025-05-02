@@ -1,34 +1,44 @@
 using Comodo
 using Comodo.GLMakie
 using Comodo.GeometryBasics
+using Comodo.LinearAlgebra
+using Comodo.Statistics
 
-r = 2.0 # Radius
+#=
+This demo shows the use of `quadsphere` to generate a quadrilateral surface mesh
+for a 3D sphere domain. 
+=#
 
-n1 = 0 # Number of refinement steps from cube
-Fn1,Vn1 = quadsphere(n1,1)
+r = 1.0 # Radius
 
-n2 = 1 # Number of refinement steps from cube
-Fn2,Vn2 = quadsphere(n2,r)
-
-n3 = 2 # Number of refinement steps from cube
-Fn3,Vn3 = quadsphere(n3,r)
-
-n4 = 3 # Number of refinement steps from cube
-Fn4,Vn4 = quadsphere(n4,r)
+pointSpacing = 0.5
+F,V,C = quadsphere(r,pointSpacing)
 
 ## Visualization
+strokewidth = 2
+cmap = cgrad(:Spectral,6, categorical = true)
+Fs,Vs = separate_vertices(F,V)
+Cs = simplex2vertexdata(Fs,C)
+
 fig = Figure(size=(800,800))
 
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=$n1")
-poly!(ax1,GeometryBasics.Mesh(Vn1,Fn1), strokewidth=3,color=:white,shading=FastShading,transparency=false)
+ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "quadrangulated sphere, point spacing = $pointSpacing")
+hp1 = poly!(ax1,GeometryBasics.Mesh(Vs,Fs), strokewidth=strokewidth,color=Cs,
+shading=FastShading,transparency=false, colorrange = (1,6),colormap=cmap)
+Colorbar(fig[1, 2], hp1)
 
-ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=$n2")
-poly!(ax2,GeometryBasics.Mesh(Vn2,Fn2), strokewidth=3,color=:white,shading=FastShading,transparency=false)
+stepRange = (2.0*π*r)/4.0 ./ collect(1:1:30)
+hSlider = Slider(fig[2, 1], range = stepRange, startvalue = pointSpacing,linewidth=30)
 
-ax3 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=$n3")
-poly!(ax3,GeometryBasics.Mesh(Vn3,Fn3), strokewidth=3,color=:white,shading=FastShading,transparency=false)
+on(hSlider.value) do pointSpacing
+    F,V,C = quadsphere(r,pointSpacing)
+    Fs,Vs = separate_vertices(F,V)
+    Cs = simplex2vertexdata(Fs,C)
 
-ax4 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=$n4")
-poly!(ax4,GeometryBasics.Mesh(Vn4,Fn4), strokewidth=3,color=:white,shading=FastShading,transparency=false)
+    hp1[1] = GeometryBasics.Mesh(Vs,Fs)
+    hp1.color = Cs
+    ax1.title = "quadrangulated sphere, point spacing = $pointSpacing"
+end
+slidercontrol(hSlider,ax1)
 
 fig

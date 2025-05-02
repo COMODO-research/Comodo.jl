@@ -20,7 +20,7 @@ for testCase = 1:2
         F = tofaces(F)
         F,V,_,_ = mergevertices(F,V)
     elseif testCase == 2 # Quad mesh sphere
-        F,V = quadsphere(4,100)
+        F,V = subquadsphere(4,100)
     end
 
     V0 = deepcopy(V)
@@ -73,7 +73,7 @@ for testCase = 1:2
     Colorbar(fig[:, 3],hp3,label = "Distance")
 
     stepRange = 0:1:nMax
-    hSlider = Slider(fig[3, :], range = stepRange, startvalue = 0,linewidth=30)
+    hSlider = Slider(fig[3, :], range = stepRange, startvalue = nMax,linewidth=30)
 
     slidercontrol(hSlider,fig)
 
@@ -92,9 +92,6 @@ for testCase = 1:2
         hp4.color = Ds_HC
         hp4[1] = GeometryBasics.Mesh(Vs_HC,F)
     end
-
-    set_close_to!(hSlider,0)
-
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")
 end

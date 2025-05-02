@@ -5,16 +5,16 @@ using Comodo.Statistics
 using Comodo.LinearAlgebra
 
 #=
-This demo shows the use of `hexsphere` to generate a hexahedral mesh for a 3D 
-sphere domain. 
+This demo shows the use of `hexspherehollow` to generate a hexahedral mesh for a 
+hollow 3D sphere domain. 
 =#
 
-nSmooth = 50
-r = 5.0
-f = 0.75
+rOut = 5.0
+rIn = 3.0
 pointSpacing = 0.5
-E,V = hexsphere(r,pointSpacing; f=f, nSmooth=nSmooth)    
+E,V = hexspherehollow(rOut,rIn,pointSpacing)    
 Fn = element2faces(E)
+
 
 # Visualisation
 cmap = Makie.Categorical(:Spectral) 

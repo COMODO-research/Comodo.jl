@@ -50,12 +50,12 @@ for testCase = 1:9
         end
     elseif testCase==5
         r = 1.0
-        F,V = quadsphere(2,r)
+        F,V = subquadsphere(2,r)
         for i = 0:1:2
             for j = 0:1:2
                 for k = 0:1:2
                     if i+j+k>0
-                        F2,V2 = quadsphere(rand(0:2,1)[1],r)
+                        F2,V2 = subquadsphere(rand(0:2,1)[1],r)
                         F2 = map(f-> f.+length(V),F2)
                         V2 = map(v-> Point{3, Float64}(i*3*r+v[1],j*3*r+v[2],k*3*r+v[3]),V2)
                         append!(F,F2)
