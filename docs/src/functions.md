@@ -168,7 +168,7 @@ Comodo.subquad
 
 ## `_pushtoradius`
 ```@docs
-Comodo.pushtoradius_
+Comodo._pushtoradius
 ```
 
 ## `_pushtoradius!`
