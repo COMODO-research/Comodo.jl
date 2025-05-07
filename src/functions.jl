@@ -7071,14 +7071,21 @@ surface. The default behaviour, when the optional argument `w=0.5`, returns a
 point mid-way between the face centre and the opposite side. If `w=0.0` is used 
 the face centre is returned while with `w=1.0` the opposing point is returned. 
 """
-function faceinteriorpoint(F,V, indFace; w=0.5)
-    ray_vector = facenormal(F[indFace],V)
+function faceinteriorpoint(F,V, indFace; w=0.5, triSide = -1)
+    if triSide == -1
+        ray_vector = -facenormal(F[indFace],V ) # Inward direction 
+    elseif triSide == 1
+        ray_vector = facenormal(F[indFace], V) # Inward direction
+    else
+        throw(ArgumentError("triSide should be -1 or 1"))
+    end
+
     ray_origin = mean(V[F[indFace]])
-    P,_ = ray_triangle_intersect(F,V,ray_origin,-ray_vector; rayType = :ray, triSide = -1)    
+    P,_ = ray_triangle_intersect(F, V, ray_origin, ray_vector; rayType = :ray, triSide = triSide)    
     if isempty(P)
         throw(ErrorException("Insufficient ray intersection points (surface may not be closed)"))
     else
-        d = [dot(p.-ray_origin,-ray_vector) for p in P]          
+        d = [dot(p.-ray_origin,ray_vector) for p in P]          
         sortOrder = sortperm(d)
         i2 = findfirst(d[sortOrder].>0.0)        
         if isnothing(i2)

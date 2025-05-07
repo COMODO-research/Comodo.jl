@@ -7418,10 +7418,10 @@ end
 end
 
 @testset "faceinteriorpoint" verbose = true begin                       
-    @testset "sphere" verbose = true begin                       
+    @testset "sphere outward normals" verbose = true begin                       
         n = 5 
         r = 2.0
-        F,V = geosphere(4,r)
+        F,V = geosphere(4,r) # Outward faces 
         eps_level = r./100
 
         indFace = 1
@@ -7432,8 +7432,33 @@ end
         @test isa(P_in,Point{3,Float64})
         @test isapprox(P_in,mean(V),atol=eps_level)
         @test isapprox(norm(P_on1-P_on2),2.0*r,atol=eps_level)
+
+        # Errors
+        @test_throws Exception faceinteriorpoint(F,V, indFace; w=0.0, triSide = 1) # mean of face
+        @test_throws ArgumentError faceinteriorpoint(F,V, indFace; w=0.0, triSide = 0)
     end
 
+    @testset "sphere inward normals, triSide variations" verbose = true begin                       
+        n = 5 
+        r = 2.0
+        F,V = geosphere(4,r)
+        invert_faces!(F) # invert faces so they point in
+        eps_level = r./100
+
+        indFace = 1
+        P_on1 = faceinteriorpoint(F,V, indFace; w=0.0, triSide = 1) # mean of face
+        P_in = faceinteriorpoint(F,V, indFace; w=0.5, triSide = 1) # Mid-point around mean
+        P_on2 = faceinteriorpoint(F,V, indFace; w=1.0, triSide = 1) # other side
+
+        @test isa(P_in,Point{3,Float64})
+        @test isapprox(P_in,mean(V),atol=eps_level)
+        @test isapprox(norm(P_on1-P_on2),2.0*r,atol=eps_level)
+
+        # Errors
+        @test_throws Exception faceinteriorpoint(F,V, indFace; w=0.0, triSide = -1) # mean of face
+        @test_throws ArgumentError faceinteriorpoint(F,V, indFace; w=0.0, triSide = 0)
+    end
+    
     @testset "Errors" verbose = true begin                       
         t = range(0.0,0.5*pi,10)
         Vc = [Point{3,Float64}(cos(t),sin(t),0.0) for t in t]
