@@ -1,6 +1,7 @@
 using Comodo
 using Comodo.GLMakie
 using Comodo.GeometryBasics
+using Comodo.GLMakie.Colors
 
 #=
 This demo shows the use of `boundaryfaceindices` to obtain the indices of boundary faces of a 
@@ -52,9 +53,6 @@ for testCase = 1:3
         Cb = ones(length(Fb))
     end
 
-
-
-
     # Visualisation
     fig = Figure(size=(1600,800))
 
@@ -62,11 +60,11 @@ for testCase = 1:3
     Fbs,Vbs = separate_vertices(Fb,V)
     Cbs = simplex2vertexdata(Fbs,Cb)
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Input faces")
-    hp1 = poly!(ax1,GeometryBasics.Mesh(Vs,Fs), strokewidth=1,shading=FastShading,strokecolor=:black, color=:white, transparency=true, overdraw=false)
+    ax1 = AxisGeom(fig[1, 1]; title = "Input faces")
+    hp1 = meshplot!(ax1, Fs, Vs; color = (:white, 0.25), transparency=true)
 
-    ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary faces")
-    hp1 = poly!(ax2,GeometryBasics.Mesh(Vbs,Fbs), strokewidth=1,shading=FastShading,strokecolor=:black, color=Cbs, transparency=true, overdraw=false)
+    ax2 = AxisGeom(fig[1, 2]; title = "Boundary faces")
+    hp2 = meshplot!(ax2, Fbs, Vbs; color = Cbs, transparency=true)
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")

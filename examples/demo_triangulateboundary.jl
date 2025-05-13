@@ -6,7 +6,7 @@ using Comodo.LinearAlgebra
  
 GLMakie.closeall()
 
-for testCase = 1:6
+for testCase = 1:7
     if testCase == 1
         r = 2.0
         n = 8
@@ -113,6 +113,20 @@ for testCase = 1:6
         anglethreshold = 120.0
 
         showSurf = true # For visualisation purposes
+    elseif testCase == 7
+        n = 76
+        V1 = batman(n; symmetric = true,dir=:cw)
+        ind1 = collect(1:length(V1))
+        N1 = fill(Vec{3,Float64}(0.0,0.0,1.0),length(ind1))
+
+        V2 = V1
+        ind2 = ind1
+        N2 = fill(Vec{3,Float64}(0.0,0.0,-1.0),length(ind1))
+
+        close_loop = true
+        anglethreshold = 180.0
+        
+        showSurf = false # For visualisation purposes
     end
 
     F1n = triangulateboundary(V1, ind1, N1, anglethreshold; deg = true, close_loop=close_loop)

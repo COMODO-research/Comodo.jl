@@ -73,27 +73,30 @@ for testCase = 1:8
     s = pointspacingmean(F,V)
     cMap = Makie.Reverse(:Spectral)
     f = 0.1
+    depth_shift = Float32(-0.01)
+    strokewidth = 0.5
+    linewidth = 1
 
     fig = Figure(size=(800,800))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "1st principal curvature")
-    hp1 = poly!(ax1,M, color=K1, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,K1))).*f.*(-1,1))
-    hpn1 = dirplot(ax1,V,U1; color=:black,linewidth=2,scaleval=s,style=:through)
+    ax1 = AxisGeom(fig[1, 1], xlabel = "X", ylabel = "Y", zlabel = "Z", title = "1st principal curvature")
+    hp1 = meshplot!(ax1,M, color=K1, strokecolor=:white, strokewidth=0.1, colormap=cMap, colorrange = maximum(abs.(filter(!isnan,K1))).*f.*(-1,1))
+    hpn1 = dirplot(ax1,V,U1; color=:black,linewidth=linewidth,scaleval=s,style=:through, depth_shift=depth_shift)
     # scatter!(ax1,V,color=K1,colormap=cMap,colorrange = maximum(abs.(K1)).*0.1.*(-1,1),markersize=10);
     Colorbar(fig[1, 2],hp1)
 
-    ax1 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "2nd principal curvature")
-    hp2 = poly!(ax1,M, color=K2, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,K2))).*f.*(-1,1))
-    hpn2 = dirplot(ax1,V,U2; color=:black,linewidth=2,scaleval=s,style=:through)
+    ax1 = AxisGeom(fig[1, 3], xlabel = "X", ylabel = "Y", zlabel = "Z", title = "2nd principal curvature")
+    hp2 = meshplot!(ax1,M, color=K2, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,K2))).*f.*(-1,1))
+    hpn2 = dirplot(ax1,V,U2; color=:black,linewidth=linewidth,scaleval=s,style=:through, depth_shift=depth_shift)
     # scatter!(ax1,V,color=K2,colormap=cMap,colorrange = maximum(abs.(K2)).*0.1.*(-1,1),markersize=10);
     Colorbar(fig[1, 4],hp2)
 
-    ax1 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Mean curvature")
-    hp3 = poly!(ax1,M, color=H, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,H))).*f.*(-1,1))
+    ax1 = AxisGeom(fig[2, 1], xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Mean curvature")
+    hp3 = meshplot!(ax1,M, color=H, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,H))).*f.*(-1,1))
     Colorbar(fig[2, 2],hp3)
 
-    ax1 = Axis3(fig[2, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Gaussian curvature")
-    hp4 = poly!(ax1,M, color=G, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,G))).*f.*(-1,1))
+    ax1 = AxisGeom(fig[2, 3], xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Gaussian curvature")
+    hp4 = meshplot!(ax1,M, color=G, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,G))).*f.*(-1,1))
     Colorbar(fig[2, 4],hp4)
 
     screen = display(GLMakie.Screen(), fig)

@@ -6,7 +6,7 @@ using FileIO
 
 c1 = RGBf(1.0, 0.30196078431372547, 0.023529411764705882)
 c2 = RGBf(0.2235294117647059, 1.0, 0.0784313725490196)
-c3 = RGBA(0.5803921568627451, 0.3411764705882353, 0.9215686274509803,0.5)
+c3 = RGBA(0.5803921568627451, 0.3411764705882353, 0.9215686274509803,0.9)
 
 #=
 This demo shows the use of the dualclag function. 
@@ -78,33 +78,24 @@ for testCase = 1:7
     Fs,Fq,Vs = dualclad(F,V,s; connectivity=con_type)
 
     # Visualisation
-    strokewidth =1
-
-    Vn = V-0.01*vertexnormal(F,V)
+    strokewidth = 0.5
 
     fig = Figure(size = (1200,1200))
-    ax = Axis3(fig[1, 1], aspect = :data)
-
-    hp1 = mesh!(ax, GeometryBasics.Mesh(Vn,F), color=c3,transparency=true, shading = FastShading)
-    hp2 = poly!(ax, GeometryBasics.Mesh(Vs,Fs), color=c1,transparency=false,strokewidth=strokewidth,strokecolor=:white, shading = FastShading)
-    hp3 = poly!(ax, GeometryBasics.Mesh(Vs,Fq), color=c2,transparency=false,strokewidth=strokewidth,strokecolor=:white, shading = FastShading)
-
-    # hp2 = mesh!(ax, GeometryBasics.Mesh(Vs,Fs), color=:white,transparency=false, shading = FastShading)
-    # hp3 = mesh!(ax, GeometryBasics.Mesh(Vs,Fq), color=:white,transparency=false, shading = FastShading)
+    ax1 = AxisGeom(fig[1, 1], title = "dual clad surface")
+    hp1 = meshplot!(ax1, F, V; color=c3, strokewidth=0, transparency=true)
+    hp2 = meshplot!(ax1, Fs, Vs; color=c1, strokewidth=strokewidth, depth_shift=-0.01f0)
+    hp3 = meshplot!(ax1, Fq, Vs; color=c2, strokewidth=strokewidth, depth_shift=-0.01f0)
 
     stepRange = range(1.0,0.0,50)
-    hSlider = Slider(fig[2, :], range = stepRange, startvalue = 1.0,linewidth=30)
+    hSlider = Slider(fig[2, :], range = stepRange, startvalue = s,linewidth=30)
 
     slidercontrol(hSlider,fig)
 
     on(hSlider.value) do s
-        Fs,Fq,Vs = dualclad(F,V,s; connectivity=con_type)
-        
+        Fs,Fq,Vs = dualclad(F,V,s; connectivity=con_type)        
         hp2[1] = GeometryBasics.Mesh(Vs,Fs)
         hp3[1] = GeometryBasics.Mesh(Vs,Fq)
     end
-
-    set_close_to!(hSlider,0.5)
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")

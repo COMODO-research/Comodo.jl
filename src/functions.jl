@@ -50,6 +50,10 @@ function comododir()
     pkgdir(@__MODULE__)
 end
 
+function AxisGeom(f::GLMakie.GridPosition; xlabel = "X", ylabel = "Y", zlabel = "Z", title = "", kwargs...)
+    ax = Axis3(f; clip=false, viewmode = :free, aspect = :data, xlabel = xlabel, ylabel = ylabel, zlabel = zlabel, title = title, kwargs...)
+    return ax
+end
 
 """
     slidercontrol(hSlider,ax)    
@@ -1610,12 +1614,13 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
         
         # Add base
         indTopFaces = 1:length(F) # Indices of top
+        indBottomFaces = length(F)+1:length(F)+length(Fb)
         for f in Fb 
             push!(F, f .+ length(V)) # Add base faces
             push!(C, 2)
         end
         append!(V,Vb)
-
+        
         # Merge nodes
         V,_,indMap = mergevertices(V; pointSpacing = ((pi/2)*r)/(1+2^n))
         indexmap!(F,indMap)
@@ -1629,9 +1634,9 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
 
             # Change refine behaviour based on face_type            
             if face_type == :tri                        
-                F,V = subtri(F,V,1)            
+                F,V = subtri(F,V,1; method=:Loop, constrain_boundary=true)            
             elseif face_type == :quad        
-                F,V = subquad(F,V,1)                
+                F,V = subquad(F,V,1; method=:Catmull_Clark, constrain_boundary=true)                
             end
             C = repeat(C,outer=4)                        
 
@@ -1640,19 +1645,36 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
                 indPush = Vector{Int}()
                 for f in @view F[indTopFaces]
                     for i in f
-                        if i>nv
+                        # if i>nv
                             push!(indPush,i)
-                        end
+                        # end
                     end
-                end                 
-            else
-                indPush = nv+1:length(V)
-            end
+                end   
 
+                indBottomFaces = [j .+ i*nf  for i = 0:3 for j in indBottomFaces]
+                indBottom = Vector{Int}()
+                for f in @view F[indBottomFaces]
+                    for i in f
+                        # if i>nv
+                            push!(indBottom,i)
+                        # end
+                    end
+                end         
+                # Now push newly introduced points of bottomto the sphere
+                @inbounds for i in indBottom
+                    V[i] = Point{3,Float64}(V[i][1],V[i][2],0.0) # Overwrite points
+                end      
+            else
+                # indPush = nv+1:length(V)
+                indPush = 1:length(V)
+            end
+            
             # Now push newly introduced points to the sphere
             @inbounds for i in indPush
                 V[i] = _pushtoradius(V[i],r) # Overwrite points
             end
+            
+
         end        
     end
 
@@ -2810,9 +2832,8 @@ function grid2surf(V::Union{Vector{Point{ND,TV}},Grid3D{TV}},num_steps; face_typ
 end
 
 
-function dirplot(ax,V::Vector{Point{ND,TV1}},U::Union{Vector{Point{ND,TV2}},Vector{Vec{ND,TV2}}}; color=:black,linewidth=3,scaleval=1.0,style=:from) where ND where TV1 <: Real where TV2 <: Real
-    E = [LineFace{Int}(i,i+length(V)) for i in 1:length(V)]
-
+function dirplot(ax,V::Vector{Point{ND,TV1}},U::Union{Vector{Point{ND,TV2}},Vector{Vec{ND,TV2}}}; color=:black, linewidth=3, scaleval=1.0, style=:from, kwargs...) where ND where TV1 <: Real where TV2 <: Real
+    E = [LineFace{Int}(i,i+length(V)) for i in 1:length(V)]    
     if style==:from        
         P = deepcopy(V)
         append!(P,V.+(scaleval.*U))
@@ -2826,14 +2847,13 @@ function dirplot(ax,V::Vector{Point{ND,TV1}},U::Union{Vector{Point{ND,TV2}},Vect
     else
         throw(ArgumentError("Invalid style specified :$style, use :from, :to, or :through"))
     end    
-    hp = wireframe!(ax,GeometryBasics.Mesh(P,E),linewidth=linewidth, transparency=false, color=color)
+    # kwargs = merge((;kwargs...), (linewidth=linewidth, color=color))
+    hp = wireframe!(ax,GeometryBasics.Mesh(P,E); linewidth=linewidth, color=color, depth_shift=-0.01f0, kwargs...)
     return hp
 end
 
-function dirplot(ax,V::Union{Point{ND,TV1},Vec{ND,TV1}},U::Union{Point{ND,TV2},Vec{ND,TV2}}; color=:black,linewidth=3,scaleval=1.0,style=:from) where ND where TV1 <: Real where TV2 <: Real
-    
+function dirplot(ax,V::Union{Point{ND,TV1},Vec{ND,TV1}},U::Union{Point{ND,TV2},Vec{ND,TV2}}; color=:black,linewidth=3,scaleval=1.0,style=:from, kwargs...) where ND where TV1 <: Real where TV2 <: Real
     E = [LineFace{Int}(1,2)]
-
     if style==:from        
         P = [V]
         push!(P,V.+(scaleval.*U))
@@ -2847,7 +2867,7 @@ function dirplot(ax,V::Union{Point{ND,TV1},Vec{ND,TV1}},U::Union{Point{ND,TV2},V
     else
         throw(ArgumentError("Invalid style specified :$style, use :from, :to, or :through"))
     end    
-    hp = wireframe!(ax,GeometryBasics.Mesh(P,E),linewidth=linewidth, transparency=false, color=color)
+    hp = wireframe!(ax,GeometryBasics.Mesh(P,E); linewidth=linewidth, transparency=false, color=color, depth_shift=Float32(-0.01), kwargs...)
     return hp
 end
 
@@ -7026,6 +7046,7 @@ function triangulateboundary(V, ind, N, anglethreshold; deg = false, close_loop=
                 # New triangle excludes i-th point so removal and updating is needed 
                 deleteat!(indParse,i) # Remove i from the boundary list 
                 deleteat!(A,i) # Also remove the corresponding angle 
+                deleteat!(N,i) # Also remove the corresponding normal
                 n -= 1 # Reduce n by 1 since point i has been removed                
                 i = mod1(i,n) # After deletion i is now for previous "next", update it now in case we have wrapped around 
 
@@ -7156,4 +7177,141 @@ function hexspherehollow(rOut,rIn,pointSpacing; numSteps=nothing)
     end  
     E,V = fromtomesh(F1,V2,V1,numSteps; correspondence=:match)
     return E,V
+end
+
+"""
+    circumcircle(P) 
+    circumcircle(f::TriangleFace{TF}, V::Vector{Point{3,TV}}) where TF<:Integer where TV<:Real      
+    circumcircle(F::Vector{TriangleFace{TF}}, V::Vector{Point{3,TV}}) where TF<:Integer where TV<:Real
+  
+Returns circumcircle parameters
+
+# Description
+This function returns the radii and centres for circumcircles for the triangles 
+defined by the input. 
+
+Syntax: circumcircle(P) 
+`P`is a point vector containing a triplet of points for a single triangle.  
+
+Syntax: circumcircle(f, V)       
+`f`is a single TraingleFace and `V` a point vector defining the triangle 
+vertices.  
+
+Syntax: circumcircle(F, V)  
+`F`is a vector TraingleFace entries and `V` a point vector defining the triangle 
+set vertices. 
+"""
+function circumcircle(P)    
+    a = P[1] - P[3]
+    b = P[2] - P[3]
+    c = cross(a, b)
+    na = norm(a)
+    nb = norm(b)
+    nc = norm(c)
+    r = 0.5*(na * nb * norm(a-b)) / nc
+    p = P[3] + 0.5*cross(b * na^2 - a * nb^2, c) / nc^2 
+    return r,p
+end
+
+function circumcircle(f::TriangleFace{TF}, V::Vector{Point{3,TV}}) where TF<:Integer where TV<:Real      
+    return circumcircle(V[f])
+end
+
+function circumcircle(F::Vector{TriangleFace{TF}}, V::Vector{Point{3,TV}}) where TF<:Integer where TV<:Real
+    R = Vector{TV}(undef,length(F))
+    P = Vector{Point{3,TV}}(undef,length(F))
+    for (i,f) in enumerate(F)
+        R[i], P[i] = circumcircle(f,V)        
+    end
+    return R, P 
+end
+
+"""
+    incircle(P) 
+    incircle(f::TriangleFace{TF}, V::Vector{Point{3,TV}}) where TF<:Integer where TV<:Real      
+    incircle(F::Vector{TriangleFace{TF}}, V::Vector{Point{3,TV}}) where TF<:Integer where TV<:Real
+  
+Returns incircle parameters
+
+# Description
+This function returns the radii and centres for incircles for the triangles 
+defined by the input. 
+
+Syntax: incircle(P) 
+`P`is a point vector containing a triplet of points for a single triangle.  
+
+Syntax: incircle(f, V)       
+`f`is a single TraingleFace and `V` a point vector defining the triangle 
+vertices.  
+
+Syntax: incircle(F, V)  
+`F`is a vector TraingleFace entries and `V` a point vector defining the triangle 
+set vertices. 
+"""
+function incircle(P)    
+    a = norm(P[2] - P[3])
+    b = norm(P[1] - P[3])
+    c = norm(P[1] - P[2])
+    n = a + b + c 
+    p = (a*P[1] + b*P[2] + c*P[3])/n
+    s = n/2.0
+    r = sqrt( (s-a)*(s-b)*(s-c)/s )
+    return r,p
+end
+
+function incircle(f::TriangleFace{TF}, V::Vector{Point{3,TV}}) where TF<:Integer where TV<:Real      
+    return incircle(V[f])
+end
+
+function incircle(F::Vector{TriangleFace{TF}}, V::Vector{Point{3,TV}}) where TF<:Integer where TV<:Real
+    R = Vector{TV}(undef,length(F))
+    P = Vector{Point{3,TV}}(undef,length(F))
+    for (i,f) in enumerate(F)
+        R[i], P[i] = incircle(f,V)        
+    end
+    return R, P 
+end
+
+"""
+    meshplot!(ax,F::Vector{NgonFace{N,Int}},V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=FastShading, strokecolor=:black, kwargs...) where N where NV where TV<:Real
+    meshplot!(ax,M::GeometryBasics.Mesh; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=FastShading, strokecolor=:black, kwargs...)
+
+Visualises a surface mesh 
+
+# Description
+This function visualises the mesh defined by either the faces `F` and vertices 
+`V` or the GeometryBasics.Mesh `M`. The function uses Makie.poly! "under the 
+hood" but features defaults that are common for mesh visualisation and geometry
+processing. Optional inputs include the full set for `poly`. 
+"""
+function meshplot!(ax,F::Vector{NgonFace{N,Int}},V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=FastShading, strokecolor=:black, kwargs...) where N where NV where TV<:Real
+    if N == 2 # Edges, use wireframe
+        throw(ArgumentError("Edge mesh detected. Use edgeplot! since meshplot! is for face based meshes."))
+    else
+        return poly!(ax, GeometryBasics.Mesh(V, F); color=color, shading = shading, stroke_depth_shift=stroke_depth_shift, strokewidth=strokewidth, strokecolor=strokecolor, kwargs...)
+    end
+end
+
+function meshplot!(ax,M::GeometryBasics.Mesh; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=FastShading, strokecolor=:black, kwargs...)
+    return poly!(ax, M; color=color, shading = shading, stroke_depth_shift=stroke_depth_shift, strokewidth=strokewidth, strokecolor=strokecolor, kwargs...)
+end
+
+"""
+    edgeplot!(ax,E::Vector{LineFace{Int}},V::Vector{Point{N,TV}}; depth_shift=-0.015f0, color=:black, linewidth=0.5f0, kwargs...) where N where TV<:Real
+    edgeplot!(ax,M::GeometryBasics.Mesh; depth_shift=-0.015f0, color=:black, linewidth=1.0f0, kwargs...)
+
+Visualises edges 
+
+# Description
+This function visualises the edges defined by either the edges `E` and vertices 
+`V` or the GeometryBasics.Mesh `M`. The function uses Makie.wireframe! "under 
+the hood" but features defaults that are common for mesh edge visualisation and 
+geometry processing. Optional inputs include the full set for `wireframe`. 
+"""
+function edgeplot!(ax,E::Vector{LineFace{Int}},V::Vector{Point{N,TV}}; depth_shift=-0.015f0, color=:black, linewidth=0.5f0, kwargs...) where N where TV<:Real
+    return wireframe!(ax, GeometryBasics.Mesh(V, E); color=color, depth_shift=depth_shift, linewidth=linewidth, kwargs...)
+end
+
+function edgeplot!(ax,M::GeometryBasics.Mesh; depth_shift=-0.015f0, color=:black, linewidth=1.0f0, kwargs...)
+    return wireframe!(ax, M; color=color, depth_shift=depth_shift, linewidth=linewidth, kwargs...)
 end

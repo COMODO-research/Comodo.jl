@@ -11,7 +11,7 @@ import MarchingCubes # For isosurface creation
 using TetGen: tetrahedralize, TetGen
 using BSplineKit: BSplineOrder, BSplineKit
 using DelaunayTriangulation: triangulate, each_solid_triangle, get_points, DelaunayTriangulation
-using GLMakie: Slider, Axis3, Figure, LScene, Keyboard, events, record, set_close_to!, wireframe!, GLMakie
+using GLMakie: Slider, Axis3, Figure, LScene, Keyboard, events, record, set_close_to!, wireframe!, FastShading, poly!, wireframe!, GLMakie
 using LinearAlgebra: cross, norm, dot, eigen, svd, det, LinearAlgebra
 using GeometryBasics: LineFace, Point, NgonFace, 
                       OffsetInteger, AbstractPoint, Vec, 
@@ -44,7 +44,7 @@ export Tet4, Tet10, Tet15, Hex8, Hex20, Penta6, Penta15, Rhombicdodeca14, Trunca
 export ConnectivitySet
 
 # Export functions
-export comododir, slidercontrol, slider2anim, dirplot, normalplot
+export comododir, slidercontrol, slider2anim, dirplot, normalplot, AxisGeom
 export elements2indices, hexbox, mindist, dist, lerp
 export gridpoints, gridpoints_equilateral
 export interp_biharmonic_spline, interp_biharmonic, nbezier
@@ -74,6 +74,7 @@ export joingeom, quadbox, tribox, tetbox, pad3, getisosurface
 export randangle, stepfunc, perlin_noise, removepoints, inpolygon
 export elementEdges, tet4_tet10, penta6_penta15
 export findindexin, hexagonline, hexagongrid, hexagonmesh, fromtomesh, fromtomesh!
-export vectorpair_angle, triangulateboundary, faceinteriorpoint, hexsphere, hexspherehollow
+export vectorpair_angle, triangulateboundary, faceinteriorpoint, hexsphere, hexspherehollow, circumcircle, incircle
+export meshplot!, edgeplot!
 
 end # module

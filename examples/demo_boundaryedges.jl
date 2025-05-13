@@ -16,11 +16,8 @@ Eb = boundaryedges(F) # or equivalently Eb = boundaryedges(meshedges(F))
 ind = edges2curve(Eb)
 ## Visualization
 fig = Figure(size=(1200,800))
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary curve")
-
-hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
-hp2 = wireframe!(ax1,GeometryBasics.Mesh(V,Eb), linewidth=5,color=:red)
-
+ax1 = AxisGeom(fig[1, 1]; title = "Boundary curve")
+hp1 = meshplot!(ax1, F, V)
+hp2 = edgeplot!(ax1, Eb, V; color=:red, linewidth=4.0f0)
 Legend(fig[1, 2],[hp1,hp2],["Surface","Boundary edges"])
-
 fig
