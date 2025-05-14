@@ -7017,27 +7017,28 @@ function triangulateboundary(V, ind, N, anglethreshold; deg = false, close_loop=
     if n<3 # Less than 3 points so stop and return empty face set 
         return Vector{TriangleFace{Int}}()
     else
-        indParse = deepcopy(ind) # Copy as this function deletes entries        
+        indParse = deepcopy(ind) # Copy as this function deletes entries  
+        N_parse = deepcopy(N) # Copy as this function deletes entries      
         if close_loop == true # Compute all angles        
             A = Vector{Float64}(undef,n)
             for i in eachindex(indParse) # Loop over all points 
                 i_prev = mod1(i-1,n)
                 i_next = mod1(i+1,n)                        
-                A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N[i]; deg=deg) 
+                A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N_parse[i]; deg=deg) 
             end
         else # close_loop == false, compute non-end point angles only 
             A = fill(NaN,n) # Initialise as NaN (stays that way for end points)
             for i in 2:lastindex(ind)-1 # Loop over non-end points
                 i_prev = i-1
                 i_next = i+1                
-                A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N[i]; deg=deg) 
+                A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N_parse[i]; deg=deg) 
             end
         end    
 
         F = Vector{TriangleFace{Int}}()
         while true # keep adding triangles until angles are no longer too small       
-            aMax,i = findmin(a -> !isnan(a) ? a : +Inf, A) # Find non-nan minimum
-            if aMax<anglethreshold # If the current angle is below the threshold                               
+            aMin,i = findmin(a -> !isnan(a) ? a : +Inf, A) # Find non-nan minimum
+            if aMin<anglethreshold # If the current angle is below the threshold                               
                 # Build and add triangle based on previous and next point
                 i_prev = mod1(i-1,n)
                 i_next = mod1(i+1,n)
@@ -7046,7 +7047,8 @@ function triangulateboundary(V, ind, N, anglethreshold; deg = false, close_loop=
                 # New triangle excludes i-th point so removal and updating is needed 
                 deleteat!(indParse,i) # Remove i from the boundary list 
                 deleteat!(A,i) # Also remove the corresponding angle 
-                deleteat!(N,i) # Also remove the corresponding normal
+                deleteat!(N_parse,i) # Also remove the corresponding normal
+
                 n -= 1 # Reduce n by 1 since point i has been removed                
                 i = mod1(i,n) # After deletion i is now for previous "next", update it now in case we have wrapped around 
 
@@ -7058,7 +7060,7 @@ function triangulateboundary(V, ind, N, anglethreshold; deg = false, close_loop=
                         # Closed loop or not a closed loop but point i is not an end point                    
                         i_prev = mod1(i-1,n)
                         i_next = mod1(i+1,n)                    
-                        A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N[i]; deg=deg) 
+                        A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N_parse[i]; deg=deg) 
                         # else case is when the loop is not closed and we are at an end point, A[i] is now left as NaN
                     end
 
@@ -7068,7 +7070,7 @@ function triangulateboundary(V, ind, N, anglethreshold; deg = false, close_loop=
                         # Closed loop or not a closed loop but point i is not an end point         
                         i_prev = mod1(i-1,n)
                         i_next = mod1(i+1,n)                    
-                        A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N[i]; deg=deg) 
+                        A[i] = vectorpair_angle(V[indParse[i_prev]]-V[indParse[i]],V[indParse[i_next]]-V[indParse[i]],N_parse[i]; deg=deg) 
                         # else case is when the loop is not closed and we are at an end point, A[i] is now left as NaN
                     end
                 end            
