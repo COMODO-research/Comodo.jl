@@ -60,7 +60,7 @@ for testCase = 1:5
     F1,V1 = getisosurface(A; x = xr, y = yr, z = zr, level = level, cap = cap, padValue=1e8)      
 
     # Visualization
-    strokewidth = 1
+    strokewidth = 0.5
     fig = Figure(size=(800,800))
 
     stepRange1 = range(minimum(A),maximum(A),30)
@@ -70,8 +70,8 @@ for testCase = 1:5
         "level = " * string(level) 
     end
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title=titleString, limits=(minimum(xr),maximum(xr),minimum(yr),maximum(yr),minimum(zr),maximum(zr)))
-    hp1 = poly!(ax1,GeometryBasics.Mesh(V1,F1), strokewidth=strokewidth, strokecolor=:black, color=:white,shading=FastShading,transparency=false)
+    ax1 = AxisGeom(fig[1, 1]; title=titleString, limits=(minimum(xr),maximum(xr),minimum(yr),maximum(yr),minimum(zr),maximum(zr)))
+    hp1 = meshplot!(ax1,GeometryBasics.Mesh(V1,F1), strokewidth=strokewidth, strokecolor=:black, stroke_depth_shift=-0.001f0)
     # normalplot(ax1,F1,V1)
 
 
