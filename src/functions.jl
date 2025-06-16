@@ -7318,13 +7318,6 @@ function edgeplot!(ax,M::GeometryBasics.Mesh; depth_shift=-0.015f0, color=:black
     return wireframe!(ax, M; color=color, depth_shift=depth_shift, linewidth=linewidth, kwargs...)
 end
 
-using Comodo
-using Comodo.GLMakie
-using Comodo.GeometryBasics
-using Comodo.Rotations
-using Comodo.LinearAlgebra
-using Comodo.Rotations
-
 
 """
     sharpfixteeth(F,B; method=:add)
@@ -7341,22 +7334,20 @@ that need to be kept. The output is B_fixed, which again is a Boolean vector tha
 - `method :: either add or remove 
 """
 function sharpfixteeth(F::Union{Vector{NgonFace{NF,TF}},Vector{<: AbstractElement{NE, TE}}},B::Vector{Bool}; method=:add) where NF where TF<:Integer where NE where TE<:Integer
-
-    if method == :add
-        # Add interior teet 
-        indNodesOut = unique(reduce(vcat,F[B]))
+    if method == :add # Add interior teeth 
+        indNodes = elements2indices(F[B])
         B_fixed = Vector{Bool}(undef,length(B))
         for i in eachindex(B)
-            B_fixed[i] = all([in(i,indNodesOut) for i in F[i]])
+            B_fixed[i] = all([in(i,indNodes) for i in F[i]])
         end
     elseif method == :remove
-        indNodesOut = unique(reduce(vcat,F[.!B]))
+        indNodes = elements2indices(F[.!B])
         B_fixed = Vector{Bool}(undef,length(B))
         for i in eachindex(B)
-            B_fixed[i] = !all([in(i,indNodesOut) for i in F[i]])
+            B_fixed[i] = !all([in(i,indNodes) for i in F[i]])
         end
-    else(throw(ArgumentError("Method should be :either add or :remove ")))
-    
+    else
+        throw(ArgumentError("Method should be :either add or :remove "))
     end
     return B_fixed
 end

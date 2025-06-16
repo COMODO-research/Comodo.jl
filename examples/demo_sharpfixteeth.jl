@@ -1,3 +1,11 @@
+using Comodo
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+using Comodo.Rotations
+using Comodo.LinearAlgebra
+using Comodo.Rotations
+
+
 GLMakie.closeall()
 for testCase = 1:2
     if testCase == 1 

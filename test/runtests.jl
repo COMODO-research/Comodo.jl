@@ -7607,6 +7607,26 @@ end
     @test typeof(ax1) == Axis3
 end
 
+@testset "sharpfixteeth" verbose = true begin                       
+    eps_level = 1e-6
+    n=6
+    V = circlepoints(1.0,n; dir=:acw)
+    push!(V,eltype(V)(0.0,0.0,0.0))
+    F = [TriangleFace(i,mod1(i+1,n),n+1) for i in 1:n]
+    B = fill(true,n)
+    B[1] = false
+    B_fix1 = sharpfixteeth(F,B; method=:add)
+    @test all(B_fix1)
+
+    plateDim1 = [10.0,10.0]
+    pointSpacing1 = 4.0
+    F,V = triplate(plateDim1,pointSpacing1; orientation=:up)
+    B = fill(true,length(F))
+    B[[8,16,24]] .= false
+    B_fix2 = sharpfixteeth(F,B; method=:remove)
+    @test B_fix2 == Bool[1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0]
+end
+
 if get(ENV, "CI", "false") != "true"
     @testset "Demos" begin
         demo_path = joinpath(comododir(), "examples")
@@ -7629,4 +7649,3 @@ if get(ENV, "CI", "false") != "true"
 else
     @info "Skipping demo tests on CI"
 end
-    
