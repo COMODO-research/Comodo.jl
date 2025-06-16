@@ -75,6 +75,6 @@ export randangle, stepfunc, perlin_noise, removepoints, inpolygon
 export elementEdges, tet4_tet10, penta6_penta15
 export findindexin, hexagonline, hexagongrid, hexagonmesh, fromtomesh, fromtomesh!
 export vectorpair_angle, triangulateboundary, faceinteriorpoint, hexsphere, hexspherehollow, circumcircle, incircle
-export meshplot!, edgeplot!
+export meshplot!, edgeplot!,sharpfixteeth
 
 end # module
