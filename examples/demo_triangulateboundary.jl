@@ -5,7 +5,6 @@ using Comodo.Rotations
 using Comodo.LinearAlgebra
  
 GLMakie.closeall()
-
 for testCase = 1:7
     if testCase == 1
         r = 2.0
@@ -127,8 +126,40 @@ for testCase = 1:7
         anglethreshold = 180.0
         
         showSurf = false # For visualisation purposes
+    elseif testCase == 8
+        w = 1.0
+        s = w/2.0
+        V11 = [Point{3,Float64}(-s, s, 0.0), 
+             Point{3,Float64}( s, s, 0.0),
+             Point{3,Float64}( s, -s, 0.0),
+             Point{3,Float64}( -s, -s, 0.0)]
+        V11 = subcurve(V11, 3; close_loop=true)
+        w = 0.5
+        s = w/2.0
+        V12 = [Point{3,Float64}(-s, s, 0.0), 
+              Point{3,Float64}( s, s, 0.0),
+              Point{3,Float64}( s, -s, 0.0),
+              Point{3,Float64}( -s, -s, 0.0)]
+        V12 = subcurve(V12, 4; close_loop=true)
+
+        V1 = [ circshift(V11,0); circshift(reverse(V12),1)]
+
+        ind1 = [collect(1:length(V11)); 1; length(V11).+collect(1:length(V12)); length(V11)+1]
+        println(ind1)
+        N1 = fill(Vec{3,Float64}(0.0,0.0,1.0),length(ind1))
+     
+        V2 = V1
+        ind2 = ind1
+        N2 = fill(Vec{3,Float64}(0.0,0.0,-1.0),length(ind1))
+
+        close_loop = false
+        anglethreshold = 180.0
+
+        showSurf = false # For visualisation purposes
     end
 
+    # V1[18] -= Point{3,Float64}(-0.05,0.0,0.0)
+    
     F1n = triangulateboundary(V1, ind1, N1, anglethreshold; deg = true, close_loop=close_loop)
     F2n = triangulateboundary(V2, ind2, N2, anglethreshold; deg = true, close_loop=close_loop)
 
@@ -138,17 +169,18 @@ for testCase = 1:7
 
     fig = Figure(size=(1200,800))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Triangulated boundary 1")
+    ax1 = AxisGeom(fig[1, 1], title = "Triangulated boundary 1")
     hp1 = lines!(ax1,V1[ind1], linewidth=linewidth, color = :blue)
-    hp2 = poly!(ax1,GeometryBasics.Mesh(V1,F1n), strokewidth = strokewidth, color = :red, shading = FastShading)
+    # scatter!(ax1,V1,markersize=15, color=:yellow, depth_shift=-0.01f0)
+    hp2 = meshplot!(ax1,GeometryBasics.Mesh(V1,F1n), strokewidth = strokewidth, color = :red)
     if showSurf
-        hp3 = poly!(ax1,GeometryBasics.Mesh(V1,F1), strokewidth = strokewidth, color = :white, shading = FastShading)
+        hp3 = meshplot!(ax1,GeometryBasics.Mesh(V1,F1), strokewidth = strokewidth, color = :white)
     end
-    ax1 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Triangulated boundary 2")
+    ax1 = AxisGeom(fig[1, 2], title = "Triangulated boundary 2")
     hp1 = lines!(ax1,V2[ind2], linewidth=linewidth, color = :blue)
-    hp2 = poly!(ax1,GeometryBasics.Mesh(V2,F2n), strokewidth = strokewidth, color = :red, shading = FastShading)
+    hp2 = meshplot!(ax1,GeometryBasics.Mesh(V2,F2n), strokewidth = strokewidth, color = :red)
     if showSurf
-        hp3 = poly!(ax1,GeometryBasics.Mesh(V2,F2), strokewidth = strokewidth, color = :white, shading = FastShading)
+        hp3 = meshplot!(ax1,GeometryBasics.Mesh(V2,F2), strokewidth = strokewidth, color = :white)
     end
 
     screen = display(GLMakie.Screen(), fig)

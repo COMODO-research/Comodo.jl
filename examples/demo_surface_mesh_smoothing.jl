@@ -58,17 +58,17 @@ for testCase = 1:2
 
     fig = Figure(size=(1200,1200))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Original")
-    hp1 = poly!(ax1,GeometryBasics.Mesh(V0,F),strokewidth=strokeWidth1,color=:white, shading = FastShading)
+    ax1 = AxisGeom(fig[1, 1], title = "Original")
+    hp1 = meshplot!(ax1,GeometryBasics.Mesh(V0,F),strokewidth=strokeWidth1)
 
-    ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Noisy")
-    hp2 = poly!(ax2,GeometryBasics.Mesh(V,F),strokewidth=strokeWidth1,color=:white, shading = FastShading)
+    ax2 = AxisGeom(fig[1, 2], title = "Noisy")
+    hp2 = meshplot!(ax2,GeometryBasics.Mesh(V,F),strokewidth=strokeWidth1)
 
-    ax3 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z")
-    hp3 = poly!(ax3,GeometryBasics.Mesh(Vs_LAP,F),strokewidth=strokeWidth1,color=Ds_LAP, shading = FastShading,colormap=Makie.Reverse(:Spectral),colorrange=cLim)
+    ax3 = AxisGeom(fig[2, 1])
+    hp3 = meshplot!(ax3,GeometryBasics.Mesh(Vs_LAP,F),strokewidth=strokeWidth1,color=Ds_LAP,colormap=Makie.Reverse(:Spectral),colorrange=cLim)
 
-    ax4 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z")
-    hp4 = poly!(ax4,GeometryBasics.Mesh(Vs_HC,F),strokewidth=strokeWidth1,color=Ds, shading = FastShading,colormap=Makie.Reverse(:Spectral),colorrange=cLim)
+    ax4 = AxisGeom(fig[2, 2])
+    hp4 = meshplot!(ax4,GeometryBasics.Mesh(Vs_HC,F),strokewidth=strokeWidth1,color=Ds, colormap=Makie.Reverse(:Spectral),colorrange=cLim)
 
     Colorbar(fig[:, 3],hp3,label = "Distance")
 

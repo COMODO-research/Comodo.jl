@@ -3555,7 +3555,7 @@ end
     eps_level = 1e-4
     # Regular cube
     F,V = cube(1.0)
-
+    
     # Build deformation gradient tensor to induce shear with known angles
     fDef = zeros(3,3)
     for i=1:3
@@ -3565,7 +3565,7 @@ end
     fDef[1,2] = tan(a) 
 
     # Sheared cube coordinates
-    V2 = topoints([fDef*v for v in V]) 
+    V2 = [eltype(V)(fDef*v) for v in V] 
 
     A = edgeangles(F,V) # Angles for regular cube
     A2 = edgeangles(F,V2) # Angles for sheared cube
@@ -3576,6 +3576,12 @@ end
     A2 = edgeangles(F,V2; deg = true)
     @test all([all(a.==90) for a in A]) # All right angles in undeformed cube
     @test isapprox(sort(unique(reduce(vcat,A2))),[45.0, 90.0, 135.0],atol=eps_level)
+    
+    # Single face test
+    a = edgeangles(F[1],V; deg = true) # Angles for regular cube
+    a2 = edgeangles(F[1],V2; deg = true)
+    @test all([all(a.==90) for a in a]) # All right angles in undeformed cube
+    @test isapprox(sort(unique(vcat,a2)),[45.0, 135.0],atol=eps_level) 
 end
 
 
@@ -7633,6 +7639,77 @@ end
     @test_throws Exception  mesh_bool_fix_isolated!(F,B; method = :wrong)
 end
 
+@testset "_getFaceLoop" verbose = true begin   
+    # Create sliced pizza mesh (triangulated hexagon with central node)
+    n = 6
+    V = circlepoints(1.0,n; dir=:acw)
+    push!(V,eltype(V)(0.0,0.0,0.0))
+    F = [TriangleFace(i,mod1(i+1,n),n+1) for i in 1:n]
+    faceSet = [3,5,2,1,4,6]
+    i = n+1
+    faceSetOrdered = Comodo._getFaceLoop(i, faceSet, F)
+    @test faceSetOrdered == [3,4,5,6,1,2]
+end
+
+@testset "meshdual" verbose = true begin   
+
+    @testset "single face n-gon" verbose = true begin                       
+        for n = 3:6
+            V = circlepoints(1.0,n; dir=:acw)
+            F = [NgonFace{n,Int}(1:n)]
+            F_dual, V_dual = meshdual(F,V)
+            @test length(F_dual) == n # Same as vertices
+            @test all(length.(F_dual) .== 4) # All quads
+        end
+    end
+
+    @testset "n-sliced pizza" verbose = true begin                       
+        for n = 4:7
+            V = circlepoints(1.0,n; dir=:acw)
+            push!(V,eltype(V)(0.0,0.0,0.0))
+            F = [TriangleFace(i,mod1(i+1,n),n+1) for i in 1:n]
+
+            F_dual, V_dual = meshdual(F,V)
+            @test length(F_dual) == n+1
+            @test length.(F_dual) == [fill(5,n);n] 
+        end
+    end
+
+    @testset "cube" verbose = true begin 
+        F,V = cube(√3)           
+        F_dual, V_dual = meshdual(F,V)
+        @test length(F_dual) == 8 # Octahedron
+        @test all(length.(F_dual) .== 3) # All triangles
+    end
+
+    @testset "icosahedron" verbose = true begin 
+        F,V = icosahedron(√3)           
+        F_dual, V_dual = meshdual(F,V)
+        @test length(F_dual) == 12 # dodecahedron
+        @test all(length.(F_dual) .== 5) # All pentagons
+    end
+
+    @testset "dodecahedron" verbose = true begin 
+        F,V = dodecahedron(√3)           
+        F_dual, V_dual = meshdual(F,V)
+        @test length(F_dual) == 20 # icosahedron
+        @test all(length.(F_dual) .== 3) # All triangles
+    end
+
+    @testset "geosphere" verbose = true begin 
+        n = 2
+        F,V = geosphere(n,1.0)          
+        F_dual, V_dual = meshdual(F,V)
+        
+        L = length.(F_dual)
+        @test length(F_dual) == length(V) 
+        @test count(x->x==5,L) == 12
+        @test count(x->x==6,L) == length(V) - 12
+    end
+end
+
+
+# -----------------------------------------------------------------------------
 if get(ENV, "CI", "false") != "true"
     @testset "Demos" begin
         demo_path = joinpath(comododir(), "examples")

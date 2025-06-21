@@ -2895,22 +2895,21 @@ end
 
 function edgeangles(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; deg=false) where N where TF<:Integer where ND where TV<:Real        
     A = Vector{GeometryBasics.Vec{N, Float64}}(undef,length(F))
-    for (j,f) in enumerate(F)
-        a = Vector{Float64}(undef,N)
-        @inbounds for i in 1:N            
-            ip1 = mod1(i+1,N)            
-            ip2 = mod1(i-1,N)
-            n1 = normalizevector(V[f[ip1]]-V[f[i]])
-            n2 = normalizevector(V[f[ip2]]-V[f[i]])
-            if deg 
-                a[i] = acosd(clamp(dot(n1,n2),-1.0,1.0))
-            else
-                a[i] = acos(clamp(dot(n1,n2),-1.0,1.0))
-            end
-        end        
-        A[j] = a        
+    for (j,f) in enumerate(F)     
+        A[j] = edgeangles(f,V; deg=deg)     
     end
     return A
+end
+
+function edgeangles(f::NgonFace{N,TF},V::Vector{Point{ND,TV}}; deg=false) where N where TF<:Integer where ND where TV<:Real        
+    a = Vector{TV}(undef,N)
+    n = facenormal(f,V)
+    @inbounds for i in 1:N            
+        v1 = V[f[mod1(i+1,N)]]-V[f[i]]
+        v2 = V[f[mod1(i-1,N)]]-V[f[i]]        
+        a[i] = vectorpair_angle(v1, v2, n; deg = deg)
+    end        
+    return a
 end
 
 function quad2tri(F::Vector{QuadFace{TF}},V::Vector{Point{ND,TV}}; convert_method = :angle, eps_level=1e-9) where TF<:Integer where ND where TV<:Real
@@ -7038,12 +7037,12 @@ function triangulateboundary(V, ind, N, anglethreshold; deg = false, close_loop=
         F = Vector{TriangleFace{Int}}()
         while true # keep adding triangles until angles are no longer too small       
             aMin,i = findmin(a -> !isnan(a) ? a : +Inf, A) # Find non-nan minimum
-            if aMin<anglethreshold # If the current angle is below the threshold                               
+            if aMin<anglethreshold # If the current angle is below the threshold                                               
                 # Build and add triangle based on previous and next point
                 i_prev = mod1(i-1,n)
                 i_next = mod1(i+1,n)
                 push!(F,TriangleFace{Int}(indParse[i],indParse[i_prev],indParse[i_next]))
-                
+
                 # New triangle excludes i-th point so removal and updating is needed 
                 deleteat!(indParse,i) # Remove i from the boundary list 
                 deleteat!(A,i) # Also remove the corresponding angle 
@@ -7286,7 +7285,7 @@ This function visualises the mesh defined by either the faces `F` and vertices
 hood" but features defaults that are common for mesh visualisation and geometry
 processing. Optional inputs include the full set for `poly`. 
 """
-function meshplot!(ax,F::Vector{NgonFace{N,Int}},V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=FastShading, strokecolor=:black, kwargs...) where N where NV where TV<:Real
+function meshplot!(ax,F::Vector{NgonFace{N,Int}},V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.001f0, color=:white, strokewidth=0.5f0, shading=FastShading, strokecolor=:black, kwargs...) where N where NV where TV<:Real
     if N == 2 # Edges, use wireframe
         throw(ArgumentError("Edge mesh detected. Use edgeplot! since meshplot! is for face based meshes."))
     else
@@ -7316,6 +7315,83 @@ end
 
 function edgeplot!(ax,M::GeometryBasics.Mesh; depth_shift=-0.015f0, color=:black, linewidth=1.0f0, kwargs...)
     return wireframe!(ax, M; color=color, depth_shift=depth_shift, linewidth=linewidth, kwargs...)
+end
+
+function _getFaceLoop(i, faceSet, F)
+    faceSetOrdered = similar(faceSet)
+    n = length(faceSet)
+    faceIndexNow = faceSet[1] # Start with first 
+    faceSetOrdered[1] = faceIndexNow
+    deleteat!(faceSet,1)
+    for stepIndex = 2:1:n # For each next face
+        f = F[faceIndexNow] # Current face           
+        indexNextOnFace = mod1(findfirst(index-> index==i,f)-1,length(f)) # Index of 
+        jPoint = f[indexNextOnFace] # Point index 
+        for (j,faceIndex) in enumerate(faceSet) # For all remaining faces        
+            faceIndexNow = faceIndex              
+            if in(jPoint,F[faceIndexNow])                                         
+                faceSetOrdered[stepIndex] = faceIndexNow # Add current face
+                deleteat!(faceSet,j) # Remove the added face from the list
+                break # Stop looping over faces
+            end
+        end
+    end
+    return faceSetOrdered
+end
+
+function meshdual(F,V)
+    con_V2F = con_vertex_face(F,V)
+    V_dual = simplexcenter(F,V)
+    L_boundary = boundaryedges(F)
+    boundaryNodeIndices = elements2indices(L_boundary)    
+    numFaces = length(F)
+    numBoundaryEdges = length(L_boundary)
+    if !isempty(boundaryNodeIndices)    
+        append!(V_dual,simplexcenter(L_boundary,V)) # Add mid-edge points
+        append!(V_dual,V[boundaryNodeIndices]) # Add boundary points
+    end 
+    F_dual = Vector{NgonFace}(undef,length(V))
+    for i = 1:length(V)
+        faceSet = con_V2F[i]
+        iBoundary = findfirst(ind-> ind==i,boundaryNodeIndices)
+        if isnothing(iBoundary)   
+            faceSetOrdered = _getFaceLoop(i, faceSet, F)        
+        else 
+            if length(faceSet)>1
+                faceIndexFirst = 0 
+                for (iEdge,e) in enumerate(L_boundary)
+                    if e[1] == i
+                        for (j,iFace) in enumerate(faceSet)
+                            if in(e[2],F[iFace])
+                                faceIndexFirst = iFace
+                                if j>1 
+                                    faceSet=[faceSet[j:end];faceSet[1:j-1]]
+                                end
+                                break
+                            end
+                        end
+                        faceSetOrdered = _getFaceLoop(i, faceSet, F)
+                        break
+                    end
+                end
+            else
+                faceSetOrdered = faceSet
+            end
+            for (edgeIndex,e) in enumerate(L_boundary)
+                if e[2] == i
+                    push!(faceSetOrdered, edgeIndex + numFaces)       
+                end 
+            end
+            push!(faceSetOrdered, iBoundary + numFaces + numBoundaryEdges)  
+            for (edgeIndex,e) in enumerate(L_boundary)
+                if e[1] == i
+                    push!(faceSetOrdered, edgeIndex + numFaces)       
+                end 
+            end
+        end
+        F_dual[i] = NgonFace{length(faceSetOrdered),Int}(faceSetOrdered)
+    end
+    return F_dual, V_dual
 end
 
 
