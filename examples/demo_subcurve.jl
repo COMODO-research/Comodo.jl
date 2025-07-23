@@ -8,7 +8,7 @@ This demo shows the use of `lerp` for linear data interpolation.
 
 GLMakie.closeall()
 
-for testCase = 1:2
+for testCase = 1:3
     if testCase == 1    
         t = range(0.0,2*π,10) 
         V = [Point{3,Float64}(ti,cos(ti),0.0) for ti in t] # Data values
@@ -16,6 +16,23 @@ for testCase = 1:2
     elseif testCase == 2    
         V = circlepoints(1.0,4; dir=:acw)
         close_loop = true
+    elseif testCase == 3 
+        V = [Point{3,Float64}(0.0,0.0,0.0),
+         Point{3,Float64}(1/3,0.0,0.0),
+         Point{3,Float64}(2/3,0.0,0.0),
+         Point{3,Float64}(1.0,0.0,0.0),
+         Point{3,Float64}(1.0,1/3,0.0),
+         Point{3,Float64}(2/3,1/3,0.0),
+         Point{3,Float64}(2/3,2/3,0.0),
+         Point{3,Float64}(1.0,2/3,0.0),
+         Point{3,Float64}(1.0,1.0,0.0),
+         Point{3,Float64}(2/3,1.0,0.0),
+         Point{3,Float64}(1/3,1.0,0.0),
+         Point{3,Float64}(0.0,1.0,0.0),
+         Point{3,Float64}(0.0,2/3,0.0),
+         Point{3,Float64}(0.0,1/3,0.0),
+         ]
+        close_loop = true        
     end
 
     n1 = 2

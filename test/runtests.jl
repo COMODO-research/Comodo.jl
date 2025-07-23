@@ -1124,24 +1124,23 @@ end
 
 
 @testset "topoints" verbose = true begin
-
     @testset "Matrix input" begin        
         V = topoints(rand(10,3))
-        @test isa(V,Vector{GeometryBasics.Point3{Float64}})
+        @test isa(V,Vector{Point3{Float64}})
         @test length(V) == 10
     end
 
     @testset "Vector Float64" begin
         Vv = [rand(3) for _ in 1:5]       
         V = topoints(Vv)
-        @test isa(V,Vector{GeometryBasics.Point3{Float64}})
+        @test isa(V,Vector{Point3{Float64}})
         @test length(V) == 5
     end
 
     @testset "Vector Vec3" begin
         Vv = rand(Vec{3,Float64},5)      
         V = topoints(Vv)
-        @test isa(V,Vector{GeometryBasics.Point3{Float64}})
+        @test isa(V,Vector{Point3{Float64}})
         @test length(V) == 5
     end
 
@@ -1149,34 +1148,23 @@ end
         m = 4
         Vv = rand(Vec{m,Float64},5)       
         V = topoints(Vv)
-        @test isa(V,Vector{GeometryBasics.Point{m,Float64}})
+        @test isa(V,Vector{Point{m,Float64}})
         @test length(V) == 5
 
         m = 5
         Vv = rand(Vec{m,Float64},5)      
         V = topoints(Vv)
-        @test isa(V,Vector{GeometryBasics.Point{m,Float64}})
+        @test isa(V,Vector{Point{m,Float64}})
         @test length(V) == 5
     end
-
-    # @testset "Imported mesh points" begin
-    #     # Imported triangular mesh 
-    #     fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
-    #     M = load(fileName_mesh) 
-    #     Vv = coordinates(M)       
-    #     V = topoints(Vv)
-    #     @test isa(V,Vector{GeometryBasics.Point3{Float32}})
-    #     @test length(V) == length(Vv)
-    # end
 
     @testset "points no change" begin
         # Imported triangular mesh 
         Vv = rand(Point{3,Float64},5) 
         V = topoints(Vv)
-        @test isa(V,Vector{GeometryBasics.Point3{Float64}})
+        @test isa(V,Vector{Point3{Float64}})
         @test length(V) == length(Vv)
     end
-
 end
 
 
@@ -3172,10 +3160,10 @@ end
 
         # Providing "nothing" for the number of steps should create point spacing based number of steps
         F,V = loftlinear(V1,V2;num_steps=nothing,close_loop=true,face_type=:quad)
-        @test length(V)/nc == ceil(Int,norm(n)/(0.5*(pointspacingmean(V1)+pointspacingmean(V2))))
+        @test length(V)/nc == 1+ceil(Int,norm(n)/(0.5*(pointspacingmean(V1)+pointspacingmean(V2))))
         
         # Providing "nothing" for the number of steps and having a small depth should result in num_steps defaulting to 2
-        F,V = loftlinear(V1,V2_close;num_steps=nothing,close_loop=true,face_type=:quad)
+        F,V = loftlinear(V1,V2_close; num_steps=nothing, close_loop=true, face_type=:quad)
         @test length(V) == length(V1)*2        
     end
 
@@ -3986,12 +3974,6 @@ end
         r = pointspacingmean(F,V)
         @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_level)
     end
-
-    @testset "Mesh" begin        
-        F,V = cube(sqrt(3))        
-        @test pointspacingmean(F,V)==2.0
-        @test pointspacingmean(GeometryBasics.Mesh(V,F))==2.0
-    end
 end
 
 
@@ -4009,22 +3991,31 @@ end
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
-        @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+        @test isapprox(zMax, d, atol = eps_level) && isapprox(zMin, 0.0, atol = eps_level)
 
         F, V = extrudecurve(Vc; extent=d, face_type=:tri)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
-        @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+        @test isapprox(zMax, d, atol = eps_level) && isapprox(zMin, 0.0, atol = eps_level)
 
         # Check num_steps = 2 handling 
-        dSmall = pointspacingmean(Vc)/2
-        F, V = extrudecurve(Vc; extent = dSmall, face_type=:tri)
+        dSmall = pointspacingmean(Vc; close_loop=true)/2
+        F, V = extrudecurve(Vc; extent = dSmall, face_type=:quad, close_loop=true)
         z = [v[3] for v in V]
         zMax = maximum(z)
         zMin = minimum(z)            
-        @test isapprox(zMax,dSmall,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
+        @test isapprox(zMax, dSmall,atol = eps_level) && isapprox(zMin, 0.0, atol = eps_level)
         @test length(V) == length(Vc)*2
+
+        # Check num_steps = 3 when face_type is :tri
+        dSmall = pointspacingmean(Vc; close_loop=true)/2
+        F, V = extrudecurve(Vc; extent = dSmall, face_type=:tri, close_loop=true)
+        z = [v[3] for v in V]
+        zMax = maximum(z)
+        zMin = minimum(z)            
+        @test isapprox(zMax, dSmall,atol = eps_level) && isapprox(zMin, 0.0, atol = eps_level)
+        @test length(V) == length(Vc)*3
     end
 
     @testset "Direction (s) variations" begin
@@ -4644,33 +4635,32 @@ end
     pointSpacing=0.05
 
     n = 5
-    r = 3.0
-    t = range(0,2π-2π/n,n)
-    V = [GeometryBasics.Point{3, Float64}(r*cos(tt),r*sin(tt),0.0) for tt ∈ t]
+    r = 3.0    
+    V = circlepoints(r,n; dir=:acw)
 
     # Nothing for point spacing
     Vn = evenly_space(V, nothing; close_loop = false, spline_order = 4) 
-    @test isapprox(pointspacingmean(Vn),pointspacingmean(V),atol=eps_level)
+    @test isapprox(pointspacingmean(Vn; close_loop = false), pointspacingmean(V; close_loop = false), atol=eps_level)
 
     # Specified point spacing 
     Vn = evenly_space(V, pointSpacing; close_loop = false, spline_order = 4) 
-    @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
+    @test isapprox(pointspacingmean(Vn; close_loop = false),pointSpacing,atol=eps_level)
 
     # Must points in open curve
     must_points = [2]
     Vn = evenly_space(V, pointSpacing; close_loop = false, spline_order = 4, must_points = must_points) 
-    @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
+    @test isapprox(pointspacingmean(Vn; close_loop = false),pointSpacing,atol=eps_level)
     d = mindist(V,Vn)
     @test isapprox(sum(d[must_points]),0.0,atol=eps_level)
 
     # Using a single must point
     must_points = [1] # This tests and empty must_points vector
     Vn = evenly_space(V, pointSpacing; close_loop = true, spline_order = 4, must_points = must_points) # Returns points and spline interpolation object
-    @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
+    @test isapprox(pointspacingmean(Vn; close_loop = true),pointSpacing,atol=eps_level)
 
     must_points = [1,2,3]
     Vn = evenly_space(V, pointSpacing; close_loop = true, spline_order = 4, must_points = must_points) # Returns points and spline interpolation object
-    @test isapprox(pointspacingmean(Vn),pointSpacing,atol=eps_level)
+    @test isapprox(pointspacingmean(Vn; close_loop = true),pointSpacing,atol=eps_level)
     d = mindist(V,Vn)
     @test isapprox(sum(d[must_points]),0.0,atol=eps_level)
 
@@ -4679,9 +4669,8 @@ end
     V = circlepoints(r,nc)
     pointSpacing = 1
     Vn = evenly_space(V,pointSpacing; close_loop = true)    
-    @test isapprox(pointspacingmean(Vn),pointSpacing, atol=eps_level)
-    @test length(Vn) == ceil(2*pi*r/pointSpacing)+1
-
+    @test isapprox(pointspacingmean(Vn; close_loop = true), pointSpacing, atol=eps_level)
+    @test length(Vn) == ceil(Int,(2.0*pi*r)/pointSpacing)
 end
 
 @testset "invert_faces" begin
@@ -5000,41 +4989,27 @@ end
     eps_level = 1e-6
 
     n = 50 # Number of points, first testing an even number
-    V = batman(n)
+    V = batman(n; stepwise=false)
     ind = round.(Int,range(1,length(V),5))
 
     @test length(V) == n # Correct length
     @test isa(V,Vector{Point{3,Float64}}) # Correct type
     # Correct coordinates for this case 
-    @test isapprox(V[ind],Point3{Float64}[
-        [4.959248144765713e-5, -0.6888052278988526, 0.0], 
-        [0.9989308524502467, -0.12980802206407838, 0.0], 
-        [-0.004310373406159424, 0.3627431045478119, 0.0], 
-        [-0.9715858301799283, -0.014868116101481532, 0.0], 
-        [-0.022332909569322653, -0.5717894489374953, 0.0]],atol=eps_level)  
+    @test isapprox(V[ind], Point{3, Float64}[[0.0, -0.687443, 0.0], [0.9961732995190227, -0.15334556390045243, 0.0], [-8.916478666520788e-16, 0.364101, 0.0], [-0.97482144516799, -0.024493920162248425, 0.0], [-0.02713585189238325, -0.5593692180912841, 0.0]],atol=eps_level)  
           
-    V = batman(n; dir=:cw)
+    # Check errors
+    @test_throws Exception batman(n; dir=:wrong)
+
+    V = batman(n; dir=:cw, stepwise=false)
     @test length(V) == n # Correct length
     @test isa(V,Vector{Point{3,Float64}})
 
-    V = batman(n; dir=:acw, symmetric=false)
-    @test length(V) == n # Correct length
+    V = batman(n; dir=:acw, stepwise=true)
+    @test length(V) >= n # Correct length
     @test isa(V,Vector{Point{3,Float64}})
-
-    V = batman(n; dir=:acw, symmetric=true)
-    @test length(V) == n # Correct length
-    @test isa(V,Vector{Point{3,Float64}})
-
-    m = n+1 # force uneven
-    V = batman(m; dir=:acw, symmetric=true)
-    @test length(V) == m+1 # Correct length
-    @test isa(V,Vector{Point{3,Float64}})
-
-    V = batman(m; dir=:cw, symmetric=true)
-    @test length(V) == m+1 # Correct length
-    @test isa(V,Vector{Point{3,Float64}})
+    # Correct coordinates for this case 
+    @test isapprox(V[ind], Point{3, Float64}[[0.0, -0.687443, 0.0], [1.0, -0.272263, 0.0], [0.0982524301063124, 0.39017280303961077, 0.0], [-0.5119832974662458, 0.2798949437839214, 0.0], [-0.6072896187419142, -0.08351246909137351, 0.0]],atol=eps_level)  
 end
-
 
 @testset "tridisc" verbose = true begin
     eps_level = 1e-6
@@ -6019,7 +5994,7 @@ end
     end
 
     @testset "Vector with single TriangleFace" begin      
-        T = Int32
+        T = Int64
         F = TriangleFace{T}[ [1,2,3] ]
         V = Point{3,Float64}[ [0.0,0.0,0.0], [1.0,0.0,0.0], [1.0,1.0,0.0]]
 
@@ -7613,38 +7588,9 @@ end
     @test typeof(ax1) == Axis3
 end
 
-@testset "mesh_bool_fix_isolated!" verbose = true begin                       
-    eps_level = 1e-6
-    
-    # Check adding
-    n=6
-    V = circlepoints(1.0,n; dir=:acw)
-    push!(V,eltype(V)(0.0,0.0,0.0))
-    F = [TriangleFace(i,mod1(i+1,n),n+1) for i in 1:n]
-    B = fill(true,n)
-    B[1] = false
-    mesh_bool_fix_isolated!(F,B; method=:add)
-    @test all(B)
-
-    # Check removing 
-    plateDim1 = [10.0,10.0]
-    pointSpacing1 = 4.0
-    F,V = triplate(plateDim1,pointSpacing1; orientation=:up)
-    B = fill(true,length(F))
-    B[[8,16,24]] .= false
-    mesh_bool_fix_isolated!(F,B; method=:remove)
-    @test B == Bool[1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0]
-
-    # Check error 
-    @test_throws Exception  mesh_bool_fix_isolated!(F,B; method = :wrong)
-end
-
-@testset "_getFaceLoop" verbose = true begin   
-    # Create sliced pizza mesh (triangulated hexagon with central node)
+@testset "_getFaceLoop" verbose = true begin      
     n = 6
-    V = circlepoints(1.0,n; dir=:acw)
-    push!(V,eltype(V)(0.0,0.0,0.0))
-    F = [TriangleFace(i,mod1(i+1,n),n+1) for i in 1:n]
+    F, V = pizza(1.0,n)   
     faceSet = [3,5,2,1,4,6]
     i = n+1
     faceSetOrdered = Comodo._getFaceLoop(i, faceSet, F)
@@ -7665,10 +7611,7 @@ end
 
     @testset "n-sliced pizza" verbose = true begin                       
         for n = 4:7
-            V = circlepoints(1.0,n; dir=:acw)
-            push!(V,eltype(V)(0.0,0.0,0.0))
-            F = [TriangleFace(i,mod1(i+1,n),n+1) for i in 1:n]
-
+            F, V = pizza(1.0,n)
             F_dual, V_dual = meshdual(F,V)
             @test length(F_dual) == n+1
             @test length.(F_dual) == [fill(5,n);n] 
@@ -7708,27 +7651,529 @@ end
     end
 end
 
+@testset "delaunay2D" verbose = true begin   
+    w = 1.0
+    pointSpacing = 0.5
+    V = squarepoints(w, pointSpacing)
 
-# -----------------------------------------------------------------------------
-if get(ENV, "CI", "false") != "true"
-    @testset "Demos" begin
-        demo_path = joinpath(comododir(), "examples")
-        demos = filter!(startswith("demo"), readdir(demo_path))
-        
-        function rundemo(demo_path, demo)
-            Pkg.activate(demo_path; io = devnull)
-            include(joinpath(demo_path, demo)) # Could also use a temporarily module, similar to SafeTestsets or DelaunayTriangulation.jl's testsets
-            Pkg.activate(joinpath(@__FILE__, ".."); io = devnull)
-        end
-
-        foreach(demos) do demo
-            println(" ---------------------------")
-            println(" Running demo: $demo ")
-            println(" ---------------------------")
-            rundemo(demo_path, demo)
-            sleep(1)
-        end
-    end
-else
-    @info "Skipping demo tests on CI"
+    Fd, Vd = delaunay2D(V) # Contruct Delaunay triangulation
+    
+    @test isa(Fd,Vector{TriangleFace{Int}})
+    @test isa(Vd,typeof(V))
+    @test length(Fd) == 6    
+    @test length(Vd) == length(V) # No additional points
 end
+
+
+@testset "erodeboundary!" verbose = true begin   
+    w = 1.0
+    _,V = square(w)
+    Fd, Vd = delaunay2D(V) # Contruct Delaunay triangulation
+    Fd_ori = deepcopy(Fd)
+
+    # Compute alpha complex
+    α = pointspacingmax(V)
+    method = :circumcircle
+    erodeboundary!(Fd,Vd,α; method=method)    
+    @test length(Fd) == length(Fd_ori) # Should leave square mesh unchanged
+
+    method = :edgelength
+    erodeboundary!(Fd,Vd,α; method=method)    
+    @test length(Fd) == length(Fd_ori) # Should leave square mesh unchanged
+
+    V = [Point{3,Float64}(0.0,0.0,0.0),
+         Point{3,Float64}(1/3,0.0,0.0),
+         Point{3,Float64}(2/3,0.0,0.0),
+         Point{3,Float64}(1.0,0.0,0.0),
+         Point{3,Float64}(1.0,1/3,0.0),
+         Point{3,Float64}(2/3,1/3,0.0),
+         Point{3,Float64}(2/3,2/3,0.0),
+         Point{3,Float64}(1.0,2/3,0.0),
+         Point{3,Float64}(1.0,1.0,0.0),
+         Point{3,Float64}(2/3,1.0,0.0),
+         Point{3,Float64}(1/3,1.0,0.0),
+         Point{3,Float64}(0.0,1.0,0.0),
+         Point{3,Float64}(0.0,2/3,0.0),
+         Point{3,Float64}(0.0,1/3,0.0),
+         ]
+
+    V = subcurve(V,4; close_loop=true)
+    np = length(V)
+    α = 1.01*pointspacingmax(V; close_loop=true)
+    Fd, Vd = delaunay2D(V) # Contruct Delaunay triangulation
+    
+    method = :edgelength
+    erodeboundary!(Fd,Vd,α; method=method)
+    Eb = boundaryedges(Fd)
+    indBoundary = elements2indices(Eb)
+    @test length(indBoundary) == np # Should retrieve original curve boundary
+
+    #Test errors 
+    @test_throws Exception erodeboundary!(Fd,Vd,α; method=:wrong)
+end
+
+@testset "erodetriangulation!" verbose = true begin   
+    w = 1.0
+    _,V = square(w)
+    Fd, Vd = delaunay2D(V) # Contruct Delaunay triangulation
+    Fd_ori = deepcopy(Fd)
+
+    # Compute alpha complex
+    α = pointspacingmax(V)
+    method = :circumcircle
+    erodetriangulation!(Fd,Vd,α; method=method, domain=:full)    
+    @test length(Fd) == length(Fd_ori) # Should leave square mesh unchanged
+
+    method = :edgelength
+    erodetriangulation!(Fd,Vd,α; method=method, domain=:boundary) 
+    @test length(Fd) == length(Fd_ori) # Should leave square mesh unchanged
+
+    method = :edgelength
+    erodetriangulation!(Fd,Vd,α; method=method, domain=:full) 
+    @test length(Fd) == 0 # Should remove all using max edge length
+
+    # Test ring
+    pointSpacing = 0.2
+    r1 = 1.0
+    r2 = r1-(pointSpacing/sqrt(3))
+    n = ceil(Int,((2*pi)*r1)./pointSpacing)
+    V = circlepoints(r1,n)
+    V2 = [v*(r2/r1) for v in V]
+    Q = RotXYZ(0.0,0.0,(2*pi/n)/2)        
+    V2 = [GeometryBasics.Point{3, Float64}(Q*v) for v ∈ V2] 
+    append!(V,V2)
+    np = length(V)
+    Fd, Vd = delaunay2D(V) # Contruct Delaunay triangulation
+    nf = length(Fd)
+    
+    α = pointspacingmax(V)
+    method = :edgelength
+    erodetriangulation!(Fd,Vd,α; method=method, domain=:boundary) 
+    @test length(Fd) == nf # Boundary based erosion should remove nothing now
+
+    erodetriangulation!(Fd,Vd,α; method=method, domain=:full) 
+    @test length(Fd) == 2*n # Full erosion should remove interior
+
+    Eb = boundaryedges(Fd)
+    indBoundary = elements2indices(Eb)
+    @test length(indBoundary) == np # Should retrieve original curve boundary
+    
+    #Test errors     
+    @test_throws Exception erodetriangulation!(Fd,Vd,α; domain=:wrong)
+end
+
+@testset "simplicialcomplex" verbose = true begin       
+    eps_level = 1e-6
+    
+    # Square
+    w = 1.0
+    _,V = square(w)    
+    Fd, Vd,_ = delaunay2D(V) # Contruct Delaunay triangulation    
+    α = pointspacingmax(Vd)
+
+    method = :circumcircle
+    domain = :full
+    F,V = simplicialcomplex(V,α; method=method, domain=domain)
+    @test length(F) == length(Fd) # should return normal Delaunay
+
+    w = 1.0
+    _,V = square(w)    
+    Fd, Vd,_ = delaunay2D(V) # Contruct Delaunay triangulation    
+    α = pointspacingmax(Vd)
+
+    method = :edgelength
+    domain = :full
+    F,V = simplicialcomplex(V,α; method=method, domain=domain)
+    @test length(F) == 0 # should return empty set 
+
+    w = 1.0
+    _,V = square(w)    
+    Fd, Vd,_ = delaunay2D(V) # Contruct Delaunay triangulation    
+    α = Inf
+    F,V = simplicialcomplex(V,α; method=method, domain=domain)
+    @test length(F) == length(Fd) # should return Delaunay triangulation
+
+    # Test ring
+    pointSpacing = 0.2
+    r1 = 1.0
+    r2 = r1-(pointSpacing/sqrt(3))
+    n = ceil(Int,((2*pi)*r1)./pointSpacing)
+    V = circlepoints(r1,n)
+    V2 = [v*(r2/r1) for v in V]
+    Q = RotXYZ(0.0,0.0,(2*pi/n)/2)        
+    V2 = [GeometryBasics.Point{3, Float64}(Q*v) for v ∈ V2] 
+    append!(V,V2)
+
+    Fd, Vd = delaunay2D(V) # Contruct Delaunay triangulation
+
+    α = pointspacingmax(V)
+    method = :edgelength
+    domain = :full
+    F,V = simplicialcomplex(V,α; method=method, domain=domain)
+    @test length(F) == 2*n # should produce 2 faces per outer boundary point if ring is tesselated properly
+
+    # Test ring
+    pointSpacing = 0.2
+    r1 = 1.0
+    r2 = r1-(pointSpacing/sqrt(3))
+    n = ceil(Int,((2*pi)*r1)./pointSpacing)
+    V = circlepoints(r1,n)
+    V2 = [v*(r2/r1) for v in V]
+    Q = RotXYZ(0.0,0.0,(2*pi/n)/2)        
+    V2 = [GeometryBasics.Point{3, Float64}(Q*v) for v ∈ V2] 
+    append!(V,V2)
+
+    Fd, Vd = delaunay2D(V) # Contruct Delaunay triangulation
+
+    α = pointspacingmax(V)
+    method = :circumcircle
+    domain = :full
+    F,V = simplicialcomplex(V,α; method=method, domain=domain)
+    @test length(F) == 2*n # should produce 2 faces per outer boundary point if ring is tesselated properly
+
+    #Test errors     
+    @test_throws Exception simplicialcomplex!(Fd,Vd,α; domain=:wrong)
+end
+
+@testset "alphacomplex" verbose = true begin       
+    eps_level = 1e-6
+    
+    # Square
+    w = 1.0
+    _,V = square(w)    
+    Fd, Vd,_ = delaunay2D(V) # Contruct Delaunay triangulation    
+    α = pointspacingmax(Vd)
+
+    F,V = alphacomplex(V,α)
+    @test length(F) == length(Fd) # should return normal Delaunay
+    
+    # Test ring
+    pointSpacing = 0.2
+    r1 = 1.0
+    r2 = r1-(pointSpacing/sqrt(3))
+    n = ceil(Int,((2*pi)*r1)./pointSpacing)
+    V = circlepoints(r1,n)
+    V2 = [v*(r2/r1) for v in V]
+    Q = RotXYZ(0.0,0.0,(2*pi/n)/2)        
+    V2 = [GeometryBasics.Point{3, Float64}(Q*v) for v ∈ V2] 
+    append!(V,V2)
+
+    Fd, Vd = delaunay2D(V) # Contruct Delaunay triangulation
+    nf = length(Fd)
+
+    α = pointspacingmax(V)
+    F,V = alphacomplex(V,α)
+    @test length(F) == nf # should produce Delaunay as interior is not removed
+
+    F,V = alphacomplex(V,0.0)
+    @test isempty(F)
+end
+
+@testset "indices_faces_at_boundary_edges" verbose = true begin       
+    eps_level = 1e-6
+
+    # Square
+    w = 1.0
+    f,V = square(w)    
+    F = quad2tri([f],V)
+    ind = indices_faces_at_boundary_edges(F)
+    @test sort(ind) == collect(1:length(F)) # Should return all faces 
+
+    # Test quad ring 
+    pointSpacing = 0.2
+    r1 = 1.0
+    r2 = r1-pointSpacing
+    n = ceil(Int,((2*pi)*r1)./pointSpacing)
+    V1 = circlepoints(r1,n)
+    V2 = [v*(r2/r1) for v in V1]    
+    F,V = loftlinear(V1,V2; num_steps=2, close_loop=true, face_type=:quad)
+    ind = indices_faces_at_boundary_edges(F)
+    @test sort(ind) == collect(1:length(F)) # Should return all faces 
+
+    nf = length(F)
+    Fs, Vs = subquad(F,V,2)
+    ind = indices_faces_at_boundary_edges(Fs)
+    @test length(ind) == nf*8 # 8 times previous due to 2x subquad splitting    
+
+    # Test tri ring             
+    pointSpacing = 0.5
+    r1 = 1.0
+    r2 = r1-pointSpacing
+    n = ceil(Int,((2*pi)*r1)./pointSpacing)
+    V1 = circlepoints(r1,10)
+    V2 = [v*(r2/r1) for v in V1]        
+    F,V = loftlinear(V1,V2; num_steps=2, close_loop=true, face_type=:forwardslash)
+    ind = indices_faces_at_boundary_edges(F)
+    @test sort(ind) == collect(1:length(F)) # Should return all faces 
+
+    nf = length(F)
+    Fs, Vs = subtri(F,V,2)
+    ind = indices_faces_at_boundary_edges(Fs)
+    @test length(ind) == nf*4 # 4 times previous due to 2x subtri splitting    
+end
+
+@testset "pizza" verbose = true begin       
+    eps_level = 1e-6
+    n = 12
+    r = 25.0
+    F, V = pizza(r, n; dir=:acw)      
+    @test isa(F,Vector{TriangleFace{Int}})
+    @test isa(V,Vector{Point{3,Float64}})
+    @test length(F) == n    
+    @test length(V) == n+1
+    @test all(isapprox.(norm.(V[1:end-1]), r, atol=eps_level))
+    @test_throws Exception F, V = pizza(r, 2; dir=:acw)      
+end
+
+@testset "barycoord" verbose = true begin       
+    eps_level = 1e-6    
+
+    # Test standard version 
+    f, vf = equilateraltriangle(2.0) # Single equilateral triangle domain    
+    p = Point{3,Float64}(0.0, 0.0, 0.0)
+    λ₁ = barycoord(vf, p, 1)
+    λ₂ = barycoord(vf, p, 2)
+    λ₃ = barycoord(vf, p, 3)    
+    @test isapprox(λ₁, 1/3, atol=eps_level)
+    @test isapprox(λ₂, 1/3, atol=eps_level)
+    @test isapprox(λ₃, 1/3, atol=eps_level)
+
+    p = vf[1]
+    λ₁ = barycoord(vf, p, 1)
+    λ₂ = barycoord(vf, p, 2)
+    λ₃ = barycoord(vf, p, 3)    
+    @test isapprox(λ₁, 1.0, atol=eps_level)
+    @test isapprox(λ₂, 0.0, atol=eps_level)
+    @test isapprox(λ₃, 0.0, atol=eps_level)
+
+    # Test version where a and n are provided
+    p = Point{3,Float64}(0.0, 0.0, 0.0)
+    c = edgecrossproduct(vf)
+    a = norm(c) # Area
+    n = c/norm(c) # Normal vector     
+    λ₁ = barycoord(vf, p, 1, a, n)
+    λ₂ = barycoord(vf, p, 2, a, n)
+    λ₃ = barycoord(vf, p, 3, a, n)
+    @test isapprox(λ₁, 1/3, atol=eps_level)
+    @test isapprox(λ₂, 1/3, atol=eps_level)
+    @test isapprox(λ₃, 1/3, atol=eps_level)
+end
+
+@testset "cart2bary" verbose = true begin       
+    eps_level = 1e-6
+    f, V = equilateraltriangle(2.0) # Single equilateral triangle domain
+    Fn,Vn = subtri([f],V,1) # Split once into 4 triangles 
+    f = convert(TriangleFace{Int},Fn[1]) # Keep first (middle) triangle
+    f,V,_ = remove_unused_vertices(f,Vn) # Create clean point set of just the triangle
+    _,PG = subtri(Fn,Vn,2) # Create test point set by refining further
+
+    L = Vector{Point{3,Float64}}(undef,length(PG))
+    for (i,p) in enumerate(PG)
+        L[i] = cart2bary(f,V,p)
+    end
+    @test all(isapprox.(sum.(L), 1.0, atol=eps_level))
+    @test all(isapprox(L, Point{3, Float64}[[1.0, -1.0, 1.0], [1.0, 1.0, -1.0], [-1.0, 1.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.5, 0.5, 0.0], [0.5, 0.0, 0.5], [0.0, 0.5, 0.5], [0.5, -0.5, 1.0], [1.0, 0.5, -0.5], [-0.5, 1.0, 0.5], [1.0, -0.5, 0.5], [0.5, 1.0, -0.5], [-0.5, 0.5, 1.0], [0.25, 0.5, 0.25], [0.5, -0.24999999999999994, 0.75], [0.7500000000000001, 0.5, -0.2500000000000001], [-0.25, 0.7500000000000001, 0.4999999999999999], [0.5, 0.25, 0.25], [0.7500000000000001, -0.24999999999999994, 0.49999999999999983], [0.49999999999999994, 0.7500000000000001, -0.2500000000000001], [-0.25, 0.5, 0.75], [0.25, 0.25, 0.5], [0.7500000000000001, -0.5, 0.7499999999999999], [0.7500000000000001, 0.7500000000000001, -0.5000000000000002], [-0.5, 0.7500000000000001, 0.7499999999999999], [0.7500000000000001, 0.0, 0.2499999999999999], [1.0, -0.24999999999999994, 0.24999999999999994], [0.25, 1.0, -0.25], [-0.25, 0.25, 1.0], [0.25, 0.7500000000000001, -1.1102230246251565e-16], [0.25, 0.0, 0.75], [0.7499999999999999, 0.25, 1.1102230246251565e-16], [0.0, 0.7500000000000001, 0.2499999999999999], [0.0, 0.25, 0.75], [0.7500000000000001, -0.7499999999999999, 0.9999999999999998], [1.0, 0.7500000000000001, -0.7500000000000001], [-0.7499999999999999, 0.9999999999999999, 0.7500000000000001], [0.25, -0.24999999999999994, 1.0], [1.0, 0.24999999999999997, -0.24999999999999997], [-0.25, 1.0, 0.25], [0.9999999999999999, -0.7499999999999999, 0.75], [0.7500000000000001, 1.0, -0.7500000000000001], [-0.7499999999999999, 0.7500000000000001, 0.9999999999999999]], atol=eps_level))
+end
+
+@testset "bary2cart" verbose = true begin 
+    eps_level = 1e-6
+    c = Point{3,Float64}(-2.0, pi, 5.0)
+    f, V = equilateraltriangle(2.0,c) # Single equilateral triangle domain
+    # Bary centric coordinates
+    L = [Point{3,Float64}(1.0, 0.0, 0.0),
+         Point{3,Float64}(0.0, 1.0, 0.0),
+         Point{3,Float64}(0.0, 0.0, 1.0),
+         Point{3,Float64}(1/3, 1/3, 1/3)]
+    
+    P = Vector{Point{3,Float64}}(undef,length(L))
+    for (i, λ) in enumerate(L)
+        P[i] = bary2cart(f,V,λ) # Compute Cartesian coordinates
+    end
+    P_true=deepcopy(V)
+    push!(P_true,c)
+    @test isapprox(P,P_true,atol=eps_level)
+end
+
+@testset "intriangle" verbose = true begin
+    eps_level = 1e-6
+    
+    f, vf = equilateraltriangle(2.0) # Single equilateral triangle domain    
+    c = edgecrossproduct(vf)
+    a = norm(c) # Area
+    n = c/norm(c) # Normal vector     
+
+    @testset "single triangle single points" begin
+        p = Point{3,Float64}(0.0, 0.0, 0.0)
+        @test intriangle(f, vf, p) == true    
+        @test intriangle(f, vf, p, a, n) == true            
+
+        p = Point{3,Float64}(5.0, 0.0, 0.0)
+        @test intriangle(f, vf, p) == false    
+        @test intriangle(f, vf, p, a, n) == false    
+    end
+
+    @testset "single triangle multiple points" begin
+        P = [Point{3,Float64}(0.0, 0.0, 0.0), Point{3,Float64}(5.0, 0.0, 0.0)]
+        @test intriangle(f, vf, P) == [true, false]
+        @test intriangle(f, vf, P, a, n) == [true, false]
+    end
+
+    F, V = subtri([f],vf,1)
+    C = edgecrossproduct(F,V)
+    A = norm.(C) # Area
+    N = C/norm(C) # Normal vector     
+    @testset "multiple triangles single point" begin
+        p = Point{3,Float64}(0.0, 0.0, 0.0)
+        @test intriangle(F, V, p) == [true, false, false, false]
+        @test intriangle(F, V, p, A, N) == [true, false, false, false]        
+
+        p = Point{3,Float64}(0.5, 0.0, 0.0)
+        @test intriangle(F, V, p) == [false, true, false, false]
+        @test intriangle(F, V, p, A, N) == [false, true, false, false]        
+    end
+end
+
+@testset "spacing2numsteps" verbose = true begin
+    d = 5.0
+    pointSpacing = 1.0
+    
+    n = spacing2numsteps(d, pointSpacing; close_loop = false)
+    @test n == 6
+    
+    n = spacing2numsteps(d, pointSpacing; close_loop = true)
+    @test n == 5    
+end
+
+@testset "hexcylinder" verbose = true begin
+    eps_level = 1e-6
+    numSingleLayer = 12 
+
+    h = 40.0
+    n = 0
+    r = 10.0    
+    nh = 2
+    E, V, F, Fb, Cb = hexcylinder(r, h, n; nh=nh, direction=:both)  
+    
+    # Test types
+    @test isa(E,Vector{Hex8{Int}})
+    @test isa(V,Vector{Point{3,Float64}})
+    @test isa(F,Vector{QuadFace{Int}})
+    @test isa(Fb,Vector{QuadFace{Int}})
+    @test isa(Cb,Vector{Int})
+
+    # Test number in single layer since nh=2
+    @test length(E) == numSingleLayer
+    
+    # Check radii and z-levels 
+    function get_rz(Fb, V, Cb)
+        indNodesSide = elements2indices(Fb[Cb.==0])
+        indNodesBottom = elements2indices(Fb[Cb.==1])
+        indNodesTop = elements2indices(Fb[Cb.==2])
+        rSet = Vector{Float64}(undef,length(indNodesSide))    
+        for (i,v) in enumerate(V[indNodesSide])
+            rSet[i] = sqrt(v[1].^2+v[2].^2)
+        end
+        
+        zSetTop = Vector{Float64}(undef,length(indNodesTop))    
+        for (i,v) in enumerate(V[indNodesTop]) 
+            zSetTop[i] = v[3]
+        end
+
+        zSetBottom = Vector{Float64}(undef,length(indNodesBottom))    
+        for (i,v) in enumerate(V[indNodesBottom])
+            zSetBottom[i] = v[3]
+        end        
+        return rSet, zSetTop, zSetBottom
+    end
+
+    rSet, zSetTop, zSetBottom = get_rz(Fb, V, Cb)
+    @test all(isapprox.(rSet, r, atol=eps_level))    
+    @test all(isapprox.(zSetTop, h/2.0, atol=eps_level))
+    @test all(isapprox.(zSetBottom, -h/2.0, atol=eps_level))
+
+    E, V, F, Fb, Cb = hexcylinder(r, h, n; nh=nh, direction=:negative)  
+    rSet, zSetTop, zSetBottom = get_rz(Fb, V, Cb)
+    @test all(isapprox.(rSet, r, atol=eps_level))    
+    @test all(isapprox.(zSetTop, 0.0, atol=eps_level))
+    @test all(isapprox.(zSetBottom, -h, atol=eps_level))
+
+    E, V, F, Fb, Cb = hexcylinder(r, h, n; nh=nh, direction=:positive)  
+    rSet, zSetTop, zSetBottom = get_rz(Fb, V, Cb)
+    @test all(isapprox.(rSet, r, atol=eps_level))    
+    @test all(isapprox.(zSetTop, h, atol=eps_level))
+    @test all(isapprox.(zSetBottom, 0.0, atol=eps_level))
+        
+    # Check layer adding with increasing nh
+    h = 40.0
+    n = 0
+    r = 10.0    
+    for nh = 2:5
+        E, V, F, Fb, Cb = hexcylinder(r, h, n; nh=nh, direction=:both)  
+        @test length(E) == numSingleLayer*(nh-1)
+    end
+
+    # Automatic number of steps 
+    h = 40.0
+    n = 0
+    r = 10.0    
+    nh = 0
+    E, V, F, Fb, Cb = hexcylinder(r, h, n; nh=nh, direction=:both)  
+    pointSpacing = pointspacingmax(F,V)
+    nh = spacing2numsteps(h, pointSpacing; close_loop=false)    
+    @test length(E) == numSingleLayer*(nh-1)
+
+    # Check errors
+    @test_throws Exception hexcylinder(r, h, n; nh=-1, direction=:both)
+    @test_throws Exception hexcylinder(r, h, n; nh=nh, direction=:wrong)  
+end
+
+@testset "equilateraltriangle" verbose = true begin
+    eps_level = 1e-6
+
+    s = 2.5 # Size (= width = edge length)
+    c = Point{3,Float64}(0.0, 0.0, 0.0) # Centre
+    f,V = equilateraltriangle(s, c)
+    L = edgelengths(f,V) # Edge lengths should be s 
+    @test all(isapprox.(L, s, atol=eps_level)) # Check size based on edge lengths
+    @test isapprox(mean(V), c, atol=eps_level) # Check mean is at desired centre
+end
+
+@testset "hermiteSegment" verbose = true begin
+    eps_level = 1e-6
+    n = 25
+    p1 = Point{3,Float64}(0.0, 0.0, 0.0)
+    v1 = Point{3,Float64}(0.0, 1.0, 0.0)
+    p2 = Point{3,Float64}(1.0, 1.0, 0.0)
+    v2 = Point{3,Float64}(1.0, .0, 0.0)
+    V = hermiteSegment(n, p1, v1, p2, v2)
+    @test isa(V,Vector{Point{3,Float64}})
+    @test length(V) == n    
+    @test isapprox(V[1],p1,atol=eps_level)
+    @test isapprox(V[end],p2,atol=eps_level)
+end
+
+# # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
+# if get(ENV, "CI", "false") != "true"
+#     @testset "Demos" begin
+#         demo_path = joinpath(comododir(), "examples")
+#         demos = filter!(startswith("demo"), readdir(demo_path))
+        
+#         function rundemo(demo_path, demo)
+#             Pkg.activate(demo_path; io = devnull)
+#             include(joinpath(demo_path, demo)) # Could also use a temporarily module, similar to SafeTestsets or DelaunayTriangulation.jl's testsets
+#             Pkg.activate(joinpath(@__FILE__, ".."); io = devnull)
+#         end
+
+#         iStart = 1
+#         for i in iStart:length(demos) #demo in demos #foreach(demos) do demo
+#             demo=demos[i]
+#             println(" ---------------------------")
+#             println(" Running demo $i: $demo ")
+#             println(" ---------------------------")
+#             rundemo(demo_path, demo)
+#             sleep(0.5)
+#         end
+#     end
+# else
+#     @info "Skipping demo tests on CI"
+# end

@@ -63,14 +63,10 @@ strokewidth = 2
 strokecolor = :black
 
 fig = Figure(size = (1200,1200))
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "truncated n-trapezohedron")
-# ax1 = LScene(fig[1,1]); cc = Makie.Camera3D(ax1.scene, projectiontype = Makie.Orthographic)
+ax1 = AxisGeom(fig[1, 1], title = "truncated n-trapezohedron")
 
-hp1 = poly!(ax1, GeometryBasics.Mesh(V,F[1]), color=:white,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
-# hp2 = poly!(ax1, GeometryBasics.Mesh(V,F[2]), color=:white,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
+hp1 = meshplot!(ax1, GeometryBasics.Mesh(V,F[1]))
 hp3 = scatter!(ax1, V,markersize=markersize,color=:red)
-# hp3 = normalplot(ax1,F[1],V; color = :green)
-# hp3 = normalplot(ax1,F[2],V; color = :green)
 
 stepRange = 3:12
 hSlider = Slider(fig[2,1], range = stepRange, startvalue = 0,linewidth=30)
@@ -88,8 +84,4 @@ on(hSlider.value) do n
 end
 slidercontrol(hSlider,ax1)
 
-# fileName = comododir()*"/assets/temp/truncatedntrapezohedron.mp4"
-# slider2anim(fig,hSlider,fileName; backforth=true, duration=4)
-
 fig
-

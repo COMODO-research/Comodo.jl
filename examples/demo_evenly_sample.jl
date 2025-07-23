@@ -27,7 +27,7 @@ for testCase = 1:3
         Vi1 = evenly_sample(V, n; spline_order=4, close_loop = false, niter = 10) # Returns points and spline interpolation object
         Vi2 = evenly_sample(V, n; spline_order=4, close_loop = true, niter = 10) # Returns points and spline interpolation object
     elseif testCase == 3
-        V = batman(25; symmetric = true, dir=:acw)
+        V = batman(25; stepwise = true, dir=:acw)
 
         # Evenly sample curve
         n = 50; # Number of points for spline 

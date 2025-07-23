@@ -14,8 +14,6 @@ boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each dire
 
 E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
 
-
-
 # Visualisation
 cmap = Makie.Categorical(:Spectral) 
 
@@ -25,14 +23,14 @@ M = GeometryBasics.Mesh(Vbs,Fbs)
 
 fig = Figure(size=(1600,800))
 
-ax1 = Axis3(fig[1, 1][1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary faces with boundary markers for the hexahedral mesh")
-hp2 = poly!(ax1,M, strokewidth=3,shading=FastShading,strokecolor=:black, color=Cbs_V, transparency=false, overdraw=false,colormap=cmap)
+ax1 = AxisGeom(fig[1, 1], title = "Boundary faces with boundary markers for the hexahedral mesh")
+hp2 = meshplot!(ax1, Fbs, Vbs; strokewidth=3, color=Cbs_V, colormap=cmap)
 # hp3 = normalplot(ax2,M_Fb; type_flag=:face, color=:black,linewidth=3)
 
-Colorbar(fig[1, 1][1, 2], hp2)
+Colorbar(fig[1, 2], hp2)
 
-ax2 = Axis3(fig[1, 1][1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Cut view of hexahedral mesh")
-hp3 = poly!(ax2,M, strokewidth=3,shading=FastShading,strokecolor=:black, color=:white, transparency=false, overdraw=false)
+ax2 = AxisGeom(fig[1, 3], title = "Cut view of hexahedral mesh")
+hp3 = meshplot!(ax2, Fbs, Vbs; strokewidth=3, color=:white)
 
 VE  = simplexcenter(E,V)
 ZE = [v[3] for v in VE]
@@ -45,7 +43,6 @@ stepRange = range(zMin,zMax,numSlicerSteps)
 hSlider = Slider(fig[2, :], range = stepRange, startvalue = mean(stepRange),linewidth=30)
 
 on(hSlider.value) do z 
-
     B = ZE .<= z
     indShow = findall(B)
     if isempty(indShow)
@@ -57,9 +54,7 @@ on(hSlider.value) do z
         Ms = GeometryBasics.Mesh(Vs,Fs)
         hp3[1] = Ms
     end
-
 end
-# hSlider.selected_index[]+=1
 slidercontrol(hSlider,ax2)
 
 fig

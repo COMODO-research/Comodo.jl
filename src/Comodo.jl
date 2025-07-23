@@ -4,7 +4,7 @@ module Comodo
 using Statistics: mean, Statistics
 using Distances: euclidean, Distances, Euclidean, pairwise
 using QuadGK: quadgk, QuadGK
-using StaticArrays: StaticVector, Size, StaticArrays
+using StaticArrays: StaticVector, Size, StaticArrays, StaticArraysCore
 using Rotations: RotMatrix3, RotXYZ, rotation_between, AngleAxis, Rotations
 using DataStructures: OrderedDict, DataStructures
 import MarchingCubes # For isosurface creation
@@ -75,6 +75,11 @@ export randangle, stepfunc, perlin_noise, removepoints, inpolygon
 export elementEdges, tet4_tet10, penta6_penta15
 export findindexin, hexagonline, hexagongrid, hexagonmesh, fromtomesh, fromtomesh!
 export vectorpair_angle, triangulateboundary, faceinteriorpoint, hexsphere, hexspherehollow, circumcircle, incircle
-export meshplot!, edgeplot!, meshdual, mesh_bool_fix_isolated!
+export meshplot!, edgeplot!, meshdual
+export delaunay2D, simplicialcomplex, alphacomplex, indices_faces_at_boundary_edges, erodeboundary!, erodetriangulation!
+export rectanglepoints, squarepoints, rectangle, square, pizza
+export cart2bary, bary2cart, barycoord, intriangle
+export spacing2numsteps, pointspacingmax, pointspacingmin, hexcylinder
+export equilateraltriangle, hermiteSegment
 
 end # module

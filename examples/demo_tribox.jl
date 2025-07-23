@@ -16,8 +16,8 @@ Fs,Vs = separate_vertices(F,V)
 CV = simplex2vertexdata(Fs,C)
 
 fig = Figure(size=(1200,1200))
-ax1 = Axis3(fig[1, 1][1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A triangulated box")
-hp1 = poly!(ax1,GeometryBasics.Mesh(Vs,Fs), strokewidth=strokewidth1,color=CV,shading=FastShading,transparency=false,colormap=cmap)
+ax1 = AxisGeom(fig[1, 1], title = "A triangulated box")
+hp1 = meshplot!(ax1, Fs, Vs, color=CV, colormap=cmap)
 # normalplot(ax1,Fs,Vs)
-Colorbar(fig[1, 1][1, 2], hp1)
+Colorbar(fig[1, 2], hp1)
 fig

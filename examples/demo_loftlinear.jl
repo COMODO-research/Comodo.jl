@@ -29,16 +29,17 @@ for (q,face_type) in enumerate(face_types)
     i = mod1(q,nRows)
     j = ceil.(Int,q/nRows)
 
-    F,V = loftlinear(V1,V2;num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+    F,V = loftlinear(V1,V2; num_steps=num_steps, close_loop=close_loop, face_type=face_type)
 
-    ax1 = Axis3(fig[i, j], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Lofted surface, face_type=:$face_type")    
-    hp1=lines!(ax1,V1, linewidth = linewidth, color = :blue)
-    scatter!(V1,markersize=markersize,color = :blue)
-    hp2=lines!(ax1,V2, linewidth = linewidth, color = :red)
-    scatter!(V2,markersize=markersize,color = :red)
-    hp3=poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,color=:white,shading=FastShading,transparency=false)
+    ax1 = AxisGeom(fig[i, j], title = "Lofted surface, face_type=:$face_type")    
+    hp1 = lines!(ax1,V1, linewidth = linewidth, color = :blue)
+    hp2 = scatter!(V1,markersize=markersize,color = :blue)
+    hp3 = lines!(ax1,V2, linewidth = linewidth, color = :red)
+    hp4 = scatter!(V2,markersize=markersize,color = :red)
+    hp5 = meshplot!(ax1,F,V)
     # normalplot(ax1,GeometryBasics.Mesh(V,F); type_flag=:face, color=:black)
-    j+=1
+    
+    j += 13
 end
 # Legend(fig[1, 4],[hp1,hp2,hp3],["curve 1", "curve 2", "lofted surface"])
 

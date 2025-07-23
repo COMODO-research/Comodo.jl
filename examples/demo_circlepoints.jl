@@ -8,7 +8,7 @@ n = 40 # Number of points
 V1 = circlepoints(r,n; dir=:acw)
 
 ## Applying a radial function
-rFun(t) = r + 0.5.*sin(3*t)
+rFun(t) = r + 0.5.*sin(3.0*t)
 V2 = circlepoints(rFun,n; dir=:cw)
 
 ## Visualization

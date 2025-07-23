@@ -7,13 +7,12 @@ This demo shows the use of `hexbox` to generate a hexahedral mesh for a 3D box
 domain. 
 =#
 
-
 GLMakie.closeall()
 
 for testCase = 1:6
     if testCase == 1 # Batman curve
         n = 120
-        V = batman(n; symmetric=true)
+        V = batman(n; stepwise=true)
         pointSpacing = pointspacingmean(V)
 
         VT = (V,)
@@ -40,30 +39,10 @@ for testCase = 1:6
         R = ([1],)
         P = (pointSpacing)
     elseif testCase == 4 
-        
-        function squarepoints(w,h,pointSpacing; dir=:acw)
-            nw = ceil(Int,w./pointSpacing)+1
-            nh = ceil(Int,h./pointSpacing)+1
-            sw = w./(nw-1)
-            sh = h./(nh-1)        
-            if dir == :acw            
-                V1 = collect(range(Point{3,Float64}( w./2.0,           h/2.0, 0.0), Point{3,Float64}(-w./2.0,         h/2.0, 0.0),   nw))
-                V2 = collect(range(Point{3,Float64}(-w./2.0,      h/2.0 - sh, 0.0), Point{3,Float64}(-w./2.0,        -h/2.0, 0.0), nh-1))
-                V3 = collect(range(Point{3,Float64}(-w./2.0+sw,       -h/2.0, 0.0), Point{3,Float64}( w./2.0,        -h/2.0, 0.0), nw-1))
-                V4 = collect(range(Point{3,Float64}( w./2.0,     -h/2.0 + sh, 0.0), Point{3,Float64}( w./2.0,     h/2.0 -sh, 0.0), nh-2))            
-            else
-                V1 = collect(range(Point{3,Float64}(-w./2.0,           h/2.0, 0.0), Point{3,Float64}( w./2.0,         h/2.0, 0.0),   nw))
-                V2 = collect(range(Point{3,Float64}( w./2.0,      h/2.0 - sh, 0.0), Point{3,Float64}( w./2.0,        -h/2.0, 0.0), nh-1))
-                V3 = collect(range(Point{3,Float64}( w./2.0-sw,       -h/2.0, 0.0), Point{3,Float64}(-w./2.0,        -h/2.0, 0.0), nw-1))
-                V4 = collect(range(Point{3,Float64}(-w./2.0,     -h/2.0 + sh, 0.0), Point{3,Float64}(-w./2.0,     h/2.0 -sh, 0.0), nh-2))            
-            end
-            return [V1; V2; V3; V4]        
-        end
-
         w = 4.0
         h = 8.0
         pointSpacing = 1.0
-        V = squarepoints(w,h,pointSpacing; dir=:acw)
+        V = rectanglepoints(w,h,pointSpacing; dir=:acw)
         
         VT = (V,)
         R = ([1],)

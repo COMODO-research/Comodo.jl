@@ -44,9 +44,8 @@ for testCase = 1:2
     end
 
     # Visualization
-    fig = Figure(size = (800,800))
-    # ax = Axis3(fig[1, 1],aspect = :data)
-    ax = Axis(fig[1, 1], aspect = DataAspect())
+    fig = Figure(size = (800,800))    
+    ax = AxisGeom(fig[1, 1])
 
     hp1 = scatter!(ax, V,markersize=15,color=:red)
     hp2 = lines!(ax, V_fit,linewidth=4,color=:black)

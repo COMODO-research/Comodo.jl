@@ -2,6 +2,7 @@ using Comodo
 using Comodo.GLMakie
 using Comodo.GeometryBasics
 using Comodo.GLMakie.Colors
+using FileIO
 
 #=
 This demo shows the use of the `facenormal` function to obtain mesh face normal
@@ -11,7 +12,7 @@ a pentagonal mesh.
 
 fig = Figure(size=(1600,800))
 cAlpha = RGBA(1.0, 1.0, 1.0,0.25)
-for q=1:1:4
+for q=1:1:5
     if q==1
         F,V = icosahedron()
         titleString="triangles"        
@@ -24,16 +25,23 @@ for q=1:1:4
     elseif q==4
         F,V = dodecahedron()
         invert_faces!(F)
-        titleString="inverted pentagons"        
+        titleString="inverted pentagons"   
+    elseif q==5             
+        fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
+        M = load(fileName_mesh)
+        F = tofaces(faces(M))
+        V = topoints(coordinates(M))
+        F,V,_,_ = mergevertices(F,V)
+        titleString="Stanford bunny"   
     end
 
     # Compute mesh face normals
     N = facenormal(F,V)    
     VN = simplexcenter(F,V)
     
-    ax1=Axis3(fig[1, q], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
-    hp1=poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=2,shading=FastShading,color=cAlpha, transparency=true, overdraw=false)
-    # hpa=arrows!(ax1,VN,N,color=:blue)  
+    ax1 = AxisGeom(fig[1, q], title = titleString)
+    hp1 = meshplot!(ax1,F,V, color=cAlpha, transparency=true)
+    # hpa = arrows!(ax1,VN,N,color=:blue)  
     hpa = dirplot(ax1,VN,N; color=:blue,linewidth=3,scaleval=1.0,style=:from)
 end
 

@@ -17,7 +17,7 @@ V = nbezier(P,n) # Get Bezier fit points
 
 # Visualization
 fig = Figure(size = (800,800))
-ax = Axis3(fig[1, 1],aspect = :data)
+ax = AxisGeom(fig[1, 1])
 
 hp1 = scatter!(ax, P,markersize=25,color=:black)
 scatter!(ax, V,markersize=15,color=:red)

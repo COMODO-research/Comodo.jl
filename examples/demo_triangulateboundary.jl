@@ -114,7 +114,7 @@ for testCase = 1:7
         showSurf = true # For visualisation purposes
     elseif testCase == 7
         n = 76
-        V1 = batman(n; symmetric = true,dir=:cw)
+        V1 = batman(n; stepwise = true, dir=:cw)
         ind1 = collect(1:length(V1))
         N1 = fill(Vec{3,Float64}(0.0,0.0,1.0),length(ind1))
 

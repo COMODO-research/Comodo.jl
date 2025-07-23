@@ -29,9 +29,9 @@ for testCase = 1:3
         Vi1 = evenly_space(V, 0.5; close_loop = false, niter=10, spline_order = 4) # Returns points and spline interpolation object
         Vi2 = evenly_space(V, 0.3; close_loop = true, niter=10, spline_order = 4,must_points = must_points) # Returns points and spline interpolation object
     elseif testCase == 3
-        V = batman(25; symmetric = true, dir=:acw)
+        V = batman(25; stepwise = true, dir=:acw)
 
-        must_points = [7,10,13,15,18,21]
+        must_points = [4,8,12, 16, 17, 18, 19, 23, 27, 31, ]
 
         # Evenly sample curve    
         Vi1 = evenly_space(V, 0.15; close_loop = false, niter=10, spline_order = 4) # Returns points and spline interpolation object
@@ -48,17 +48,17 @@ for testCase = 1:3
 
     fig = Figure(size = (1200,500))
 
-    ax1 = Axis3(fig[1, 1],aspect = :data,azimuth=-pi/2,elevation=pi/2, title="Input")
+    ax1 = AxisGeom(fig[1, 1], azimuth=-pi/2, elevation=pi/2, title="Input")
     hp1 = scatter!(ax1, V,markersize=markersize2,color=:red)
     hp2 = lines!(ax1, V,linewidth=linewidth,color=:red)
 
-    ax2 = Axis3(fig[1, 2],aspect = :data,azimuth=-pi/2,elevation=pi/2, title="evenly spaced")
+    ax2 = AxisGeom(fig[1, 2], azimuth=-pi/2, elevation=pi/2, title="evenly spaced")
     hp1 = scatter!(ax2, V,markersize=markersize2,color=:red)
     hp2 = lines!(ax2, V,linewidth=linewidth,color=:red)
     hp3 = scatter!(ax2, Vi1,markersize=markersize1,color=:black)
     hp4 = lines!(ax2, Vi1,linewidth=linewidth,color=:black)
 
-    ax3 = Axis3(fig[1, 3],aspect = :data,azimuth=-pi/2,elevation=pi/2, title="evenly spaced, closed")
+    ax3 = AxisGeom(fig[1, 3], azimuth=-pi/2, elevation=pi/2, title="evenly spaced, closed, with must points")
     hp1 = scatter!(ax3, V,markersize=markersize2,color=:red)
     if !isnothing(must_points)
         hp5 = scatter!(ax3, V[must_points],markersize=markersize3,color=:green)
@@ -69,5 +69,4 @@ for testCase = 1:3
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")
-
 end
