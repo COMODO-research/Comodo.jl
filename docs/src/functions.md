@@ -286,6 +286,16 @@ Comodo.loftlinear
 Comodo.pointspacingmean
 ```
 
+## `pointspacingmin`
+```@docs
+Comodo.pointspacingmean
+```
+
+## `pointspacingmax`
+```@docs
+Comodo.pointspacingmean
+```
+
 ## `ray_triangle_intersect`
 ```@docs
 Comodo.ray_triangle_intersect
@@ -595,3 +605,123 @@ Comodo.hexsphere
 ```@docs 
 Comodo.hexspherehollow
 ```
+
+## `circumcircle`
+```@docs 
+Comodo.circumcircle
+```
+
+## `incircle`
+```@docs 
+Comodo.incircle
+```
+
+## `meshplot!`
+```@docs 
+Comodo.meshplot!
+```
+
+## `edgeplot!`
+```@docs 
+Comodo.edgeplot!
+```
+
+## `meshdual`
+```@docs 
+Comodo.meshdual
+```
+
+## `delaunay2D`
+```@docs 
+Comodo.delaunay2D
+```
+
+## `simplicialcomplex`
+```@docs 
+Comodo.simplicialcomplex
+```
+
+## `alphacomplex`
+```@docs 
+Comodo.alphacomplex
+```
+
+## `indices_faces_at_boundary_edges`
+```@docs 
+Comodo.indices_faces_at_boundary_edges
+```
+
+## `erodeboundary!`
+```@docs 
+Comodo.erodeboundary
+```
+
+## `erodetriangulation!`
+```@docs 
+Comodo.erodetriangulation
+```
+
+## `rectanglepoints`
+```@docs 
+Comodo.rectanglepoints
+```
+
+## `squarepoints`
+```@docs 
+Comodo.squarepoints
+```
+
+## `rectangle`
+```@docs 
+Comodo.rectangle
+```
+
+## `square`
+```@docs 
+Comodo.square
+```
+
+## `pizza`
+```@docs 
+Comodo.pizza
+```
+
+## `cart2bary`
+```@docs 
+Comodo.cart2bary
+```
+
+## `bary2cart`
+```@docs 
+Comodo.bary2cart
+```
+
+## `barycoord`
+```@docs 
+Comodo.barycoord
+```
+
+## `intriangle`
+```@docs intriangle
+```
+
+## `spacing2numsteps`
+```@docs 
+Comodo.spacing2numsteps
+```
+
+## `hexcylinder`
+```@docs 
+Comodo.hexcylinder
+```
+
+## `equilateraltriangle`
+```@docs 
+Comodo.equilateraltriangle
+```
+
+## `hermiteSegment`
+```@docs 
+Comodo.hermiteSegment
+```
+

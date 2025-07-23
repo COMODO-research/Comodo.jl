@@ -3664,20 +3664,21 @@ end
     F, V = geosphere(2, 1.0)
     VC = simplexcenter(F, V)
     F = [F[i] for i in findall(map(v -> v[3] > 0, VC))] # Remove some faces
-    Fn, Vn = remove_unused_vertices(F, V)
+    Fn, Vn, indFix  = remove_unused_vertices(F, V)
 
     @test Fn isa Vector{TriangleFace{Int}}
     @test Vn isa Vector{Point3{Float64}}
     @test length(F) == length(Fn)
     @test length(Vn) ==  maximum(reduce(vcat,Fn))
     
-    # Check empty results
-    Fn, Vn = remove_unused_vertices(Vector{TriangleFace{Int}}(), V)
-    @test isempty(Fn)
-    @test isempty(Vn)
+    F, V = geosphere(2, 1.0)    
+    f = F[1]
+    fn, Vn, indFix  = remove_unused_vertices(f, V)
+    @test length(Vn) ==  length(f)
 
-    fn, Vn = remove_unused_vertices(TriangleFace{Int}[], V)
-    @test isempty(fn)
+    # Check empty results
+    Fn, Vn, indFix  = remove_unused_vertices(Vector{TriangleFace{Int}}(), V)
+    @test isempty(Fn)
     @test isempty(Vn)
 end
 
@@ -7469,6 +7470,28 @@ end
 end    
 
 @testset "triangulateboundary" verbose = true begin                
+    @testset "<3 points" verbose = true begin                
+        eps_level = 1e-6
+        n = 13
+        V1 = collect(range(Point{3,Float64}(0.0,0.0,0.0),Point{3,Float64}(n,0.0,0.0),n))
+        for i in 2:2:n
+            V1[i] = Point{3,Float64}(V1[i][1],1.0,0.0)
+        end
+        ind1 = collect(1:length(V1))
+        N1 = fill(Vec{3,Float64}(0.0,0.0,1.0),length(ind1))
+
+        V2 = V1
+        ind2 = ind1
+        N2 = fill(Vec{3,Float64}(0.0,0.0,-1.0),length(ind2))
+
+        close_loop = false
+        anglethreshold = 140.0
+        
+        F1n = triangulateboundary(V1, ind1[1:2], N1[1:2], anglethreshold; deg = true, close_loop=close_loop)
+        
+        @test isempty(F1n)        
+    end
+
     @testset "Open loop" verbose = true begin                
         eps_level = 1e-6
         n = 13
@@ -7686,6 +7709,7 @@ end
     r = 1.0 # radius
     n1 = 0 # Number of refinement iterations
     F1,V1 = geosphere(n1,r)
+    E1 = meshedges(F1)
 
     #Visualize mesh
     fig = Figure(size = (1600,800))
@@ -7702,6 +7726,9 @@ end
     # GeometryBasics.Mesh     
     hp1 = meshplot!(ax1, GeometryBasics.Mesh(V1,F1); strokewidth=2)    
     @test typeof(hp1) == Poly{Tuple{GeometryBasics.Mesh{3, Float64, TriangleFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{TriangleFace{Int64}}}}} 
+
+    # Error for edges
+    @test_throws Exception meshplot!(ax1, GeometryBasics.Mesh(V1,E1); strokewidth=2)    
 end
 
 @testset "edgeplot!" verbose = true begin        
@@ -7727,6 +7754,9 @@ end
     hp1 = edgeplot!(ax1, F1, V1; linewidth=2)
     @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, TriangleFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{TriangleFace{Int64}}}}}
     
+    # GeometryBasics.Mesh     
+    hp1 = edgeplot!(ax1, GeometryBasics.Mesh(V1,E1); linewidth=2)    
+    @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
 end
 
 @testset "AxisGeom" verbose = true begin        
@@ -8089,6 +8119,9 @@ end
         V = rectanglepoints(w, h; dir=:acw)         
         @test isa(V,Vector{Point{3,Float64}})    
         @test length(V) == 4
+        V = rectanglepoints(w, h; dir=:cw)         
+        @test isa(V,Vector{Point{3,Float64}})    
+        @test length(V) == 4
         x = [v[1] for v in V]
         y = [v[2] for v in V]    
         @test minimum(x) == -w/2.0
@@ -8102,6 +8135,9 @@ end
         h = 2.0
         pointSpacing = 0.25
         V = rectanglepoints(w, h, pointSpacing; dir=:acw)         
+        @test isa(V,Vector{Point{3,Float64}})    
+        @test pointspacingmean(V) == pointSpacing        
+        V = rectanglepoints(w, h, pointSpacing; dir=:cw)         
         @test isa(V,Vector{Point{3,Float64}})    
         @test pointspacingmean(V) == pointSpacing        
         x = [v[1] for v in V]

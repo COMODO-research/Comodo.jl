@@ -2547,10 +2547,7 @@ function loftlinear(V1::Vector{Point{ND,TV}}, V2::Vector{Point{ND,TV}}; num_step
     if isnothing(num_steps)
         d = mean([norm(V2[i]-v1) for (i,v1) in enumerate(V1)])
         dp = 0.5* (pointspacingmean(V1)+pointspacingmean(V2))
-        num_steps = spacing2numsteps(d, dp; close_loop=false)
-        if num_steps < 2
-            num_steps = 2
-        end
+        num_steps = spacing2numsteps(d, dp; close_loop=false)    
     end
 
     if num_steps < 2
@@ -2914,16 +2911,12 @@ function remove_unused_vertices(F::Union{Vector{<: NgonFace},Vector{<: AbstractE
     end
 end
 
-function remove_unused_vertices(f::Union{NgonFace{N,TF}, AbstractElement{N,TF}},V::Vector{Point{ND,TV}}) where N where ND where TF<:Integer where TV<:Real
-    if isempty(f) # If the face set is empty, return all empty outputs
-        return f, Vector{Point{ND,TV}}(), Vector{Int}()
-    else # Faces not empty, so check which indices are used and shorten V if needed        
-        fc = convert(typeof(f), 1:N) # Fixed indices in f    
-        indFix = zeros(Int,length(V))
-        @views indFix[f] = fc
-        Vc = convert(Vector{Point{ND,TV}},V[f]) # Remove unused points    
-        return fc, Vc, indFix     
-    end
+function remove_unused_vertices(f::Union{NgonFace{N,TF}, AbstractElement{N,TF}},V::Vector{Point{ND,TV}}) where N where ND where TF<:Integer where TV<:Real        
+    fc = convert(typeof(f), 1:N) # Fixed indices in f    
+    indFix = zeros(Int,length(V))
+    @views indFix[f] = fc
+    Vc = convert(Vector{Point{ND,TV}},V[f]) # Remove unused points    
+    return fc, Vc, indFix         
 end
 
 function trisurfslice(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}},n = Vec{3, Float64}(0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance = 0.0, output_type=:full) where TF<:Integer where ND where TV<:Real 
@@ -3223,7 +3216,6 @@ curve. If a vector of edges `E` or a vector of faces `F is also provided, then
 the average edge length is computed. If instead a set of faces `F` is provided 
 then edges are first computed after which the mean edge spacing is return. 
 """
-
 function pointspacingmean(V::Vector{Point{ND,TV}}; close_loop=false) where ND where TV <: Real    
     d = curve_length(V; close_loop=close_loop, total=true)  
     if close_loop 
@@ -3262,7 +3254,6 @@ end
 Similar to `pointspacingmean` but this function computes to maximum point 
 spacing. 
 """
-
 function pointspacingmax(V::Vector{Point{ND,TV}}; close_loop=false) where ND where TV <: Real    
     if close_loop
         L = norm(V[end]-V[1])                    
@@ -3365,10 +3356,7 @@ function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive,
 
     # Derive num_steps from curve point spacing if missing    
     if isnothing(num_steps)
-        num_steps = spacing2numsteps(extent, pointspacingmean(V1; close_loop=close_loop); close_loop=false)        
-        if num_steps < 2
-            num_steps = 2
-        end
+        num_steps = spacing2numsteps(extent, pointspacingmean(V1; close_loop=close_loop); close_loop=false)                
         if face_type==:tri
             num_steps = num_steps + Int(iseven(num_steps)) # Force uneven
         end        
@@ -7421,6 +7409,15 @@ function _getFaceLoop(i, faceSet, F)
     return faceSetOrdered
 end
 
+"""
+     meshdual(F,V)
+
+Computes the mesh dual 
+
+# Description
+This function derives the dual mesh for the input faces `F` and vertices 
+`V`. 
+"""
 function meshdual(F,V)
     con_V2F = con_vertex_face(F,V)
     V_dual = simplexcenter(F,V)
@@ -7818,6 +7815,18 @@ function pizza(r::T, n::TN; dir=:acw) where T<:Real where TN<:Integer
     return F, V
 end
 
+"""
+    barycoord(vf,p,i,a,n)          
+    barycoord(vf,p,i) 
+
+Computes barycentric coordinate
+
+# Description
+This function computes the `i`-th barycentric coordinate for the point `p` 
+within the triangle defined by the input point vector `vf`. Optionally one can 
+also provide the triangle face area `a` and normal direction `n`, if these 
+have already been computed. 
+"""
 function barycoord(vf,p,i,a,n)     
      vfp = Vector{eltype(vf)}(undef,length(vf))
      for j in eachindex(vf)
@@ -7837,6 +7846,15 @@ function barycoord(vf,p,i)
      return barycoord(vf,p,i,a,n)
 end
 
+"""
+    cart2bary(f::NgonFace{NF,TF}, V::Vector{Point{ND,TV}}, p::Point{ND,TV}) where NF where TF<:Integer where ND where TV<:Real
+
+Computes barycentric coordinates
+
+# Description
+This function computes the barycentric coordinates for the point `p` within the 
+triangle defined by the face `f` and vertices `V`. 
+"""
 function cart2bary(f::NgonFace{NF,TF}, V::Vector{Point{ND,TV}}, p::Point{ND,TV}) where NF where TF<:Integer where ND where TV<:Real
     c = edgecrossproduct(f,V) # Shoelace vector
     a = norm(c) # Area
@@ -7847,10 +7865,36 @@ function cart2bary(f::NgonFace{NF,TF}, V::Vector{Point{ND,TV}}, p::Point{ND,TV})
     return Point{3,TV}(λ₁, λ₂, λ₃)
 end
 
+"""
+    bary2cart(f::NgonFace{NF,TF}, V::Vector{Point{ND,TV}}, λ::Point{ND,TV}) where NF where TF<:Integer where ND where TV<:Real
+
+Computes Cartesian coordinates from barycentric coordinates
+
+# Description
+This function computes the Cartesian coordinates for the point `p` using the 
+triangle defined by the face `f`, the triangle vertices `V` and the barycentric
+coordinates `λ`.  
+"""
 function bary2cart(f::NgonFace{NF,TF}, V::Vector{Point{ND,TV}}, λ::Point{ND,TV}) where NF where TF<:Integer where ND where TV<:Real
     return λ[1]*V[f[1]] + λ[2]*V[f[2]] + λ[3]*V[f[3]]
 end
 
+"""
+    intriangle(f, V::Vector{Point{ND,TV}}, p::Point{ND,TV}) where ND where TV<:Real          
+    intriangle(f, V::Vector{Point{ND,TV}}, p::Point{ND,TV}, a, n) where ND where TV<:Real           
+    intriangle(f::TriangleFace{TF}, V::Vector{Point{ND,TV}}, P::Vector{Point{ND,TV}}) where ND where TF<:Integer where TV<:Real
+    intriangle(f::TriangleFace{TF}, V::Vector{Point{ND,TV}}, P::Vector{Point{ND,TV}}, a, n) where ND where TF<:Integer where TV<:Real
+
+Checks if point is in triangle
+
+# Description
+This function computes a boolean which is true if the point `p` is inside the 
+triangle defined by the face `f` and the triangle vertices `V`. Instead of a 
+single face, the input may also feature a vector of triangle faces `F`. 
+Optionally one can also provide the triangle face area `a` (or area vector `A`)
+and normal direction `n` (or vector of normal directions), if these have already
+been computed. In addition one may use a vector of points `P`. 
+"""
 function intriangle(f, V::Vector{Point{ND,TV}}, p::Point{ND,TV}) where ND where TV<:Real          
      c = edgecrossproduct(V[f])
      a = norm(c) # Area     
@@ -7899,7 +7943,19 @@ function intriangle(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, p::Poi
      end
      return B
 end
- 
+
+"""
+    spacing2numsteps(d::T, pointSpacing; close_loop=false) where T<:Real
+
+Returns number of steps to achieve spacing
+
+# Description
+This function takes in the distance (or length) `d` and the desired point 
+spacing `pointSpacing` across such a distance and returns the number of points to use across 
+the distance to achieve the points spacing. The optional argument `close_loop`
+can be used to set wether the distance is for a closed loop (since the start 
+and end point are the same for these). 
+"""
 function spacing2numsteps(d::T, pointSpacing; close_loop=false) where T<:Real
     if close_loop == true
         return ceil(Int,d/pointSpacing)
@@ -7908,6 +7964,21 @@ function spacing2numsteps(d::T, pointSpacing; close_loop=false) where T<:Real
     end
 end
 
+"""
+    spacing2numsteps(d::T, pointSpacing; close_loop=false) where T<:Real
+
+Creates hexahedral mesh of cylinder
+
+# Description
+This function creates a hexahedral mesh of a cylinder. The input consists of the 
+cylinder radius `r` and the height `h`. In addition the parameter `n` set the 
+number of refinement steps to use for the the `quaddisc` based creation of the
+top and bottom surface. The optional argument `nh` sets the number of steps (in
+terms of nodes) in the height direction. The default behaviour it to define the
+cylinder with the 0.0 z level in the centre (`direction=:both`), however the 
+optional argument `direction` can also be set to be `:positive` (up only) or 
+`:negative` (down only). 
+"""
 function hexcylinder(r::Tr, h::Th, n::Int; nh=0, direction=:both) where Tr<:Real where Th<:Real        
     F,V = quaddisc(r,n; method=:Catmull_Clark)        
     if nh<2
@@ -7935,6 +8006,16 @@ function hexcylinder(r::Tr, h::Th, n::Int; nh=0, direction=:both) where Tr<:Real
     return E, V, F, Fb, Cb
 end
 
+"""
+    equilateraltriangle(s=1.0, c=Point{3,Float64}(0.0, 0.0, 0.0))
+
+Creates equilateral triangle
+
+# Description
+This function creates the face `f` anver vertices `V` for a single equilateral 
+triangle. The inputs include the edgelength (or width) `s` (default `s=1.0`)
+as well as the centre `c` (default at origin). 
+"""
 function equilateraltriangle(s=1.0, c=Point{3,Float64}(0.0, 0.0, 0.0))
     f = TriangleFace{Int}(1,2,3)
     V = [Point{3,Float64}( s/2.0 + c[1], -s*sqrt(3)/6.0 + c[2], c[3]), 
@@ -7943,6 +8024,17 @@ function equilateraltriangle(s=1.0, c=Point{3,Float64}(0.0, 0.0, 0.0))
     return f, V
 end
 
+"""
+    equilateraltriangle(s=1.0, c=Point{3,Float64}(0.0, 0.0, 0.0))
+
+Evaluates Hermite spline segment
+
+# Description
+This function computes `n` points along a Hermite spline defined by the start 
+point `p1` and speed `v1`, and the end point `p2` and speed `v2`. The 
+implementation uses the `nbezier` function with the control points: 
+`[p1, p1+v1/3.0, p2-v2/3.0, p2]` to create the spline. 
+"""
 function hermiteSegment(n::Int, p1::Point{ND,TV}, v1::Point{ND,TV}, p2::Point{ND,TV}, v2::Point{ND,TV}) where ND where TV<:Real            
     return nbezier([p1, p1+v1/3.0, p2-v2/3.0, p2],n) 
 end
