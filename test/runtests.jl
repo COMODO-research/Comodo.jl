@@ -169,7 +169,6 @@ end
         
 end
 
-
 @testset "gridpoints_equilateral" verbose = true begin
     eps_level = 1e-4
        
@@ -424,7 +423,7 @@ end
         eps_level = 1e-4
         np = 10
         t = range(0.0,2.0*π,np) # Parameterisation metric
-        V = [GeometryBasics.Point{3, Float64}(cos(t[i]),sin(t[i]),t[i]/(2.0*π)) for i in eachindex(t)] # ND data, here 3D points
+        V = [Point{3, Float64}(cos(t[i]),sin(t[i]),t[i]/(2.0*π)) for i in eachindex(t)] # ND data, here 3D points
         np_i = np*3 
         ti = range(minimum(t)-0.5, maximum(t) + 0.5, np_i)
 
@@ -467,16 +466,16 @@ end
     end 
 
     @testset "vector of points to vector of points" begin
-        V1 = Vector{GeometryBasics.Point{3,Float64}}(undef, 4)
-        V1[1] = GeometryBasics.Point{3,Float64}(1.0, 0.0, 0.0)
-        V1[2] = GeometryBasics.Point{3,Float64}(0.0, 1.0, 0.0)
-        V1[3] = GeometryBasics.Point{3,Float64}(0.0, 0.0, 1.0)
-        V1[4] = GeometryBasics.Point{3,Float64}(1.0, 1.0, 1.0)
+        V1 = Vector{Point{3,Float64}}(undef, 4)
+        V1[1] = Point{3,Float64}(1.0, 0.0, 0.0)
+        V1[2] = Point{3,Float64}(0.0, 1.0, 0.0)
+        V1[3] = Point{3,Float64}(0.0, 0.0, 1.0)
+        V1[4] = Point{3,Float64}(1.0, 1.0, 1.0)
 
-        V2 = Vector{GeometryBasics.Point{3,Float64}}(undef, 3)
-        V2[1] = GeometryBasics.Point{3,Float64}(π, 0.0, 0.0)
-        V2[2] = GeometryBasics.Point{3,Float64}(0.0, π, 0.0)
-        V2[3] = GeometryBasics.Point{3,Float64}(0.0, 0.0, π)
+        V2 = Vector{Point{3,Float64}}(undef, 3)
+        V2[1] = Point{3,Float64}(π, 0.0, 0.0)
+        V2[2] = Point{3,Float64}(0.0, π, 0.0)
+        V2[3] = Point{3,Float64}(0.0, 0.0, π)
 
         result = dist(V1, V2)
         eps_level = maximum(eps.(result))
@@ -1224,52 +1223,52 @@ end
 @testset "edgecrossproduct" verbose = true begin
     @testset "Single triangle" begin
         F = TriangleFace{Int}(1, 2, 3)
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,3)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,3)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
         C = edgecrossproduct(F,V) 
         @test C == Vec3{Float64}(0.0,0.0,0.5)
     end
     @testset "Single quad" begin
         F = QuadFace{Int}(1, 2, 3, 4)
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,4)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
         C = edgecrossproduct(F,V) 
         @test C == Vec3{Float64}(0.0,0.0,1.0)
     end
     @testset "Single vector" begin
         F = [1, 2, 3, 4]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,4)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
         C = edgecrossproduct(F,V) 
         @test C == Vec3{Float64}(0.0,0.0,1.0)
     end
     @testset "Triangles" begin
         F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,4)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
         C = edgecrossproduct(F,V) 
         @test C == [Vec3{Float64}(0.0,0.0,0.5),Vec3{Float64}(0.0,0.0,-0.5)]
     end
     @testset "Quads" begin
         F = [QuadFace{Int}(1, 2, 3, 4),QuadFace{Int}(6, 5, 4, 3)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,6)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
-        V[5] = GeometryBasics.Point{3, Float64}(2.0, 0.0, 0.0)
-        V[6] = GeometryBasics.Point{3, Float64}(2.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,6)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
+        V[5] = Point{3, Float64}(2.0, 0.0, 0.0)
+        V[6] = Point{3, Float64}(2.0, 1.0, 0.0)
         C = edgecrossproduct(F,V) 
         @test C == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,-1.0)]
     end
@@ -1278,42 +1277,42 @@ end
 @testset "facenormal" verbose = true begin
     @testset "Single triangle" begin
         F = [TriangleFace{Int}(1, 2, 3)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,3)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,3)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
         N = facenormal(F,V) 
         @test N == [Vec3{Float64}(0.0,0.0,1.0)]
     end
     @testset "Single quad" begin
         F = [QuadFace{Int}(1, 2, 3, 4)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,4)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
         N = facenormal(F,V) 
         @test N == [Vec3{Float64}(0.0,0.0,1.0)]
     end
     @testset "Triangles" begin
         F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,4)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
         N = facenormal(F,V) 
         @test N == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,-1.0)]
     end
     @testset "Quads" begin
         F = [QuadFace{Int}(1, 2, 3, 4),QuadFace{Int}(6, 5, 4, 3)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,6)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
-        V[5] = GeometryBasics.Point{3, Float64}(2.0, 0.0, 0.0)
-        V[6] = GeometryBasics.Point{3, Float64}(2.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,6)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
+        V[5] = Point{3, Float64}(2.0, 0.0, 0.0)
+        V[6] = Point{3, Float64}(2.0, 1.0, 0.0)
         N = facenormal(F,V) 
         @test N == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,-1.0)]
     end
@@ -1325,43 +1324,53 @@ end
 
 @testset "facearea" verbose = true begin
     @testset "Single triangle" begin
+        f = TriangleFace{Int}(1, 2, 3)
+        V = Vector{Point{3, Float64}}(undef,3)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        A = facearea(f,V) 
+        @test A == 0.5
+    end
+
+    @testset "Vector containing single triangle" begin
         F = [TriangleFace{Int}(1, 2, 3)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,3)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,3)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
         A = facearea(F,V) 
         @test A == [0.5]
     end
     @testset "Single quad" begin
         F = [QuadFace{Int}(1, 2, 3, 4)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,4)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
         A = facearea(F,V) 
         @test A == [1.0]
     end
     @testset "Triangles" begin
         F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,4)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
         A = facearea(F,V) 
         @test A == [0.5,0.5]
     end
     @testset "Quads" begin
         F = [QuadFace{Int}(1, 2, 3, 4),QuadFace{Int}(6, 5, 4, 3)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,6)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
-        V[5] = GeometryBasics.Point{3, Float64}(2.0, 0.0, 0.0)
-        V[6] = GeometryBasics.Point{3, Float64}(2.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,6)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
+        V[5] = Point{3, Float64}(2.0, 0.0, 0.0)
+        V[6] = Point{3, Float64}(2.0, 1.0, 0.0)
         A = facearea(F,V) 
         @test A == [1.0,1.0]
     end
@@ -1374,42 +1383,42 @@ end
 @testset "vertexnormal" verbose = true begin
     @testset "Single triangle" begin
         F = [TriangleFace{Int}(1, 2, 3)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,3)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,3)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
         N = vertexnormal(F,V) 
         @test N == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0)]
     end
     @testset "Single quad" begin
         F = [QuadFace{Int}(1, 2, 3, 4)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,4)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
         N = vertexnormal(F,V) 
         @test N == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0)]
     end
     @testset "Triangles" begin
         F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,4)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(0.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(1.0, 1.0, 0.0)
         N = vertexnormal(F,V) 
         @test N == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0)]
     end
     @testset "Quads" begin
         F = [QuadFace{Int}(1, 2, 3, 4),QuadFace{Int}(3,4,5,6)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,6)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
-        V[5] = GeometryBasics.Point{3, Float64}(2.0, 0.0, 0.0)
-        V[6] = GeometryBasics.Point{3, Float64}(2.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,6)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
+        V[5] = Point{3, Float64}(2.0, 0.0, 0.0)
+        V[6] = Point{3, Float64}(2.0, 1.0, 0.0)
         N = vertexnormal(F,V) 
         @test N == [Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0),Vec3{Float64}(0.0,0.0,1.0)]
     end
@@ -1420,13 +1429,33 @@ end
 end
 
 @testset "edgelengths" begin
-    @testset "GeometryBasics faces, vertices" begin
+    @testset "Single face" begin
+        f = QuadFace{Int}(1, 2, 3, 4)
+        V = Vector{Point{3, Float64}}(undef,4)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
+        
+        @test edgelengths(f,V) == [1.0, 1.0, 1.0, 1.0] # Unit square
+        @test edgelengths(f,V*pi) == pi.*[1.0, 1.0, 1.0, 1.0] # Scaled square
+    end
+
+    @testset "Single edge" begin
+        e = LineFace{Int}(1, 2)
+        V = Vector{Point{3, Float64}}(undef,2)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        @test edgelengths(e,V) == 1.0         
+    end
+
+    @testset "Vector containing single faces" begin
         F = [QuadFace{Int}(1, 2, 3, 4)]
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,4)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
         
         @test edgelengths(F,V) == [1.0, 1.0, 1.0, 1.0] # Unit square
         @test edgelengths(F,V*pi) == pi.*[1.0, 1.0, 1.0, 1.0] # Scaled square
@@ -1435,11 +1464,23 @@ end
     @testset "GeometryBasics LineFace edges" begin
         F = [QuadFace{Int}(1, 2, 3, 4)]
         E = meshedges(F)
-        V = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-        V[1] = GeometryBasics.Point{3, Float64}(0.0, 0.0, 0.0)
-        V[2] = GeometryBasics.Point{3, Float64}(1.0, 0.0, 0.0)
-        V[3] = GeometryBasics.Point{3, Float64}(1.0, 1.0, 0.0)
-        V[4] = GeometryBasics.Point{3, Float64}(0.0, 1.0, 0.0)
+        V = Vector{Point{3, Float64}}(undef,4)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
+        
+        @test edgelengths(E,V) == [1.0, 1.0, 1.0, 1.0]        
+    end
+    
+    @testset "GeometryBasics LineFace edges" begin
+        F = [QuadFace{Int}(1, 2, 3, 4)]
+        E = meshedges(F)
+        V = Vector{Point{3, Float64}}(undef,4)
+        V[1] = Point{3, Float64}(0.0, 0.0, 0.0)
+        V[2] = Point{3, Float64}(1.0, 0.0, 0.0)
+        V[3] = Point{3, Float64}(1.0, 1.0, 0.0)
+        V[4] = Point{3, Float64}(0.0, 1.0, 0.0)
         
         @test edgelengths(E,V) == [1.0, 1.0, 1.0, 1.0]        
     end
@@ -1682,7 +1723,7 @@ end
     @test F isa Vector{TriangleFace{Int}}
     @test length(F) == 4^n*20    # 20 since the icosahedron is the start geometry
     @test V isa Vector{Point{3,Float64}}    
-    @test isapprox(V[ind],GeometryBasics.Point{3, Float64}[[0.0, -0.5257311121191336, -0.85065080835204], 
+    @test isapprox(V[ind],Point{3, Float64}[[0.0, -0.5257311121191336, -0.85065080835204], 
     [-0.25989191300775444, -0.43388856455269487, 0.8626684804161864], [0.5133754412304479, 0.6465777917977317, 0.5642542117657715], 
     [0.21302286564912973, -0.5712516591357086, -0.7926492292592814], [0.840177885327139, -0.5192584897281833, 0.15643446504023087], 
     [-0.7838430424199713, 0.08108629344330351, -0.6156420208736807]], atol=eps_level)
@@ -2739,7 +2780,7 @@ end
 
     # Single face/element
     F1 = QuadFace{Int}[[1,2,3,4]]
-    V1 = [GeometryBasics.Point3(rand(3)) for _=1:length(F1[1])]
+    V1 = [Point3(rand(3)) for _=1:length(F1[1])]
 
     # A quad mesh featuring a variation in terms of face areas and vertex connectivity 
     Fq,Vq = cube(1.0)    
@@ -2893,7 +2934,7 @@ end
 
     # Single face/element
     F1 = [[1,2,3,4,5,6]]
-    V1 = [GeometryBasics.Point3(rand(3)) for _=1:length(F1[1])]
+    V1 = [Point3(rand(3)) for _=1:length(F1[1])]
 
     # A quad mesh featuring a variation in terms of face areas and vertex connectivity 
     Fq,Vq = cube(1.0)    
@@ -3619,7 +3660,6 @@ end
     end
 end
 
-
 @testset "remove_unused_vertices" begin
     F, V = geosphere(2, 1.0)
     VC = simplexcenter(F, V)
@@ -3636,8 +3676,10 @@ end
     @test isempty(Fn)
     @test isempty(Vn)
 
+    fn, Vn = remove_unused_vertices(TriangleFace{Int}[], V)
+    @test isempty(fn)
+    @test isempty(Vn)
 end
-
 
 @testset "trisurfslice" begin
     eps_level = 1e-2
@@ -3952,12 +3994,18 @@ end
 
 end
 
-
 @testset "pointspacingmean" verbose = true begin
-    eps_level = 1e-4
+    eps_level = 1e-6
     @testset "Curve" begin
         V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.75,0.0,0.0],[1.75,0.0,0.0]]
         r = pointspacingmean(V)
+        @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_level)
+    end
+
+    @testset "Single edge" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0]]
+        e = LineFace{Int}([1,2])
+        r = pointspacingmean(e,V)
         @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_level)
     end
 
@@ -3968,14 +4016,94 @@ end
         @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_level)
     end
 
+    @testset "Single face" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.25,0.5,0.0],[0,0.5,0.0],[0.0,0.0,0.0]]
+        f = QuadFace{Int}(1,2,3,4)
+        r = pointspacingmean(f,V)
+        @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_level)
+    end
+
     @testset "Faces" begin
         V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.25,0.5,0.0],[0,0.5,0.0],[0.0,0.0,0.0]]
-        F = QuadFace{Int}[[1,2,3,4]]
+        F = [QuadFace{Int}(1,2,3,4),QuadFace{Int}(1,2,3,4)]
         r = pointspacingmean(F,V)
         @test isapprox(r,mean(norm.(diff(V,dims=1))),atol = eps_level)
     end
 end
 
+@testset "pointspacingmin" verbose = true begin
+    eps_level = 1e-6
+    @testset "Curve" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.75,0.0,0.0],[1.75,0.0,0.0]]
+        r = pointspacingmin(V)
+        @test isapprox(r,minimum(norm.(diff(V,dims=1))),atol = eps_level)
+    end
+
+    @testset "Single edge" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0]]
+        e = LineFace{Int}([1,2])
+        r = pointspacingmin(e,V)
+        @test isapprox(r,minimum(norm.(diff(V,dims=1))),atol = eps_level)
+    end
+
+    @testset "Edges" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.75,0.0,0.0],[1.75,0.0,0.0]]
+        E = LineFace{Int}[[1,2],[2,3],[3,4]]
+        r = pointspacingmin(E,V)
+        @test isapprox(r,minimum(norm.(diff(V,dims=1))),atol = eps_level)
+    end
+
+    @testset "Single face" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.25,0.5,0.0],[0,0.5,0.0],[0.0,0.0,0.0]]
+        f = QuadFace{Int}(1,2,3,4)
+        r = pointspacingmin(f,V)
+        @test isapprox(r,minimum(norm.(diff(V,dims=1))),atol = eps_level)
+    end
+
+    @testset "Faces" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.25,0.5,0.0],[0,0.5,0.0],[0.0,0.0,0.0]]
+        F = [QuadFace{Int}(1,2,3,4),QuadFace{Int}(1,2,3,4)]
+        r = pointspacingmin(F,V)
+        @test isapprox(r,minimum(norm.(diff(V,dims=1))),atol = eps_level)
+    end
+end
+
+@testset "pointspacingmax" verbose = true begin
+    eps_level = 1e-6
+    @testset "Curve" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.75,0.0,0.0],[1.75,0.0,0.0]]
+        r = pointspacingmax(V)
+        @test isapprox(r,maximum(norm.(diff(V,dims=1))),atol = eps_level)
+    end
+
+    @testset "Single edge" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0]]
+        e = LineFace{Int}([1,2])
+        r = pointspacingmax(e,V)
+        @test isapprox(r,maximum(norm.(diff(V,dims=1))),atol = eps_level)
+    end
+
+    @testset "Edges" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.75,0.0,0.0],[1.75,0.0,0.0]]
+        E = LineFace{Int}[[1,2],[2,3],[3,4]]
+        r = pointspacingmax(E,V)
+        @test isapprox(r,maximum(norm.(diff(V,dims=1))),atol = eps_level)
+    end
+
+    @testset "Single face" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.25,0.5,0.0],[0,0.5,0.0],[0.0,0.0,0.0]]
+        f = QuadFace{Int}(1,2,3,4)
+        r = pointspacingmax(f,V)
+        @test isapprox(r,maximum(norm.(diff(V,dims=1))),atol = eps_level)
+    end
+
+    @testset "Faces" begin
+        V = Point3{Float64}[[0.0,0.0,0.0],[0.25,0.0,0.0],[0.25,0.5,0.0],[0,0.5,0.0],[0.0,0.0,0.0]]
+        F = [QuadFace{Int}(1,2,3,4),QuadFace{Int}(1,2,3,4)]
+        r = pointspacingmax(F,V)
+        @test isapprox(r,maximum(norm.(diff(V,dims=1))),atol = eps_level)
+    end
+end
 
 @testset "extrudecurve" verbose = true begin
     eps_level = 1e-4
@@ -4335,7 +4463,7 @@ end
     F,V = cube(r)    
     F = quad2tri(F,V,convert_method = :forward)
     @testset "ray" begin 
-        ray_origin = GeometryBasics.Point3{Float64}(0.25,0.0,1.5) # Slight off so we hit one triangle, not two at the edge
+        ray_origin = Point3{Float64}(0.25,0.0,1.5) # Slight off so we hit one triangle, not two at the edge
         ray_vector = Vec3{Float64}(0.0,0.0,-1)
 
         P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 1)
@@ -4350,7 +4478,7 @@ end
         @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0]],atol=eps_level)
         @test isa(indIntersect,Vector{Int})
 
-        ray_origin = GeometryBasics.Point3{Float64}(0.0,0.0,1.5) # At centre so hits an edge between two triangles
+        ray_origin = Point3{Float64}(0.0,0.0,1.5) # At centre so hits an edge between two triangles
         ray_vector = Vec3{Float64}(0.0,0.0,-1)
         P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 0, tolEps = 1e-3)
         @test isapprox(P,Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, -1.0], 
@@ -4359,7 +4487,7 @@ end
     end
 
     @testset "line type" begin 
-        ray_origin = GeometryBasics.Point3{Float64}(0.25,0.0,1.5) # Slight off so we hit one triangle, not two at the edge
+        ray_origin = Point3{Float64}(0.25,0.0,1.5) # Slight off so we hit one triangle, not two at the edge
         ray_vector = Vec3{Float64}(0.0,0.0,-1) # Shorst so only one hit
 
         P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 1)
@@ -4380,7 +4508,7 @@ end
         @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0]],atol=eps_level)
         @test isa(indIntersect,Vector{Int})
 
-        ray_origin = GeometryBasics.Point3{Float64}(0.0,0.0,1.5) # At centre so hits an edge between two triangles
+        ray_origin = Point3{Float64}(0.0,0.0,1.5) # At centre so hits an edge between two triangles
         P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 0, tolEps = 1e-3)
         @test isapprox(P,Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, -1.0], 
                                          [0.0, 0.0,  1.0], [0.0, 0.0,  1.0]],atol=eps_level)
@@ -4555,12 +4683,12 @@ end
     @testset "Evenly upsampling linear curve" begin
         # Example linear curve raw
         X = range(0, 10, 5)
-        V = [GeometryBasics.Point{3,Float64}(x, 2.0*x, 0.0) for x in X]
+        V = [Point{3,Float64}(x, 2.0*x, 0.0) for x in X]
 
         # Create true evenly upsampled data 
         n = 20
         Xt = range(0, 10, n)
-        Vt = [GeometryBasics.Point{3,Float64}(x, 2.0*x, 0.0) for x in Xt]
+        Vt = [Point{3,Float64}(x, 2.0*x, 0.0) for x in Xt]
 
         # Resample using evenly_sample
         Vi = evenly_sample(V, n; niter=5)
@@ -4575,11 +4703,11 @@ end
         # Example circle curve raw
         r = 2.25
         nc = 100    
-        V = [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t in range(0.0,2.0*π,nc)]
+        V = [Point{3, Float64}(r*cos(t),r*sin(t),0) for t in range(0.0,2.0*π,nc)]
 
         # Create true evenly upsampled data 
         n = 10
-        Vt = [GeometryBasics.Point{3, Float64}(r*cos(t),r*sin(t),0) for t in range(0.0,2.0*π,n)]
+        Vt = [Point{3, Float64}(r*cos(t),r*sin(t),0) for t in range(0.0,2.0*π,n)]
         
         # Resample using evenly_sample
         Vi = evenly_sample(V, n; niter=5)
@@ -4717,11 +4845,11 @@ end
 
     # Define guide curve
     nc = 25 # Number of points on guide curve
-    P = Vector{GeometryBasics.Point{3, Float64}}(undef,4)
-    P[1 ] = GeometryBasics.Point{3, Float64}( 0.0, 0.0, 0.0)
-    P[2 ] = GeometryBasics.Point{3, Float64}( 1.0, 0.0, 0.0)
-    P[3 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 0.0)
-    P[4 ] = GeometryBasics.Point{3, Float64}( 1.0, 1.0, 1.0)
+    P = Vector{Point{3, Float64}}(undef,4)
+    P[1 ] = Point{3, Float64}( 0.0, 0.0, 0.0)
+    P[2 ] = Point{3, Float64}( 1.0, 0.0, 0.0)
+    P[3 ] = Point{3, Float64}( 1.0, 1.0, 0.0)
+    P[4 ] = Point{3, Float64}( 1.0, 1.0, 1.0)
     Vc = nbezier(P,nc) # Get Bezier fit points
     Vc = [vc.*10 for vc in Vc]
     Vc = evenly_sample(Vc, nc)
@@ -7561,9 +7689,18 @@ end
 
     #Visualize mesh
     fig = Figure(size = (1600,800))
-
     ax1 = AxisGeom(fig[1, 1], title = "Visualised mesh")
-    hp1 = meshplot!(ax1, F1, V1; strokewidth=2)
+
+    # Faces     
+    hp1 = meshplot!(ax1, F1, V1; strokewidth=2)    
+    @test typeof(hp1) == Poly{Tuple{GeometryBasics.Mesh{3, Float64, TriangleFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{TriangleFace{Int64}}}}} 
+
+    # Single face    
+    hp1 = meshplot!(ax1, F1[1], V1; strokewidth=2)    
+    @test typeof(hp1) == Poly{Tuple{GeometryBasics.Mesh{3, Float64, TriangleFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{TriangleFace{Int64}}}}} 
+
+    # GeometryBasics.Mesh     
+    hp1 = meshplot!(ax1, GeometryBasics.Mesh(V1,F1); strokewidth=2)    
     @test typeof(hp1) == Poly{Tuple{GeometryBasics.Mesh{3, Float64, TriangleFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{TriangleFace{Int64}}}}} 
 end
 
@@ -7576,10 +7713,20 @@ end
 
     #Visualize mesh
     fig = Figure(size = (800,800))
-
     ax1 = AxisGeom(fig[1, 1], title = "Visualised mesh")
+
+    # Edges     
     hp1 = edgeplot!(ax1, E1, V1; linewidth=2)
     @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
+
+    # Single edge     
+    hp1 = edgeplot!(ax1, E1[1], V1; linewidth=2)
+    @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
+
+    # Faces     
+    hp1 = edgeplot!(ax1, F1, V1; linewidth=2)
+    @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, TriangleFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{TriangleFace{Int64}}}}}
+    
 end
 
 @testset "AxisGeom" verbose = true begin        
@@ -7740,7 +7887,7 @@ end
     V = circlepoints(r1,n)
     V2 = [v*(r2/r1) for v in V]
     Q = RotXYZ(0.0,0.0,(2*pi/n)/2)        
-    V2 = [GeometryBasics.Point{3, Float64}(Q*v) for v ∈ V2] 
+    V2 = [Point{3, Float64}(Q*v) for v ∈ V2] 
     append!(V,V2)
     np = length(V)
     Fd, Vd = delaunay2D(V) # Contruct Delaunay triangulation
@@ -7760,6 +7907,7 @@ end
     
     #Test errors     
     @test_throws Exception erodetriangulation!(Fd,Vd,α; domain=:wrong)
+    @test_throws Exception erodetriangulation!(Fd,Vd,α; domain=:full, method=:wrong)
 end
 
 @testset "simplicialcomplex" verbose = true begin       
@@ -7801,7 +7949,7 @@ end
     V = circlepoints(r1,n)
     V2 = [v*(r2/r1) for v in V]
     Q = RotXYZ(0.0,0.0,(2*pi/n)/2)        
-    V2 = [GeometryBasics.Point{3, Float64}(Q*v) for v ∈ V2] 
+    V2 = [Point{3, Float64}(Q*v) for v ∈ V2] 
     append!(V,V2)
 
     Fd, Vd = delaunay2D(V) # Contruct Delaunay triangulation
@@ -7820,7 +7968,7 @@ end
     V = circlepoints(r1,n)
     V2 = [v*(r2/r1) for v in V]
     Q = RotXYZ(0.0,0.0,(2*pi/n)/2)        
-    V2 = [GeometryBasics.Point{3, Float64}(Q*v) for v ∈ V2] 
+    V2 = [Point{3, Float64}(Q*v) for v ∈ V2] 
     append!(V,V2)
 
     Fd, Vd = delaunay2D(V) # Contruct Delaunay triangulation
@@ -7855,7 +8003,7 @@ end
     V = circlepoints(r1,n)
     V2 = [v*(r2/r1) for v in V]
     Q = RotXYZ(0.0,0.0,(2*pi/n)/2)        
-    V2 = [GeometryBasics.Point{3, Float64}(Q*v) for v ∈ V2] 
+    V2 = [Point{3, Float64}(Q*v) for v ∈ V2] 
     append!(V,V2)
 
     Fd, Vd = delaunay2D(V) # Contruct Delaunay triangulation
@@ -7910,6 +8058,113 @@ end
     Fs, Vs = subtri(F,V,2)
     ind = indices_faces_at_boundary_edges(Fs)
     @test length(ind) == nf*4 # 4 times previous due to 2x subtri splitting    
+end
+
+@testset "rectangle" verbose = true begin       
+    w = 1.0
+    h = 2.0
+    f,V = rectangle(w, h; orientation=:up) 
+    n = facenormal(f,V)
+    @test n == Vec{3,Float64}(0.0,0.0,1.0)
+    f,V = rectangle(w, h; orientation=:down) 
+    n = facenormal(f,V)
+    @test n == Vec{3,Float64}(0.0,0.0,-1.0)
+    @test isa(f,QuadFace{Int})
+    @test isa(V,Vector{Point{3,Float64}})    
+    @test length(V) == 4
+    x = [v[1] for v in V]
+    y = [v[2] for v in V]    
+    @test minimum(x) == -w/2.0
+    @test maximum(x) ==  w/2.0
+    @test minimum(y) == -h/2.0
+    @test maximum(y) ==  h/2.0
+        
+    @test_throws Exception rectangle(w, h; orientation=:wrong) 
+end
+
+@testset "rectanglepoints" verbose = true begin       
+    @testset "No pointspacing" begin       
+        w = 1.0
+        h = 2.0
+        V = rectanglepoints(w, h; dir=:acw)         
+        @test isa(V,Vector{Point{3,Float64}})    
+        @test length(V) == 4
+        x = [v[1] for v in V]
+        y = [v[2] for v in V]    
+        @test minimum(x) == -w/2.0
+        @test maximum(x) ==  w/2.0
+        @test minimum(y) == -h/2.0
+        @test maximum(y) ==  h/2.0            
+        @test_throws Exception rectanglepoints(w, h; dir=:wrong) 
+    end
+    @testset "Pointspacing" begin       
+        w = 1.0
+        h = 2.0
+        pointSpacing = 0.25
+        V = rectanglepoints(w, h, pointSpacing; dir=:acw)         
+        @test isa(V,Vector{Point{3,Float64}})    
+        @test pointspacingmean(V) == pointSpacing        
+        x = [v[1] for v in V]
+        y = [v[2] for v in V]    
+        @test minimum(x) == -w/2.0
+        @test maximum(x) ==  w/2.0
+        @test minimum(y) == -h/2.0
+        @test maximum(y) ==  h/2.0            
+        @test_throws Exception rectanglepoints(w, h, pointSpacing; dir=:wrong) 
+    end
+end
+
+@testset "square" verbose = true begin       
+    eps_level = 1e-6
+
+    w = 1.0    
+    f,V = square(w; orientation=:up) 
+    n = facenormal(f,V)
+    @test n == Vec{3,Float64}(0.0,0.0,1.0)
+    f,V = square(w; orientation=:down) 
+    n = facenormal(f,V)
+    @test n == Vec{3,Float64}(0.0,0.0,-1.0)
+    @test isa(f,QuadFace{Int})
+    @test isa(V,Vector{Point{3,Float64}})    
+    @test length(V) == 4
+    x = [v[1] for v in V]
+    y = [v[2] for v in V]    
+    @test minimum(x) == -w/2.0
+    @test maximum(x) ==  w/2.0
+    @test minimum(y) == -w/2.0
+    @test maximum(y) ==  w/2.0
+        
+    @test_throws Exception square(w; orientation=:wrong) 
+end
+
+@testset "squarepoints" verbose = true begin       
+    @testset "No pointspacing" begin       
+        w = 1.0        
+        V = squarepoints(w; dir=:acw)         
+        @test isa(V,Vector{Point{3,Float64}})    
+        @test length(V) == 4
+        x = [v[1] for v in V]
+        y = [v[2] for v in V]    
+        @test minimum(x) == -w/2.0
+        @test maximum(x) ==  w/2.0
+        @test minimum(y) == -w/2.0
+        @test maximum(y) ==  w/2.0            
+        @test_throws Exception squarepoints(w; dir=:wrong) 
+    end
+    @testset "Pointspacing" begin       
+        w = 1.0        
+        pointSpacing = 0.25
+        V = squarepoints(w, pointSpacing; dir=:acw)         
+        @test isa(V,Vector{Point{3,Float64}})    
+        @test pointspacingmean(V) == pointSpacing        
+        x = [v[1] for v in V]
+        y = [v[2] for v in V]    
+        @test minimum(x) == -w/2.0
+        @test maximum(x) ==  w/2.0
+        @test minimum(y) == -w/2.0
+        @test maximum(y) ==  w/2.0            
+        @test_throws Exception squarepoints(w, pointSpacing; dir=:wrong) 
+    end
 end
 
 @testset "pizza" verbose = true begin       

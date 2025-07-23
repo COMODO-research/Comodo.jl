@@ -1240,7 +1240,7 @@ end
 
 function edgelengths(f::NgonFace{N,TF}, V::Vector{Point{ND,TV}}) where N where TF<:Integer where ND where TV<:Real
     if typeof(f)<:LineFace
-        return norm(V[e[1]]-V[e[2]])
+        return norm(V[f[1]]-V[f[2]])
     else # Need to compute edges
         return edgelengths(meshedges([f]; unique_only=true),V)
     end
@@ -7669,18 +7669,6 @@ function indices_faces_at_boundary_edges(F::Vector{NgonFace{NF,TF}}) where NF wh
     return indBoundaryFaces
 end
 
-# function indices_faces_at_boundary_edges(F::Vector{NgonFace{NF,TF}}, con_E2F::Vector{Vector{Int}}) where NF where TF<:Integer   
-#     indPerimeter = Vector{Int}()
-#     indEdges = Vector{Int}()
-#     for (i,c) in enumerate(con_E2F)
-#         if length(c)==1
-#             push!(indPerimeter,c[1])
-#             push!(indEdges,i)
-#         end
-#     end            
-#     return indPerimeter, indEdges
-# end
-
 """
     rectangle(w::T, h::T; orientation=:up) where T<:Real
 
@@ -7693,6 +7681,10 @@ The user can specify the widht `w` and the height `h`. The direction
 (default) or `:cw`. 
 """
 function rectangle(w::T, h::T; orientation=:up) where T<:Real
+    if  !in(orientation,(:up,:down))        
+        throw(ArgumentError("Orientation not supported. Use :up or :down"))
+    end 
+
     f = QuadFace{Int}(1,2,3,4)
     if orientation == :up # Anti-clockwise  
         V = rectanglepoints(w, h; dir=:acw)
@@ -7716,6 +7708,9 @@ user can specify the widht `w`, the height `h` and the point spacing
 corners are returned. 
 """
 function rectanglepoints(w::T, h=w; dir=:acw) where T<:Real    
+    if  !in(dir,(:acw,:cw))        
+        throw(ArgumentError("dir not supported. Use :acw or :cw"))
+    end 
     if dir == :acw
         V = [Point{3, T}( w/2.0,  h/2.0, 0.0),
              Point{3, T}(-w/2.0,  h/2.0, 0.0), 
@@ -7731,6 +7726,9 @@ function rectanglepoints(w::T, h=w; dir=:acw) where T<:Real
 end
 
 function rectanglepoints(w::T, h::T, pointSpacing::T; dir=:acw) where T<:Real
+    if  !in(dir,(:acw,:cw))        
+        throw(ArgumentError("dir not supported. Use :acw or :cw"))
+    end 
     nw = ceil(Int,w/pointSpacing) # Number of points in x-dir. -1
     nh = ceil(Int,h/pointSpacing) # Number of points in y-dir. -1       
     V = Vector{Point{3, T}}(undef,2*(nw+nh)) # Allocate point vector 
