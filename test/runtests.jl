@@ -3491,7 +3491,6 @@ end
 
 
 @testset "dirplot" verbose = true begin
-
     F,V = cube(1.0)    
     U = vertexnormal(F,V)
 
@@ -3502,7 +3501,7 @@ end
     hp2 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:to)
     hp3 = dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:through)
     
-    Mp = hp1[1].val
+    Mp = hp1[1][]
 
     @testset "Errors" begin
         @test_throws ArgumentError dirplot(ax,V,U; color=:black,linewidth=3,scaleval=1.0,style=:wrong)
@@ -3549,17 +3548,17 @@ end
 
     @testset "type_flag options" begin
         hp1 =  normalplot(ax,F,V; type_flag=:face, color=:black,linewidth=3,scaleval=nothing)
-        Mp = hp1[1].val
+        Mp = hp1[1][]
         @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(F)
 
         hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
-        Mp = hp1[1].val
+        Mp = hp1[1][]
         @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(V)
 
         hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
-        Mp = hp1[1].val
+        Mp = hp1[1][]
         @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(V)
 
@@ -3569,12 +3568,12 @@ end
         V = [Point{3,Float64}(v) for v in coordinates(Mn)]
 
         hp1 =  normalplot(ax,F,V; type_flag=:vertex, color=:black,linewidth=3,scaleval=nothing)
-        Mp = hp1[1].val
+        Mp = hp1[1][]
         @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float64, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(V)
 
         hp1 =  normalplot(ax,Mn; type_flag=:face)
-        Mp = hp1[1].val
+        Mp = hp1[1][]
         @test typeof(hp1) == Wireframe{Tuple{GeometryBasics.Mesh{3, Float32, LineFace{Int64}, (:position,), Tuple{Vector{Point{3, Float32}}}, Vector{LineFace{Int64}}}}}
         @test length(faces(Mp)) == length(F)
     end
@@ -7775,7 +7774,6 @@ end
 end
 
 @testset "meshdual" verbose = true begin   
-
     @testset "single face n-gon" verbose = true begin                       
         for n = 3:6
             V = circlepoints(1.0,n; dir=:acw)
