@@ -371,14 +371,14 @@ end
 @testset "interp_biharmonic" verbose = true begin
     eps_level = 1e-4    
     @testset "3D points 1D data, vectors" begin
-        result = interp_biharmonic([[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10], [[0.0, 0.0, x] for x in range(-1, 1, 5)])
+        result = interp_biharmonic([[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10.0, 10.0], [[0.0, 0.0, x] for x in range(-1.0, 1.0, 5)])
         true_result = [-10.0, -7.449961786934791, 0.0, 7.449961786934791, 10.0]        
         @test isapprox(result, true_result, atol = eps_level)
     end
 
     @testset "3D points 1D data, geometry basics point vectors" begin
-        result = interp_biharmonic(Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10, 10],
-            [Point3{Float64}(0.0, 0.0, x) for x in range(-1, 1, 5)])
+        result = interp_biharmonic(Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, 1.0]], [-10.0, 10.0],
+            [Point{3,Float64}(0.0, 0.0, x) for x in range(-1.0, 1.0, 5)])
         true_result = [-10.0, -7.449961786934791, 0.0, 7.449961786934791, 10.0]        
         @test isapprox(result, true_result, atol = eps_level)
     end
