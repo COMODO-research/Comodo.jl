@@ -13,7 +13,7 @@ for testCase = 1:6
     if testCase == 1 # Batman curve
         n = 120
         V = batman(n; stepwise=true)
-        pointSpacing = pointspacingmean(V)
+        pointSpacing = pointspacingmean(V; close_loop=true)
 
         VT = (V,)
         R = ([1],)
@@ -22,7 +22,7 @@ for testCase = 1:6
         n = 50
         r = 2.0
         V = circlepoints(r,n;dir=:acw) 
-        pointSpacing = pointspacingmean(V)
+        pointSpacing = pointspacingmean(V; close_loop=true)
 
         VT = (V,)
         R = ([1],)
@@ -33,7 +33,7 @@ for testCase = 1:6
         rFun(t) = r + 0.5.*sin(6*t)
         V = circlepoints(rFun,n; dir=:acw)    
         V = evenly_sample(V, n)
-        pointSpacing = pointspacingmean(V)
+        pointSpacing = pointspacingmean(V; close_loop=true)
 
         VT = (V,)
         R = ([1],)

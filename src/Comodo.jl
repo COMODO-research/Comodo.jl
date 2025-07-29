@@ -2,7 +2,7 @@ module Comodo
 
 # Import required functions and modules from dependency libraries
 using Statistics: mean, Statistics
-using Distances: euclidean, Distances, Euclidean, pairwise
+using Distances: euclidean, Distances, Euclidean, pairwise, sqeuclidean
 using QuadGK: quadgk, QuadGK
 using StaticArrays: StaticVector, Size, StaticArrays, StaticArraysCore
 using Rotations: RotMatrix3, RotXYZ, rotation_between, AngleAxis, Rotations

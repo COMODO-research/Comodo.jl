@@ -357,6 +357,16 @@ end
     end
 end
 
+@testset "Comodo._greens_sq" verbose = true begin
+    eps_level = 1e-5    
+    d = collect(range(0.0,12.0,12)) # Distances 
+    g = Comodo._greens_sq.(d.^2) # Green's function based on squared distance 
+    
+    gTrue = d.^2 .* (log.(d) .- 1.0) # Green's function standard 
+    gTrue[isnan.(gTrue)] .= 0.0 # Replace NaN by zero
+
+    @test all(isapprox(g, gTrue, atol=eps_level))
+end
 
 @testset "interp_biharmonic" verbose = true begin
     eps_level = 1e-4    
@@ -373,7 +383,6 @@ end
         @test isapprox(result, true_result, atol = eps_level)
     end
 end
-
 
 @testset "nbezier" verbose = true begin 
     eps_level = 1e-4    

@@ -22,7 +22,7 @@ a = 0.25
 fig = Figure(size=(800,800))
 
 ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Volumetric mesh (cut view)")
-hp3 = poly!(ax1, GeometryBasics.Mesh(V,Fn), strokewidth=2,shading=FastShading,strokecolor=:black, color=:white, transparency=false, overdraw=false)
+hp3 = meshplot!(ax1, Fn, V, strokewidth=2)
 
 VE  = simplexcenter(E,V)
 ZE = [v[3] for v in VE]

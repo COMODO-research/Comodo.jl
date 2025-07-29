@@ -35,6 +35,11 @@ Comodo.gridpoints_equilateral
 Comodo.interp_biharmonic_spline
 ```
 
+## `_greens_sq`
+```@docs
+Comodo._greens_sq
+```
+
 ## `interp_biharmonic`
 ```@docs
 Comodo.interp_biharmonic

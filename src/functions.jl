@@ -394,6 +394,21 @@ function interp_biharmonic_spline(x::Union{Vector{T}, AbstractRange{T}},y::Union
 end
 
 """
+    _greens_sq(d_sq::T) where T<:Real
+
+Green's function from squared distance
+
+# Description
+A simple function to compute Green's function from a squared distance. The 
+output is equivalent to g(d)= d^2 * (log(d)-1.0) where d is the non-squared 
+distance. A squared distance can be derived from using `Distances.sqeuclidean`.
+"""
+function _greens_sq(d_sq::T) where T<:Real
+    g = d_sq * (log(d_sq)/2.0-1.0)
+    return isnan(g) ? zero(T) : g
+end
+
+"""
     interp_biharmonic(x,y,xi)
 
 Interpolates n-dimensional data using biharmonic spline interpolation
@@ -408,20 +423,28 @@ be a vector consisting of m scalar data values.
 1. [David T. Sandwell, _Biharmonic spline interpolation of GEOS-3 and SEASAT altimeter data_, Geophysical Research Letters, 2, 139-142, 1987. doi: 10.1029/GL014i002p00139](https://doi.org/10.1029/GL014i002p00139)
 """
 function interp_biharmonic(x,y,xi)
-    # Distances from all points in X to all points in X
-    Dxx = dist(x,x)
+    # Greens function with squared distance, equivalent to g(d)= d^2 * (log(d)-1.0)
+    g = Matrix{Float64}(undef,(length(x),length(x)))
+    for i in eachindex(x)
+        for j in eachindex(x)
+            if i==j
+                g[i,j] = 0.0
+            else 
 
-    # Determine weights for interpolation
-    g = (Dxx.^2) .* (log.(Dxx).-1.0)   # Green's function.
-    g[1:size(g,1)+1:length(g)] .= 0.0 # Fix values along diagonal
-    replace!(x -> isnan(x) ? zero(x) : x, g) # Replace NaN entries by zeros
+                g[i,j] = _greens_sq(sqeuclidean(x[i],x[j]))
+            end
+        end
+    end    
     W = g \ y # Weights  
 
-    D = dist(xi,x) # Distance between points in X and XI
-
-    G = (D.^2).*(log.(D).-1.0) # Green's function.
-    replace!(x -> isnan(x) ? zero(x) : x, G) # Replace NaN entries by zeros
-    return G * W
+    # Now compute G*W
+    YI =  zeros(eltype(y),length(xi))
+    for (i,xxi) in enumerate(xi)
+        for (j,xx) in enumerate(x)
+            YI[i] += _greens_sq(sqeuclidean(xx,xxi)) * W[j] 
+        end
+    end
+    return YI   
 end
 
 """
@@ -7336,8 +7359,8 @@ function incircle(F::Vector{TriangleFace{TF}}, V::Vector{Point{3,TV}}) where TF<
 end
 
 """
-    meshplot!(ax,F::Vector{NgonFace{N,Int}},V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=FastShading, strokecolor=:black, kwargs...) where N where NV where TV<:Real
-    meshplot!(ax,M::GeometryBasics.Mesh; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=FastShading, strokecolor=:black, kwargs...)
+    meshplot!(ax,F::Vector{NgonFace{N,Int}},V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=true, strokecolor=:black, kwargs...) where N where NV where TV<:Real
+    meshplot!(ax,M::GeometryBasics.Mesh; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=true, strokecolor=:black, kwargs...)
 
 Visualises a surface mesh 
 
@@ -7347,7 +7370,7 @@ This function visualises the mesh defined by either the faces `F` and vertices
 hood" but features defaults that are common for mesh visualisation and geometry
 processing. Optional inputs include the full set for `poly`. 
 """
-function meshplot!(ax,F::Vector{NgonFace{N,Int}},V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.001f0, color=:white, strokewidth=0.5f0, shading=FastShading, strokecolor=:black, kwargs...) where N where NV where TV<:Real
+function meshplot!(ax,F::Vector{NgonFace{N,Int}},V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.001f0, color=:white, strokewidth=0.5f0, shading=true, strokecolor=:black, kwargs...) where N where NV where TV<:Real
     if N == 2 # Edges, use wireframe
         throw(ArgumentError("Edge mesh detected. Use edgeplot! since meshplot! is for face based meshes."))
     else
@@ -7359,7 +7382,7 @@ function meshplot!(ax,f::NgonFace{N,Int},V::Vector{Point{NV,TV}}; kwargs...) whe
     return meshplot!(ax,[f],V; kwargs...)
 end
 
-function meshplot!(ax,M::GeometryBasics.Mesh; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=FastShading, strokecolor=:black, kwargs...)
+function meshplot!(ax,M::GeometryBasics.Mesh; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=true, strokecolor=:black, kwargs...)
     return poly!(ax, M; color=color, shading = shading, stroke_depth_shift=stroke_depth_shift, strokewidth=strokewidth, strokecolor=strokecolor, kwargs...)
 end
 
