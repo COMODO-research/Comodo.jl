@@ -8061,3 +8061,63 @@ implementation uses the `nbezier` function with the control points:
 function hermiteSegment(n::Int, p1::Point{ND,TV}, v1::Point{ND,TV}, p2::Point{ND,TV}, v2::Point{ND,TV}) where ND where TV<:Real            
     return nbezier([p1, p1+v1/3.0, p2-v2/3.0, p2],n) 
 end
+
+"""
+togrid(F, V,  nel_x, nel_y, type::Symbol)
+Exmaple:
+```
+using Comodo
+using Comodo.GLMakie
+using Comodo.GeometryBasics
+plateDim1 = [10,5]
+nel_x, nel_y = 2 , 1
+plateElem1 = [nel_x, nel_y]
+orientation1 = :up
+F1,V1 = quadplate(plateDim1,plateElem1; orientation=orientation1)
+
+grid = togrid(F1, V1, nel_x, nel_y,:quad4)
+```
+
+# Description
+Function to convert quad4 element from Comodo to Ferrite.jl Grid
+Depened on 
+using Ferrite
+using OrderedCollections
+
+Aim to connect Comodo to Ferrite for FEM
+"""
+using Ferrite
+using OrderedCollections
+
+function togrid(F, V,  nel_x, nel_y, type::Symbol)
+    if type == :quad4
+        cells = [Quadrilateral((f[1], f[2], f[3], f[4])) for f in F]
+    else
+        error("Unsupported element type: $type")
+    end
+    nodes = [Node{2,Float64}(Ferrite.Vec{2,Float64}((p[1], p[2]))) for p in V]
+    nel_tot = nel_x * nel_y
+    # Cell facets
+    cell_array = reshape(collect(1:nel_tot), (nel_x, nel_y))
+    boundary = FacetIndex[
+        [FacetIndex(cl, 1) for cl in cell_array[:, 1]];
+        [FacetIndex(cl, 2) for cl in cell_array[end, :]];
+        [FacetIndex(cl, 3) for cl in cell_array[:, end]];
+        [FacetIndex(cl, 4) for cl in cell_array[1, :]]
+    ]
+
+    # Cell facet sets
+    offset = 0
+    facetsets = Dict{String,OrderedSet{FacetIndex}}()
+    facetsets["bottom"] = OrderedSet{FacetIndex}(boundary[(1:length(cell_array[:, 1])).+offset])
+    offset += length(cell_array[:, 1])
+    facetsets["right"] = OrderedSet{FacetIndex}(boundary[(1:length(cell_array[end, :])).+offset])
+    offset += length(cell_array[end, :])
+    facetsets["top"] = OrderedSet{FacetIndex}(boundary[(1:length(cell_array[:, end])).+offset])
+    offset += length(cell_array[:, end])
+    facetsets["left"] = OrderedSet{FacetIndex}(boundary[(1:length(cell_array[1, :])).+offset])
+    offset += length(cell_array[1, :])
+    foreach(s -> sort!(s, by=x -> x.idx), values(facetsets))
+
+    return Grid(cells, nodes, facetsets = facetsets)
+end
