@@ -6,7 +6,7 @@ using Comodo.GeometryBasics
 This demo shows the use of `subhex` to refine a a hexhedral mesh through splitting. 
 =#
 
-boxDim = [2.0,3.0,1.0] # Dimensions for the box in each direction
+boxDim = [2.0,3.0,2.5] # Dimensions for the box in each direction
 boxEl = [2,3,1] # Number of elements to use in each direction 
 E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
 
@@ -28,24 +28,24 @@ linewidth = 4
 
 fig = Figure(size=(1600,800))
 
-ax0 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined hexahedral mesh, direction=0 (all)")
-hp1 = poly!(ax0,GeometryBasics.Mesh(Vh0,Fh0), strokewidth=strokewidth,shading=FastShading,strokecolor=:black, color=:white, transparency=false, overdraw=false)
-hp2 = wireframe!(ax0,GeometryBasics.Mesh(V,F), linewidth=linewidth,color=:red, overdraw=false)
-hp3 = normalplot(ax0,Fh0,Vh0;color=:black)
+ax1 = AxisGeom(fig[1, 1], title = "Refined hexahedral mesh, direction=0 (all)")
+hp1 = meshplot!(ax1, Fh0, Vh0, strokewidth=strokewidth)
+hp2 = edgeplot!(ax1, F, V, linewidth=linewidth, color=:red, depth_shift=-0.01f0)
+hpa = normalplot(ax1, Fh0, Vh0; color=:blue,linewidth=3)
 
-ax1 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined hexahedral mesh, direction=1")
-hp1 = poly!(ax1,GeometryBasics.Mesh(Vh1,Fh1), strokewidth=strokewidth,shading=FastShading,strokecolor=:black, color=:white, transparency=false, overdraw=false)
-hp2 = wireframe!(ax1,GeometryBasics.Mesh(V,F), linewidth=linewidth,color=:red, overdraw=false)
-hp3 = normalplot(ax1,Fh1,Vh1;color=:black)
+ax2 = AxisGeom(fig[1, 2], title = "Refined hexahedral mesh, direction=1")
+hp1 = meshplot!(ax2, Fh1, Vh1, strokewidth=strokewidth)
+hp2 = edgeplot!(ax2, F, V, linewidth=linewidth, color=:red, depth_shift=-0.01f0)
+hpa = normalplot(ax2, Fh1, Vh1; color=:blue,linewidth=3)
 
-ax2 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined hexahedral mesh, direction=2")
-hp1 = poly!(ax2,GeometryBasics.Mesh(Vh2,Fh2), strokewidth=strokewidth,shading=FastShading,strokecolor=:black, color=:white, transparency=false, overdraw=false)
-hp2 = wireframe!(ax2,GeometryBasics.Mesh(V,F), linewidth=linewidth,color=:red, overdraw=false)
-hp3 = normalplot(ax2,Fh2,Vh2;color=:black)
+ax3 = AxisGeom(fig[2, 1], title = "Refined hexahedral mesh, direction=2")
+hp1 = meshplot!(ax3, Fh2, Vh2, strokewidth=strokewidth)
+hp2 = edgeplot!(ax3, F, V, linewidth=linewidth, color=:red, depth_shift=-0.01f0)
+hpa = normalplot(ax3, Fh2, Vh2; color=:blue,linewidth=3)
 
-ax3 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined hexahedral mesh, direction=3")
-hp1 = poly!(ax3,GeometryBasics.Mesh(Vh3,Fh3), strokewidth=strokewidth,shading=FastShading,strokecolor=:black, color=:white, transparency=false, overdraw=false)
-hp2 = wireframe!(ax3,GeometryBasics.Mesh(V,F), linewidth=linewidth,color=:red, overdraw=false)
-hp3 = normalplot(ax3,Fh3,Vh3;color=:black)
+ax4 = AxisGeom(fig[2, 2], title = "Refined hexahedral mesh, direction=3")
+hp1 = meshplot!(ax4, Fh3, Vh3, strokewidth=strokewidth)
+hp2 = edgeplot!(ax4, F, V, linewidth=linewidth, color=:red, depth_shift=-0.01f0)
+hpa = normalplot(ax4, Fh3, Vh3; color=:blue,linewidth=3)
 
 fig

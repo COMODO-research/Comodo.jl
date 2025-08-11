@@ -681,7 +681,7 @@ function unique_simplices(F,V=nothing)
     virtual_indices = let n=n 
         sub2ind(ntuple(i -> n, Val(length(F[1]))), sort.(F))
     end
-    unique_indices, inverse_indices = gunique(virtual_indices; return_unique = Val(false), return_index = Val(true), return_inverse = Val(true))
+    unique_indices, inverse_indices = gunique(virtual_indices; return_unique = Val(false), return_index = Val(true), return_inverse = Val(true), sort_entries=false)
     unique_faces = F[unique_indices]
     if !isnothing(V)
         unique_faces = map(f -> sort(f), unique_faces)
@@ -695,7 +695,7 @@ end
 Converts linear indices to subscript indices. Assumes one-based indexing.
 
 # Description
-
+shading = tru
 Converts the linear indices in `ind`, for a matrix/array with size `siz`, to the 
 equivalent subscript indices.  
 """
@@ -4239,14 +4239,14 @@ boundary points to circular boundary) to obtain the final mesh. The subdivision
 Lastly the optional input `orientation`, which can be `:up` or `:down` sets the 
 face normal direction. 
 """
-function tridisc(r=1.0,n=0; ngon=6, method=:Loop, orientation=:up)
+function tridisc(r=1.0, n=0; ngon=6, method=:Loop, orientation=:up)
     if  !in(orientation,(:up,:down))        
         throw(ArgumentError("Orientation not supported. Use :up or :down"))
     end 
 
     # Create a triangulated hexagon
     V = circlepoints(r,ngon)
-    push!(V,Point{3,Float64}(0.0,0.0,0.0))
+    push!(V, Point{3,Float64}(0.0,0.0,0.0))
     if orientation==:up
         F = [TriangleFace{Int}(i,mod1(i+1,ngon),ngon+1) for i in 1:ngon]
     else#if orientation==:down
@@ -4257,8 +4257,8 @@ function tridisc(r=1.0,n=0; ngon=6, method=:Loop, orientation=:up)
     if n>0
         @inbounds for _ = 1:n            
             nv = length(V)             
-            F,V = subtri(F,V,1; method = method)
-            indBoundary = unique(reduce(vcat,boundaryedges(F)))
+            F,V = subtri(F, V, 1; method = method)
+            indBoundary = unique(reduce(vcat, boundaryedges(F)))
             @inbounds for i in indBoundary
                 if i>nv || method == :Loop
                     V[i] *= r/norm(V[i])
@@ -4266,7 +4266,7 @@ function tridisc(r=1.0,n=0; ngon=6, method=:Loop, orientation=:up)
             end            
         end        
     end
-    return F,V
+    return F, V
 end
 
 """
@@ -4814,7 +4814,7 @@ end
 """
     subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int; direction=0) where T<:Integer where ND where TV<:Real
 
-Split hexahedral elements
+Splits hexahedral elements
 
 # Description
 This function splits the hexahedral elements defined by the elements `E` and 
@@ -4829,13 +4829,13 @@ to the x-, y-, and z-direction respectively.
 function subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int; direction=0) where T<:Integer where ND where TV<:Real
     if iszero(n)
         return E,V
-    elseif isone(n)
+    elseif isone(n)       
+             # Non-unique hex element faces
+            Ft = element2faces(E)   
 
-        # Non-unique hex element faces
-        Ft = element2faces(E)      
-        
-        # Non-unique structured (element by element) hexbox element edges
+        # Non-unique structured (element-by-element) hexbox element edges
         if iszero(direction)
+       
             Et = Vector{LineFace{T}}(undef,length(E)*12)
             for (i,e) in enumerate(E)         
                 ii = 1 + (i-1)*12
@@ -4880,15 +4880,16 @@ function subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int; direction=0) 
                 Et[ii+3 ] = LineFace{T}(e[4],e[8])
             end
         end
-        #Unique edges and inverse mapping 
-        Etu,inv_Et = gunique(Et; return_unique=Val(true),  return_inverse=Val(true), sort_entries=true)
+
+        # Unique edges and inverse mapping 
+        Etu, inv_Et = gunique(Et; return_unique=Val(true),  return_inverse=Val(true), sort_entries=true)
         
         # Create mid-edge coordinates
         Ve = simplexcenter(Etu,V) # Edge centres           
 
         if iszero(direction)
             # Unique faces and inverse mapping 
-            Ftu,inv_Ft = gunique(Ft; return_unique=Val(true),  return_inverse=Val(true), sort_entries=true)
+            Ftu, inv_Ft = gunique(Ft; return_unique=Val(true),  return_inverse=Val(true), sort_entries=true)
             Vf = simplexcenter(Ftu,V) # Face centres
             Vc = simplexcenter(E,V) # Element centres
             Vh = [V;Vc;Vf;Ve] # Append vertices
@@ -4933,45 +4934,40 @@ function subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int; direction=0) 
             Vh = [V;Ve] # Append vertices
             inv_Et = inv_Et .+ length(V)  
             Eh = Vector{Hex8{T}}(undef,length(E)*2) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
-            for i = eachindex(E)
+            for (i,e) = enumerate(E)
                 i_e = 1 + (i-1)*4 # index of first edge
-                i_f = 1 + (i-1)*6 # index of first face 
                 ii = 1 + (i-1)*2
-                Eh[ii  ] = Hex8{T}( Ft[i_f+4][4],  Ft[i_f+4][3],  Ft[i_f+4][2],  Ft[i_f+4][1], 
+                Eh[ii  ] = Hex8{T}(         e[6],          e[7],          e[3],          e[2], 
                                    inv_Et[i_e+2], inv_Et[i_e+3], inv_Et[i_e+1], inv_Et[i_e+0] )   
 
-                Eh[ii+1] = Hex8{T}( Ft[i_f+5][4],  Ft[i_f+5][3],  Ft[i_f+5][2],  Ft[i_f+5][1], 
-                                   inv_Et[i_e+0], inv_Et[i_e+1], inv_Et[i_e+3], inv_Et[i_e+2] )      
-
+                Eh[ii+1] = Hex8{T}(inv_Et[i_e+2], inv_Et[i_e+3], inv_Et[i_e+1], inv_Et[i_e+0],
+                                            e[5],          e[8],          e[4],          e[1] )     
             end  
         elseif direction == 2 # Split in 2nd-direction
             Vh = [V;Ve] # Append vertices
             inv_Et = inv_Et .+ length(V)  
             Eh = Vector{Hex8{T}}(undef,length(E)*2) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
-            for i = eachindex(E)
+            for (i,e) = enumerate(E)
                 i_e = 1 + (i-1)*4 # index of first edge
-                i_f = 1 + (i-1)*6 # index of first face 
                 ii = 1 + (i-1)*2
-                Eh[ii  ] = Hex8{T}( Ft[i_f+2][4],  Ft[i_f+2][3],  Ft[i_f+2][2],  Ft[i_f+2][1], 
+                Eh[ii  ] = Hex8{T}(         e[5],          e[6],          e[2],          e[1], 
                                    inv_Et[i_e+3], inv_Et[i_e+2], inv_Et[i_e+0], inv_Et[i_e+1] )   
 
-                Eh[ii+1] = Hex8{T}( Ft[i_f+3][4],  Ft[i_f+3][3],  Ft[i_f+3][2],  Ft[i_f+3][1],
-                                   inv_Et[i_e+1], inv_Et[i_e+0], inv_Et[i_e+2], inv_Et[i_e+3] )   
+                Eh[ii+1] = Hex8{T}(inv_Et[i_e+3], inv_Et[i_e+2], inv_Et[i_e+0], inv_Et[i_e+1],
+                                            e[8],          e[7],          e[3],          e[4] )   
             end    
         elseif direction == 3 # Split in 3rd-direction
             Vh = [V;Ve] # Append vertices
             inv_Et = inv_Et .+ length(V)  
             Eh = Vector{Hex8{T}}(undef,length(E)*2) # Allocate hexahedral element vector, one hex for each of the 4 nodes per element  
-            for i = eachindex(E)
+            for (i,e) = enumerate(E)
                 i_e = 1 + (i-1)*4 # index of first edge
-                i_f = 1 + (i-1)*6 # index of first face 
                 ii = 1 + (i-1)*2
-                Eh[ii  ] = Hex8{T}(   Ft[i_f][4],    Ft[i_f][3],     Ft[i_f][2],     Ft[i_f][1], 
+                Eh[ii  ] = Hex8{T}(         e[1],          e[2],          e[3],          e[4],  
                                    inv_Et[i_e+0], inv_Et[i_e+1], inv_Et[i_e+2], inv_Et[i_e+3] )   
 
-                Eh[ii+1] = Hex8{T}(  Ft[i_f+1][4],   Ft[i_f+1][3],  Ft[i_f+1][2],  Ft[i_f+1][1],
-                                   inv_Et[i_e+3], inv_Et[i_e+2], inv_Et[i_e+1], inv_Et[i_e+0] )   
-
+                Eh[ii+1] = Hex8{T}(inv_Et[i_e+0], inv_Et[i_e+1], inv_Et[i_e+2], inv_Et[i_e+3],
+                                            e[5],          e[6],          e[7],          e[8])   
             end   
         end 
         return Eh,Vh
@@ -7370,7 +7366,7 @@ This function visualises the mesh defined by either the faces `F` and vertices
 hood" but features defaults that are common for mesh visualisation and geometry
 processing. Optional inputs include the full set for `poly`. 
 """
-function meshplot!(ax,F::Vector{NgonFace{N,Int}},V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.001f0, color=:white, strokewidth=0.5f0, shading=true, strokecolor=:black, kwargs...) where N where NV where TV<:Real
+function meshplot!(ax, F::Vector{NgonFace{N,Int}}, V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.001f0, color=:white, strokewidth=0.5f0, shading=true, strokecolor=:black, kwargs...) where N where NV where TV<:Real
     if N == 2 # Edges, use wireframe
         throw(ArgumentError("Edge mesh detected. Use edgeplot! since meshplot! is for face based meshes."))
     else
@@ -7378,8 +7374,8 @@ function meshplot!(ax,F::Vector{NgonFace{N,Int}},V::Vector{Point{NV,TV}}; stroke
     end
 end
 
-function meshplot!(ax,f::NgonFace{N,Int},V::Vector{Point{NV,TV}}; kwargs...) where N where NV where TV<:Real
-    return meshplot!(ax,[f],V; kwargs...)
+function meshplot!(ax, f::NgonFace{N,Int}, V::Vector{Point{NV,TV}}; kwargs...) where N where NV where TV<:Real
+    return meshplot!(ax, [f], V; kwargs...)
 end
 
 function meshplot!(ax,M::GeometryBasics.Mesh; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=true, strokecolor=:black, kwargs...)
@@ -8060,4 +8056,95 @@ implementation uses the `nbezier` function with the control points:
 """
 function hermiteSegment(n::Int, p1::Point{ND,TV}, v1::Point{ND,TV}, p2::Point{ND,TV}, v2::Point{ND,TV}) where ND where TV<:Real            
     return nbezier([p1, p1+v1/3.0, p2-v2/3.0, p2],n) 
+end
+
+"""
+    subpenta(E::Vector{Penta6{T}}, V::Vector{Point{ND,TV}}, n::Int; direction=0) where T<:Integer where ND where TV<:Real
+
+Splits pentahedral elements
+
+# Description
+This function splits the pentahedral elements defined by the elements `E` and 
+vertices `V`. Splitting is done `n` times as requested. By default the splitting 
+occurs in all direction (corresponding to the default `direction=0`). If instead
+`direction` is set to 1 or 2, then the splitting only occur in the first 
+(in plane) or second (allong element) local element direction respectively.  
+"""
+function subpenta(E::Vector{Penta6{T}}, V::Vector{Point{ND,TV}}, n::Int; direction=0) where T<:Integer where ND where TV<:Real
+    if iszero(n)
+        return E,V
+    elseif isone(n)        
+        if iszero(direction) # All 
+            E,V = subpenta(E,V,1; direction=1)
+            E,V = subpenta(E,V,1; direction=2)
+            return E,V 
+        elseif isone(direction) # Split in 1st (plane) direction
+            Et = Vector{LineFace{T}}(undef,length(E)*6)
+            for (i,e) in enumerate(E)         
+                ii = 1 + (i-1)*6
+                Et[ii   ] = LineFace{T}(e[1],e[2])
+                Et[ii+1 ] = LineFace{T}(e[2],e[3])
+                Et[ii+2 ] = LineFace{T}(e[3],e[1])
+                Et[ii+3 ] = LineFace{T}(e[4],e[5])
+                Et[ii+4 ] = LineFace{T}(e[5],e[6])
+                Et[ii+5 ] = LineFace{T}(e[6],e[4])
+            end
+        elseif direction==2 # Split in 2nd-direction  
+            Et = Vector{LineFace{T}}(undef,length(E)*3)
+            for (i,e) in enumerate(E)         
+                ii = 1 + (i-1)*3
+                Et[ii   ] = LineFace{T}(e[1],e[4])
+                Et[ii+1 ] = LineFace{T}(e[2],e[5])
+                Et[ii+2 ] = LineFace{T}(e[3],e[6])                
+            end
+        end
+
+        # Unique edges and inverse mapping 
+        Etu, inv_Et = gunique(Et; return_unique=Val(true),  return_inverse=Val(true), sort_entries=true)
+        
+        # Create mid-edge coordinates
+        Ve = simplexcenter(Etu,V) # Edge centres           
+
+       if isone(direction) # Split in 1st-direction
+            Vs = [V; Ve] # Append vertices
+            inv_Et = inv_Et .+ length(V)  
+            Es = Vector{Penta6{T}}(undef,length(E)*4) # Allocate element vector, 4 new elements per original element
+            for (i,e) = enumerate(E)
+                i_e = 1 + (i-1)*6 # index of first edge
+                ii = 1 + (i-1)*4
+                Es[ii  ] = Penta6{T}(e[1],   inv_Et[i_e], inv_Et[i_e+2], 
+                                     e[4], inv_Et[i_e+3], inv_Et[i_e+5])   
+
+                Es[ii+1] = Penta6{T}(e[2], inv_Et[i_e+1], inv_Et[i_e], 
+                                     e[5], inv_Et[i_e+4], inv_Et[i_e+3])  
+
+                Es[ii+2] = Penta6{T}(e[3], inv_Et[i_e+2], inv_Et[i_e+1], 
+                                     e[6], inv_Et[i_e+5], inv_Et[i_e+4])  
+
+                Es[ii+3] = Penta6{T}(  inv_Et[i_e], inv_Et[i_e+1], inv_Et[i_e+2], 
+                                     inv_Et[i_e+3], inv_Et[i_e+4], inv_Et[i_e+5],)  
+            end          
+        elseif direction == 2 # Split in 2nd-direction
+            Vs = [V; Ve] # Append vertices
+            inv_Et = inv_Et .+ length(V)  
+            Es = Vector{Penta6{T}}(undef,length(E)*2) # Allocate element vector, two new elements for each original one
+            for (i,e) = enumerate(E)
+                i_e = 1 + (i-1)*3 # index of first edge
+                ii = 1 + (i-1)*2
+                Es[ii  ] = Penta6{T}(       e[1],          e[2],          e[3], 
+                                     inv_Et[i_e], inv_Et[i_e+1], inv_Et[i_e+2] )   
+
+                Es[ii+1] = Penta6{T}(         e[6],          e[5],        e[4],
+                                     inv_Et[i_e+2], inv_Et[i_e+1], inv_Et[i_e] )   
+            end   
+        end 
+        return Es,Vs
+    elseif n>1
+        for _ = 1:n
+            E,V = subpenta(E,V,1; direction=direction)
+        end
+        return E,V
+    else
+        throw(ArgumentError("n should be larger than or equal to 0"))
+    end
 end

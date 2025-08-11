@@ -13,7 +13,7 @@ Random.seed!(1) # Set seed so demo performs the same each time
 
 GLMakie.closeall()
 for testCase = 1:2
-    if testCase == 1 # SIngle triangle    
+    if testCase == 1 # 3D points     
         # Define raw data
         m = 150 # Number of input data points
         V = Vector{GeometryBasics.Point{3, Float64}}(undef,m) # Initialize point vector
@@ -39,7 +39,7 @@ for testCase = 1:2
         Legend(fig[1, 3],[hs1,hs2],["Raw","Interpolated"])
         fig
 
-    elseif testCase == 2 # n-slice pizza triangle set
+    elseif testCase == 2 # 3D points interpolate 3rd dim (z-direction)
         # Define raw data
         fSin(x,f,a) = 2.0*sin(f*x+a) # Function to change shape of loop
         a = 0.0
@@ -52,7 +52,7 @@ for testCase = 1:2
             C[i] = fSin(v[1],f,a)
             V[i] = Point{3,Float64}(v[1], v[2], C[i])
         end
-
+        
         # Define points for interpolation 
         pointSpacing = pointspacingmean(V; close_loop=true)
         VT = (deepcopy(V),)

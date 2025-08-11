@@ -5718,7 +5718,6 @@ end
         E = [Hex20{Int}(collect(1:20))]                
         @test_throws Exception element2faces(E)
     end
-
 end
 
 
@@ -5755,7 +5754,43 @@ end
     @test Vh0 == V
 
     @test_throws Exception subhex(E,V,-1;direction=0)
+end
+
+
+@testset "subpenta" verbose = true begin
+    r = 1.0 # Radius
+    n = 0
+    t = 1.0
+    nSteps = 2
+    direction=:positive
+    Fs,Vs = tridisc(r,n)
+    E, V = extrudefaces(Fs,Vs; extent=t, direction=direction, num_steps=nSteps)
+
+    Eh0,Vh0 = subpenta(E,V,1; direction=0)
+    Eh1,Vh1 = subpenta(E,V,1; direction=1)
+    Eh2,Vh2 = subpenta(E,V,1; direction=2)    
+
+    @test length(Eh0) == length(E)*8
+    @test length(Eh1) == length(E)*4
+    @test length(Eh2) == length(E)*2
     
+    @test length(Vh0) == 57
+    @test length(Vh1) == 38
+    @test length(Vh2) == 21
+    
+    @test isa(Vh0,Vector{eltype(V)})
+
+    Eh0,Vh0 = subpenta(E,V,2; direction=0)
+    @test length(Eh0) == length(E)*8^2
+    @test isa(Eh0,Vector{Penta6{Int}})
+    @test isa(Vh0,Vector{eltype(V)})
+
+    # Check when n=0 (no refinement)
+    Eh0,Vh0 = subpenta(E,V,0; direction=0)
+    @test Eh0 == E
+    @test Vh0 == V
+
+    @test_throws Exception subpenta(E,V,-1; direction=0)
 end
 
 
