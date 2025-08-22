@@ -1,7 +1,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache-blue.svg)](https://github.com/COMODO-research/Comodo.jl/blob/main/LICENSE)
 [![example workflow](https://github.com/COMODO-research/Comodo.jl/actions/workflows/test.yml/badge.svg)](https://github.com/COMODO-research/Comodo.jl/blob/main/.github/workflows/test.yml) [![Doc](https://img.shields.io/badge/docs-dev-blue.svg)](https://comodo-research.github.io/Comodo.jl/dev/)  [![codecov](https://codecov.io/gh/COMODO-research/Comodo.jl/graph/badge.svg?token=2ZOXAXXX1I)](https://codecov.io/gh/COMODO-research/Comodo.jl)  [![Join the chat at https://gitter.im/Comodo.jl](https://badges.gitter.im/Comodo.jl.svg)](https://app.gitter.im/#/room/#comodo:gitter.im?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-![](assets/img/COMODO_sticker.png)  
+![](assets/img/COMODO_sticker.gif)  
 # About Comodo
 Comodo is a [Julia](https://julialang.org/) package for **computational (bio)mechanics and computational design**, and offers functionality for geometry processing, meshing, finite element analysis, automated design, topology optimisation, and image-based modelling. 
 
