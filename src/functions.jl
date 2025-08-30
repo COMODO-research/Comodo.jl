@@ -7168,8 +7168,8 @@ end
 Returns interior point for given face
 
 # Description
-This function takes in the `F`, the points `V`, and a face index `indFace`, and 
-returns a point that is between the face center and the opposing side of the 
+This function takes in the faces `F`, the points `V`, and a face index `indFace`, 
+and returns a point that is between the face center and the opposing side of the 
 surface. The default behaviour, when the optional argument `w=0.5`, returns a 
 point mid-way between the face centre and the opposite side. If `w=0.0` is used 
 the face centre is returned while with `w=1.0` the opposing point is returned. 
@@ -8147,4 +8147,25 @@ function subpenta(E::Vector{Penta6{T}}, V::Vector{Point{ND,TV}}, n::Int; directi
     else
         throw(ArgumentError("n should be larger than or equal to 0"))
     end
+end
+
+"""
+    polycentroid(V::Vector{Point{ND,TV}}) where ND where TV<:Real
+
+Computes polygon centroid
+
+# Description
+This function takes in a polygon defined by the point vector `V` and returns the
+centroid `C`. 
+"""
+function polycentroid(V::Vector{Point{ND,TV}}) where ND where TV<:Real        
+    N = length(V)
+    C = zero(Point{ND,TV})
+    W = 0.0
+    @inbounds for q in 1:N # Loop from first to end-1                    
+        w = norm(V[q]-V[mod1(q+1,N)])
+        W += w
+        C += ((V[q]+V[mod1(q+1,N)])/2.0) * w
+    end  
+    return C./W
 end

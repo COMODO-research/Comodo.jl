@@ -8485,6 +8485,19 @@ end
     @test isapprox(V[end],p2,atol=eps_level)
 end
 
+@testset "polycentroid" verbose = true begin
+    eps_level = 1e-6
+    V = circlepoints(1.0,4)
+    V2 = collect(range(V[end],V[1],10))
+    append!(V,V2[2:end-1])
+    C_true = Point{3, Float64}(2.1,3.4,-5.7) #randn(eltype(V))
+    V .+= C_true # Shift coordinates to desired centre 
+
+    C = polycentroid(V)
+
+    @test isapprox(C, C_true, atol=eps_level)
+end
+
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
 #     @testset "Demos" begin

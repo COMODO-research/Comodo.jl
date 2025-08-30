@@ -731,3 +731,7 @@ Comodo.equilateraltriangle
 Comodo.hermiteSegment
 ```
 
+## `polycentroid`
+```@docs 
+Comodo.polycentroid
+```
