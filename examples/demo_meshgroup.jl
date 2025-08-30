@@ -8,22 +8,22 @@ GLMakie.closeall()
 for testCase = 1:9
     if testCase == 1
         s=1.0
-        V=Vector{GeometryBasics.Point{3, Float64}}(undef,5)
-        V[1 ] = GeometryBasics.Point{3, Float64}( 0.0,    s, 0.0)
-        V[2 ] = GeometryBasics.Point{3, Float64}( 0.0,   -s, 0.0)
-        V[3 ] = GeometryBasics.Point{3, Float64}(   s,  0.0, 0.0)
+        V=Vector{Point{3, Float64}}(undef,5)
+        V[1 ] = Point{3, Float64}( 0.0,    s, 0.0)
+        V[2 ] = Point{3, Float64}( 0.0,   -s, 0.0)
+        V[3 ] = Point{3, Float64}(   s,  0.0, 0.0)
 
         F = Vector{TriangleFace{Int}}(undef,1)
         F[1 ] = TriangleFace{Int}(1,2,3)
         # F,V=subtri(F,V,2)
     elseif testCase==2
         s=1.0
-        V=Vector{GeometryBasics.Point{3, Float64}}(undef,5)
-        V[1 ] = GeometryBasics.Point{3, Float64}( 0.0,    s, 0.0)
-        V[2 ] = GeometryBasics.Point{3, Float64}( 0.0,   -s, 0.0)
-        V[3 ] = GeometryBasics.Point{3, Float64}(   s,  0.0, 0.0)
-        V[4 ] = GeometryBasics.Point{3, Float64}( 2*s,    s, 0.0)
-        V[5 ] = GeometryBasics.Point{3, Float64}( 2*s,    -s, 0.0)
+        V=Vector{Point{3, Float64}}(undef,5)
+        V[1 ] = Point{3, Float64}( 0.0,    s, 0.0)
+        V[2 ] = Point{3, Float64}( 0.0,   -s, 0.0)
+        V[3 ] = Point{3, Float64}(   s,  0.0, 0.0)
+        V[4 ] = Point{3, Float64}( 2*s,    s, 0.0)
+        V[5 ] = Point{3, Float64}( 2*s,    -s, 0.0)
 
         F = Vector{TriangleFace{Int}}(undef,2)
         F[1 ] = TriangleFace{Int}(1,2,3)
@@ -112,14 +112,13 @@ for testCase = 1:9
     Cn = simplex2vertexdata(Fn,C,Vn)
 
     # Visualization
-
     fig = Figure(size=(1200,1200))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A multi-object mesh")
-    hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
+    ax1 = AxisGeom(fig[1, 1], title = "A multi-object mesh")
+    hp1 = meshplot!(ax1, F, V)
 
-    ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Grouping")
-    hp2 = poly!(ax2,GeometryBasics.Mesh(Vn,Fn), strokewidth=1,color=Cn, strokecolor=:black, shading = FastShading, transparency=false,colormap=c)
+    ax2 = AxisGeom(fig[1, 2], title = "Grouping")
+    hp2 = meshplot!(ax2, Fn, Vn, color=Cn, colormap=c)
 
     Legend(fig[1, 3],[hp1,hp2],["Mesh object","Grouped mesh"])
     Colorbar(fig[1, 4],hp2, label = "Group labelling")

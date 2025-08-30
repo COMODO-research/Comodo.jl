@@ -6874,6 +6874,31 @@ end
         @test length(F) == length(F1)+length(F2)+length(F3)
         @test length(V) == length(V1)+length(V2)+length(V3)
     end
+
+    @testset "Single face/vertex set split" begin
+        F,V,C = joingeom([F1],[V1])        
+        @test typeof(F) == typeof(F1) 
+        @test typeof(V) == typeof(V1)
+        @test length(F) == length(F1)
+        @test length(V) == length(V1)
+    end
+    
+    @testset "Two face/vertex sets split" begin
+        F,V,C = joingeom([F1, F2], [V1, V2])        
+        @test typeof(F) == typeof(F1) 
+        @test typeof(V) == typeof(V1)
+        @test length(F) == length(F1)+length(F2)
+        @test length(V) == length(V1)+length(V2)
+    end
+
+    @testset "Three face/vertex sets split" begin
+        F,V,C = joingeom([F1, F2, F3], [V1,V2,V3])        
+        @test typeof(F) == typeof(F1) 
+        @test typeof(V) == typeof(V1)
+        @test length(F) == length(F1)+length(F2)+length(F3)
+        @test length(V) == length(V1)+length(V2)+length(V3)
+    end
+
 end
 
 
