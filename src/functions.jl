@@ -6147,20 +6147,46 @@ sets into one such set. All geometry such be of the same type such that they can
 be joined. The input can for instance be n-sets of faces (or elements) and 
 vertices e.g. appearing as inpus as: `F1,V1,F2,V2,...,FN,VN`.  
 """
-function joingeom(G...)
-    # The input G is of the form F1,V1,F2,V2,...FN,VN    
-    if iseven(length(G)) # G should be even in length                         
-        if length(G)==2
-            # Only one set of faces and vertices
-            return G[1],G[2],ones(length(G[1]))
-        else
-            # Multiple sets of faces and vertices
-            F = deepcopy(G[1]) # Initial face set 
-            V = deepcopy(G[2]) # Initial vertex set 
-            C = ones(length(G[1]))                            
+function joingeom(FF::Array{Array{NgonFace{N,T},1},1}, VV::Vector{Vector{Point{ND,TV}}}) where N where T<:Integer where ND where TV<:Real
+    if length(FF)==1
+        return FF[1], VV[1], ones(Int, length(FF[1]))
+    else
+        if length(FF) == length(VV)
+            # Multiple sets of faces and vertices        
+            F = deepcopy(FF[1]) # Initial face set 
+            V = deepcopy(VV[1]) # Initial vertex set 
+            C = ones(Int, length(FF[1]))                  
             indexShift = length(V)         
             c = 1   
-            @inbounds for i in 3:1:length(G)
+            @inbounds for i in 2:1:length(FF)
+                append!(F,[f.+indexShift for f in FF[i]])                     
+                append!(V, VV[i])          
+                indexShift += length(VV[i])
+                c += 1
+                append!(C,fill(c,length(FF[i])))                                         
+            end
+        else
+            throw(ArgumentError("Number of element sets does not match the number of vertex sets"))            
+        end
+        return F, V, C
+    end    
+end
+
+function joingeom(F1::Vector{NgonFace{N,T}}, V1::Vector{Point{ND,TV}}, G...) where N where T<:Integer where ND where TV<:Real
+    
+    # The input G is of the form F2,V2,F3,V3,...FN,VN    
+    if iseven(length(G)) # G should be even in length                         
+        if isempty(G)
+            # Only one set of faces and vertices
+            return F1, V1, ones(Int, length(F1))
+        else
+            # Multiple sets of faces and vertices            
+            F = deepcopy(F1)
+            V = deepcopy(V1)
+            C = ones(Int, length(F))                            
+            indexShift = length(V)         
+            c = 1   
+            @inbounds for i in 1:1:length(G)
                 g = G[i]
                 if iseven(i)
                     append!(V,g) 
@@ -6174,7 +6200,7 @@ function joingeom(G...)
             return F,V,C        
         end
     else        
-        throw(ArgumentError("Number of element sets does not seem to match the number of vertex sets"))        
+        throw(ArgumentError("Number of element sets does not match the number of vertex sets"))        
     end
 end
 

@@ -8,22 +8,22 @@ GLMakie.closeall()
 for testCase = 1:9
     if testCase == 1
         s=1.0
-        V=Vector{GeometryBasics.Point{3, Float64}}(undef,5)
-        V[1 ] = GeometryBasics.Point{3, Float64}( 0.0,    s, 0.0)
-        V[2 ] = GeometryBasics.Point{3, Float64}( 0.0,   -s, 0.0)
-        V[3 ] = GeometryBasics.Point{3, Float64}(   s,  0.0, 0.0)
+        V=Vector{Point{3, Float64}}(undef,5)
+        V[1 ] = Point{3, Float64}( 0.0,    s, 0.0)
+        V[2 ] = Point{3, Float64}( 0.0,   -s, 0.0)
+        V[3 ] = Point{3, Float64}(   s,  0.0, 0.0)
 
         F = Vector{TriangleFace{Int}}(undef,1)
         F[1 ] = TriangleFace{Int}(1,2,3)
         # F,V=subtri(F,V,2)
     elseif testCase==2
         s=1.0
-        V=Vector{GeometryBasics.Point{3, Float64}}(undef,5)
-        V[1 ] = GeometryBasics.Point{3, Float64}( 0.0,    s, 0.0)
-        V[2 ] = GeometryBasics.Point{3, Float64}( 0.0,   -s, 0.0)
-        V[3 ] = GeometryBasics.Point{3, Float64}(   s,  0.0, 0.0)
-        V[4 ] = GeometryBasics.Point{3, Float64}( 2*s,    s, 0.0)
-        V[5 ] = GeometryBasics.Point{3, Float64}( 2*s,    -s, 0.0)
+        V=Vector{Point{3, Float64}}(undef,5)
+        V[1 ] = Point{3, Float64}( 0.0,    s, 0.0)
+        V[2 ] = Point{3, Float64}( 0.0,   -s, 0.0)
+        V[3 ] = Point{3, Float64}(   s,  0.0, 0.0)
+        V[4 ] = Point{3, Float64}( 2*s,    s, 0.0)
+        V[5 ] = Point{3, Float64}( 2*s,    -s, 0.0)
 
         F = Vector{TriangleFace{Int}}(undef,2)
         F[1 ] = TriangleFace{Int}(1,2,3)
@@ -112,7 +112,6 @@ for testCase = 1:9
     Cn = simplex2vertexdata(Fn,C,Vn)
 
     # Visualization
-
     fig = Figure(size=(1200,1200))
 
     ax1 = AxisGeom(fig[1, 1], title = "A multi-object mesh")
