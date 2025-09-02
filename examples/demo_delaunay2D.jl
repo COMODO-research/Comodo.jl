@@ -12,7 +12,7 @@ simplicialcomplex as well as the unconstrained Delaunay Triangulation
 
 GLMakie.closeall()
 
-for testCase = 1:5
+for testCase = 1:4
     if testCase == 1
         w = 1.0
         pointSpacing = 0.5

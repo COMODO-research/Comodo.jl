@@ -72,15 +72,17 @@ for testCase = 1:7
     d,dd,l = distmarch(F,V,ind; dist_tol=1e-3)
 
     ## Visualization
+    GLMakie.closeall()
+
     fig = Figure(size=(800,800))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Distances")
-    hp1 = mesh!(ax1,GeometryBasics.Mesh(V,F), color=d, shading = FastShading, transparency=false,colormap=Reverse(:Spectral))
+    ax1 = AxisGeom(fig[1, 1], title = "Distances")
+    hp1 = meshplot!(ax1, F, V, color=d, strokewidth=0.0, colormap=Reverse(:Spectral))
     # scatter!(ax1,V[ind],color=:black,markersize=25)
     Colorbar(fig[1, 2], hp1)
 
-    ax2 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Point regions")
-    hp1 = mesh!(ax2,GeometryBasics.Mesh(V,F), color=l, shading = FastShading, transparency=false,colormap=Reverse(:Spectral))
+    ax2 = AxisGeom(fig[1, 3], title = "Point regions")
+    hp1 = meshplot!(ax2, F, V, color=l, strokewidth=0.0, colormap=Reverse(:Spectral))
     scatter!(ax2,V[ind],color=:black,markersize=25)
     Colorbar(fig[1, 4], hp1)
 

@@ -42,7 +42,7 @@ for testCase = 1:3
     G = faceanglesegment(F,V; deg=true, angleThreshold = 22.5, indStart = 1)
 
     ## Visualization
-    linewidth = 3
+    linewidth = 5
     c = cgrad(:Spectral,maximum(G),categorical = true)
     A,E,con_E2F = edgefaceangles(F,V; deg=true)
 
@@ -56,21 +56,20 @@ for testCase = 1:3
 
     Fn,Vn = separate_vertices(F,V)
     Gn = simplex2vertexdata(Fn,G,Vn)## Visualization
-    linewidth = 3
 
     fig = Figure(size=(800,800))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Imported mesh")
-    hp1 = poly!(ax1,GeometryBasics.Mesh(Vn,Fn), color=:white, shading = FastShading, transparency=false,strokecolor=:black,strokewidth=0.25)
+    ax1 = AxisGeom(fig[1, 1], title = "Imported mesh")
+    hp1 = meshplot!(ax1, Fn, Vn, strokewidth=0.1)
     # normalplot(ax1,F,V)
     # hp_A = wireframe!(ax1,GeometryBasics.Mesh(Vn_E,En),linewidth=linewidth, transparency=false, color=An,colormap=:Spectral,colorrange = (-120, 120))
     # Colorbar(fig[1, 2],hp_A, label = "Angles")
 
-    ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Groups")
-    hp2 = poly!(ax2,GeometryBasics.Mesh(Vn,Fn), color=Gn, shading = FastShading, transparency=false,colormap=c)#,strokecolor=:black,strokewidth=0.25)
+    ax2 = AxisGeom(fig[1, 2], title = "Groups")
+    hp2 = meshplot!(ax2, Fn, Vn, color=Gn, colormap=c)#,strokecolor=:black,strokewidth=0.25)
     # normalplot(ax1,F,V)
 
-    hp3 = wireframe!(ax2,GeometryBasics.Mesh(Vn_E,En),linewidth=linewidth, transparency=false, color=:black)
+    hp3 = edgeplot!(ax2, En, Vn_E, linewidth=linewidth)
 
     Colorbar(fig[1, 3],hp2, label = "Groups")
 

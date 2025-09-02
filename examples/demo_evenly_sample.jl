@@ -42,17 +42,17 @@ for testCase = 1:3
 
     fig = Figure(size = (1200,500))
 
-    ax1 = Axis3(fig[1, 1],aspect = :data,azimuth=-pi/2,elevation=pi/2, title="Input")
+    ax1 = AxisGeom(fig[1, 1], azimuth=-pi/2, elevation=pi/2, title="Input")
     hp1 = scatter!(ax1, V,markersize=markersize2,color=:red)
     hp2 = lines!(ax1, V,linewidth=linewidth,color=:red)
 
-    ax2 = Axis3(fig[1, 2],aspect = :data,azimuth=-pi/2,elevation=pi/2, title="evenly sampled")
+    ax2 = AxisGeom(fig[1, 2], azimuth=-pi/2,elevation=pi/2, title="evenly sampled")
     hp1 = scatter!(ax2, V,markersize=markersize2,color=:red)
     hp2 = lines!(ax2, V,linewidth=linewidth,color=:red)
     hp3 = scatter!(ax2, Vi1,markersize=markersize1,color=:black)
     hp4 = lines!(ax2, Vi1,linewidth=linewidth,color=:black)
 
-    ax3 = Axis3(fig[1, 3],aspect = :data,azimuth=-pi/2,elevation=pi/2, title="evenly sampled, closed")
+    ax3 = AxisGeom(fig[1, 3], azimuth=-pi/2,elevation=pi/2, title="evenly sampled, closed")
     hp1 = scatter!(ax3, V,markersize=markersize2,color=:red)
     hp2 = lines!(ax3, V,linewidth=linewidth,color=:red)
     hp3 = scatter!(ax3, Vi2,markersize=markersize1,color=:black)

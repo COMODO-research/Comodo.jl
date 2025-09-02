@@ -8,7 +8,6 @@ using FileIO
 
 c = RGBA(1.0, 1.0, 1.0, 1.0)
 
-
 GLMakie.closeall()
 
 for testCase = 1:3

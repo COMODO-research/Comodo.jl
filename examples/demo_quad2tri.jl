@@ -55,17 +55,17 @@ for testCase = 1:3
 
     fig = Figure(size=(800,800))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Original")
-    poly!(ax1,GeometryBasics.Mesh(Vs,Fs), strokewidth=3,color=:white,shading=FastShading,transparency=false)
+    ax1 = AxisGeom(fig[1, 1], title = "Original")
+    meshplot!(ax1, Fs, Vs, strokewidth=3)
 
-    ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Forward slash converted")
-    poly!(ax2,GeometryBasics.Mesh(Vs1,Fs1), strokewidth=3,color=:white,shading=FastShading,transparency=false)
+    ax2 = AxisGeom(fig[1, 2], title = "Forward slash converted")
+    meshplot!(ax2,Fs1, Vs1, strokewidth=3)
 
-    ax3 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Back slash converted")
-    poly!(ax3,GeometryBasics.Mesh(Vs2,Fs2), strokewidth=3,color=:white,shading=FastShading,transparency=false)
+    ax3 = AxisGeom(fig[2, 1], title = "Back slash converted")
+    meshplot!(ax3,Fs2, Vs2, strokewidth=3)
 
-    ax4 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Angle based conversion")
-    poly!(ax4,GeometryBasics.Mesh(Vs3,Fs3), strokewidth=3,color=:white,shading=FastShading,transparency=false)
+    ax4 = AxisGeom(fig[2, 2], title = "Angle based conversion")
+    meshplot!(ax4,Fs3, Vs3, strokewidth=3)
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")

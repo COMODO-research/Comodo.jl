@@ -26,21 +26,20 @@ DD = dist(Vn,V)
 Dn = minimum(DD,dims=2)[:,1] 
 
 # Visualization
+GLMakie.closeall()
+
 fig = Figure(size = (800,800))
 
-ax=Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z")
-
-hp = poly!(ax,GeometryBasics.Mesh(Vn,Fn),strokewidth=1,color=Dn, 
-            transparency=false, overdraw=false,colormap=:Spectral)
-hs1 = scatter!(ax, V,markersize=35,color=:black)
-hs2 = scatter!(ax, Vn,markersize=15,color=Dn,colormap=:Spectral)
+ax1 = AxisGeom(fig[1, 1])
+hp = meshplot!(ax1, Fn, Vn, color=Dn, colormap=:Spectral)
+hs1 = scatter!(ax1, V,markersize=35,color=:black)
+hs2 = scatter!(ax1, Vn,markersize=15,color=Dn,colormap=:Spectral)
 
 Colorbar(fig[1, 2], hp,label="Distance")
 Legend(fig[1, 3],[hp,hs1],["Distances on mesh","Point set"])
 
-ax=Axis(fig[2, 1], aspect = DataAspect(), xlabel = "Point indices set 1 (refined)",
+ax2 = Axis(fig[2, 1], aspect = DataAspect(), xlabel = "Point indices set 1 (refined)",
         ylabel = "Point indices set 2(icosahedron)")
-hi = image!(DD,colormap=:Spectral,interpolate=false)
+hi = image!(ax2, DD, colormap=:Spectral,interpolate=false)
 Colorbar(fig[2, 2], hi,label="Distance")
-
 fig

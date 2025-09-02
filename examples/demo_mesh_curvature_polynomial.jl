@@ -86,17 +86,17 @@ for testCase = 1:8
     Colorbar(fig[1, 2],hp1)
 
     ax1 = AxisGeom(fig[1, 3], xlabel = "X", ylabel = "Y", zlabel = "Z", title = "2nd principal curvature")
-    hp2 = meshplot!(ax1,M, color=K2, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,K2))).*f.*(-1,1))
+    hp2 = meshplot!(ax1,M, color=K2, strokecolor=:white, strokewidth=0.1, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,K2))).*f.*(-1,1))
     hpn2 = dirplot(ax1,V,U2; color=:black,linewidth=linewidth,scaleval=s,style=:through, depth_shift=depth_shift)
     # scatter!(ax1,V,color=K2,colormap=cMap,colorrange = maximum(abs.(K2)).*0.1.*(-1,1),markersize=10);
     Colorbar(fig[1, 4],hp2)
 
     ax1 = AxisGeom(fig[2, 1], xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Mean curvature")
-    hp3 = meshplot!(ax1,M, color=H, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,H))).*f.*(-1,1))
+    hp3 = meshplot!(ax1,M, color=H, strokecolor=:white, strokewidth=0.1, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,H))).*f.*(-1,1))
     Colorbar(fig[2, 2],hp3)
 
     ax1 = AxisGeom(fig[2, 3], xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Gaussian curvature")
-    hp4 = meshplot!(ax1,M, color=G, strokecolor=:white, strokewidth=0.1, shading = FastShading, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,G))).*f.*(-1,1))
+    hp4 = meshplot!(ax1,M, color=G, strokecolor=:white, strokewidth=0.1, transparency=false,colormap=cMap,colorrange = maximum(abs.(filter(!isnan,G))).*f.*(-1,1))
     Colorbar(fig[2, 4],hp4)
 
     screen = display(GLMakie.Screen(), fig)

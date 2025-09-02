@@ -8,6 +8,8 @@ pointSpacing = 0.5
 F,V,C = tribox(boxDim,pointSpacing)
 
 # Visualization
+GLMakie.closeall()
+
 strokewidth1 = 2
 lineWidth = 4
 cmap = Makie.Categorical(:Spectral) 

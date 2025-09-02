@@ -24,6 +24,7 @@ s = 0.5
 Fs,Vs = scalesimplex(F,V,s)
 
 ## Visualisation
+GLMakie.closeall()
 
 strokewidth = 0.1
 strokecolor = :white
@@ -32,21 +33,17 @@ Vn = V-0.01*vertexnormal(F,V)
 
 fig = Figure(size = (1400,800))
 
-ax1 = Axis3(fig[1, 1], aspect = :data,title="Single scale factor")
-mesh!(ax1, GeometryBasics.Mesh(Vn,F), color=:white,transparency=false,shading = FastShading)
-hp1 = poly!(ax1, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
-# hp1 = mesh!(ax1, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,shading = FastShading)
+ax1 = AxisGeom(fig[1, 1], title="Single scale factor")
+meshplot!(ax1, F, Vn)
+hp1 = meshplot!(ax1, Fs, Vs, color=:green, strokewidth=strokewidth, strokecolor=strokecolor)
 
-ax2 = Axis3(fig[1, 2], aspect = :data,title="Per vertex scale factor")
-mesh!(ax2, GeometryBasics.Mesh(Vn,F), color=:white,transparency=false,shading = FastShading)
-hp2 = poly!(ax2, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
-# hp2 = mesh!(ax1, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,shading = FastShading)
+ax2 = AxisGeom(fig[1, 2], title="Per vertex scale factor")
+meshplot!(ax2, F, Vn)
+hp2 = meshplot!(ax2, Fs, Vs, color=:green, strokewidth=strokewidth, strokecolor=strokecolor)
 
-ax3 = Axis3(fig[1, 3], aspect = :data,title="Per face scale factor")
-mesh!(ax3, GeometryBasics.Mesh(Vn,F), color=:white,transparency=false,shading = FastShading)
-hp3 = poly!(ax3, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
-# hp3 = mesh!(ax3, GeometryBasics.Mesh(Vs,Fs), color=:green,transparency=false,shading = FastShading)
-
+ax3 = AxisGeom(fig[1, 3], title="Per face scale factor")
+meshplot!(ax3, F, Vn)
+hp3 = meshplot!(ax3, Fs, Vs, color=:green, strokewidth=strokewidth, strokecolor=strokecolor)
 
 stepRange = range(1.0,0.0,50)
 hSlider = Slider(fig[2, :], range = stepRange, startvalue = 1.0,linewidth=30)

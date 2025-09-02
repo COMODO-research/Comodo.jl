@@ -24,6 +24,8 @@ method4 = :Loop
 F4,V4 = geosphere(n4,r; method=method4)
 
 #Visualize mesh
+GLMakie.closeall()
+
 fig = Figure(size = (1600,800))
 
 ax1 = AxisGeom(fig[1, 1], title = "A geodesic sphere n=$n1")

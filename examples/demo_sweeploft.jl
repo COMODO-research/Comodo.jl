@@ -243,7 +243,7 @@ for testCase = 1:5
         CF = round.(Int,vertex2simplexdata(F,C))
 
         fig = Figure(size = (1600,1600))
-        ax = Axis3(fig[1, 1],aspect = :data,title="Swept lofting")
+        ax = AxisGeom(fig[1, 1], title="Swept lofting")
 
         stepRange1 = 0:maximum(C)
 
@@ -258,15 +258,14 @@ for testCase = 1:5
         scatter!(ax, V2,markersize=markersize,color=:red)
         hp3 = lines!(ax, V2,linewidth=linewidth,color=:red)
 
-        hp1 = poly!(ax, GeometryBasics.Mesh(V,F), color=C, strokecolor=:black, strokewidth=0.5,transparency=false,shading = FastShading,colormap=:Spectral)
-        # hp1 = mesh!(ax, GeometryBasics.Mesh(V,F), color=C,transparency=false,shading = FastShading,colormap=cMap)
+        hp1 = meshplot!(ax, F, V, color=C, strokewidth=0.5, colormap=:Spectral)
 
         on(hSlider1.value) do stepIndex1        
             hp1[1] = GeometryBasics.Mesh(V,F[CF.<=stepIndex1])  
         end
     elseif vizCase ==2 
         fig = Figure(size = (1600,1600))
-        ax = Axis3(fig[1, 1],aspect = :data,title="Swept lofting")
+        ax = AxisGeom(fig[1, 1], title="Swept lofting")
 
         stepRange1 = -10:1:10
         hSlider1 = Slider(fig[2, 1], range = stepRange1, startvalue = 0,linewidth=30)
@@ -280,8 +279,7 @@ for testCase = 1:5
         scatter!(ax, V2,markersize=markersize,color=:red)
         hp3 = lines!(ax, V2,linewidth=linewidth,color=:red)
 
-        hp1 = poly!(ax, GeometryBasics.Mesh(V,F), strokecolor=:black, strokewidth=0.5,color=C,transparency=false,shading = FastShading,colormap=:Spectral)
-        # hp1 = mesh!(ax, GeometryBasics.Mesh(V,F), color=C,transparency=false,shading = FastShading,colormap=cMap)
+        hp1 = meshplot!(ax, F, V, strokewidth=0.5,color=C, colormap=:Spectral)
 
         on(hSlider1.value) do stepIndex1
             F,V = sweeploft(Vc,V1,V2; face_type=:quad, num_twist=stepIndex1)
@@ -291,7 +289,7 @@ for testCase = 1:5
     elseif vizCase ==0 # debugging
 
         fig = Figure(size = (1600,1600))
-        ax = Axis3(fig[1, 1],aspect = :data,title="Swept lofting")
+        ax = AxisGeom(fig[1, 1], title="Swept lofting")
 
         # scatter!(ax, Vc,markersize=markersize,color=:black)
         hp1 = lines!(ax, Vc,linewidth=linewidth,color=:black)
@@ -302,7 +300,7 @@ for testCase = 1:5
         scatter!(ax, V2,markersize=markersize,color=:red)
         hp3 = lines!(ax, V2,linewidth=linewidth,color=:red)
 
-        hp1 = poly!(ax, GeometryBasics.Mesh(V,F), strokecolor=:black, strokewidth=0.5,color=C,transparency=false,shading = FastShading,colormap=:Spectral)
+        hp1 = meshplot!(ax, F, V, strokewidth=0.5,color=C, colormap=:Spectral)
         hp2 = normalplot(ax,F,V)
 
         lines!(ax, V[1:length(V1):length(V)],linewidth=10,color=:yellow)

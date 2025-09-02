@@ -29,61 +29,59 @@ for testCase = 1:3
         M = GeometryBasics.Mesh(V,F)
     end
     ## Refine mesh using `subquad` and the default "linear" method
-    Fn1,Vn1=subquad(F,V,1) # Split once 
-    Fn2,Vn2=subquad(F,V,2) # Split twice
-    Fn3,Vn3=subquad(F,V,3) # Split 3 times
+    Fn1,Vn1 = subquad(F, V, 1) # Split once 
+    Fn2,Vn2 = subquad(F, V, 2) # Split twice
+    Fn3,Vn3 = subquad(F, V, 3) # Split 3 times
 
-    Fn4,Vn4=subquad(F,V,1;method=:Catmull_Clark) # Split once 
-    Fn5,Vn5=subquad(F,V,2;method=:Catmull_Clark) # Split twice
-    Fn6,Vn6=subquad(F,V,3;method=:Catmull_Clark) # Split 3 times
+    Fn4,Vn4 = subquad(F, V, 1; method=:Catmull_Clark) # Split once 
+    Fn5,Vn5 = subquad(F, V, 2; method=:Catmull_Clark) # Split twice
+    Fn6,Vn6 = subquad(F, V, 3; method=:Catmull_Clark) # Split 3 times
 
-    Fn7,Vn7=subquad(F,V,1; method=:Catmull_Clark, constrain_boundary=true) # Split once 
-    Fn8,Vn8=subquad(F,V,2; method=:Catmull_Clark, constrain_boundary=true) # Split twice
-    Fn9,Vn9=subquad(F,V,3; method=:Catmull_Clark, constrain_boundary=true) # Split 3 times
+    Fn7,Vn7 = subquad(F, V, 1; method=:Catmull_Clark, constrain_boundary=true) # Split once 
+    Fn8,Vn8 = subquad(F, V, 2; method=:Catmull_Clark, constrain_boundary=true) # Split twice
+    Fn9,Vn9 = subquad(F, V, 3; method=:Catmull_Clark, constrain_boundary=true) # Split 3 times
 
-
-    ## Visualization
-    strokewidth1 = 1
+    ## Visualization    
     lineWidth = 4
     fig = Figure(size=(1600,800))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Linear, n=1")
-    wireframe!(ax1,M, linewidth=lineWidth,color=:red, overdraw=false)
-    poly!(ax1,GeometryBasics.Mesh(Vn1,Fn1), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax1 = AxisGeom(fig[1, 1], title = "Linear, n=1")
+    edgeplot!(ax1, F, V, linewidth=lineWidth, color=:red)
+    meshplot!(ax1, Fn1, Vn1)
 
-    ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Linear, n=2")
-    wireframe!(ax2,M, linewidth=lineWidth,color=:red, overdraw=false)
-    poly!(ax2,GeometryBasics.Mesh(Vn2,Fn2), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax2 = AxisGeom(fig[1, 2], title = "Linear, n=2")
+    edgeplot!(ax2, F, V, linewidth=lineWidth, color=:red)
+    meshplot!(ax2, Fn2, Vn2)
 
-    ax3 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Linear, n=3")
-    hp1 = wireframe!(ax3,M, linewidth=lineWidth,color=:red, overdraw=false)
-    hp2 = poly!(ax3,GeometryBasics.Mesh(Vn3,Fn3), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax3 = AxisGeom(fig[1, 3], title = "Linear, n=3")
+    hp1 = edgeplot!(ax3, F, V, linewidth=lineWidth, color=:red)
+    hp2 = meshplot!(ax3, Fn3, Vn3)
     Legend(fig[1, 4],[hp1,hp2],["Initial","Refined"])
 
-    ax4 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Catmull_Clark, n=1")
-    wireframe!(ax4,M, linewidth=lineWidth,color=:red, overdraw=false)
-    poly!(ax4,GeometryBasics.Mesh(Vn4,Fn4), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax4 = AxisGeom(fig[2, 1], title = "Catmull_Clark, n=1")
+    edgeplot!(ax4, F, V, linewidth=lineWidth, color=:red)
+    meshplot!(ax4, Fn4, Vn4)
 
-    ax5 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Catmull_Clark, n=2")
-    wireframe!(ax5,M, linewidth=lineWidth,color=:red, overdraw=false)
-    poly!(ax5,GeometryBasics.Mesh(Vn5,Fn5), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax5 = AxisGeom(fig[2, 2], title = "Catmull_Clark, n=2")
+    edgeplot!(ax5, F, V, linewidth=lineWidth, color=:red)
+    meshplot!(ax5, Fn5, Vn5)
 
-    ax6 = Axis3(fig[2, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Catmull_Clark, n=3")
-    hp1 = wireframe!(ax6,M, linewidth=lineWidth,color=:red, overdraw=false)
-    hp2 = poly!(ax6,GeometryBasics.Mesh(Vn6,Fn6), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax6 = AxisGeom(fig[2, 3], title = "Catmull_Clark, n=3")
+    hp1 = edgeplot!(ax6, F, V, linewidth=lineWidth, color=:red)
+    hp2 = meshplot!(ax6, Fn6, Vn6)
     Legend(fig[2, 4],[hp1,hp2],["Initial","Refined"])
 
-    ax4 = Axis3(fig[3, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Catmull_Clark, constrained boundary, n=1")
-    wireframe!(ax4,M, linewidth=lineWidth,color=:red, overdraw=false)
-    poly!(ax4,GeometryBasics.Mesh(Vn7,Fn7), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax4 = AxisGeom(fig[3, 1], title = "Catmull_Clark, constrained boundary, n=1")
+    edgeplot!(ax4, F, V, linewidth=lineWidth, color=:red)
+    meshplot!(ax4, Fn7, Vn7)
 
-    ax5 = Axis3(fig[3, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Catmull_Clark, constrained boundary, n=2")
-    wireframe!(ax5,M, linewidth=lineWidth,color=:red, overdraw=false)
-    poly!(ax5,GeometryBasics.Mesh(Vn8,Fn8), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax5 = AxisGeom(fig[3, 2], title = "Catmull_Clark, constrained boundary, n=2")
+    edgeplot!(ax5, F, V, linewidth=lineWidth, color=:red)
+    meshplot!(ax5, Fn8, Vn8)
 
-    ax6 = Axis3(fig[3, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Catmull_Clark, constrained boundary, n=3")
-    hp1 = wireframe!(ax6,M, linewidth=lineWidth,color=:red, overdraw=false)
-    hp2 = poly!(ax6,GeometryBasics.Mesh(Vn9,Fn9), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax6 = AxisGeom(fig[3, 3], title = "Catmull_Clark, constrained boundary, n=3")
+    hp1 = edgeplot!(ax6, F, V, linewidth=lineWidth, color=:red)
+    hp2 = meshplot!(ax6, Fn9, Vn9)
     Legend(fig[3, 4],[hp1,hp2],["Initial","Refined"])
 
     screen = display(GLMakie.Screen(), fig)

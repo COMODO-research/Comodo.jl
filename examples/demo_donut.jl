@@ -25,19 +25,18 @@ indTop = elements2indices(Ft)
 indRand = unique(rand(1:length(indTop),200))
 Nt = vertexnormal(Ft,V)          
 
-M1 = GeometryBasics.Mesh(V,F[L1])
-M2 = GeometryBasics.Mesh(V,F[.!L1])
-
 ## Visualization
+GLMakie.closeall()
+
 markersize = 0.1
 doughColor = RGB(1.0, 0.74, 0.5) 
 icingColor = RGB(145/255, 85/255, 77/255) 
 
 fig = Figure(size=(1200,1200))
 
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Donut")
-hp1 = mesh!(ax1,M1, color = doughColor, shading = FastShading, transparency = false)
-hp2 = mesh!(ax1,M2, color = icingColor, shading = FastShading, transparency = false)
+ax1 = AxisGeom(fig[1, 1], title = "Donut")
+hp1 = meshplot!(ax1, F[L1], V, color = doughColor, strokewidth=0.0)
+hp2 = meshplot!(ax1, F[.!L1], V, color = icingColor, strokewidth=0.0)
 
 for i in indRand
     Fr,Vr = geosphere(2,0.07)
@@ -45,6 +44,6 @@ for i in indRand
     Q2 = RotXYZ(0.0,0.0,rand(1)[1]*2*pi)
     Vr = [Q* Q2* Point{3,Float64}(v[1]*3,v[2],v[3]) for v in Vr]
     Vr .+= V[indTop[i]]
-    mesh!(ax1,GeometryBasics.Mesh(Vr,Fr),color=rand(RGB,1)[1],shading = FastShading, transparency = false)
+    meshplot!(ax1, Fr, Vr, color=rand(RGB,1)[1], strokewidth=0.0)
 end
 fig

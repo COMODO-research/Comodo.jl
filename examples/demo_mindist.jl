@@ -21,19 +21,21 @@ Fn,Vn = geosphere(n,r)  # Subdevide/refine the mesh linearly
 Dn,indMin = mindist(Vn,V; getIndex = Val(true))
 
 # Visualization
+GLMakie.closeall()
+
 fig = Figure(size = (1200,500))
 
-ax1=Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z")
+ax1 = AxisGeom(fig[1, 1])
 
-hp1 = poly!(ax1,GeometryBasics.Mesh(Vn,Fn),strokewidth=0,color=Dn,shading=FastShading, overdraw=false)
+hp1 = meshplot!(ax1, Fn, Vn,strokewidth=0.0, color=Dn)
 hs1 = scatter!(ax1, V,markersize=35,color=:black)
 
 Colorbar(fig[1, 2], hp1,label="Distance")
 Legend(fig[1, 3],[hp1,hs1],["Distances on mesh","Point set"])
 
-ax2=Axis3(fig[1, 4], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z")
+ax2 = AxisGeom(fig[1, 4])
 
-hp2 = poly!(ax2,GeometryBasics.Mesh(Vn,Fn),strokewidth=0,color=indMin,shading=FastShading, overdraw=false)
+hp2 = meshplot!(ax2, Fn, Vn, strokewidth=0.0, color=indMin)
 hs2 = scatter!(ax2, V,markersize=35,color=:black)
 
 Colorbar(fig[1, 5], hp2,label="Nearest point index")

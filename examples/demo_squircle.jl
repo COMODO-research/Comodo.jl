@@ -12,6 +12,7 @@ a_tol = 1e-6
 V = squircle(r,n,τ; atol=a_tol)
 
 # Visualization
+GLMakie.closeall()
 
 markersize = 6
 linewidth = 10
@@ -20,7 +21,7 @@ cMap = cgrad(:Spectral, nSlider, categorical = true)#Makie.Reverse(:Spectral)
 
 fig = Figure(size = (1600,1600))
 # ax = Axis3(fig[1, 1],aspect = :data,title="Squircle, τ="*string(τ))
-ax = Axis(fig[1, 1],aspect = DataAspect(),title="Squircle, τ="*@sprintf("%.3f",τ),titlesize=50)
+ax = Axis(fig[1, 1], aspect = DataAspect(), title="Squircle, τ="*@sprintf("%.3f",τ), titlesize=50)
 
 stepRange1 = range(0.0,1.0,nSlider)
 

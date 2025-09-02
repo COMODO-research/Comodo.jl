@@ -41,54 +41,54 @@ for testCase = 1:2
 
     fig = Figure(size=(1200,800))
 
-    ax=Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "edge-face")
-    hp=poly!(ax,GeometryBasics.Mesh(V,F), strokewidth=3,color=:white, shading=FastShading, overdraw=false)
+    ax = AxisGeom(fig[1, 1], title = "edge-face")
+    hp = meshplot!(ax, F, V, strokewidth=3)
 
-    hp1=wireframe!(ax,GeometryBasics.Mesh(V,[E_uni[indE]]),linewidth=5, transparency=true, depth_shift=-1.0f-3, color=:blue)
-    hp2=poly!(ax,GeometryBasics.Mesh(V,F[con_E2F[indE]]), strokewidth=4,color=:red, shading=FastShading, overdraw=false)
+    hp1 = edgeplot!(ax, [E_uni[indE]], V, linewidth=5, color=:blue)
+    hp2 = meshplot!(ax, F[con_E2F[indE]], V, strokewidth=4,color=:red)
 
-    ax=Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "face-edge")
-    hp=poly!(ax,GeometryBasics.Mesh(V,F), strokewidth=3,color=:white, shading=FastShading, overdraw=false)
+    ax = AxisGeom(fig[1, 2], title = "face-edge")
+    hp = meshplot!(ax, F, V, strokewidth=3)
 
-    hp1=poly!(ax,GeometryBasics.Mesh(V,[F[indF]]), strokewidth=4,color=:blue, shading=FastShading, overdraw=false)
-    hp2=wireframe!(ax,GeometryBasics.Mesh(V,E_uni[con_F2E[indF]]),linewidth=5, transparency=true, depth_shift=-1.0f-3, color=:red)
+    hp1 = meshplot!(ax, [F[indF]], V, strokewidth=4,color=:blue)
+    hp2 = edgeplot!(ax, E_uni[con_F2E[indF]], V, linewidth=5, color=:red)
 
-    ax=Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "face-face (via edges)")
-    hp=poly!(ax,GeometryBasics.Mesh(V,F), strokewidth=3,color=:white, shading=FastShading, overdraw=false)
+    ax = AxisGeom(fig[1, 3], title = "face-face (via edges)")
+    hp = meshplot!(ax, F, V, strokewidth=3)
 
-    hp1=poly!(ax,GeometryBasics.Mesh(V,[F[indF]]), strokewidth=4,color=:blue, shading=FastShading, overdraw=false)
-    hp2=poly!(ax,GeometryBasics.Mesh(V,F[con_F2F[indF]]), strokewidth=4,color=:red, shading=FastShading, overdraw=false)
+    hp1 = meshplot!(ax, [F[indF]], V, strokewidth=4,color=:blue)
+    hp2 = meshplot!(ax, F[con_F2F[indF]], V, strokewidth=4, color=:red)
 
-    ax=Axis3(fig[1, 4], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "vertex-face")
-    hp=poly!(ax,GeometryBasics.Mesh(V,F), strokewidth=3,color=:white, shading=FastShading, overdraw=false)
+    ax = AxisGeom(fig[1, 4], title = "vertex-face")
+    hp = meshplot!(ax, F, V, strokewidth=3)
 
-    hp1=scatter!(ax,V[indV],color =:blue, markersize = 25)
-    hp2=poly!(ax,GeometryBasics.Mesh(V,F[con_V2F[indV]]), strokewidth=4,color=:red, shading=FastShading, overdraw=false)
+    hp1 = scatter!(ax,V[indV],color =:blue, markersize = 25)
+    hp2 = meshplot!(ax, F[con_V2F[indV]], V, strokewidth=4, color=:red)
 
-    ax=Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "vertex-edge")
-    hp=poly!(ax,GeometryBasics.Mesh(V,F), strokewidth=3,color=:white, shading=FastShading, overdraw=false)
+    ax = AxisGeom(fig[2, 1], title = "vertex-edge")
+    hp = meshplot!(ax, F, V, strokewidth=3)
 
-    hp1=scatter!(ax,V[indV],color =:blue, markersize = 25)
-    hp2=wireframe!(ax,GeometryBasics.Mesh(V,E_uni[con_V2E[indV]]),linewidth=5, transparency=true, depth_shift=-1.0f-3, color=:red)
+    hp1 = scatter!(ax,V[indV],color =:blue, markersize = 25)
+    hp2 = edgeplot!(ax, E_uni[con_V2E[indV]], V, linewidth=5, color=:red)
 
 
-    ax=Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "vertex-vertex")
-    hp=poly!(ax,GeometryBasics.Mesh(V,F), strokewidth=3,color=:white, shading=FastShading, overdraw=false)
+    ax = AxisGeom(fig[2, 2], title = "vertex-vertex")
+    hp = meshplot!(ax, F, V, strokewidth=3)
 
-    hp1=scatter!(ax,V[indV],color =:blue, markersize = 25)
-    hp2=scatter!(ax,V[con_V2V[indV]],color =:red, markersize = 25)
+    hp1 = scatter!(ax, V[indV], color =:blue, markersize = 25)
+    hp2 = scatter!(ax, V[con_V2V[indV]], color =:red, markersize = 25)
 
-    ax=Axis3(fig[2, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "edge-edge")
-    hp=poly!(ax,GeometryBasics.Mesh(V,F), strokewidth=3,color=:white, shading=FastShading, overdraw=false)
+    ax = AxisGeom(fig[2, 3], title = "edge-edge")
+    hp = meshplot!(ax, F, V, strokewidth=3)
 
-    hp1=wireframe!(ax,GeometryBasics.Mesh(V,[E_uni[indE]]), linewidth=5, transparency=true, depth_shift=-1.0f-3, color=:blue)
-    hp2=wireframe!(ax,GeometryBasics.Mesh(V,E_uni[con_E2E[indE]]),linewidth=5, transparency=true, depth_shift=-1.0f-3, color=:red)
+    hp1 = edgeplot!(ax, [E_uni[indE]], V, linewidth=5,  color=:blue)
+    hp2 = edgeplot!(ax, E_uni[con_E2E[indE]], V,linewidth=5,  color=:red)
 
-    ax=Axis3(fig[2, 4], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "face-face (via vertices)")
-    hp=poly!(ax,GeometryBasics.Mesh(V,F), strokewidth=3,color=:white, shading=FastShading, overdraw=false)
+    ax = AxisGeom(fig[2, 4], title = "face-face (via vertices)")
+    hp = meshplot!(ax, F, V, strokewidth=3)
 
-    hp1=poly!(ax,GeometryBasics.Mesh(V,[F[indF]]), strokewidth=4,color=:blue, shading=FastShading, overdraw=false)
-    hp2=poly!(ax,GeometryBasics.Mesh(V,F[con_F2F_v[indF]]), strokewidth=4,color=:red, shading=FastShading, overdraw=false)
+    hp1 = meshplot!(ax, [F[indF]], V, strokewidth=4,color=:blue)
+    hp2 = meshplot!(ax, F[con_F2F_v[indF]], V, strokewidth=4,color=:red)
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")

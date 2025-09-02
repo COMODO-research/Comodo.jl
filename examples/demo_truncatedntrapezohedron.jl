@@ -58,6 +58,8 @@ f = nothing
 F,V = truncatedntrapezohedron(n,r,f)
 
 ## Visualize mesh
+GLMakie.closeall()
+
 markersize = 25
 strokewidth = 2 
 strokecolor = :black
@@ -75,7 +77,7 @@ on(hSlider.value) do n
     F,V = truncatedntrapezohedron(n,r,f)
     
     M1 = GeometryBasics.Mesh(V,F[1])
-    M2 = GeometryBasics.Mesh(V,F[2])
+    # M2 = GeometryBasics.Mesh(V,F[2])
 
     hp1[1] = M1    
     # hp2[1] = M2

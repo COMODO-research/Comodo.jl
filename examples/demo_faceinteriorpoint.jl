@@ -16,7 +16,6 @@ for testCase = 1:3
         F = [TriangleFace{Int}(f) for f in faces(M)]
         V = [Point{3,Float64}(p) for p in coordinates(M)]
         F,V  = mergevertices(F,V)
-        M = GeometryBasics.Mesh(V,F)
         indFace = 1
     elseif testCase == 2
         fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")    
@@ -24,13 +23,11 @@ for testCase = 1:3
         F = [TriangleFace{Int}(f) for f in faces(M)]
         V = [Point{3,Float64}(p) for p in coordinates(M)]
         F,V  = mergevertices(F,V)
-        M = GeometryBasics.Mesh(V,F)
         indFace = 1
     elseif testCase == 3
         n = 4 
         r = 1.0
         F,V = geosphere(4,2.0)
-        M = GeometryBasics.Mesh(V,F)
         indFace = 1
     end
 
@@ -39,18 +36,18 @@ for testCase = 1:3
     P_on2 = faceinteriorpoint(F,V, indFace; w=1.0)
 
     ## Visualization
-    c = RGBA(0.5, 0.5, 0.5,0.25)
+    c = RGBA(1.0, 1.0, 1.0,0.25)
 
     markerSize = 15
 
     fig = Figure(size=(800,800))
-    ax1 = LScene(fig[1,1]) # ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = """rayType = :ray, triSide=1""")
-    hp1 = poly!(ax1,M,color=c, shading = FastShading, transparency=true,strokecolor=:black, strokewidth=0.25)
+    ax1 = AxisGeom(fig[1, 1], title = """rayType = :ray, triSide=1""")
+    hp1 = meshplot!(ax1, F, V, color=c, transparency=true, strokewidth=0.25)
 
     hp2 = scatter!(ax1,P_on1,color=:red,markersize=markerSize)
-    hp3 =scatter!(ax1,P_in,color=:green,markersize=markerSize)
-    hp4 =scatter!(ax1,P_on2,color=:blue,markersize=markerSize)
-    hp5 =lines!(ax1,[P_on1, P_on2],color=:yellow)
+    hp3 = scatter!(ax1,P_in,color=:green,markersize=markerSize)
+    hp4 = scatter!(ax1,P_on2,color=:blue,markersize=markerSize)
+    hp5 = lines!(ax1,[P_on1, P_on2],color=:yellow)
     Legend(fig[1, 2],[hp2,hp3,hp4],["on1", "in", "on2"])
 
     stepRange = 1:1:length(F)
@@ -65,8 +62,6 @@ for testCase = 1:3
         hp4[1] = P_on2
         hp5[1] = [P_on1,P_on2]
     end
-
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")
-
 end

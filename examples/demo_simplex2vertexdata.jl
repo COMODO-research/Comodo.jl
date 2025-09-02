@@ -34,6 +34,8 @@ F_data_on_V = simplex2vertexdata(F,F_data,V; weighting=weighting)
 E_data_on_V = simplex2vertexdata(L,L_data,V; weighting=weighting)
 
 # Visualization
+GLMakie.closeall()
+
 lineWidth = 2 
 markersize = 15 
 cAlpha = RGBA(1.0, 1.0, 1.0,0.25)
@@ -53,31 +55,31 @@ L_data_s = simplex2vertexdata(L_s,L_data)
 
 fig = Figure(size = (1200,800))
 
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title="Edge data")
-hp1 = wireframe!(ax1,GeometryBasics.Mesh(VL_s,L_s), linewidth=lineWidth, color=L_data_s, colormap=:avocado)
+ax1 = AxisGeom(fig[1, 1], title="Edge data")
+hp1 = edgeplot!(ax1, L_s, VL_s, linewidth=lineWidth, color=L_data_s, colormap=:avocado)
 Colorbar(fig[1, 2], hp1,label="Edge data")
 
-ax2 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title="Node data")
-mesh!(ax2,GeometryBasics.Mesh(V,F),color=cAlpha,shading=FastShading, overdraw=false,transparency=true)
-hp2 = scatter!(ax2,V, color=E_data_on_V, colormap=:avocado, markersize=markersize)
+ax2 = AxisGeom(fig[2, 1], title="Node data")
+meshplot!(ax2, F, V, color=cAlpha, transparency=true)
+hp2 = scatter!(ax2, V, color=E_data_on_V, colormap=:avocado, markersize=markersize)
 Colorbar(fig[2, 2], hp2,label="Edge data on nodes")
 
-ax3 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title="Face data")
-hp3 = poly!(ax3,GeometryBasics.Mesh(VF_s,F_s), strokewidth=lineWidth,color=F_data_s,shading=FastShading, overdraw=false,colormap=:avocado)
+ax3 = AxisGeom(fig[1, 3], title="Face data")
+hp3 = meshplot!(ax3, F_s, VF_s, strokewidth=lineWidth, color=F_data_s, colormap=:avocado)
 Colorbar(fig[1, 4], hp3,label="Face data")
 
-ax4 = Axis3(fig[2, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title="Node data")
-mesh!(ax4,GeometryBasics.Mesh(V,F),color=cAlpha,shading=FastShading, overdraw=false,transparency=true)
-hp4 = scatter!(ax4,V, color=F_data_on_V, colormap=:avocado, markersize=markersize)
+ax4 = AxisGeom(fig[2, 3], title="Node data")
+meshplot!(ax4, F, V, color=cAlpha, transparency=true)
+hp4 = scatter!(ax4, V, color=F_data_on_V, colormap=:avocado, markersize=markersize)
 Colorbar(fig[2, 4], hp4,label="Face data on nodes")
 
-ax4 = Axis3(fig[1, 5], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title="Element data")
-hp5 = poly!(ax4,GeometryBasics.Mesh(VE_s,FE_s), strokewidth=0,color=FE_data_s,shading=FastShading, overdraw=false,colormap=:avocado)
+ax4 = AxisGeom(fig[1, 5], title="Element data")
+hp5 = meshplot!(ax4,  FE_s, VE_s, strokewidth=0, color=FE_data_s, colormap=:avocado)
 Colorbar(fig[1, 6], hp3,label="Face data")
 
-ax5 = Axis3(fig[2, 5], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title="Node data")
-mesh!(ax5,GeometryBasics.Mesh(V,F),color=cAlpha,shading=FastShading, overdraw=false,transparency=true)
-hp6 = scatter!(ax5,V, color=E_data_on_V, colormap=:avocado, markersize=markersize)
+ax5 = AxisGeom(fig[2, 5], title="Node data")
+meshplot!(ax5, F, V, color=cAlpha, transparency=true)
+hp6 = scatter!(ax5, V, color=E_data_on_V, colormap=:avocado, markersize=markersize)
 Colorbar(fig[2, 6], hp4,label="Face data on nodes")
 
 fig

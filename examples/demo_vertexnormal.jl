@@ -10,6 +10,8 @@ directions. The demo shows visualisations for a triangular, quadrilateral, and
 a pentagonal mesh. 
 =#
 
+GLMakie.closeall()
+
 fig = Figure(size=(1600,800))
 
 for q=1:1:4
@@ -38,10 +40,9 @@ for q=1:1:4
     # Compute mesh vertex normals
     NV = vertexnormal(F,V; weighting=:size)
     
-    ax1 = Axis3(fig[1, q], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
-    hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,shading=FastShading,color=:white, transparency=false, overdraw=false)    
-    # hpa = normalplot(ax1,M,color=:red,linewidth=2)
-    # hpa = arrows!(ax1,V,NV,color=:blue)
+    ax1 = AxisGeom(fig[1, q], title = titleString)
+    hp1 = meshplot!(ax1, F, V)    
+    # hpa = normalplot(ax1,M,color=:red,linewidth=2)    
     hpa = dirplot(ax1,V,NV.*mean(edgelengths(F,V)); color=:blue,linewidth=3,scaleval=1.0,style=:from)
 end
 

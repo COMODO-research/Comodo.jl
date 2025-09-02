@@ -8,29 +8,31 @@ h = 0.5
 F,V = dodecahedron(r;h=h)
 
 ## Visualize mesh
+GLMakie.closeall()
+
 markersize = 25
 strokewidth = 2 
 strokecolor = :black
 
 fig = Figure(size = (2000,1200))
-ax1 = Axis3(fig[1:3, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title =  @sprintf "Pyritohedron h=%0.6f" h)
+ax1 = AxisGeom(fig[1:3, 1], title =  @sprintf "Pyritohedron h=%0.6f" h)
 
 Fn,Vn = separate_vertices(F,V)
 
-hp1 = poly!(ax1, GeometryBasics.Mesh(Vn,Fn), color=:white,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
+hp1 = meshplot!(ax1, Fn, Vn, strokewidth=strokewidth,strokecolor=strokecolor)
 hp2 = scatter!(ax1, V,markersize=markersize,color=:red)
 
-ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title =  "Cube")
+ax2 = AxisGeom(fig[1, 2], title =  "Cube")
 Fs,Vs = cube(1.0);Fs,Vs = separate_vertices(Fs,Vs)
-poly!(ax2, GeometryBasics.Mesh(Vs,Fs), color=:white,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
+meshplot!(ax2, Fs, Vs, strokewidth=strokewidth,strokecolor=strokecolor)
 
-ax3 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title =  "Dodecahedron")
+ax3 = AxisGeom(fig[2, 2], title =  "Dodecahedron")
 Fs,Vs = dodecahedron(1.0);Fs,Vs = separate_vertices(Fs,Vs)
-poly!(ax3, GeometryBasics.Mesh(Vs,Fs), color=:white,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
+meshplot!(ax3, Fs, Vs, strokewidth=strokewidth,strokecolor=strokecolor)
 
-ax4 = Axis3(fig[3, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title =  "Rhombic dodecahedron")
+ax4 = AxisGeom(fig[3, 2], title =  "Rhombic dodecahedron")
 Fs,Vs = rhombicdodecahedron(1.0);Fs,Vs = separate_vertices(Fs,Vs)
-poly!(ax4, GeometryBasics.Mesh(Vs,Fs), color=:white,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
+meshplot!(ax4, Fs, Vs, strokewidth=strokewidth,strokecolor=strokecolor)
 
 stepRange = collect(range(0.00001,0.9999,100))
 hSlider = Slider(fig[4, :], range = stepRange, startvalue = 0,linewidth=30)

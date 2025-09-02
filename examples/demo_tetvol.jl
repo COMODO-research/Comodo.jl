@@ -160,8 +160,8 @@ for testCase = 1:5
 
     fig = Figure(size=(1200,1200))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Cut mesh")
-    hp2 = poly!(ax1,M, color=CE_Vs, shading = FastShading, transparency=false,strokecolor=:black,strokewidth=strokewidth, overdraw=false,colorrange = (0,maximum(vol)),colormap=cmap)
+    ax1 = AxisGeom(fig[1, 1], title = "Cut mesh")
+    hp2 = meshplot!(ax1, Fs, Vs, color=CE_Vs, strokewidth=strokewidth, colorrange = (0,maximum(vol)), colormap=cmap)
 
     VE  = simplexcenter(E,V)
     ZE = [v[3] for v in VE]
@@ -170,8 +170,8 @@ for testCase = 1:5
     zMin = minimum(Z)
     numSlicerSteps = 3*ceil(Int,(zMax-zMin)/mean(edgelengths(F,V)))
 
-    stepRange = range(zMin,zMax,numSlicerSteps)
-    hSlider = Slider(fig[2, 1], range = stepRange, startvalue = mean(stepRange),linewidth=30)
+    stepRange = range(zMin,zMax,numSlicerSteps)    
+    hSlider = Slider(fig[2, 1], range = stepRange, startvalue = numSlicerSteps,linewidth=30)
 
     Colorbar(fig[1, 2], hp2, ticks = range(0,maximum(vol),25))
 
@@ -197,8 +197,7 @@ for testCase = 1:5
             hp2.color = CE_Vs
         end
 
-    end
-    # hSlider.selected_index[]+=1
+    end    
     slidercontrol(hSlider,ax1)
 
     screen = display(GLMakie.Screen(), fig)

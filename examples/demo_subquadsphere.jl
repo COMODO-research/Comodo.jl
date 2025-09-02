@@ -21,20 +21,22 @@ Fn4,Vn4 = subquadsphere(n4,r)
 pointSpacing = 0.25
 
 ## Visualization
+GLMakie.closeall()
+
 strokewidth = 2
 
 fig = Figure(size=(800,800))
 
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=$n1")
-poly!(ax1,GeometryBasics.Mesh(Vn1,Fn1), strokewidth=strokewidth,color=:white,shading=FastShading,transparency=false)
+ax1 = AxisGeom(fig[1, 1], title = "Refined n=$n1")
+meshplot!(ax1, Fn1, Vn1, strokewidth=strokewidth)
 
-ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=$n2")
-poly!(ax2,GeometryBasics.Mesh(Vn2,Fn2), strokewidth=strokewidth,color=:white,shading=FastShading,transparency=false)
+ax2 = AxisGeom(fig[1, 2], title = "Refined n=$n2")
+meshplot!(ax2, Fn2, Vn2, strokewidth=strokewidth)
 
-ax3 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=$n3")
-poly!(ax3,GeometryBasics.Mesh(Vn3,Fn3), strokewidth=strokewidth,color=:white,shading=FastShading,transparency=false)
+ax3 = AxisGeom(fig[2, 1], title = "Refined n=$n3")
+meshplot!(ax3, Fn3, Vn3, strokewidth=strokewidth)
 
-ax4 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=$n4")
-poly!(ax4,GeometryBasics.Mesh(Vn4,Fn4), strokewidth=strokewidth,color=:white,shading=FastShading,transparency=false)
+ax4 = AxisGeom(fig[2, 2], title = "Refined n=$n4")
+meshplot!(ax4, Fn4, Vn4, strokewidth=strokewidth)
 
 fig

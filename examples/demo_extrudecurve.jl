@@ -21,6 +21,8 @@ F5,V5 = extrudecurve(Vc; extent=d, direction=:both, n=n, close_loop=true, face_t
 F6,V6 = extrudecurve(Vc; extent=d, direction=:negative, n=n, close_loop=true, face_type=:quad2tri)
 
 ## Visualization
+GLMakie.closeall()
+
 fig = Figure(size=(1200,1200))
 
 ax1 = AxisGeom(fig[1, 1], limits=(-r,r,-r,r,-d,d), title = """Extruded direction=:positive, face_type=:quad """)

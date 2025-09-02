@@ -63,7 +63,7 @@ for testCase = 1:11
 
     # Visualisation
     fig = Figure(size=(1000,1000))
-    ax1 = Axis3(fig[1, 1],aspect = :data,title="Input curve")
+    ax1 = AxisGeom(fig[1, 1], title="Input curve")
 
     hp11 = lines!(ax1, V,linewidth=2,color=:black)
     if close_loop == true

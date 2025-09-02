@@ -17,6 +17,8 @@ S = extrapolate(interpolate(x, y, BSplineOrder(4),Natural()),Smooth())
 yi = S.(xi)
 
 # Visualization
+GLMakie.closeall()
+
 fig = Figure(size = (800,800))
 ax = Axis(fig[1, 1], aspect = DataAspect())
 

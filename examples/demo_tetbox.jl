@@ -8,13 +8,14 @@ This demo shows the use of `tetbox` to generate a tetrahedral mesh for a 3D box
 domain. 
 =#
 
-
 boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
 pointSpacing = 0.5
 
 E, V, Fb, Cb = tetbox(boxDim,pointSpacing)
 
 # Visualisation
+GLMakie.closeall()
+
 cmap = Makie.Categorical(:Spectral) 
 
 Fbs,Vbs = separate_vertices(Fb,V)
@@ -23,13 +24,13 @@ M = GeometryBasics.Mesh(Vbs,Fbs)
 
 fig = Figure(size=(1600,800))
 
-ax1 = Axis3(fig[1, 1][1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary faces with boundary markers for the tetrahedral mesh")
-hp2 = poly!(ax1,M, strokewidth=3,shading=FastShading,strokecolor=:black, color=Cbs_V, transparency=false, overdraw=false,colorrange = (1,6),colormap=cmap)
+ax1 = AxisGeom(fig[1, 1][1, 1], title = "Boundary faces with boundary markers for the tetrahedral mesh")
+hp2 = meshplot!(ax1, Fbs, Vbs, strokewidth=2, color=Cbs_V, colorrange = (1,6), colormap=cmap)
 # hp3 = normalplot(ax1,Fb,V; type_flag=:face, color=:black,linewidth=3)
 Colorbar(fig[1, 1][1, 2], hp2)
 
-ax2 = Axis3(fig[1, 2][1,1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Cut view of tetrahedral mesh")
-hp3 = poly!(ax2,M, strokewidth=3,shading=FastShading,strokecolor=:black, color=:white, transparency=false, overdraw=false)
+ax2 = AxisGeom(fig[1, 2], title = "Cut view of tetrahedral mesh")
+hp3 = meshplot!(ax2, Fbs, Vbs, strokewidth=2, color=:white)
 
 VE  = simplexcenter(E,V)
 ZE = [v[3] for v in VE]

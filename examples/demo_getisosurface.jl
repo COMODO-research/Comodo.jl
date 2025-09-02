@@ -74,7 +74,6 @@ for testCase = 1:5
     hp1 = meshplot!(ax1,GeometryBasics.Mesh(V1,F1), strokewidth=strokewidth, strokecolor=:black, stroke_depth_shift=-0.001f0)
     # normalplot(ax1,F1,V1)
 
-
     on(hSlider1.value) do level
         F1,V1 = getisosurface(A; x=collect(xr), y=collect(yr), z=collect(zr), level=level, cap=cap, padValue=1e8)    
         F1,V1 = separate_vertices(F1,V1)    

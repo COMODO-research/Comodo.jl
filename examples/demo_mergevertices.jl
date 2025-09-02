@@ -24,6 +24,7 @@ NV1 = vertexnormal(F1,V1)
 NV2 = vertexnormal(F2,V2)
 
 ## Visualisation
+GLMakie.closeall()
 
 fig = Figure(size=(1200,800))
 
@@ -44,10 +45,10 @@ M2 = lift(hSlider.value) do stepIndex
     return GeometryBasics.Mesh(V2n,F2)
 end
 
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
+ax1 = AxisGeom(fig[1, 1],  title = titleString)
 poly!(ax1,M1,strokewidth=2,color=:white, shading = FastShading)
 
-ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
+ax2 = AxisGeom(fig[1, 2],  title = titleString)
 poly!(ax2,M2,strokewidth=2,color=:white, shading = FastShading)
 
 fig[2, :]=hSlider

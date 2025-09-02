@@ -1,6 +1,7 @@
 using Comodo
 using Comodo.GLMakie
 using Comodo.GeometryBasics
+using Comodo.GLMakie.Colors
 
 #=
 This demo shows the use of `tet2hex` to convert tetrahedral elements to hexahedral elements
@@ -33,12 +34,12 @@ for testCase = 1:1
 
     fig = Figure(size=(1600,800))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Wireframe of hexahedral mesh")
-    hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=3,shading=FastShading,strokecolor=:black, color=:white, transparency=true, overdraw=false)
-    hp2 = normalplot(ax1,F,V)
+    ax1 = AxisGeom(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Original and converte hexahedral mesh")
+    hp1 = meshplot!(ax1, F, V, strokewidth=3, strokecolor=:blue, color=RGBA{Float64}(0.0, 0.0, 1.0, 0.5), transparency = true)
+    hp2 = normalplot(ax1, F, V)
 
-    hp1 = poly!(ax1,GeometryBasics.Mesh(Vh,Fh), strokewidth=2,shading=FastShading,strokecolor=:red, color=:red, transparency=true, overdraw=false)
-    hp2 = normalplot(ax1,Fh,Vh;color=:red)
+    hp1 = meshplot!(ax1, Fh, Vh, strokewidth=2, strokecolor=:red, color=RGBA{Float64}(1.0, 0.0, 0.0, 0.5), transparency = true)
+    hp2 = normalplot(ax1, Fh, Vh; color=:red)
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")

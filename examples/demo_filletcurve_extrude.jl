@@ -29,13 +29,13 @@ for testCase = 1:4
     
     # Visualisation
     fig = Figure(size=(1000,1000))
-    ax1 = Axis3(fig[1, 1],aspect = :data,title="Filleting a curve")
+    ax1 = AxisGeom(fig[1, 1], title="Filleting a curve")
 
     hp11 = lines!(ax1, V,linewidth=2,color=:black)
     hp12 = scatter!(ax1, V,markersize=15,color=:black)
 
     Fes,Ves = separate_vertices(Fe,Ve)
-    hp3 = poly!(ax1,GeometryBasics.Mesh(Ves,Fes), strokewidth=1,color=:lightgreen, shading = FastShading,transparency=false)
+    hp3 = meshplot!(ax1, Fes, Ves, color=:lightgreen)
     # # scatter!(ax1, V[1],markersize=25,color=:yellow)
     # # scatter!(ax1, V[end],markersize=25,color=:red)
 
@@ -64,5 +64,4 @@ for testCase = 1:4
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")
-
 end

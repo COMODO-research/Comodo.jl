@@ -14,7 +14,10 @@ F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces w
 Eb = boundaryedges(F) # or equivalently Eb = boundaryedges(meshedges(F))
 
 ind = edges2curve(Eb)
+
 ## Visualization
+GLMakie.closeall()
+
 fig = Figure(size=(1200,800))
 ax1 = AxisGeom(fig[1, 1]; title = "Boundary curve")
 hp1 = meshplot!(ax1, F, V)

@@ -7,6 +7,8 @@ nf = (9,6)
 V = hexagongrid(r,nf; weave=0.0)
 
 ## Visualize mesh
+GLMakie.closeall()
+
 markersize = 25
 linewidth = 2
 

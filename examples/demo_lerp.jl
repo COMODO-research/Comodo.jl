@@ -6,7 +6,6 @@ using Comodo.GeometryBasics
 This demo shows the use of `lerp` for linear data interpolation. 
 =#
 
-
 # 1D curve interpolation 
 x = range(0,9,9) # Data sites
 y = 5.0*cos.(x.^2 ./ 9.0) # Data values
@@ -22,6 +21,8 @@ ti = range(minimum(t)-0.5,maximum(t)+0.5,np_i)
 Vi = lerp(t,V,ti) # Linearly interpolate data 
 
 # Visualization
+GLMakie.closeall()
+
 fig = Figure(size = (1200,800))
 
 ax1 = Axis(fig[1, 1], aspect = DataAspect(),title = "1D lerp interpolation")
@@ -30,8 +31,7 @@ scatter!(ax1, xi,yi,markersize=15,color=:red)
 hp2 = lines!(ax1, xi,yi,linewidth=3,color=:red)
 Legend(fig[1, 2],[hp1,hp2],["Raw","Interpolated"])
 
-ax2 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "ND lerp interpolation")
-
+ax2 = AxisGeom(fig[1, 3], title = "ND lerp interpolation")
 hp1 = scatter!(ax2,V,markersize=25,color=:black)
 scatter!(ax2, Vi,markersize=15,color=:red)
 hp2 = lines!(ax2, Vi,linewidth=3,color=:red)

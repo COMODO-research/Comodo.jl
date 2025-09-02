@@ -8,6 +8,8 @@ V1 = hexagonline(r,n; type=:ufdf)
 V2 = hexagonline(r,n; type=:zigzag)
 
 ## Visualize mesh
+GLMakie.closeall()
+
 markersize1 = 25
 markersize2 = 15
 linewidth1 = 2

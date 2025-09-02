@@ -19,14 +19,16 @@ stroke_width = 2
 marker_size = 15 
 
 ## Visualize mesh
+GLMakie.closeall()
+
 fig = Figure(size=(800,800))
 
-ax1=Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Triangle centre points")
-hp1=poly!(ax1,V1,F1, strokewidth=stroke_width,color=:white, shading = FastShading, transparency=false)
-hs2 = scatter!(ax1, V1C,markersize=marker_size,color=:blue)
+ax1 = AxisGeom(fig[1, 1], title = "Triangle centre points")
+hp1 = meshplot!(ax1, F1, V1, strokewidth=stroke_width)
+hs2 = scatter!(ax1, V1C, markersize=marker_size, color=:blue)
 
-ax2=Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Quad centre points")
-hp2=poly!(ax2,GeometryBasics.Mesh(V2,F2), strokewidth=stroke_width,color=:white, shading = FastShading, transparency=false)
-hs2 = scatter!(ax2, V2C,markersize=marker_size,color=:blue)
+ax2 = AxisGeom(fig[1, 2], title = "Quad centre points")
+hp2 = meshplot!(ax2, F2, V2, strokewidth=stroke_width)
+hs2 = scatter!(ax2, V2C, markersize=marker_size, color=:blue)
 
 fig

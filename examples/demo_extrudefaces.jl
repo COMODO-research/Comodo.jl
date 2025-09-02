@@ -98,21 +98,15 @@ for testCase = 1:3
     FE = element2faces(E)
 
     ## Visualize mesh
-
     strokewidth=1
-
     fig = Figure(size=(1200,1200))
-
-    ax1=Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Input surface mesh")
-
-
-    hp2=poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=strokewidth,color=:white, shading = FastShading,transparency=false)
+    ax1 = AxisGeom(fig[1, 1], title = "Input surface mesh")
+    hp2 = meshplot!(ax1, F, V, strokewidth=strokewidth)
     # normalplot(ax1,F,V; scaleval=0.25)
-
     # hp2 = scatter!(ax1, Ve,markersize=15,color=:orange)
     # normalplot(ax1,FE,Ve; scaleval=0.25)
 
-    ax2=Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Extruded mesh")
+    ax2 = AxisGeom(fig[1, 2], title = "Extruded mesh")
 
     if isa(FE,Tuple)
         FE1s,V1s = separate_vertices(FE[1],Ve)
@@ -126,8 +120,8 @@ for testCase = 1:3
         C2 = repeat(collect(1:n),inner=length(V))
         Cs2 = C2[ind]
 
-        hp2=poly!(ax2,GeometryBasics.Mesh(V1s,FE1s), strokewidth=strokewidth,color=Cs1, shading = FastShading,transparency=false,colormap=:Spectral)    
-        hp3=poly!(ax2,GeometryBasics.Mesh(V2s,FE2s), strokewidth=strokewidth,color=Cs2, shading = FastShading,transparency=false,colormap=:Spectral)
+        hp2 = meshplot!(ax2, FE1s, V1s, strokewidth=strokewidth, color=Cs1, colormap=:Spectral)    
+        hp3 = meshplot!(ax2, FE2s, V2s, strokewidth=strokewidth, color=Cs2, colormap=:Spectral)
     #     normalplot(ax2,FE[1],Ve; scaleval=0.25)
     #     normalplot(ax2,FE[2],Ve; scaleval=0.25)
     else
@@ -135,13 +129,9 @@ for testCase = 1:3
         C = repeat(collect(1:n),inner=length(V))
         Cs = C[ind]
         FEs,Vs = separate_vertices(FE,Ve)
-        hp2=poly!(ax2,GeometryBasics.Mesh(Vs,FEs), strokewidth=strokewidth,color=Cs, shading = FastShading,transparency=false,colormap=:Spectral)
+        hp2 = meshplot!(ax2, FEs, Vs, strokewidth=strokewidth, color=Cs, colormap=:Spectral)
         # normalplot(ax2,FE,Ve; scaleval=0.25)
-
-        # poly!(ax2,GeometryBasics.Mesh(V,F), strokewidth=strokewidth,color=:lightgreen, shading = FastShading,transparency=false)
     end
-
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")
-
 end

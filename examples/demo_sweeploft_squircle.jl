@@ -34,6 +34,7 @@ F,V,C = makeMesh(1.0)
 
 #########
 # Visualization
+GLMakie.closeall()
 
 cMap = :Spectral
 
@@ -46,8 +47,7 @@ ax = Axis3(fig[1, 1],aspect = :data,title="Swept lofting")
 stepRange1 = range(0.0,1.0,100)
 hSlider1 = Slider(fig[2, 1], range = stepRange1, startvalue = 0,linewidth=30)
 
-# hp1 = poly!(ax, GeometryBasics.Mesh(V,F), strokecolor=:black, strokewidth=0.5,color=C,transparency=false,shading = FastShading,colormap=cMap)
-hp1 = mesh!(ax, GeometryBasics.Mesh(V,F), color=C,transparency=false,shading = FastShading,colormap=cMap)
+hp1 = meshplot!(ax, F, V, color=C, transparency=false, colormap=cMap)
 
 on(hSlider1.value) do τ
     F,V,C = makeMesh(τ)

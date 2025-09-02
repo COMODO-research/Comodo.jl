@@ -110,12 +110,8 @@ for testCase = 1:6
     Cp = simplex2vertexdata(Fp,C) # Convert face color data to vertex color data 
 
     fig = Figure(size=(1200,1000))
-    ax1 = Axis3(fig[1, 1],aspect = :data,title="Multi-region meshing",azimuth=-pi/2,elevation=pi/2)
-    hp1 = poly!(ax1,GeometryBasics.Mesh(Vp,Fp), strokewidth=1,color=Cp, strokecolor=:black, shading = FastShading, transparency=false,colormap=Makie.Categorical(Makie.Reverse(:Spectral)))
-    # for V in VTp
-    #     scatter!(ax1, V, markersize=15, color=:black)
-    #     lines!(ax1, V, linewidth=5, color=:black)
-    # end
+    ax1 = AxisGeom(fig[1, 1], title="Multi-region meshing", azimuth=-pi/2, elevation=pi/2)
+    hp1 = meshplot!(ax1, Fp, Vp, color=Cp, colormap=Makie.Categorical(Makie.Reverse(:Spectral)))    
     Colorbar(fig[1, 1][1, 2], hp1)
 
     screen = display(GLMakie.Screen(), fig)

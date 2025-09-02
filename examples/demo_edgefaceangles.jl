@@ -43,11 +43,11 @@ for testCase = 1:2
 
     fig = Figure(size=(800,800))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Edge angles")
-    hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), color=:white, shading = FastShading, transparency=false)#,strokecolor=:black,strokewidth=0.25)
+    ax1 = AxisGeom(fig[1, 1], title = "Edge angles")
+    hp1 = meshplot!(ax1, F, V,strokewidth=0.25)
     # normalplot(ax1,F,V)
 
-    hp_A = wireframe!(ax1,GeometryBasics.Mesh(Vn,En),linewidth=linewidth, transparency=false, color=An,colormap=:Spectral, colorrange = (-180, 180))
+    hp_A = edgeplot!(ax1, En, Vn, linewidth=linewidth, color=An, colormap=:Spectral, colorrange = (-180, 180))
 
     Colorbar(fig[1, 2],hp_A, label = "Angles",ticks =-180:20:180)
 

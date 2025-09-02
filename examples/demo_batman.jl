@@ -12,6 +12,8 @@ V1 = batman(n; stepwise = true, dir=:acw)
 V2 = batman(n; stepwise = false, dir=:cw)
 
 # Visualisation
+GLMakie.closeall()
+
 fig = Figure(size=(1000,500))
 
 ax1 = AxisGeom(fig[1, 1]; title="stepwise=true, approximately n points, anti-clockwise", azimuth=-pi/2, elevation=pi/2)

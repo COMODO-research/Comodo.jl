@@ -30,15 +30,15 @@ for testCase = 1:3
     markersize = 10
     markersize2 = 20
     fig = Figure(size=(1200,1200))
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Mesh with unused vertices")
-    hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,color=:white, strokecolor=:blue, shading = FastShading, transparency=false)
-    scatter!(Vn,markersize=markersize,color=:red)
-    scatter!(Vn[indCheck],markersize=markersize2,color=:blue)
+    ax1 = AxisGeom(fig[1, 1], title = "Mesh with unused vertices")
+    hp1 = meshplot!(ax1, F, V)
+    scatter!(Vn, markersize=markersize, color=:red)
+    scatter!(Vn[indCheck], markersize=markersize2, color=:blue)
 
-    ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Mesh with unused vertices removed")
-    hp2 = poly!(ax2,GeometryBasics.Mesh(Vc,Fc), strokewidth=1,color=:white, strokecolor=:blue, shading = FastShading, transparency=false)
-    scatter!(Vc,markersize=markersize,color=:red)
-    scatter!(Vc[indCheck_c],markersize=markersize2,color=:blue)
+    ax2 = AxisGeom(fig[1, 2], title = "Mesh with unused vertices removed")
+    hp2 = meshplot!(ax2, Fc , Vc)
+    scatter!(Vc, markersize=markersize, color=:red)
+    scatter!(Vc[indCheck_c], markersize=markersize2, color=:blue)
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")

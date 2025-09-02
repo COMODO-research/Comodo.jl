@@ -39,7 +39,6 @@ for testCase = 1:3
 
     Fq,Vq = tri2quad(F,V; method=:split)
     Fr,Vr = tri2quad(F,V; method=:rhombic)
-    # Fr = [QuadFace{Int}(f[2],f[3],f[4],f[1]) for f in Fr]
 
     ## Visualization
 
@@ -51,18 +50,16 @@ for testCase = 1:3
     lineWidth = 4
     fig = Figure(size=(800,800))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Input triangulation")
-    poly!(ax1,GeometryBasics.Mesh(Vp,Fp), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax1 = AxisGeom(fig[1, 1], title = "Input triangulation")
+    meshplot!(ax1, Fp, Vp, strokewidth=strokewidth1)
 
-    ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "split method")
-    # hp1 = wireframe!(ax2,M, linewidth=lineWidth,color=:red, overdraw=false)
-    hp2 = poly!(ax2,GeometryBasics.Mesh(Vqp,Fqp), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax2 = AxisGeom(fig[1, 2], title = "split method")    
+    hp2 = meshplot!(ax2, Fqp, Vqp, strokewidth=strokewidth1)
     # scatter!(ax2,Vq,markersize=25,color=:green)
     # normalplot(ax2,Fq,Vq)
 
-    ax3 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "rhombic method")
-    # hp1 = wireframe!(ax3,M, linewidth=lineWidth,color=:red, overdraw=false)
-    hp2 = poly!(ax3,GeometryBasics.Mesh(Vrp,Frp), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax3 = AxisGeom(fig[1, 3], title = "rhombic method")    
+    hp2 = meshplot!(ax3, Frp, Vrp, strokewidth=strokewidth1)
     # scatter!(ax3,Vr,markersize=25,color=:green)
     # normalplot(ax3,Fr,Vr)
     # Legend(fig[1, 3],[hp1,hp2],["Input triangulation","Output quadrangulation"])

@@ -8,15 +8,13 @@ E,V = rhombicdodecahedronfoam(w,n; merge=false, orientation=:align)
 F = element2faces(E)
 
 ## Visualize mesh
+GLMakie.closeall()
+
 strokewidth = 2
 strokecolor = :black
 cmap = reverse(cgrad(:Spectral, length(E), categorical = true))
 
 fig = Figure(size = (1200,1200))
-# ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Rhombic dodecahedron")
-ax1 = LScene(fig[1,1])
-cc = Makie.Camera3D(ax1.scene, projectiontype = Makie.Orthographic)
-
-hp1 = poly!(ax1, GeometryBasics.Mesh(V,F), color=:white,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
-
-fig
+ax1 = AxisGeom(fig[1, 1], title = "Rhombic dodecahedron")
+hp1 = meshplot!(ax1, F, V)
+display(fig)

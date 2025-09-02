@@ -17,12 +17,14 @@ Fn = element2faces(E)
 
 
 # Visualisation
+GLMakie.closeall()
+
 cmap = Makie.Categorical(:Spectral) 
 a = 0.25
 fig = Figure(size=(800,800))
 
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Volumetric mesh (cut view)")
-hp3 = poly!(ax1, GeometryBasics.Mesh(V,Fn), strokewidth=2,shading=FastShading,strokecolor=:black, color=:white, transparency=false, overdraw=false)
+ax1 = AxisGeom(fig[1, 1],  title = "Volumetric mesh (cut view)")
+hp3 = meshplot!(ax1, Fn, V, strokewidth=2)
 
 VE  = simplexcenter(E,V)
 ZE = [v[3] for v in VE]

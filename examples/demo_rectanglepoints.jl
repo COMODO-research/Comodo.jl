@@ -31,8 +31,11 @@ V3 = rectanglepoints(w3, h3, pointSpacing3; dir=dir3)
 V4 = rectanglepoints(w4, h4, pointSpacing4; dir=dir4) 
 
 # Visualization
+GLMakie.closeall()
+
 markersize1 = 10
 markersize2 = 15
+
 fig = Figure(size = (1600,1600))
 
 ax1 = AxisGeom(fig[1, 1], title="Rectangle, w=$w1, h=$h1, dir=$dir1", azimuth=-pi/2, elevation=pi/2)

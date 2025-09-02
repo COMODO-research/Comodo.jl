@@ -18,9 +18,11 @@ A = edgeangles(F,V; deg = true)
 A2 = edgeangles(F,V2; deg = true)
 
 ## Visualize mesh
+GLMakie.closeall()
+
 Fs,Vs = separate_vertices(F,V2) # Separate to enable per face color shading
 fig = Figure(size=(800,800))
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Edge angles")
-hp3 = poly!(ax1,GeometryBasics.Mesh(Vs,Fs), strokewidth=3,color=reduce(vcat,A2), shading = FastShading,colormap=Makie.Reverse(:Spectral))
+ax1 = AxisGeom(fig[1, 1], title = "Edge angles")
+hp3 = meshplot!(ax1, Fs, Vs, strokewidth=3, color=reduce(vcat,A2), colormap=Makie.Reverse(:Spectral))
 Colorbar(fig[1,2],hp3)
 fig

@@ -18,22 +18,24 @@ rs3 = mean(Rn3)
 d3 = Rn3.-rs3
 
 ## Visualization
+GLMakie.closeall()
+
 fig = Figure(size=(800,800))
 
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=1")
-wireframe!(ax1,GeometryBasics.Mesh(V,F), linewidth=8,color=:red, overdraw=false)
-poly!(ax1,GeometryBasics.Mesh(Vn1,Fn1), strokewidth=3,color=:white,shading=FastShading,transparency=false)
+ax1 = AxisGeom(fig[1, 1], title = "Refined n=1")
+edgeplot!(ax1, F, V, linewidth=8,color=:red)
+meshplot!(ax1, Fn1, Vn1, strokewidth=3)
 
-ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=2")
-wireframe!(ax2,GeometryBasics.Mesh(V,F), linewidth=8,color=:red, overdraw=false)
-poly!(ax2,GeometryBasics.Mesh(Vn2,Fn2), strokewidth=3,color=:white,shading=FastShading,transparency=false)
+ax2 = AxisGeom(fig[1, 2], title = "Refined n=2")
+edgeplot!(ax2, F, V, linewidth=8,color=:red)
+meshplot!(ax2, Fn2, Vn2, strokewidth=3)
 
-ax3 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=3")
-hp1 = wireframe!(ax3,GeometryBasics.Mesh(V,F), linewidth=8,color=:red, overdraw=false)
-hp2 = poly!(ax3,GeometryBasics.Mesh(Vn3,Fn3), strokewidth=3,color=:white,shading=FastShading,transparency=false)
+ax3 = AxisGeom(fig[2, 1], title = "Refined n=3")
+hp1 = edgeplot!(ax3, F, V, linewidth=8,color=:red)
+meshplot!(ax3, Fn3, Vn3, strokewidth=3)
 Legend(fig[2, 1][1,2],[hp1,hp2],["Initial","Refined"])
 
-ax4 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Refined n=3, distance to sphere")
-hp3 = poly!(ax4,GeometryBasics.Mesh(Vn3,Fn3), strokewidth=0.5,color=d3,shading=FastShading,transparency=false,colormap=:Spectral)
+ax4 = AxisGeom(fig[2, 2], title = "Refined n=3, distance to sphere")
+hp3 = meshplot!(ax4, Fn3, Vn3, strokewidth=0.5, color=d3, colormap=:Spectral)
 Colorbar(fig[2, 2][1, 2],hp3)
 fig

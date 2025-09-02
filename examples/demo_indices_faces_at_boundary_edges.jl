@@ -9,7 +9,7 @@ volumetric mesh.
 
 GLMakie.closeall()
 
-for testCase = 1:5#:3
+for testCase = 1:5
 
     if testCase == 1 
         # Square

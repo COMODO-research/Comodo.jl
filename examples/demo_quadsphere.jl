@@ -15,6 +15,8 @@ pointSpacing = 0.5
 F,V,C = quadsphere(r,pointSpacing)
 
 ## Visualization
+GLMakie.closeall()
+
 strokewidth = 2
 cmap = cgrad(:Spectral,6, categorical = true)
 Fs,Vs = separate_vertices(F,V)
@@ -22,9 +24,8 @@ Cs = simplex2vertexdata(Fs,C)
 
 fig = Figure(size=(800,800))
 
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "quadrangulated sphere, point spacing = $pointSpacing")
-hp1 = poly!(ax1,GeometryBasics.Mesh(Vs,Fs), strokewidth=strokewidth,color=Cs,
-shading=FastShading,transparency=false, colorrange = (1,6),colormap=cmap)
+ax1 = AxisGeom(fig[1, 1], title = "quadrangulated sphere, point spacing = $pointSpacing")
+hp1 = meshplot!(ax1, Fs, Vs, strokewidth=strokewidth, color=Cs, colorrange = (1,6), colormap=cmap)
 Colorbar(fig[1, 2], hp1)
 
 stepRange = (2.0*π*r)/4.0 ./ collect(1:1:30)

@@ -5,26 +5,24 @@ using Comodo.GeometryBasics
 r = 1.0 #radius
 F,V = platonicsolid(4,r)
 
-# Fn,Vn = subtri(F,V,n; method=:Loop) 
+n = 1
+Fn,Vn = subtri(F,V,n; method=:Loop) 
 
-################# 
+# Visualisation
+GLMakie.closeall()
 
 fig = Figure(size=(800,800))
+ax = AxisGeom(fig[1, 1], title = "n = " * string(n) * " refinement steps")
+hp1 = edgeplot!(ax, F, V, linewidth=3, color=:red)
+hp2 = meshplot!(ax, Fn, Vn)
 
 stepRange = 0:1:5
-hSlider = Slider(fig[2, 1], range = stepRange, startvalue = 0,linewidth=30)
+hSlider = Slider(fig[2, 1], range = stepRange, startvalue = 1,linewidth=30)
 
-titleString = lift(hSlider.value) do n
-    "n = " * string(n) * " refinement steps"
+on(hSlider.value) do n    
+    Fn,Vn = subtri(F,V,n; method=:Loop)     
+    ax.title = "n = " * string(n) * " refinement steps"
+    hp2[1] = GeometryBasics.Mesh(Vn, Fn)
 end
-
-Mn = lift(hSlider.value) do n
-    Fn,Vn = subtri(F,V,n; method=:Loop) 
-    return GeometryBasics.Mesh(Vn,Fn)
-end
-ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
-
-hp1 = wireframe!(ax,GeometryBasics.Mesh(V,F),linewidth=3,color=:red, overdraw=false)
-hp2 = poly!(ax,Mn,strokewidth=1,color=:white, shading = FastShading)
 
 fig

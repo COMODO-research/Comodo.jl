@@ -23,6 +23,8 @@ Eh3,Vh3 = subhex(E,V,1;direction=3)
 Fh3 = element2faces(Eh3)
 
 # Visualisation
+GLMakie.closeall()
+
 strokewidth = 3
 linewidth = 4
 

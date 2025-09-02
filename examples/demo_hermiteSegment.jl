@@ -17,6 +17,8 @@ v2 = Point{3,Float64}(1.0, .0, 0.0)
 V = hermiteSegment(n, p1, v1, p2, v2)
 
 # Visualization
+GLMakie.closeall()
+
 vMax = 6.0
 fig = Figure(size = (800,800))
 ax = AxisGeom(fig[1, 1], azimuth=-pi/2, elevation=pi/2, limits=(-0.5,1.5,-0.5,1.5,0,1))

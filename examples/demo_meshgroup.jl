@@ -115,11 +115,11 @@ for testCase = 1:9
 
     fig = Figure(size=(1200,1200))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A multi-object mesh")
-    hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
+    ax1 = AxisGeom(fig[1, 1], title = "A multi-object mesh")
+    hp1 = meshplot!(ax1, F, V)
 
-    ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Grouping")
-    hp2 = poly!(ax2,GeometryBasics.Mesh(Vn,Fn), strokewidth=1,color=Cn, strokecolor=:black, shading = FastShading, transparency=false,colormap=c)
+    ax2 = AxisGeom(fig[1, 2], title = "Grouping")
+    hp2 = meshplot!(ax2, Fn, Vn, color=Cn, colormap=c)
 
     Legend(fig[1, 3],[hp1,hp2],["Mesh object","Grouped mesh"])
     Colorbar(fig[1, 4],hp2, label = "Group labelling")

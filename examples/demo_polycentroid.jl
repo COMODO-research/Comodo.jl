@@ -32,7 +32,7 @@ for testCase = 1:2
 
     ## Visualization
     fig = Figure(size=(900,900))
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z")
+    ax1 = AxisGeom(fig[1, 1])
     h0 = lines!(ax1, V, linewidth = 5, color = :black)
     h1 = scatter!(ax1, V, markersize=25, color = :black)
     h2 = scatter!(ax1, C_true, markersize=35, color = :green)

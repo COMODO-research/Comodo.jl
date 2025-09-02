@@ -12,6 +12,8 @@ xi = range(-0.5,9.5,n) # Interval definition
 yi = interp_biharmonic_spline(x,y,xi; extrapolate_method=:linear,pad_data=:linear)
 
 # Visualization
+GLMakie.closeall()
+
 fig = Figure(size = (800,800))
 ax = Axis(fig[1, 1], aspect = DataAspect())
 

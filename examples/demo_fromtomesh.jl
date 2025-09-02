@@ -89,19 +89,19 @@ for testCase = 1:5
     a = 0.25
     fig = Figure(size=(800,800))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Surface sets to mesh from-to")
-    hp1 = poly!(ax1,GeometryBasics.Mesh(V1,F1), strokewidth=3,shading=FastShading, strokecolor=:black, color=:white, transparency=false, overdraw=false)
+    ax1 = AxisGeom(fig[1, 1], title = "Surface sets to mesh from-to")
+    hp1 = meshplot!(ax1, F1, V1)
     hp2 = scatter!(ax1,V2, color = :red, markersize=15)
 
-    ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Volumetric mesh (cut view)")
+    ax2 = AxisGeom(fig[1, 2], title = "Volumetric mesh (cut view)")
     hpSlider = Vector{Any}()
     if isa(Fn,Tuple)
-        hp31 = poly!(ax2, GeometryBasics.Mesh(V1,Fn[1]), strokewidth=3,shading=FastShading,strokecolor=:black, color=:white, transparency=false, overdraw=false)
-        hp32 = poly!(ax2, GeometryBasics.Mesh(V1,Fn[2]), strokewidth=3,shading=FastShading,strokecolor=:black, color=:white, transparency=false, overdraw=false)
+        hp31 = meshplot!(ax2, Fn[1], V1)
+        hp32 = meshplot!(ax2, Fn[2], V1)
         push!(hpSlider,hp31)
         push!(hpSlider,hp32)
     else
-        hp3 = poly!(ax2, GeometryBasics.Mesh(V1,Fn), strokewidth=3,shading=FastShading,strokecolor=:black, color=:white, transparency=false, overdraw=false)
+        hp3 = meshplot!(ax2, Fn, V1)
         push!(hpSlider,hp3)
     end
 
@@ -113,37 +113,36 @@ for testCase = 1:5
     zMin = minimum(Z)
     numSlicerSteps = 3*ceil(Int,(zMax-zMin)/pointSpacing)
 
-    stepRange = range(zMin,zMax,numSlicerSteps)
-    hSlider = Slider(fig[2, :], range = stepRange, startvalue = stepRange[end],linewidth=30)
+    # stepRange = range(zMin,zMax,numSlicerSteps)
+    # hSlider = Slider(fig[2, :], range = stepRange, startvalue = stepRange[end],linewidth=30)
+    
+    # on(hSlider.value) do z     
+    #     indShow = findall(ZE .<= z)
+    #     if isempty(indShow)
+    #         for hp in hpSlider
+    #             hp.visible=false        
+    #         end
+    #     else
+    #         Fn = element2faces(E[indShow])        
+    #         if isa(Fn,Tuple)
+    #             for hp in hpSlider
+    #                 hp.visible=true    
+    #             end
+    #             Fns,Vns = separate_vertices(Fn[1],V1)
+    #             hpSlider[1][1] = GeometryBasics.Mesh(Vns,Fns)
+    #             Fns,Vns = separate_vertices(Fn[2],V1)
+    #             hpSlider[2][1] = GeometryBasics.Mesh(Vns,Fns)
+    #         else
+    #             hpSlider[1][1].visible=true
+    #             Fn = element2faces(E[indShow])        
+    #             Fns,Vns = separate_vertices(Fn,V1)
+    #             hpSlider[1][1] = GeometryBasics.Mesh(Vns,Fns)
+    #         end
+    #     end
+    # end
 
-    on(hSlider.value) do z     
-        indShow = findall(ZE .<= z)
-        if isempty(indShow)
-            for hp in hpSlider
-                hp.visible=false        
-            end
-        else
-            Fn = element2faces(E[indShow])        
-            if isa(Fn,Tuple)
-                for hp in hpSlider
-                    hp.visible=true    
-                end
-                Fns,Vns = separate_vertices(Fn[1],V1)
-                hpSlider[1][1] = GeometryBasics.Mesh(Vns,Fns)
-                Fns,Vns = separate_vertices(Fn[2],V1)
-                hpSlider[2][1] = GeometryBasics.Mesh(Vns,Fns)
-            else
-                hpSlider[1][1].visible=true
-                Fn = element2faces(E[indShow])        
-                Fns,Vns = separate_vertices(Fn,V1)
-                hpSlider[1][1] = GeometryBasics.Mesh(Vns,Fns)
-            end
-        end
-    end
-
-    slidercontrol(hSlider,ax2)
+    # slidercontrol(hSlider,ax2)
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")
-
 end

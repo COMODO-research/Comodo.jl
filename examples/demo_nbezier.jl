@@ -16,6 +16,8 @@ n = 25 # Number of points
 V = nbezier(P,n) # Get Bezier fit points
 
 # Visualization
+GLMakie.closeall()
+
 fig = Figure(size = (800,800))
 ax = AxisGeom(fig[1, 1])
 

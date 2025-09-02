@@ -35,14 +35,14 @@ for testCase = 1:2
 
     fig = Figure(size=(800,800))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Penta5 faces")
-    hp1 = poly!(ax1,GeometryBasics.Mesh(V,F[1]), color=:white, shading = FastShading, transparency=false, strokecolor=:black, strokewidth=1)
-    hp2 = poly!(ax1,GeometryBasics.Mesh(V,F[2]), color=:white, shading = FastShading, transparency=false, strokecolor=:black, strokewidth=1)
+    ax1 = AxisGeom(fig[1, 1], title = "Penta5 faces")
+    hp1 = meshplot!(ax1, F[1], V)
+    hp2 = meshplot!(ax1, F[2], V)
     scatter!(ax1,V,color=:black,markersize=10)
 
-    ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Penta15 faces")
-    hp3 = poly!(ax2,GeometryBasics.Mesh(V_penta15,F_penta15[1]), color=:white, shading = FastShading, transparency=false, strokecolor=:black, strokewidth=1)
-    hp4 = poly!(ax2,GeometryBasics.Mesh(V_penta15,F_penta15[2]), color=:white, shading = FastShading, transparency=false, strokecolor=:black, strokewidth=1)
+    ax2 = AxisGeom(fig[1, 2], title = "Penta15 faces")
+    hp3 = meshplot!(ax2, F_penta15[1], V_penta15)
+    hp4 = meshplot!(ax2, F_penta15[2], V_penta15)
     scatter!(ax2,V_penta15,color=:black,markersize=10)
     # normalplot(ax2,F_penta15[2],V_penta15)
 

@@ -40,8 +40,8 @@ for testCase = 1:2
         fig = Figure(size=(1600,800))
         styleSet = (:to,:from,:through)
         for i in eachindex(styleSet)
-            ax1 = Axis3(fig[1, i], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = string(styleSet[i]))
-            hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=1,shading=FastShading,color=cAlpha, transparency=true, overdraw=false)        
+            ax1 = AxisGeom(fig[1, i], title = string(styleSet[i]))
+            hp1 = meshplot!(ax1, F, V,color=cAlpha, transparency=true, overdraw=false)        
             hpa = dirplot(ax1,V,N; color=:blue,linewidth=3,scaleval=1.0,style=styleSet[i])
         end
         screen = display(GLMakie.Screen(), fig)

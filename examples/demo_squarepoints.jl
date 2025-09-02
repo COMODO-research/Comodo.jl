@@ -27,6 +27,8 @@ V3 = squarepoints(w3, pointSpacing3; dir=dir3)
 V4 = squarepoints(w4, pointSpacing4; dir=dir4) 
 
 # Visualization
+GLMakie.closeall()
+
 markersize1 = 10
 markersize2 = 15
 fig = Figure(size = (1600,1600))

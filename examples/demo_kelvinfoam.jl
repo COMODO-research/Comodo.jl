@@ -8,18 +8,14 @@ E,V = kelvinfoam(w,n; merge=false)
 F = element2faces(E)
 
 ## Visualize mesh
+GLMakie.closeall()
+
 strokewidth = 2
 strokecolor = :black
 cmap = reverse(cgrad(:Spectral, length(E), categorical = true))
 
 fig = Figure(size = (1200,1200))
-# ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Rhombic dodecahedron")
-ax1 = LScene(fig[1,1]); cc = Comodo.GLMakie.Camera3D(ax1.scene, projectiontype = Makie.Perspective)
-
-hp1 = poly!(ax1, GeometryBasics.Mesh(V,F[1]), color=:white,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
-hp2 = poly!(ax1, GeometryBasics.Mesh(V,F[2]), color=:white,transparency=false,strokewidth=strokewidth,strokecolor=strokecolor,shading = FastShading)
-
+ax1 = AxisGeom(fig[1, 1], title = "Rhombic dodecahedron")
+hp1 = meshplot!(ax1, F[1], V)
+hp2 = meshplot!(ax1, F[2], V)
 display(fig)
-
-cc.near[] = 1f-3
-cc.far[] = 100

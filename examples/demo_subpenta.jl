@@ -31,6 +31,8 @@ Es2,Vs2 = subpenta(E, V, nRefine; direction=2)
 Fs2 = element2faces(Es2)
 
 # Visualisation
+GLMakie.closeall()
+
 strokewidth = 2
 linewidth = 3
 

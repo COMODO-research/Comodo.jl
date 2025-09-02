@@ -1,8 +1,6 @@
 using Comodo
 using Comodo.GLMakie
 using Comodo.GeometryBasics
- 
-GLMakie.closeall()
 
 n = 12
 r = 25.0
@@ -10,6 +8,8 @@ r = 25.0
 F, V = pizza(r, n; dir=:acw)  
 
 # Visualisation
+GLMakie.closeall()
+
 fig = Figure(size=(1200,1000))
 ax1 = AxisGeom(fig[1, 1], title="Pizza mesh, n=$n slices")
 hp1 = meshplot!(ax1,F,V; color=:red, strokecolor=:white, strokewidth=1)

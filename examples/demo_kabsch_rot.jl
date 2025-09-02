@@ -29,16 +29,13 @@ V2 = [GeometryBasics.Point{3, Float64}(Q*v) for v ∈ V1]
 R = kabsch_rot(V2,V1)
 V3 = [GeometryBasics.Point{3, Float64}(R*v) for v ∈ V2] 
 
-# Rotate the coordinates
+# Visualization
+GLMakie.closeall()
+
 fig = Figure(size = (800,800))
-ax = Axis3(fig[1, 1], aspect = :data)
-
-hp1 = poly!(ax, GeometryBasics.Mesh(V1,F), color=:green,transparency=false,shading = FastShading)
-hp2 = poly!(ax, GeometryBasics.Mesh(V2,F), strokewidth=2,color=:red,shading = FastShading)
-hp3 = wireframe!(ax, GeometryBasics.Mesh(V3,F), color=:red,linewidth=2)
-
+ax = AxisGeom(fig[1, 1])
+hp1 = meshplot!(ax, F, V1, color=:green)
+hp2 = meshplot!(ax, F, V2, color=:red)
+hp3 = edgeplot!(ax, F, V3, color=:red, linewidth=1)
 Legend(fig[1, 2],[hp1,hp2,hp3],["Initial","Rotated","Back rotated"])
-
 fig
-
-

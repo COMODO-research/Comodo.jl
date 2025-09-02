@@ -57,28 +57,13 @@ for testCase = 1:3
 
     fig = Figure(size=(800,800))
 
-    # ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A sliced mesh")
-    ax1 = LScene(fig[1,1]); 
-    cc1 = cam3d!(ax1.scene, clipping_mode = :view_relative, projectiontype = Makie.Perspective) 
+    ax1 = AxisGeom(fig[1, 1], title = "")    
+    hp1 = edgeplot!(ax1, FG1, VGn, linewidth=5, color=:red)
+    hp2 = meshplot!(ax1, Fn, Vn, color=CnV, colorrange = (-2.5,2.5),colormap=cmap)
+    hp3 = Colorbar(fig[1, 2], hp2, ticks=-2:1:2)
 
-    hp1 = wireframe!(ax1,MG, linewidth=5, color=:red)
-    hp2 = poly!(ax1,Mn, color=CnV, strokewidth=1, strokecolor=:black, shading = FastShading, transparency=false, colorrange = (-2.5,2.5),colormap=cmap)
-    hp3 = Colorbar(fig[1,2],hp2,ticks=-2:1:2)
-
-    cc1.near[] = 1f-3
-    cc1.far[] = 100
-
-    # ax2 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A sliced mesh")
-    ax2 = LScene(fig[1,3]); 
-    cc2 = cam3d!(ax1.scene, clipping_mode = :view_relative, projectiontype = Makie.Perspective) 
-
-    Mn = GeometryBasics.Mesh(Vn,Fn[Cn.<=0])
-    hp4 = poly!(ax2,Mn, color=:white, strokewidth=1, strokecolor=:black, shading = FastShading, transparency=false, colorrange = (-2.5,2.5),colormap=cmap)
-
-    cc2.near[] = 1f-3
-    cc2.far[] = 100
-
-
+    ax2 = AxisGeom(fig[1, 3], title = "A sliced mesh")    
+    hp4 = meshplot!(ax2, Fn[Cn.<=0], Vn)
 
     stepRange = range(-s,s,100)
     hSlider = Slider(fig[2, :], range = stepRange, startvalue = 0,linewidth=30)
@@ -96,7 +81,7 @@ for testCase = 1:3
             Mn = GeometryBasics.Mesh(Vn,Fn)
         end
         
-        VGn = [GeometryBasics.Point{3, Float64}(R'*v)+pp for v ∈ VG1] # Rotate plane    
+        VGn = [Point{3, Float64}(R'*v)+pp for v ∈ VG1] # Rotate plane    
         MG = GeometryBasics.Mesh(VGn,FG1)
 
         hp1[1] = MG

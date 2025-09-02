@@ -17,6 +17,8 @@ F1, V1 = square(w1; orientation=orientation1)
 F2, V2 = square(w2; orientation=orientation2) 
 
 # Visualization
+GLMakie.closeall()
+
 markersize1 = 10
 markersize2 = 15
 fig = Figure(size = (1600,1600))

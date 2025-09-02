@@ -40,7 +40,7 @@ zMin = minimum(Z)
 numSlicerSteps = 3*ceil(Int,(zMax-zMin)/mean(edgelengths(F,V)))
 
 stepRange = range(zMin,zMax,numSlicerSteps)
-hSlider = Slider(fig[2, :], range = stepRange, startvalue = mean(stepRange),linewidth=30)
+hSlider = Slider(fig[2, :], range = stepRange, startvalue = mean(stepRange), linewidth=30)
 
 on(hSlider.value) do z 
     B = ZE .<= z

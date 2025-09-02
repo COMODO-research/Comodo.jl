@@ -10,7 +10,8 @@ for testCase = 1:4
         nx = 10
         num_steps = 11
         V = gridpoints(range(0.0,5.0,nx),range(0.0,5.0,num_steps),0.0)
-
+        V = collect(V)
+        
         # Periodicity types, first entry is for direction 1 (which will here close over the ends), the second for direction 2 (which will close in the circle direction)
         periodicity1 = (false, false)
         periodicity2 = (false, false)
@@ -128,39 +129,38 @@ for testCase = 1:4
 
     fig = Figure(size=(1600,1200))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = """periodicity=$periodicity1, face_type=$face_type1""")
-    poly!(ax1,M1, strokewidth=strokeWidth,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
-    wireframe!(ax1,GeometryBasics.Mesh(V,E1),linewidth=linewidth, transparency=false, color=:red)
+    ax1 = AxisGeom(fig[1, 1], title = """periodicity=$periodicity1, face_type=$face_type1""")
+    meshplot!(ax1, F1, V; strokewidth=strokeWidth)
+    edgeplot!(ax1, E1, V; linewidth=linewidth, color=:red)
     # normalplot(ax1,F1,V)
-    scatter!(ax1,VG,color=:green,markersize=markerSize)
+    scatter!(ax1, VG, color=:green, markersize=markerSize)
 
-    ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = """periodicity=$periodicity2, face_type=$face_type2""")
-    poly!(ax2,M2, strokewidth=strokeWidth,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
-    wireframe!(ax2,GeometryBasics.Mesh(V,E2),linewidth=linewidth, transparency=false, color=:red)
-    scatter!(ax2,VG,color=:green,markersize=markerSize)
+    ax2 = AxisGeom(fig[1, 2], title = """periodicity=$periodicity2, face_type=$face_type2""")
+    meshplot!(ax2, F2, V; strokewidth=strokeWidth)
+    edgeplot!(ax2, E2, V; linewidth=linewidth, color=:red)
+    scatter!(ax2, VG, color=:green, markersize=markerSize)
 
-    ax3 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = """periodicity=$periodicity3, face_type=$face_type3""")
-    poly!(ax3,M3, strokewidth=strokeWidth,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
-    wireframe!(ax3,GeometryBasics.Mesh(V,E3),linewidth=linewidth, transparency=false, color=:red)
-    scatter!(ax3,VG,color=:green,markersize=markerSize)
+    ax3 = AxisGeom(fig[1, 3], title = """periodicity=$periodicity3, face_type=$face_type3""")
+    meshplot!(ax3, F3, V; strokewidth=strokeWidth)
+    edgeplot!(ax3, E3, V; linewidth=linewidth, color=:red)
+    scatter!(ax3, VG, color=:green,markersize=markerSize)
 
-    ax4 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = """periodicity=$periodicity4, face_type=$face_type4, tri_dir=$tri_dir4""")
-    poly!(ax4,M4, strokewidth=strokeWidth,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
-    wireframe!(ax4,GeometryBasics.Mesh(V4,E4),linewidth=linewidth, transparency=false, color=:red)
-    scatter!(ax4,VG,color=:green,markersize=markerSize)
+    ax4 = AxisGeom(fig[2, 1], title = """periodicity=$periodicity4, face_type=$face_type4, tri_dir=$tri_dir4""")
+    meshplot!(ax4, F4, V4; strokewidth=strokeWidth)
+    edgeplot!(ax4, E4, V4; linewidth=linewidth, color=:red)
+    scatter!(ax4, VG, color=:green, markersize=markerSize)
 
-    ax5 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = """periodicity=$periodicity5, face_type=$face_type5, tri_dir=$tri_dir5""")
-    poly!(ax5,M5, strokewidth=strokeWidth,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
-    wireframe!(ax5,GeometryBasics.Mesh(V5,E5),linewidth=linewidth, transparency=false, color=:red)
-    scatter!(ax5,VG,color=:green,markersize=markerSize)
+    ax5 = AxisGeom(fig[2, 2], title = """periodicity=$periodicity5, face_type=$face_type5, tri_dir=$tri_dir5""")
+    meshplot!(ax5, F5, V5, strokewidth=strokeWidth)
+    edgeplot!(ax5, E5, V5,linewidth=linewidth, color=:red)
+    scatter!(ax5, VG, color=:green, markersize=markerSize)
 
+    ax6 = AxisGeom(fig[2, 3], title = """periodicity=$periodicity6, face_type=$face_type6, tri_dir=$tri_dir6""")
+    hp2 = meshplot!(ax6, F6, V6, strokewidth=strokeWidth)
+    hp3 = edgeplot!(ax6, E6, V6, linewidth=linewidth, color=:red)
+    hp1 = scatter!(ax6, VG, color=:green, markersize=markerSize)
 
-    ax6 = Axis3(fig[2, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = """periodicity=$periodicity6, face_type=$face_type6, tri_dir=$tri_dir6""")
-    hp2 = poly!(ax6,M6, strokewidth=strokeWidth,color=:white, strokecolor=:black, shading = FastShading, transparency=false)
-    hp3 = wireframe!(ax6,GeometryBasics.Mesh(V6,E6),linewidth=linewidth, transparency=false, color=:red)
-    hp1 = scatter!(ax6,VG,color=:green,markersize=markerSize)
-
-    Legend(fig[:,4],[hp1,hp2,hp3],["Original input grid", "Output surface", "Boundary"])
+    Legend(fig[:,4], [hp1,hp2,hp3], ["Original input grid", "Output surface", "Boundary"])
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")

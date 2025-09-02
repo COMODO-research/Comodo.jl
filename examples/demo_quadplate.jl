@@ -8,9 +8,9 @@ orientation1 = :up
 F1,V1 = quadplate(plateDim1,plateElem1; orientation=orientation1)
 
 ## Visualize mesh
+GLMakie.closeall()
+
 fig = Figure(size = (1200,800))
-
-ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Quadrilateral mesh plate")
-hp2 = poly!(ax1,GeometryBasics.Mesh(V1,F1), strokewidth = 3, color = :white, shading = FastShading)
-
+ax1 = AxisGeom(fig[1, 1], title = "Quadrilateral mesh plate")
+hp2 = meshplot!(ax1, F1, V1)
 fig

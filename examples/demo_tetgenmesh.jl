@@ -35,7 +35,7 @@ for testCase = 1:6
         V_regions = [v_region]
         V_holes = Vector{Point{3,Float64}}()
         stringOpt = "paAqY"
-        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions,region_vol=vol1,V_holes=[v_hole], stringOpt)
+        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions,region_vol=[vol1],V_holes=[v_hole], stringOpt)
     elseif testCase == 3
         r1 = 2.0
         r2 = r1/2
@@ -192,15 +192,15 @@ for testCase = 1:6
 
     fig = Figure(size=(800,800))
 
-    ax1 = Axis3(fig[1, 1][1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary surfaces")
-    hp1 = mesh!(ax1,GeometryBasics.Mesh(Vbs,Fbs), color=Cbs_V, shading = FastShading, transparency=true, overdraw=false,colorrange = (1,3),colormap=cmap)
+    ax1 = AxisGeom(fig[1, 1][1, 1], title = "Boundary surfaces")
+    hp1 = meshplot!(ax1, Fbs, Vbs, color=Cbs_V, transparency=true, colorrange = (1,3), colormap=cmap, strokewidth=0.0)
 
-    scatter!(ax1,V_regions,color=:black,markersize=25)
-    scatter!(ax1,V_holes,color=:black,markersize=25)
+    scatter!(ax1, V_regions, color=:black, markersize=25)
+    scatter!(ax1, V_holes, color=:black, markersize=25)
 
-    ax2 = Axis3(fig[1, 1][1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Cut mesh")
-    hp2 = poly!(ax2,M, color=CE_Vs, shading = FastShading, transparency=false,strokecolor=:black,strokewidth=strokewidth, overdraw=false,colorrange = (1,2),colormap=cmap)
-    hp3 = scatter!(ax2,V,color=:black,markersize=10)
+    ax2 = AxisGeom(fig[1, 1][1, 2], title = "Cut mesh")
+    hp2 = meshplot!(ax2, Fs, Vs, color=CE_Vs, strokewidth=strokewidth,colorrange = (1,2), colormap=cmap)
+    hp3 = scatter!(ax2, V, color=:black, markersize=10)
 
     VE  = simplexcenter(E,V)
     ZE = [v[3] for v in VE]

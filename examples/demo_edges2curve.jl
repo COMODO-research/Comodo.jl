@@ -49,9 +49,9 @@ for testCase = 1:3
     markersize = 35
 
     fig = Figure(size=(1200,1200))
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary edges converted to curve")
+    ax1 = AxisGeom(fig[1, 1], title = "Boundary edges converted to curve")
 
-    hp1 = poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth = 1, color = :white, strokecolor = :black, shading = FastShading, transparency = false)
+    hp1 = meshplot!(ax1, F, V)
 
     if !isempty(ind)
         hp2 = lines!(ax1,V[ind], color = :red, linewidth = linewidth)

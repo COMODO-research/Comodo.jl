@@ -13,6 +13,7 @@ directions for a surface mesh.
 
 type_flag_set = (:face,:face,:vertex)
 fig = Figure(size=(1600,800))
+GLMakie.closeall()
 
 for q=1:1:3
     type_flag = type_flag_set[q]
@@ -27,8 +28,8 @@ for q=1:1:3
         titleString="pentagons, surface normals, type_flag=$type_flag"            
     end
     
-    ax1=Axis3(fig[1, q], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = titleString)
-    hp1=poly!(ax1,GeometryBasics.Mesh(V,F), strokewidth=3,shading=FastShading,color=:white, transparency=false, overdraw=false)
+    ax1 = AxisGeom(fig[1, q], title = titleString)
+    hp1 = meshplot!(ax1, F, V, strokewidth=3)
     # hpa=arrows!(ax1,VN,N,color=:blue)  
     # type_flag=:face, color=:black,linewidth=3,scaleval=nothing
     hpa = normalplot(ax1,F,V; type_flag=type_flag, color=:blue,linewidth=3,scaleval=1.0)

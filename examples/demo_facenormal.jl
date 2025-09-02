@@ -10,6 +10,8 @@ directions. The demo shows visualisations for a triangular, quadrilateral, and
 a pentagonal mesh. 
 =#
 
+GLMakie.closeall()
+
 fig = Figure(size=(1600,800))
 cAlpha = RGBA(1.0, 1.0, 1.0,0.25)
 for q=1:1:5
@@ -42,7 +44,7 @@ for q=1:1:5
     ax1 = AxisGeom(fig[1, q], title = titleString)
     hp1 = meshplot!(ax1,F,V, color=cAlpha, transparency=true)
     # hpa = arrows!(ax1,VN,N,color=:blue)  
-    hpa = dirplot(ax1,VN,N; color=:blue,linewidth=3,scaleval=1.0,style=:from)
+    hpa = dirplot(ax1,VN,N; color=:blue,linewidth=3, scaleval=1.0, style=:from)
 end
 
 fig

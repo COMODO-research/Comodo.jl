@@ -33,8 +33,7 @@ for testCase = 1:2
         d = norm(Vc[1]-Vc[2])        
         F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:backslash)    
     end
-    M = GeometryBasics.Mesh(V,F)
-
+    
     ## Refine triangulation using `subtri` and the default :linear method
 
     Fn1,Vn1=subtri(F,V,1) # Split once, default is same as: Fn1,Vn1=subtri(F,V,1; method="linear")
@@ -55,43 +54,43 @@ for testCase = 1:2
     lineWidth = 4
     fig = Figure(size=(1600,800))
 
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Linear, n=1")
-    wireframe!(ax1,M, linewidth=lineWidth,color=:red, overdraw=false)
-    poly!(ax1,GeometryBasics.Mesh(Vn1,Fn1), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax1 = AxisGeom(fig[1, 1], title = "Linear, n=1")
+    edgeplot!(ax1, F, V, linewidth=lineWidth, color=:red)
+    meshplot!(ax1, Fn1, Vn1, strokewidth=strokewidth1)
 
-    ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Linear, n=2")
-    wireframe!(ax2,M, linewidth=lineWidth,color=:red, overdraw=false)
-    poly!(ax2,GeometryBasics.Mesh(Vn2,Fn2), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax2 = AxisGeom(fig[1, 2], title = "Linear, n=2")
+    edgeplot!(ax2, F, V, linewidth=lineWidth, color=:red)
+    meshplot!(ax2, Fn2, Vn2, strokewidth=strokewidth1)
 
-    ax3 = Axis3(fig[1, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Linear, n=3")
-    hp1 = wireframe!(ax3,M, linewidth=lineWidth,color=:red, overdraw=false)
-    hp2 = poly!(ax3,GeometryBasics.Mesh(Vn3,Fn3), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax3 = AxisGeom(fig[1, 3], title = "Linear, n=3")
+    hp1 = edgeplot!(ax3, F, V, linewidth=lineWidth, color=:red)
+    hp2 = meshplot!(ax3, Fn3, Vn3, strokewidth=strokewidth1)
     Legend(fig[1, 4],[hp1,hp2],["Initial","Refined"])
 
-    ax4 = Axis3(fig[2, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Loop, n=1")
-    wireframe!(ax4,M, linewidth=lineWidth,color=:red, overdraw=false)
-    poly!(ax4,GeometryBasics.Mesh(Vn4,Fn4), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax4 = AxisGeom(fig[2, 1], title = "Loop, n=1")
+    edgeplot!(ax4, F, V, linewidth=lineWidth, color=:red)
+    meshplot!(ax4, Fn4, Vn4, strokewidth=strokewidth1)
 
-    ax5 = Axis3(fig[2, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Loop, n=2")
-    wireframe!(ax5,M, linewidth=lineWidth,color=:red, overdraw=false)
-    poly!(ax5,GeometryBasics.Mesh(Vn5,Fn5), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax5 = AxisGeom(fig[2, 2], title = "Loop, n=2")
+    edgeplot!(ax5, F, V, linewidth=lineWidth, color=:red)
+    meshplot!(ax5, Fn5, Vn5, strokewidth=strokewidth1)
 
-    ax6 = Axis3(fig[2, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Loop, n=3")
-    hp1 = wireframe!(ax6,M, linewidth=lineWidth,color=:red, overdraw=false)
-    hp2 = poly!(ax6,GeometryBasics.Mesh(Vn6,Fn6), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax6 = AxisGeom(fig[2, 3], title = "Loop, n=3")
+    hp1 = edgeplot!(ax6, F, V, linewidth=lineWidth, color=:red)
+    hp2 = meshplot!(ax6, Fn6, Vn6, strokewidth=strokewidth1)
     Legend(fig[2, 4],[hp1,hp2],["Initial","Refined"])
 
-    ax4 = Axis3(fig[3, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Loop, constrained boundary, n=1")
-    wireframe!(ax4,M, linewidth=lineWidth,color=:red, overdraw=false)
-    poly!(ax4,GeometryBasics.Mesh(Vn7,Fn7), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax4 = AxisGeom(fig[3, 1], title = "Loop, constrained boundary, n=1")
+    edgeplot!(ax4, F, V, linewidth=lineWidth, color=:red)
+    meshplot!(ax4, Fn7, Vn7, strokewidth=strokewidth1)
 
-    ax5 = Axis3(fig[3, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Loop, constrained boundary, n=2")
-    wireframe!(ax5,M, linewidth=lineWidth,color=:red, overdraw=false)
-    poly!(ax5,GeometryBasics.Mesh(Vn8,Fn8), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax5 = AxisGeom(fig[3, 2], title = "Loop, constrained boundary, n=2")
+    edgeplot!(ax5, F, V, linewidth=lineWidth, color=:red)
+    meshplot!(ax5, Fn8, Vn8, strokewidth=strokewidth1)
 
-    ax6 = Axis3(fig[3, 3], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Loop, constrained boundary, n=3")
-    hp1 = wireframe!(ax6,M, linewidth=lineWidth,color=:red, overdraw=false)
-    hp2 = poly!(ax6,GeometryBasics.Mesh(Vn9,Fn9), strokewidth=strokewidth1,color=:white,shading=FastShading,transparency=false)
+    ax6 = AxisGeom(fig[3, 3], title = "Loop, constrained boundary, n=3")
+    hp1 = edgeplot!(ax6, F, V, linewidth=lineWidth, color=:red)
+    hp2 = meshplot!(ax6, Fn9, Vn9, strokewidth=strokewidth1)
     Legend(fig[3, 4],[hp1,hp2],["Initial","Refined"])
 
     screen = display(GLMakie.Screen(), fig)

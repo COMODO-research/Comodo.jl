@@ -13,7 +13,9 @@ n1 = 0 # Number of refinement iterations
 F1,V1 = geosphere(n1,r)
 c = [v[3] for v in V1]
 
-#Visualize mesh
+# Visualize mesh
+GLMakie.closeall()
+
 fig = Figure(size = (1600,800))
 
 ax1 = AxisGeom(fig[1, 1], title = "Visualised mesh")

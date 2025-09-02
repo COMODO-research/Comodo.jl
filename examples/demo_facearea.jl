@@ -58,14 +58,10 @@ for testCase = 1:6
     Fn,Vn = separate_vertices(F,V)
 
     ## Visualization
-
     fig = Figure(size=(800,800))
-
-    ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Face area")
-    hp1 = poly!(ax1,GeometryBasics.Mesh(Vn,Fn), color=simplex2vertexdata(Fn,A), shading = FastShading, transparency=false,strokecolor=:black,strokewidth=1)
+    ax1 = AxisGeom(fig[1, 1], title = "Face area")
+    hp1 = meshplot!(ax1, Fn, Vn, color=simplex2vertexdata(Fn,A), strokewidth=0.5)
     Colorbar(fig[1, 2],hp1)
-
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")
-
 end
