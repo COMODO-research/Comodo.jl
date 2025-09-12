@@ -44,7 +44,7 @@ for testCase = 1:7
 
         # Obtain mesh faces and vertices
         F = tofaces(faces(M))
-        V = topoints(coordinates(M))
+        V = topoints(Comodo.GeometryBasics.coordinates(M))
         F,V = mergevertices(F,V)
         # n = 1
         # F,V = subtri(F,V,n; method=:Loop)
@@ -55,23 +55,13 @@ for testCase = 1:7
 
         # Obtain mesh faces and vertices
         F = tofaces(faces(M))
-        V = topoints(coordinates(M))
+        V = topoints(Comodo.GeometryBasics.coordinates(M))
         F,V = mergevertices(F,V)
         B = [v[3]>-10 for v in V]
         BF = [all(B[f]) for f in F]
         F = F[BF]
         F,V = remove_unused_vertices(F,V)    
         con_type = :face
-    # elseif testCase == 8
-    #     # Loading a mesh
-    #     fileName_mesh = joinpath(comododir(),"assets","stl","david.stl")
-    #     M = load(fileName_mesh)
-
-    #     # Obtain mesh faces and vertices
-    #     F = tofaces(faces(M))
-    #     V = topoints(coordinates(M))
-    #     F,V,_ = mergevertices(F,V)
-    #     con_type = :face
     end
 
     s = 0.5
@@ -99,7 +89,4 @@ for testCase = 1:7
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")
-
 end
-
-

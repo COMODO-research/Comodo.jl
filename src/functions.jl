@@ -735,16 +735,21 @@ The input `F` can either represent a vector of faces or a
 GeometryBasics.Mesh. The convention is such that for a face referring to the 
 nodes 1-2-3-4, the edges are 1-2, 2-3, 3-4, 4-1.   
 """
-function meshedges(F::AbstractVector{NgonFace{N,T}}; unique_only=false) where {N,T}
+function meshedges(F::AbstractVector{NgonFace{N,T}}; unique_only=false, edgetypes=collect(1:N)) where {N,T}
     nf = length(F)
-    E = Vector{LineFace{T}}(undef,N*nf)        
+    E = Vector{LineFace{T}}(undef,length(edgetypes)*nf)        
     for (i,f) in enumerate(F) # Loop over each node/point for the current simplex                           
-        for (j, idx) in enumerate(i:nf:lastindex(E))
+        for (s,j) in enumerate(edgetypes) # (j, idx) in enumerate(i:nf:lastindex(E))
+            idx = i + (s-1)*nf
             E[idx] = LineFace{T}(f[j], f[mod1(j+1,N)])
         end
     end    
     unique_only && (E = gunique(E; sort_entries=true)) # Remove doubles if requested e.g. 1-2 seen as same as 2-1
     return E
+end
+
+function meshedges(f::NgonFace{N,T}; unique_only=false, edgetypes=collect(1:N)) where {N,T}    
+    return meshedges([f]; unique_only=unique_only, edgetypes=edgetypes)
 end
 
 function meshedges(M::GeometryBasics.Mesh; unique_only=false)   
@@ -1472,7 +1477,7 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
             for (i,v_i) in enumerate(V) # Loop over all vertices
                 if treatBoundary && in(i,indB)
                     if !constrain_boundary
-                        Vv[i] = 6/8*V[i] + 1/8*(V[con_V2V[i][1]]+V[con_V2V[i][2]]) 
+                        Vv[i] = 6/8*v_i + 1/8*(V[con_V2V[i][1]]+V[con_V2V[i][2]]) 
                     end
                 else
                     indF = con_V2F[i]
@@ -1493,9 +1498,10 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
         nf = length(F)
         ne = length(Eu)
         for (i,f_i) in enumerate(F)            
-            for j = 1:4
-                Fn[i+(j-1)*nf] = QuadFace{TF}([f_i[j], con_F2E[i][j]+nv, i+nv+ne, con_F2E[i][mod1(j+3,4)]+nv])                
-            end            
+            Fn[i]      = QuadFace{TF}(          f_i[1], con_F2E[i][1]+nv,          i+nv+ne, con_F2E[i][4]+nv)        
+            Fn[i+nf]   = QuadFace{TF}(con_F2E[i][1]+nv,           f_i[2], con_F2E[i][2]+nv, i+nv+ne)                
+            Fn[i+2*nf] = QuadFace{TF}(         i+nv+ne, con_F2E[i][2]+nv,           f_i[3], con_F2E[i][3]+nv)    
+            Fn[i+3*nf] = QuadFace{TF}(con_F2E[i][4]+nv,          i+nv+ne, con_F2E[i][3]+nv, f_i[4])                                        
         end
 
         return Fn,Vn
@@ -1794,7 +1800,7 @@ function con_face_edge(F,E_uni=nothing,indReverse=nothing)
         E = meshedges(F)
         E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)    
     end
-    return [Vector{Int}(a) for a in eachrow(reshape(indReverse,length(F),length(F[1])))] 
+    return [Vector{Int}(a) for a in eachrow(reshape(indReverse,length(F), round(Int,length(indReverse)/length(F))))] 
 end
 
 """
@@ -2395,11 +2401,19 @@ function quadplate(plateDim::Union{Vector{T},Tuple{T,T}}, plateElem::Union{Vecto
         end
     end
     
-    if orientation == :up
-        return F, collect(V)
-    else#if orientation == :down
-        return invert_faces(F), collect(V) # TODO: Remove collect    
+    # Eb = boundaryedges(F) # Boundary edges
+    indBottom = 1:1:(plateElem[1]+1)
+    indRight = (plateElem[1]+1):(plateElem[1]+1):length(V)
+    indTop = length(V):-1:1+plateElem[2]*(plateElem[1]+1)
+    indLeft = 1+plateElem[2]*(plateElem[1]+1):-(plateElem[1]+1):1
+    Eb = [curve2edges(indBottom); curve2edges(indRight); curve2edges(indTop); curve2edges(indLeft)]
+    Cb = [fill(1,length(indBottom)-1); fill(2,length(indRight)-1); fill(3,length(indTop)-1); fill(4,length(indLeft)-1);]
+
+    if orientation == :down        
+        invert_faces!(F)
+        invert_faces!(Eb)
     end    
+    return F, collect(V), Eb, Cb
 end
 
 """
@@ -4284,7 +4298,7 @@ function triplate(plateDim,pointSpacing::T; orientation=:up) where T <: Real
     if orientation == :down
         return invert_faces(F), collect(V)
     else
-        return F,collect(V) # TODO: Remove collect
+        return F, collect(V) 
     end
 end
 
@@ -8194,4 +8208,136 @@ function polycentroid(V::Vector{Point{ND,TV}}) where ND where TV<:Real
         C += ((V[q]+V[mod1(q+1,N)])/2.0) * w
     end  
     return C./W
+end
+
+"""
+    curve2edges(ind::Vector{T}; close_loop=false) where T<:Integer
+
+Returns curve edge vector
+
+# Description
+This function return and set of edges that span the same nodes as the set of 
+ordered indices `ind`. The indices in `ind` should define a curve of consecutive
+points. If the option `close_loop=true` (default is `false`) is used then an 
+edge is added to span from the last to the first point in `ind`.  
+"""
+function curve2edges(ind::Union{Vector{T}, UnitRange{T}, StepRange{T,T}}; close_loop=false) where T<:Integer
+    E = [LineFace{T}(ind[i], ind[i+1]) for i in 1:(length(ind)-1)] # Vector of edges
+    if close_loop        
+        push!(E, LineFace{T}(ind[end], ind[1]))
+    end
+    return E
+end
+
+"""
+    subtri_dual(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n=1; smooth=true, split_boundary=false, constrain_boundary=false) where TF<:Integer where ND where TV<:Real      
+
+Subdivides triangles using dual
+
+# Description
+This function refines triangulated meshes using the face-centered dual. The
+dual subtriangulation method is sometimes referred to as √3-subdevision (see 
+also [1]). For a closed surface mesh 2k subdivision steps would mean each 
+original triangle now represents 9ᵏ triangles (hence √3 new faces per iteration 
+on average). The implementation here largely follows reference [1] however 
+smoothing can be turned on/off using the `smooth` option (default is `true`). 
+In addition, there is the option to contrain the boundary during smoothing by 
+setting `constrain_boundary=true` (default `false`). Finally there is the option 
+to split the boundary edges by setting `split_boundary=true` (default is 
+`false`).      
+# References    
+[1] Kobbelt, √3-subdivision, 2000, SIGGRAPH 2000. 
+"""
+function subtri_dual(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n=1; smooth=true, split_boundary=false, constrain_boundary=false) where TF<:Integer where ND where TV<:Real      
+    if n == 0
+        return F, V
+    elseif n == 1
+        numVerticesOriginal = length(V)
+        numFacesOriginal = length(F)
+        E = meshedges(F)        
+        Eu, indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
+        
+        con_E2F = con_edge_face(F, Eu, indReverse)     
+        boundaryEdgeDict = Dict{Int,Int}()
+        numBoundaryEdges = 0 
+        for (i,c) in enumerate(con_E2F)
+            if length(c) == 1
+                numBoundaryEdges += 1 
+                boundaryEdgeDict[i] = numBoundaryEdges
+            end
+        end
+        indicesBoundaryEdges = sort(collect(keys(boundaryEdgeDict)))
+
+        Eu_boundary = Eu[indicesBoundaryEdges]
+        if numBoundaryEdges>0
+            indicesBoundaryVertices = reduce(vcat, Eu_boundary)
+        else 
+            indicesBoundaryVertices = Vector{Int}()
+        end
+
+        V_tri = deepcopy(V)
+        append!(V_tri, simplexcenter(F,V))            
+        if split_boundary && numBoundaryEdges>0
+            append!(V_tri, simplexcenter(Eu_boundary,V))    
+            F_tri = Vector{TriangleFace{TF}}(undef, 2*length(Eu))
+        else
+            F_tri = Vector{TriangleFace{TF}}(undef, 2*length(Eu)-numBoundaryEdges)
+        end
+
+        if smooth
+            con_V2E = con_vertex_simplex(Eu,V)
+            con_V2V = con_vertex_vertex(Eu, V, con_V2E)                        
+            for (i,v) in enumerate(V)                
+                indRingNeighbourhood = con_V2V[i]                
+                if numBoundaryEdges>0 && in(i, indicesBoundaryVertices)                    
+                    if split_boundary && !constrain_boundary                      
+                        indEdges = intersect(con_V2E[i],indicesBoundaryEdges)                                   
+                        indBoundaryEdges = [boundaryEdgeDict[k] for k in indEdges]                        
+                        V_tri[i] = 0.5*v + 0.5*mean(V_tri[(numVerticesOriginal+numFacesOriginal).+indBoundaryEdges])                              
+                    end
+                else                    
+                    α = (4.0-2.0*cos(2*pi/length(indRingNeighbourhood)))/9.0                
+                    V_tri[i] = (1.0-α)*v +  α*mean(V[indRingNeighbourhood])
+                end
+            end                                                                    
+        end    
+        
+        indexFace = 1        
+        for (indexEdge, e) in enumerate(Eu)
+            indicesFaceFriends = con_E2F[indexEdge]
+            if numBoundaryEdges>0 && haskey(boundaryEdgeDict, indexEdge) # Boundary edge                
+                indexBoundaryEdge = boundaryEdgeDict[indexEdge]                
+                if split_boundary                
+                    E1 = meshedges(F[indicesFaceFriends[1]])                
+                    if in(e,E1)
+                        F_tri[indexFace] = TriangleFace{TF}(e[1], numVerticesOriginal+numFacesOriginal+indexBoundaryEdge, numVerticesOriginal+indicesFaceFriends[1])
+                        F_tri[indexFace+1] = TriangleFace{TF}(numVerticesOriginal+numFacesOriginal+indexBoundaryEdge, e[2], numVerticesOriginal+indicesFaceFriends[1])                
+                    else
+                        F_tri[indexFace] = TriangleFace{TF}(e[2], numVerticesOriginal+numFacesOriginal+indexBoundaryEdge, numVerticesOriginal+indicesFaceFriends[1])
+                        F_tri[indexFace+1] = TriangleFace{TF}(numVerticesOriginal+numFacesOriginal+indexBoundaryEdge, e[1], numVerticesOriginal+indicesFaceFriends[1])
+                    end                    
+                    indexFace += 2                                  
+                else
+                    F_tri[indexFace] = TriangleFace{TF}(e[1], e[2], numVerticesOriginal+indicesFaceFriends[1])
+                    indexFace += 1 
+                end                                               
+            else
+                E1 = meshedges(F[indicesFaceFriends[1]])                
+                if in(e,E1)
+                    F_tri[indexFace] = TriangleFace{TF}(e[2], numVerticesOriginal+indicesFaceFriends[1], numVerticesOriginal+indicesFaceFriends[2])
+                    F_tri[indexFace+1] = TriangleFace{TF}(e[1], numVerticesOriginal+indicesFaceFriends[2], numVerticesOriginal+indicesFaceFriends[1])                    
+                else
+                    F_tri[indexFace] = TriangleFace{TF}(e[1], numVerticesOriginal+indicesFaceFriends[1], numVerticesOriginal+indicesFaceFriends[2])
+                    F_tri[indexFace+1] = TriangleFace{TF}(e[2], numVerticesOriginal+indicesFaceFriends[2], numVerticesOriginal+indicesFaceFriends[1])                    
+                end
+                indexFace += 2
+            end
+        end
+        return F_tri, V_tri
+    elseif n>1
+        for _ in 1:n
+            F,V = subtri_dual(F, V, 1; smooth=smooth, split_boundary=split_boundary, constrain_boundary=constrain_boundary)    
+        end
+        return F, V
+    end
 end

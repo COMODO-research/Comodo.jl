@@ -46,7 +46,7 @@ for testCase = 1:12
 
         # Obtain mesh faces and vertices
         F = tofaces(faces(M))
-        V = topoints(coordinates(M))
+        V = topoints(Comodo.GeometryBasics.coordinates(M))
         F,V = mergevertices(F,V)
     elseif testCase == 11
         fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
@@ -80,5 +80,4 @@ for testCase = 1:12
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")
-
 end

@@ -853,6 +853,12 @@ end
         @test E == LineFace{Int}[[1, 2], [2, 3], [3, 4], [4, 1]]
     end
 
+    @testset "Single quad edge_types" begin
+        F = [QuadFace{Int}(1, 2, 3, 4)]       
+        E = meshedges(F; unique_only=true, edgetypes=[1,3])
+        @test E == LineFace{Int}[[1, 2], [3, 4]]
+    end
+
     @testset "Triangles" begin
         F = [TriangleFace{Int}(1, 2, 3),TriangleFace{Int}(1, 4, 3)]
         E = meshedges(F)
@@ -868,7 +874,7 @@ end
     @testset "Mesh" begin
         F, V = cube(1.0)
         M = GeometryBasics.Mesh(V,F)
-        E = meshedges(M,unique_only=true)
+        E = meshedges(M, unique_only=true)
         @test E == LineFace{Int}[[1, 2], [8,7], [5, 6], [6, 7], [8, 5], [2, 3], 
         [6, 2], [7, 3], [8, 4], [5, 1], [3, 4], [1, 4]]
     end
@@ -1627,7 +1633,7 @@ end
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)  
-        @test isapprox(Vn[ind], Point{3, Float64}[[-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], [-0.2886751345948129, 0.5773502691896258, 0.2886751345948129], [-0.5773502691896258, 0.0, 0.14433756729740646], [-0.2886751345948129, 0.14433756729740646, 0.5773502691896258], [0.4330127018922194, -0.43301270189221935, -0.5773502691896258], [0.14433756729740646, -0.5773502691896258, -0.43301270189221935]], atol=eps_level)        
+        @test isapprox(Vn[ind], Point{3, Float64}[[-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], [-0.2886751345948129, 0.5773502691896258, 0.2886751345948129], [0.2886751345948129, 0.4330127018922194, -0.5773502691896258], [-0.14433756729740646, 0.0, 0.5773502691896258], [0.14433756729740646, -0.4330127018922194, -0.5773502691896258], [0.4330127018922194, -0.5773502691896258, -0.4330127018922194]], atol=eps_level)        
     end
 
     @testset "Catmull_Clark" begin
@@ -1640,7 +1646,7 @@ end
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)  
-        @test isapprox(Vn[ind], Point{3, Float64}[[-0.2895661072324513, -0.2895661072324513, -0.2895661072324513], [-0.18414681640860342, 0.4257509268592806, 0.18414681640860342], [-0.48187698248769556, 0.0, 0.09948266357130273], [-0.19141642225574024, 0.09422035643025145, 0.44889359308574917], [0.25066958302055375, -0.25066958302055375, -0.3566674840045866], [0.0907121516695506, -0.407828803431474, -0.2770228830681994]], atol=eps_level)        
+        @test isapprox(Vn[ind], Point{3, Float64}[[-0.2895661072324513, -0.2895661072324513, -0.2895661072324513], [-0.18414681640860342, 0.4257509268592806, 0.18414681640860342], [0.1760575853420767, 0.2654854834831565, -0.3878341245125987], [-0.09948266357130273, 0.0, 0.48187698248769556], [0.0907121516695506, -0.27702288306819944, -0.40782880343147404], [0.25066958302055375, -0.35666748400458664, -0.25066958302055375]], atol=eps_level)        
     end
 
     @testset "Catmull_Clark, unconstrained boundary" begin
@@ -1660,7 +1666,7 @@ end
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)  
-        @test isapprox(Vn[ind], Point{3, Float64}[[0.5078125, 3.2959746043559335e-17, 0.0], [-0.39453125, -0.2604842034820381, 0.0], [0.09765624999999989, -0.4397785253592852, 0.8660254037844388], [0.4228515625000001, 0.21143198334581026, 1.0825317547305486], [-0.33593750000000006, -0.36535446722155995, 0.2165063509461097], [0.09765624999999989, -0.4397785253592852, 1.5155444566227678]], atol=eps_level)        
+        @test isapprox(Vn[ind], Point{3, Float64}[[0.5078125, 3.2959746043559335e-17, 0.0], [-0.39453125, -0.2604842034820381, 1.7320508075688776], [0.09765624999999989, -0.4397785253592852, 0.4330127018922194], [0.2207031250000002, 0.38226902588922496, 1.0825317547305486], [-0.4296875, -0.13531646934131844, 0.2165063509461097], [-0.1484375000000001, -0.47360764269461486, 1.515544456622768]], atol=eps_level)        
     end
 
     @testset "Catmull_Clark, constrained boundary" begin
@@ -1676,12 +1682,11 @@ end
         @test Vn == V
 
         Fn, Vn = subquad(F, V, n; method=:Catmull_Clark, constrain_boundary=true)
-        ind = round.(Int,range(1,length(Vn),6)) # Sample indices
-        V_true = Point{3, Float64}[[1.0, 0.0, 0.0], [-0.5, -0.43301270189221924, 0.0], [0.08666992187499989, -0.47149332286115675, 0.8660254037844388], [0.4898681640625001, 0.21333487119592254, 1.0825317547305486], [-0.4472656250000001, -0.5581804360329389, 0.2165063509461097], [0.07128906249999988, -0.5158940393637769, 1.5155444566227678]]
+        ind = round.(Int,range(1,length(Vn),6)) # Sample indices       
         @test eltype(F) == eltype(Fn)
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)  
-        @test isapprox(Vn[ind], V_true, atol=eps_level)        
+        @test isapprox(Vn[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [-0.5, -0.43301270189221924, 1.7320508075688776], [0.07897949218749989, -0.4936936811124668, 0.4330127018922194], [0.23168945312500022, 0.40129790439034785, 1.0825317547305486], [-0.482421875, -0.19620888054491178, 0.2165063509461097], [-0.25976562500000017, -0.6664336115059938, 1.515544456622768]], atol=eps_level)        
     end
 
     @testset "errors" begin
@@ -2680,11 +2685,9 @@ end
 
     plateDim = [5,5]
     plateElem = [4,3]
-    F,V = quadplate(plateDim,plateElem)
+    F,V, Eb, Cb = quadplate(plateDim,plateElem)
 
-    @testset "Errors" begin
-        @test_throws ArgumentError quadplate(plateDim,plateElem; orientation=:wrong)
-    end
+    Ebb = boundaryedges(F)
 
     @test V isa Vector{Point3{Float64}}
     @test length(V) == prod(plateElem.+1)
@@ -2692,9 +2695,14 @@ end
     @test F isa Vector{QuadFace{Int}}
     @test length(F) == prod(plateElem)
     @test F[1] == [1, 2, 7, 6]
+    @test length(Eb) == length(Ebb)
 
-    F,V = quadplate(plateDim,plateElem; orientation=:down)
+    F,V, Eb, Cb = quadplate(plateDim,plateElem; orientation=:down)
     @test F[1] == [6,7,2,1]
+
+    @testset "Errors" begin
+        @test_throws ArgumentError quadplate(plateDim,plateElem; orientation=:wrong)
+    end
 end
 
 @testset "triplate" begin
@@ -2775,13 +2783,13 @@ end
     r = 1.0
     F, V = subquadsphere(3, r)
     ind = round.(Int,range(1,length(V),6))
-    V_true = Point{3, Float64}[[-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], [-0.3689702423132517, 0.8530661876868645, 0.3689702423132517], [-0.9793474352247509, 0.0, 0.20218457191067402], [-0.38513265214423603, 0.18957274057435147, 0.9031805003893055], [0.49847402263276075, -0.49847402263276075, -0.7092582727896994], [0.18095633824105684, -0.8135537030036463, -0.552616662777592]]
+    V_true = Point{3, Float64}[[-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], [-0.3689702423132517, 0.8530661876868645, 0.3689702423132517], [0.35078880366009596, 0.5289708759735062, -0.7727464186902068], [-0.20218457191067402, 0.0, 0.9793474352247509], [0.18095633824105684, -0.5526166627775921, -0.8135537030036464], [0.49847402263276075, -0.7092582727896996, -0.49847402263276075]]
     @test V isa Vector{Point3{Float64}}
     @test length(V) == 386
     @test isapprox(V[ind], V_true, atol=eps_level)
     @test F isa Vector{QuadFace{Int}}
     @test length(F) == 384
-    @test F[1] == [1, 99, 291, 116]
+    @test F[1] == [1, 99, 291, 285]
 end
 
 @testset "simplex2vertexdata" verbose = true begin
@@ -2846,7 +2854,7 @@ end
         # Edges
         DF = collect(Float64,1:length(Lq))        
         DV = simplex2vertexdata(Lq,DF,Vq; weighting=:none)
-        D_true = [49.333333333333336, 50.666666666666664, 53.333333333333336, 56.0, 47.666666666666664, 45.0, 43.666666666666664, 42.333333333333336, 47.0, 42.5, 47.5, 45.0, 46.0, 50.5, 48.5, 49.5, 50.5, 49.5, 54.0, 51.5, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0]
+        D_true = [57.333333333333336, 50.666666666666664, 61.333333333333336, 72.0, 47.666666666666664, 37.0, 27.666666666666668, 34.333333333333336, 47.0, 30.5, 47.5, 33.0, 46.0, 50.5, 48.5, 49.5, 50.5, 49.5, 66.0, 63.5, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0]
         @test isapprox(DV,D_true, atol=eps_level)
     end
     
@@ -2879,7 +2887,7 @@ end
         # Edges
         DF = collect(Float64,1:length(Lq))
         DV = simplex2vertexdata(Lq,DF,Vq; weighting=:size)
-        D_true = [49.33333333333334, 50.66666666666668, 53.333333333333336, 56.00000000000001, 47.66666666666667, 45.00000000000001, 43.66666666666667, 42.333333333333336, 47.00000000000001, 42.5, 47.50000000000001, 45.00000000000001, 46.00000000000001, 50.5, 48.50000000000001, 49.50000000000001, 50.500000000000014, 49.5, 54.00000000000001, 51.500000000000014, 46.0, 46.99999999999999, 48.0, 49.0, 50.0, 51.0]
+        D_true = [57.333333333333336, 50.66666666666668, 61.33333333333334, 72.0, 47.66666666666667, 37.0, 27.66666666666667, 34.333333333333336, 48.45215111403195, 33.404302228063905, 48.95215111403195, 34.452151114031956, 46.00000000000001, 50.500000000000014, 47.04784888596806, 48.04784888596806, 49.04784888596805, 48.04784888596805, 66.0, 62.04784888596806, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0]
         @test isapprox(DV,D_true, atol=eps_level)
     end
     
@@ -3076,7 +3084,7 @@ end
         ind = round.(Int,range(1,length(VC),5))
         @test VC isa typeof(V)
         @test length(VC) == length(F)
-        VC_true = Point{3, Float64}[[-0.48624303129694313, -0.48624303129694313, -0.6913184394948764], [-0.5330679123349682, -0.1754002930303379, -0.7870889972738774], [0.5330679123349682, -0.7870889972738774, -0.1754002930303379], [0.18978604606913252, -0.9236437317570111, -0.18978604606913252], [0.1754002930303379, -0.7870889972738774, -0.5330679123349682]]
+        VC_true = Point{3, Float64}[[-0.48624303129694313, -0.48624303129694313, -0.6913184394948764], [-0.5330679123349682, -0.1754002930303379, -0.7870889972738774], [0.1897860460691325, -0.9236437317570111, -0.1897860460691325], [0.17540029303033788, -0.7870889972738774, -0.5330679123349682], [0.48624303129694313, -0.6913184394948764, -0.48624303129694313]]
         @test isapprox(VC[ind], VC_true, atol=eps_level)
     end
 end
@@ -8521,6 +8529,76 @@ end
     C = polycentroid(V)
 
     @test isapprox(C, C_true, atol=eps_level)
+end
+
+@testset "curve2edges" verbose = true begin
+    ind = [1,2,3,4]
+    E = curve2edges(ind)
+    @test E == LineFace{Int64}[LineFace{Int64}(1, 2), LineFace{Int64}(2, 3), LineFace{Int64}(3, 4)]
+
+    E = curve2edges(ind; close_loop=true)
+    @test E == LineFace{Int64}[LineFace{Int64}(1, 2), LineFace{Int64}(2, 3), LineFace{Int64}(3, 4), LineFace{Int64}(4, 1)]
+end
+
+@testset "subtri_dual" verbose = true begin
+    @testset "Closed surface (Icosahedron)" begin
+        # Closed surface (Icosahedron)
+        r = 2.0
+        F,V = platonicsolid(4,r)
+        E = meshedges(F; unique_only=true) 
+
+        split_boundary = false
+        smooth = false    
+        constrain_boundary = false
+        n = 1
+        F_tri, V_tri = subtri_dual(F, V, n; smooth=smooth, split_boundary=split_boundary, constrain_boundary=constrain_boundary)
+
+        @test length(F_tri) == 2*length(E) # Each edge spawns two faces for closed surface 
+        @test V_tri[1:length(V)] == V # Test non-smoothing 
+
+        split_boundary = false
+        smooth = true    
+        constrain_boundary = false
+        n = 2
+        F_tri, V_tri = subtri_dual(F, V, n; smooth=smooth, split_boundary=split_boundary, constrain_boundary=constrain_boundary)
+
+        @test length(F_tri) == length(F)*9 # Refining twice is like splitting faces into 9-sub faces
+    end
+
+    @testset "Non-closed surface (disc)" begin
+        r = 1.0 # Radius
+        n1 = 0
+        F,V = tridisc(r,n1)
+        E = meshedges(F; unique_only=true) 
+        Eb = boundaryedges(F)
+        indBoundary = unique(reduce(vcat,Eb))
+
+        # Test single split step and constraining 
+        split_boundary = false
+        smooth = false    
+        constrain_boundary = false
+        n = 1
+        F_tri, V_tri = subtri_dual(F, V, n; smooth=smooth, split_boundary=split_boundary, constrain_boundary=constrain_boundary)
+        @test length(F_tri) == 2*length(E) - length(Eb) # Each edge spawns two faces but boundary edges only 1
+        @test V_tri[1:length(V)] == V # Test non-smoothing 
+
+        # Test double splitting and smoothing 
+        split_boundary = false
+        smooth = true    
+        constrain_boundary = true
+        n = 2
+        F_tri, V_tri = subtri_dual(F, V, n; smooth=smooth, split_boundary=split_boundary, constrain_boundary=constrain_boundary)
+        @test length(F_tri) == length(F)*9 # Refining twice is like splitting faces into 9-sub faces
+        @test V_tri[indBoundary] == V[indBoundary] # Test non-smoothing at boundary
+
+        # Testing boundary splitting 
+        split_boundary = true
+        smooth = true    
+        constrain_boundary = false
+        n = 1
+        F_tri, V_tri = subtri_dual(F, V, n; smooth=smooth, split_boundary=split_boundary, constrain_boundary=constrain_boundary)
+        @test length(F_tri) == 2*length(E) # Each edge spawns two faces now as edges are split
+    end
 end
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------

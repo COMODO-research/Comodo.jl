@@ -26,10 +26,11 @@ for testCase = 1:2
     fig = Figure(size=(800,800))
 
     ax1 = AxisGeom(fig[1, 1], title = "Mesh edges")
-    hp1 = meshplot!(ax1, F, V, strokewidth=0.0)
+    hp1 = meshplot!(ax1, F, V, strokewidth=5.0)
     hp2 = edgeplot!(ax1, edgeSet, V, color=:red, linewidth=3)
+
+    Legend(fig[1,2], [hp1, hp2], ["Mesh", "Edges"])
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")
-
 end

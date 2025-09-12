@@ -735,3 +735,13 @@ Comodo.hermiteSegment
 ```@docs 
 Comodo.polycentroid
 ```
+
+## `curve2edges`
+```@docs 
+Comodo.curve2edges
+```
+
+## `subtri_dual`
+```@docs 
+Comodo.subtri_dual
+```
