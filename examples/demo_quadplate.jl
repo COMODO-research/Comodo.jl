@@ -16,7 +16,7 @@ Ebs,Vbs = separate_vertices(Eb,V)
 Cbs_V = simplex2vertexdata(Ebs,Cb)
 
 fig = Figure(size = (1200,800))
-ax1 = AxisGeom(fig[1, 1], title = "Quadrilateral mesh plate")
+ax1 = AxisGeom(fig[1, 1], title = "Quadrilateral mesh plate", azimuth=-pi/2, elevation=pi/2)
 hp2 = meshplot!(ax1, F, V)
 # scatter!(ax1, V[indBoundaryNodes], markersize=15, color=:red)
 hp3 = edgeplot!(ax1, Ebs, Vbs; color=Cbs_V, linewidth=6, colormap=cmap)

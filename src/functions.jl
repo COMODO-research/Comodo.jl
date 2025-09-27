@@ -215,7 +215,12 @@ flat such that all x-coordinates on the left are at the minimum in `xSpan` and
 all on the right are at the maximum in `xSpan`, however, this does result in a 
 non-uniform spacing at these edges.  
 """
-function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Union{Vector{TT},Tuple{TT,TT}},pointSpacing::T; return_faces::Val{B1} = Val(false), rectangular::Val{B2}=Val(false), force_equilateral::Val{B3}=Val(false)) where {T<:Real, TT<:Real, B1, B2, B3}
+function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}}, ySpan::Union{Vector{TT},Tuple{TT,TT}}, pointSpacing::T; 
+                                return_faces::Val{B1} = Val(false), 
+                                rectangular::Val{B2}=Val(false), 
+                                force_equilateral::Val{B3}=Val(false), 
+                                return_boundary_edges::Val{B4}=Val(false)) where {T<:Real, TT<:Real, B1, B2, B3, B4}
+                              
     minX = minimum(xSpan)
     maxX = maximum(xSpan)
     minY = minimum(ySpan)
@@ -281,9 +286,22 @@ function gridpoints_equilateral(xSpan::Union{Vector{TT},Tuple{TT,TT}},ySpan::Uni
                     c += 1
                 end
             end
-        end        
-        return F,V
+        end                
+        if B4 # Edges requested as well
+            indBottom = 1:1:(plateElem[1]+1)
+            indRight = (plateElem[1]+1):(plateElem[1]+1):length(V)
+            indTop = length(V):-1:1+plateElem[2]*(plateElem[1]+1)
+            indLeft = 1+plateElem[2]*(plateElem[1]+1):-(plateElem[1]+1):1
+            Eb = [curve2edges(indBottom); curve2edges(indRight); curve2edges(indTop); curve2edges(indLeft)]
+            Cb = [fill(1,length(indBottom)-1); fill(2,length(indRight)-1); fill(3,length(indTop)-1); fill(4,length(indLeft)-1);]
+            return F, V, Eb, Cb
+        else
+            return F, V
+        end
     else
+        if B4 
+            @warn "Edge request ignored as only points requested."
+        end
         return V
     end
 end
@@ -627,7 +645,12 @@ The optional parameter `sort_entries` (default is `false`) can be set to `true`
 if each entry in X should be sorted, this is helpful to allow the entry [1,2] to 
 be seen as the same as [2,1] for instance.  
 """
-function gunique(X; return_unique::Val{CompUnique}=Val(true), return_index::Val{CompIdx}=Val(false), return_inverse::Val{CompInv}=Val(false), return_counts::Val{CompCounts}=Val(false), sort_entries=false) where {CompUnique,CompIdx,CompInv,CompCounts}
+function gunique(X; return_unique::Val{CompUnique}=Val(true), 
+                    return_index::Val{CompIdx}=Val(false), 
+                    return_inverse::Val{CompInv}=Val(false), 
+                    return_counts::Val{CompCounts}=Val(false), 
+                    sort_entries=false) where {CompUnique,CompIdx,CompInv,CompCounts}
+                    
     if CompUnique && !(CompIdx || CompInv || CompCounts)
         return sort_entries ? unique(_sort, X) : unique(X)
     else
@@ -2545,16 +2568,16 @@ function normalizevector(A::Union{Point{ND,TV},Vec{ND,TV}}) where ND where TV<:R
     return A./norm(A)    
 end
 
-function circlepoints(r::T,n::Int; dir=:acw) where T <: Real
-    return [Point{3, Float64}(r*cos(t),r*sin(t),0) for t in circlerange(n;dir=dir)]
+function circlepoints(r::T,n::Int; dir=:acw, pc = Point{3, Float64}(0.0, 0.0, 0.0)) where T <: Real
+    return [pc + Point{3, Float64}(r*cos(t),r*sin(t),0) for t in circlerange(n;dir=dir)]
 end
 
-function circlepoints(r::Tuple{T,T},n::Int; dir=:acw) where T <: Real
-    return [Point{3, Float64}(r[1]*cos(t),r[2]*sin(t),0) for t in circlerange(n;dir=dir)]
+function circlepoints(r::Tuple{T,T},n::Int; dir=:acw, pc = Point{3, Float64}(0.0, 0.0, 0.0)) where T <: Real
+    return [pc + Point{3, Float64}(r[1]*cos(t),r[2]*sin(t),0) for t in circlerange(n;dir=dir)]
 end
 
-function circlepoints(f::FunctionType,n::Int; dir=:acw) where {FunctionType <: Function}
-    return [Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t in circlerange(n;dir=dir)]
+function circlepoints(f::FunctionType,n::Int; dir=:acw, pc = Point{3, Float64}(0.0, 0.0, 0.0)) where {FunctionType <: Function}
+    return [pc + Point{3, Float64}(f(t)*cos(t),f(t)*sin(t),0) for t in circlerange(n;dir=dir)]
 end
 
 """
@@ -4169,7 +4192,7 @@ The `batman` function creates points on the curve for the Batman logo. The curve
 is useful for testing surface meshing algorithms since it contains sharp 
 transitions and pointy features. The user requests `n` points on the curve. The
 default uses the option `stepwise=true`, which means curve segments are sampled 
-seperately and hence all sharp features and corners are captured. In this 
+separately and hence all sharp features and corners are captured. In this 
 case the actual number of points on the curve can deviate from `n` (be a bit 
 higher), as each curve segment features at least two points. If instead 
 `stepwise=false` is used then the function forces exactly `n` points. In this 
@@ -4208,7 +4231,7 @@ function batman(n::Int; stepwise = true, dir=:acw)
     
     if stepwise == true 
         setOrder(V) = length(V)>3 ? 4 : 2
-        # Resample each seperately (which is like having must points) since some are linear and some are not        
+        # Resample each separately (which is like having must points) since some are linear and some are not        
         V1 = evenly_space(V1, pointSpacing; close_loop=false, spline_order=setOrder(V1))        
         V2 = evenly_space(V2, pointSpacing; close_loop=false, spline_order=setOrder(V2))
         V3 = evenly_space(V3, pointSpacing; close_loop=false, spline_order=setOrder(V3))
@@ -4289,16 +4312,25 @@ end
 # Description
 Generates a triangulated mesh for a plate.
 """
-function triplate(plateDim,pointSpacing::T; orientation=:up) where T <: Real 
+function triplate(plateDim,pointSpacing::T; orientation=:up, return_boundary_edges::Val{B1}=Val(false)) where T <: Real where B1
     if  !in(orientation,(:up,:down))        
         throw(ArgumentError("Orientation not supported. Use :up or :down"))
     end 
 
-    F, V = gridpoints_equilateral((-plateDim[1]/2,plateDim[1]/2),(-plateDim[2]/2,plateDim[2]/2),pointSpacing; return_faces = Val(true), rectangular=Val(true), force_equilateral=Val(false))
+    if B1
+        F, V, Eb, Cb = gridpoints_equilateral((-plateDim[1]/2,plateDim[1]/2),(-plateDim[2]/2,plateDim[2]/2),pointSpacing; return_faces = Val(true), rectangular=Val(true), force_equilateral=Val(false), return_boundary_edges=Val(true))
+    else 
+        F, V = gridpoints_equilateral((-plateDim[1]/2,plateDim[1]/2),(-plateDim[2]/2,plateDim[2]/2),pointSpacing; return_faces = Val(true), rectangular=Val(true), force_equilateral=Val(false), return_boundary_edges=Val(false))
+    end
+
     if orientation == :down
-        return invert_faces(F), collect(V)
+       invert_faces!(F)    
+    end
+
+    if B1 
+        return F, collect(V), Eb, Cb
     else
-        return F, collect(V) 
+        return F, collect(V)
     end
 end
 
@@ -8312,9 +8344,9 @@ function subtri_dual(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n=1; 
                     if in(e,E1)
                         F_tri[indexFace] = TriangleFace{TF}(e[1], numVerticesOriginal+numFacesOriginal+indexBoundaryEdge, numVerticesOriginal+indicesFaceFriends[1])
                         F_tri[indexFace+1] = TriangleFace{TF}(numVerticesOriginal+numFacesOriginal+indexBoundaryEdge, e[2], numVerticesOriginal+indicesFaceFriends[1])                
-                    else
-                        F_tri[indexFace] = TriangleFace{TF}(e[2], numVerticesOriginal+numFacesOriginal+indexBoundaryEdge, numVerticesOriginal+indicesFaceFriends[1])
-                        F_tri[indexFace+1] = TriangleFace{TF}(numVerticesOriginal+numFacesOriginal+indexBoundaryEdge, e[1], numVerticesOriginal+indicesFaceFriends[1])
+                    # else # This is not possible, the boundary edges should be part of the boundary faces
+                    #     F_tri[indexFace] = TriangleFace{TF}(e[2], numVerticesOriginal+numFacesOriginal+indexBoundaryEdge, numVerticesOriginal+indicesFaceFriends[1])
+                    #     F_tri[indexFace+1] = TriangleFace{TF}(numVerticesOriginal+numFacesOriginal+indexBoundaryEdge, e[1], numVerticesOriginal+indicesFaceFriends[1])
                     end                    
                     indexFace += 2                                  
                 else
@@ -8340,4 +8372,20 @@ function subtri_dual(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n=1; 
         end
         return F, V
     end
+end
+
+function rhombicdodecahedron2hex(E,V)
+    Eh = Vector{Hex8{Int}}(undef, length(E)*4)
+    Vh = deepcopy(V)
+    m = length(Vh)
+    for (i,e) in enumerate(E)
+        i_h = (i-1)*4
+        push!(Vh,mean(view(V,e))) # Add centroid
+        m+=1
+        Eh[i_h+1] = Hex8{Int}(e[ 9], e[ 5], e[10], e[ 1], e[ 8], e[14], e[ 6], m)
+        Eh[i_h+2] = Hex8{Int}(e[11], e[ 2], e[10], e[ 6], e[ 3], e[13], e[ 1], m)
+        Eh[i_h+3] = Hex8{Int}(e[11], e[ 7], e[12], e[ 3], e[ 6], e[14], e[ 8], m)
+        Eh[i_h+4] = Hex8{Int}(e[ 9], e[ 4], e[12], e[ 8], e[ 1], e[13], e[ 3], m)
+    end
+    return Eh,Vh
 end

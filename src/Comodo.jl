@@ -80,6 +80,6 @@ export delaunay2D, simplicialcomplex, alphacomplex, indices_faces_at_boundary_ed
 export rectanglepoints, squarepoints, rectangle, square, pizza
 export cart2bary, bary2cart, barycoord, intriangle
 export spacing2numsteps, pointspacingmax, pointspacingmin, hexcylinder
-export equilateraltriangle, hermiteSegment, subpenta, polycentroid, curve2edges, subtri_dual
+export equilateraltriangle, hermiteSegment, subpenta, polycentroid, curve2edges, subtri_dual, rhombicdodecahedron2hex
 
 end # module

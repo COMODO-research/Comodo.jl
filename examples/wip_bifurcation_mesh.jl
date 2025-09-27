@@ -5,6 +5,8 @@ using Comodo.Statistics
 using Comodo.Rotations
 using Comodo.LinearAlgebra
 
+GLMakie.closeall()
+
 function removefaces(F1,boolKeep)
     F1_cut = Vector{eltype(F1)}()
     F1_cutout = Vector{eltype(F1)}()
@@ -28,9 +30,9 @@ function loopsmooth(V; λ=0.5)
     return V
 end
 
-###########################################################
 
-pointSpacing = 2.0
+pointSpacing = 2.0 
+wallThickness = 3.0
 r = 16.0
 h = 70.0 # Height = extrusion distance (extent)
 
@@ -38,15 +40,15 @@ rBranch = r/2
 hBranch = 50.0
 filletDistance = rBranch/4
 
-# Create base branch
+# Create base branch quad mesh
 nc = ceil(Int,(2*pi*r)/pointSpacing) # Compute number of circumferential points from point spacing
 Vc = circlepoints(r,nc;dir=:acw) # Create points on circle
 
 n = normalizevector(Vec{3, Float64}(0.0,0.0,1.0)) # Extrusion direction
-direction = :positive
 F1,V1 = extrudecurve(Vc; extent=h, direction=:positive, n=n, close_loop=true,face_type=:quad)
 E1b  = boundaryedges(F1)
 
+# Convert quad mesh to triangulation for ray tracing
 F1t = quad2tri(F1,V1; convert_method = :angle);
 N1_V = vertexnormal(F1,V1)
 E1 = boundaryedges(F1)
@@ -55,9 +57,8 @@ E1 = boundaryedges(F1)
 tBranch = 0.25*π
 Q = RotXYZ(tBranch,0.0,0.0)
 nz = Vec{3,Float64}(0.0,0.0,1.0)
-m = Q*nz
+m = Q'*nz
 
-m = Vec{3, Float64}(0.0,sqrt(2)/2,sqrt(2)/2)
 pb = Point{3,Float64}(0.0,0.0,h/4)
 
 # Define side branch base contour 
@@ -67,7 +68,6 @@ Vc_branch_c = circlepoints(rBranch,nc_branch;dir=:acw) # Create points on circle
 
 b = 1.0 / cos(pi-tBranch);
 Qb = RotXYZ(0.5*π,0.0,0.0)
-
 
 Vc_branch = [pb+(Q'*v)+m*hBranch for v in Vc_branch_c]
 
@@ -96,10 +96,19 @@ Vc_branch_ellipse=[pb+(Qb*Point{3,Float64}(v[1], b*v[2], v[3]))+m*(r*(1/cos(tBra
 V1[indNearest] = P_intersect # Overwrite nearest with intersection points so distances are more accurate 
 d,dd,l = distmarch(F1,V1,indNearest)
 
+# Visualization
+fig = Figure(size=(1900,1200))
+ax1 = AxisGeom(fig[1, 1])
+hp = meshplot!(ax1, F1, V1, color=d)
+lines!(ax1, Vc_branch, color=:red, linewidth=3)
+lines!(ax1, Vc_branch_ellipse, color=:red, linewidth=3)
+scatter!(ax1, P_intersect, color=:red, markersize=15)
+screen = display(GLMakie.Screen(), fig)
+
 # Cut hole in surface 
 boolKeep = d .> maximum(dCut)
 
-F1_cut,F1_cutout = removefaces(F1,boolKeep)
+F1_cut, F1_cutout = removefaces(F1,boolKeep)
 
 C = meshgroup(F1_cut; con_type = :v, indStart=E1b[1][1], stop_at = 1)
 F1_cut = F1_cut[C.==1]
@@ -130,6 +139,18 @@ Vc_bez = [pb+(Qb*Point{3,Float64}(v[1], b*v[2], v[3]))+m*(r*(1/cos(tBranch))+max
 
 Vc_bez2 = circlepoints(rBranch,nc;dir=:cw)
 Vc_bez2 = [pb+(Q'*v)+m*hBranch for v in Vc_bez2];
+
+
+# Visualization
+fig = Figure(size=(1900,1200))
+ax1 = AxisGeom(fig[1, 1])
+hp = meshplot!(ax1, F1_cut, V1, color=d)
+lines!(ax1, Vc_branch, color=:red, linewidth=3)
+lines!(ax1, Vc_branch_ellipse, color=:red, linewidth=3)
+lines!(ax1, Vc_bez2, color=:green, linewidth=3)
+
+scatter!(ax1, P_intersect, color=:red, markersize=15)
+screen = display(GLMakie.Screen(), fig)
 
 # Vc_bez2 = circlepoints(rBranch,nc;dir=:cw)
 # Vc_bez2 = [pb+(Qb*Point{3,Float64}(v[1], b*v[2], v[3]))+m*hBranch for v in Vc_bez2];
@@ -188,10 +209,6 @@ nSmooth = 25
 β=0.5
 V = smoothmesh_hc(F,V, nSmooth, α, β; constrained_points=indConstrain)
 
-E,VE = extrudefaces(F,V; extent=2.0, direction=:negative, num_steps=3) 
-
-FE = element2faces(E)
-
 ## Visualization
 linewidth = 6
 strokewidth = 0.5
@@ -199,51 +216,33 @@ markersize = 20
 cmap = cgrad(:Spectral, 3, categorical = true)
 
 fig = Figure(size=(1900,1200))
-# ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z")
-# # ax1 = LScene(fig[1,1])
-
-# hp1 = lines!(ax1,Vc,color=:red,linewidth=linewidth, transparency=true, depth_shift=-1.0f-3)
-# hp2 = poly!(ax1,GeometryBasics.Mesh(V1,F1_cut), strokewidth=strokewidth,color=:white, strokecolor=:black, shading = FastShading, transparency=false,colormap = :Spectral)
-# hp3 = dirplot(ax1,pb,m,scaleval=hBranch,color=:black,linewidth=8)
-
-# hp5 = lines!(ax1,Vc_bez,color=:red,linewidth=linewidth)
-# hp5 = lines!(ax1,Vc_bez2,color=:blue,linewidth=linewidth)
-
-# # hp5 = scatter!(ax1,P_intersect,color=:red,markersize=markersize)
-# # hp6 = scatter!(ax1,V1[indNearest],color=:cyan,markersize=markersize)
-
-# # dirplot(ax1,V1[indCurve],MV_cutout[indCurve],scaleval=2,color=:blue,linewidth=2)
-# # dirplot(ax1,V1[indCurve],KV_cutout,scaleval=2,color=:red,linewidth=2)
-
-# # hp6 = scatter!(ax1,V1[indNear],color=:blue,markersize=markersize)
-
-# # hp6 = scatter!(ax1,V1[indMiddle],color=:cyan,markersize=markersize)
-
-
-# # scatter!(ax1,Vc_branch,color=:red,markersize=markersize)
-
-# wireframe!(ax1,GeometryBasics.Mesh(V1,E1_cutout),linewidth=linewidth, transparency=false, color=:yellow)
-
-# hp2 = poly!(ax1,GeometryBasics.Mesh(Vb,Fb), strokewidth=strokewidth,color=:white, strokecolor=:black, shading = FastShading, transparency=false,colormap = :Spectral)
-# hp2 = poly!(ax1,GeometryBasics.Mesh(Vb2,Fb2), strokewidth=strokewidth,color=:white, strokecolor=:black, shading = FastShading, transparency=false,colormap = :Spectral)
-
-# # Colorbar(fig[1, 2], hp2)
-
-# ax2 = LScene(fig[1,1])
-
 Fs,Vs = separate_vertices(F,V)
 Cs = simplex2vertexdata(Fs,C,Vs)
 
 ax1 = AxisGeom(fig[1, 1])
-hp11 = meshplot!(ax1,GeometryBasics.Mesh(Vs,Fs), strokewidth=strokewidth,color=Cs, strokecolor=:black, colormap = cmap,colorrange=(0.5,3.5), stroke_depth_shift=-0.001f0)
+hp11 = meshplot!(ax1,GeometryBasics.Mesh(Vs,Fs), strokewidth=strokewidth,color=Cs, strokecolor=:black, colormap = cmap, stroke_depth_shift=-0.001f0)
 Colorbar(fig[1, 2], hp11)
 
-FEs,VEs = separate_vertices(FE,VE)
+screen = display(GLMakie.Screen(), fig)
 
-ax2 = AxisGeom(fig[1, 3])
-hp21 = meshplot!(ax2,GeometryBasics.Mesh(VEs,FEs), strokewidth=strokewidth,color=:white, strokecolor=:black, colormap = cmap,colorrange=(0.5,3.5), stroke_depth_shift=-0.001f0)
+# Extrude faces to hex8 elements 
+num_steps = 1+ceil(Int, wallThickness/pointSpacing)
+E, Ve = extrudefaces(F,V; extent=wallThickness, direction=:negative, num_steps=num_steps)
+elementLabels = repeat(C, outer=num_steps-1)
+elementLabels_F = repeat(elementLabels,inner=6) 
+FE = element2faces(E)
+indBoundaryFaces = boundaryfaceindices(FE)
+Fb = FE[indBoundaryFaces]
+Cb = elementLabels_F[indBoundaryFaces]
 
-fig
+## Visualization
+fig = Figure(size=(1900,1200))
+Fbs,Vbs = separate_vertices(Fb,Ve)
+Cbs = simplex2vertexdata(Fbs,Cb,Vbs)
 
+ax1 = AxisGeom(fig[1, 1])
+hp11 = meshplot!(ax1, Fbs, Vbs, strokewidth=strokewidth, color=Cbs, strokecolor=:black, colormap = cmap, stroke_depth_shift=-0.001f0)
+Colorbar(fig[1, 2], hp11)
 
-# save("/home/kevin/DATA/Julia/Comodo.jl/assets/temp/branches.png", fig, px_per_unit=5)
+screen = display(GLMakie.Screen(), fig)
+

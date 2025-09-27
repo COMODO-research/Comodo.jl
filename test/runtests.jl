@@ -254,8 +254,16 @@ end
         @test isapprox(maximum(x), xSpan[2], atol = eps_level)
     end
 
+    @testset "Return boundary edges" begin
+        xSpan = (-3,3)
+        ySpan = (-2,2)
+        pointSpacing = 1
+        F, V, Eb, Cb = gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(true), rectangular = Val(true), return_boundary_edges = Val(true))
+        @test Eb isa Vector{LineFace{Int}}
+        @test Cb isa Vector{Int}
+        @test length(Cb) == length(Eb)
+    end
 end
-
 
 @testset "interp_biharmonic_spline" verbose = true begin
     eps_level = 1e-4
@@ -2725,6 +2733,12 @@ end
     @test isapprox(sum(facenormal(F,V).-Vec{3,Float64}(0.0,0.0,1.0)),Vec{3,Float64}(0.0,0.0,0.0),atol=eps_level)
     F,V = triplate(plateDim,pointSpacing; orientation=:down)    
     @test isapprox(sum(facenormal(F,V).-Vec{3,Float64}(0.0,0.0,-1.0)),Vec{3,Float64}(0.0,0.0,0.0),atol=eps_level)
+ 
+    # Exporting boundary edges 
+    F,V, Eb, Cb = triplate(plateDim,pointSpacing; return_boundary_edges = Val(true))    
+    @test Eb isa Vector{LineFace{Int}}
+    @test Cb isa Vector{Int}
+    @test length(Cb) == length(Eb)
 
     # Check errors
     @test_throws Exception triplate(plateDim,pointSpacing; orientation=:wrong) 
@@ -8563,9 +8577,14 @@ end
         F_tri, V_tri = subtri_dual(F, V, n; smooth=smooth, split_boundary=split_boundary, constrain_boundary=constrain_boundary)
 
         @test length(F_tri) == length(F)*9 # Refining twice is like splitting faces into 9-sub faces
+        
+        # Test for non-refinement with n=0
+        F_tri, V_tri = subtri_dual(F, V, 0; smooth=smooth, split_boundary=split_boundary, constrain_boundary=constrain_boundary)
+        @test F_tri == F
     end
 
     @testset "Non-closed surface (disc)" begin
+        # Open disc 
         r = 1.0 # Radius
         n1 = 0
         F,V = tridisc(r,n1)
@@ -8599,6 +8618,16 @@ end
         F_tri, V_tri = subtri_dual(F, V, n; smooth=smooth, split_boundary=split_boundary, constrain_boundary=constrain_boundary)
         @test length(F_tri) == 2*length(E) # Each edge spawns two faces now as edges are split
     end
+end
+
+@testset "rhombicdodecahedron2hex" begin
+    w = 1.0
+    n = (2,2,3)
+    E,V = rhombicdodecahedronfoam(w, n; merge=false, orientation=:align)
+    Eh,Vh = rhombicdodecahedron2hex(E,V)
+
+    @test Eh isa Vector{Hex8{Int}}
+    @test length(Eh) == length(E)*4 # 4 hex elements per rhombicdodecahedron
 end
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
