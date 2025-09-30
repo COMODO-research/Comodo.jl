@@ -262,6 +262,8 @@ end
         @test Eb isa Vector{LineFace{Int}}
         @test Cb isa Vector{Int}
         @test length(Cb) == length(Eb)
+        # Test for warning
+        @test_logs (:warn, "Edge request ignored as only points requested.")  gridpoints_equilateral(xSpan,ySpan,pointSpacing; return_faces = Val(false), rectangular = Val(true), return_boundary_edges = Val(true))
     end
 end
 
