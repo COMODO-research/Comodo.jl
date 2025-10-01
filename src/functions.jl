@@ -8390,14 +8390,14 @@ function rhombicdodecahedron2hex(E,V)
     return Eh,Vh
 end
 
-function surface_centroid(F, V::Vector{Point{3,T}}) where T<:Real 
-    V_centroid = Point{3,T}(0.0, 0.0, 0.0)
-    aSum = 0.0 # Initialise summed area as 0
+function surface_centroid(F::AbstractVector{NgonFace{N,T}}, V::Vector{Point{3,TV}}) where N where T<:Integer where TV<:Real 
+    V_centroid = Point{3,TV}(0.0, 0.0, 0.0) # Initialise as zeros
+    aSum = 0.0 # Initialise summed area as zero
     for f in F #for all faces        
         vf = collect(V[f]) # Current face vertices        
         a = norm(edgecrossproduct(vf)) # Current face area                        
         V_centroid += (a * mean(vf)) # Add area weighted contribution
-        aSum += a
+        aSum += a # Add area contribution
     end    
     return V_centroid / aSum # Return normalised by summed area
 end
