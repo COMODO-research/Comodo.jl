@@ -12,6 +12,7 @@ for testCase = 1:6
         r = 1
         F,V = geosphere(3,r)  
         # V = [GeometryBasics.Point{3, Float64}(v[1],v[2],3*v[3]) for v ∈ V]  
+        # V = [v + Point{3,Float64}(2.0, 2.0, 2.0,) for v in V]
 
         println("Theoretical area: " * string(4*pi*r^2))    
     elseif testCase == 2

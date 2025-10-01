@@ -8380,7 +8380,7 @@ function rhombicdodecahedron2hex(E,V)
     m = length(Vh)
     for (i,e) in enumerate(E)
         i_h = (i-1)*4
-        push!(Vh,mean(view(V,e))) # Add centroid
+        push!(Vh,mean(view(V,e))) # Add middle
         m+=1
         Eh[i_h+1] = Hex8{Int}(e[ 9], e[ 5], e[10], e[ 1], e[ 8], e[14], e[ 6], m)
         Eh[i_h+2] = Hex8{Int}(e[11], e[ 2], e[10], e[ 6], e[ 3], e[13], e[ 1], m)
@@ -8388,4 +8388,16 @@ function rhombicdodecahedron2hex(E,V)
         Eh[i_h+4] = Hex8{Int}(e[ 9], e[ 4], e[12], e[ 8], e[ 1], e[13], e[ 3], m)
     end
     return Eh,Vh
+end
+
+function surface_centroid(F, V::Vector{Point{3,T}}) where T<:Real 
+    V_centroid = Point{3,T}(0.0, 0.0, 0.0)
+    aSum = 0.0 # Initialise summed area as 0
+    for f in F #for all faces        
+        vf = collect(V[f]) # Current face vertices        
+        a = norm(edgecrossproduct(vf)) # Current face area                        
+        V_centroid += (a * mean(vf)) # Add area weighted contribution
+        aSum += a
+    end    
+    return V_centroid / aSum # Return normalised by summed area
 end

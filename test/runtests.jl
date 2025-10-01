@@ -8632,6 +8632,18 @@ end
     @test length(Eh) == length(E)*4 # 4 hex elements per rhombicdodecahedron
 end
 
+@testset "surface_centroid" begin
+    eps_level = 1e-6
+
+    r = 10.0 # radius
+    n = 1 # Number of refinement iterations
+    F1,V1 = geosphere(n,r)
+    VC_true = Point{3,Float64}(2.0, 3.0, 4.0)
+    V1 = [v + VC_true for v in V1]
+    V1C = surface_centroid(F1, V1)
+    @test isapprox(V1C, VC_true, atol=eps_level)
+end
+
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
 #     @testset "Demos" begin
