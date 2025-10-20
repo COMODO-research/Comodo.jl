@@ -30,11 +30,11 @@ GLMakie.closeall()
 for testCase = 1:2
     if testCase == 1
         L = curve_length(V; close_loop=true)
-        S = BSplineKit.fit(L[1:end-1], V, λ, BSplineKit.Periodic(maximum(L)))
+        S = fit(BSplineOrder(4), L[1:end-1], V, λ, BSplineKit.Periodic(maximum(L)))
         L_fit = range(0.0,maximum(L),m)
         V_fit = S.(L_fit)
     elseif testCase == 2        
-        S = BSplineKit.fit(t, r, λ, BSplineKit.Periodic(2.0*pi))
+        S = fit(BSplineOrder(4), t, r, λ, BSplineKit.Periodic(2.0*pi))
         t_fit = range(0.0,2*pi,m)
         r_fit = S.(t_fit)
         V_fit = Vector{Point{3,Float64}}(undef,m)
@@ -57,10 +57,10 @@ for testCase = 1:2
 
     on(hSlider.value) do λ
         if testCase == 1
-            S = BSplineKit.fit(L[1:end-1], V, λ, BSplineKit.Periodic(maximum(L)))    
+            S = fit(BSplineOrder(4), L[1:end-1], V, λ, BSplineKit.Periodic(maximum(L)))    
             V_fit = S.(L_fit)
         elseif testCase == 2  
-            S = BSplineKit.fit(t, r, λ, BSplineKit.Periodic(2*pi))
+            S = fit(BSplineOrder(4), t, r, λ, BSplineKit.Periodic(2*pi))
             r_fit = S.(t_fit)
             V_fit = Vector{Point{3,Float64}}(undef,m)
             for (i,tt) in enumerate(t_fit)
