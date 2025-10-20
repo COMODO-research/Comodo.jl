@@ -43,7 +43,8 @@ end
 
 # Description 
 
-This function simply returns the string for the Comodo path. This is helpful for instance to load items, such as meshes, from the `assets`` folder. 
+This function simply returns the string for the Comodo path. This is helpful for 
+instance to load items, such as meshes, from the `assets` folder. 
 """
 function comododir()
     pkgdir(@__MODULE__)
@@ -4955,26 +4956,26 @@ function subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int; direction=0) 
                 Eh[ii  ] = Hex8{T}(        e[1], inv_Et[i_e  ], inv_Ft[i_f  ], inv_Et[i_e+3],
                                     inv_Et[i_e+8 ], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+5] )   
 
-                Eh[ii+1] = Hex8{T}(        e[2], inv_Et[i_e+1], inv_Ft[i_f  ], inv_Et[i_e],
-                                    inv_Et[i_e+9 ], inv_Ft[i_f+4],          i_vc, inv_Ft[i_f+2] )   
+                Eh[ii+1] = Hex8{T}( inv_Et[i_e], e[2], inv_Et[i_e+1], inv_Ft[i_f  ], 
+                                    inv_Ft[i_f+2], inv_Et[i_e+9 ], inv_Ft[i_f+4],          i_vc)   
 
-                Eh[ii+2] = Hex8{T}(        e[3], inv_Et[i_e+2], inv_Ft[i_f  ], inv_Et[i_e+1],
-                                    inv_Et[i_e+10], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+4] )   
+                Eh[ii+2] = Hex8{T}(  inv_Ft[i_f  ], inv_Et[i_e+1], e[3], inv_Et[i_e+2], 
+                                    i_vc, inv_Ft[i_f+4], inv_Et[i_e+10], inv_Ft[i_f+3] )   
 
-                Eh[ii+3] = Hex8{T}(        e[4], inv_Et[i_e+3], inv_Ft[i_f  ], inv_Et[i_e+2],
-                                    inv_Et[i_e+11], inv_Ft[i_f+5],          i_vc, inv_Ft[i_f+3] )   
+                Eh[ii+3] = Hex8{T}( inv_Et[i_e+3], inv_Ft[i_f  ], inv_Et[i_e+2], e[4], 
+                                    inv_Ft[i_f+5], i_vc, inv_Ft[i_f+3], inv_Et[i_e+11] )   
             
-                Eh[ii+4] = Hex8{T}(        e[5], inv_Et[i_e+7], inv_Ft[i_f+1], inv_Et[i_e+4],
-                                    inv_Et[i_e+8 ], inv_Ft[i_f+5],          i_vc, inv_Ft[i_f+2] )   
+                Eh[ii+4] = Hex8{T}( inv_Et[i_e+8 ], inv_Ft[i_f+2],  i_vc, inv_Ft[i_f+5],          
+                                    e[5], inv_Et[i_e+4],  inv_Ft[i_f+1], inv_Et[i_e+7])   
 
-                Eh[ii+5] = Hex8{T}(        e[6], inv_Et[i_e+4], inv_Ft[i_f+1], inv_Et[i_e+5],
-                                    inv_Et[i_e+9 ], inv_Ft[i_f+2],          i_vc, inv_Ft[i_f+4] )   
+                Eh[ii+5] = Hex8{T}( inv_Ft[i_f+2], inv_Et[i_e+9 ], inv_Ft[i_f+4],  i_vc,  
+                                    inv_Et[i_e+4], e[6], inv_Et[i_e+5],  inv_Ft[i_f+1])   
 
-                Eh[ii+6] = Hex8{T}(        e[7], inv_Et[i_e+5], inv_Ft[i_f+1], inv_Et[i_e+6],
-                                    inv_Et[i_e+10], inv_Ft[i_f+4],          i_vc, inv_Ft[i_f+3] )   
+                Eh[ii+6] = Hex8{T}( i_vc, inv_Ft[i_f+4], inv_Et[i_e+10], inv_Ft[i_f+3],   
+                                    inv_Ft[i_f+1],  inv_Et[i_e+5],  e[7], inv_Et[i_e+6] )   
                                     
-                Eh[ii+7] = Hex8{T}(        e[8], inv_Et[i_e+6], inv_Ft[i_f+1], inv_Et[i_e+7],
-                                    inv_Et[i_e+11], inv_Ft[i_f+3],          i_vc, inv_Ft[i_f+5] )  
+                Eh[ii+7] = Hex8{T}( inv_Ft[i_f+5],  i_vc, inv_Ft[i_f+3], inv_Et[i_e+11],   
+                                    inv_Et[i_e+7], inv_Ft[i_f+1], inv_Et[i_e+6], e[8])  
             end
         elseif isone(direction) # Split in 1st-direction
             Vh = [V;Ve] # Append vertices
@@ -4983,11 +4984,16 @@ function subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int; direction=0) 
             for (i,e) = enumerate(E)
                 i_e = 1 + (i-1)*4 # index of first edge
                 ii = 1 + (i-1)*2
-                Eh[ii  ] = Hex8{T}(         e[6],          e[7],          e[3],          e[2], 
-                                   inv_Et[i_e+2], inv_Et[i_e+3], inv_Et[i_e+1], inv_Et[i_e+0] )   
+                Eh[ii] = Hex8{T}( e[1], inv_Et[i_e], inv_Et[i_e+1],  e[4],          
+                                  e[5], inv_Et[i_e+2], inv_Et[i_e+3], e[8])  
+                                    
+                # Eh[ii] = Hex8{T}(inv_Et[i_e+2], inv_Et[i_e+3], inv_Et[i_e+1], inv_Et[i_e],
+                #                             e[5],          e[8],          e[4],          e[1] )   
 
-                Eh[ii+1] = Hex8{T}(inv_Et[i_e+2], inv_Et[i_e+3], inv_Et[i_e+1], inv_Et[i_e+0],
-                                            e[5],          e[8],          e[4],          e[1] )     
+                Eh[ii+1 ] = Hex8{T}( inv_Et[i_e],  e[2], e[3], inv_Et[i_e+1],                        
+                                     inv_Et[i_e+2], e[6], e[7], inv_Et[i_e+3])   
+
+  
             end  
         elseif direction == 2 # Split in 2nd-direction
             Vh = [V;Ve] # Append vertices
@@ -4996,11 +5002,17 @@ function subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int; direction=0) 
             for (i,e) = enumerate(E)
                 i_e = 1 + (i-1)*4 # index of first edge
                 ii = 1 + (i-1)*2
-                Eh[ii  ] = Hex8{T}(         e[5],          e[6],          e[2],          e[1], 
-                                   inv_Et[i_e+3], inv_Et[i_e+2], inv_Et[i_e+0], inv_Et[i_e+1] )   
 
-                Eh[ii+1] = Hex8{T}(inv_Et[i_e+3], inv_Et[i_e+2], inv_Et[i_e+0], inv_Et[i_e+1],
-                                            e[8],          e[7],          e[3],          e[4] )   
+                Eh[ii  ] = Hex8{T}( e[1], e[2],  inv_Et[i_e], inv_Et[i_e+1],
+                                    e[5],          e[6],  inv_Et[i_e+2], inv_Et[i_e+3])   
+
+                Eh[ii+1] = Hex8{T}(inv_Et[i_e+1],  inv_Et[i_e], e[3], e[4],  
+                                    inv_Et[i_e+3], inv_Et[i_e+2], e[7], e[8]) 
+
+
+   
+                # Eh[ii+1] = Hex8{T}( inv_Et[i_e], inv_Et[i_e+1],
+                #                             ,          ,          e[3],          )   
             end    
         elseif direction == 3 # Split in 3rd-direction
             Vh = [V;Ve] # Append vertices
@@ -5009,11 +5021,12 @@ function subhex(E::Vector{Hex8{T}},V::Vector{Point{ND,TV}},n::Int; direction=0) 
             for (i,e) = enumerate(E)
                 i_e = 1 + (i-1)*4 # index of first edge
                 ii = 1 + (i-1)*2
-                Eh[ii  ] = Hex8{T}(         e[1],          e[2],          e[3],          e[4],  
-                                   inv_Et[i_e+0], inv_Et[i_e+1], inv_Et[i_e+2], inv_Et[i_e+3] )   
 
-                Eh[ii+1] = Hex8{T}(inv_Et[i_e+0], inv_Et[i_e+1], inv_Et[i_e+2], inv_Et[i_e+3],
+                Eh[ii  ] = Hex8{T}(inv_Et[i_e], inv_Et[i_e+1], inv_Et[i_e+2], inv_Et[i_e+3],
                                             e[5],          e[6],          e[7],          e[8])   
+
+                Eh[ii+1] = Hex8{T}(         e[1],          e[2],          e[3],          e[4],  
+                                   inv_Et[i_e], inv_Et[i_e+1], inv_Et[i_e+2], inv_Et[i_e+3] )   
             end   
         end 
         return Eh,Vh
@@ -8286,6 +8299,7 @@ function subtri_dual(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n=1; 
     elseif n == 1
         numVerticesOriginal = length(V)
         numFacesOriginal = length(F)
+        indUsed = elements2indices(F)
         E = meshedges(F)        
         Eu, indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
         
@@ -8319,7 +8333,8 @@ function subtri_dual(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n=1; 
         if smooth
             con_V2E = con_vertex_simplex(Eu,V)
             con_V2V = con_vertex_vertex(Eu, V, con_V2E)                        
-            for (i,v) in enumerate(V)                
+            for i in indUsed # For each used vertex   
+                v = V[i]             
                 indRingNeighbourhood = con_V2V[i]                
                 if numBoundaryEdges>0 && in(i, indicesBoundaryVertices)                    
                     if split_boundary && !constrain_boundary                      
@@ -8374,7 +8389,19 @@ function subtri_dual(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n=1; 
     end
 end
 
-function rhombicdodecahedron2hex(E,V)
+"""
+    rhombicdodecahedron2hex(E::Vector{Rhombicdodeca14{T}},V::Vector{Point{3,TV}}) where T<:Integer where TV<:Real
+    
+Converts rhombicdodecahedrons to hexahedrons
+
+# Description
+This function converts the input rhombicdodecahedron elements, defined by the
+element vector `E` and the vertex vector `V`, so a set of hexahedral elements
+defined by the element vector `Eh` and the vertex vector `Vh`. The conversion 
+uses a simple splitting up of the rhombicdodecahedron elements. 
+"""
+
+function rhombicdodecahedron2hex(E::Vector{Rhombicdodeca14{T}},V::Vector{Point{3,TV}}) where T<:Integer where TV<:Real
     Eh = Vector{Hex8{Int}}(undef, length(E)*4)
     Vh = deepcopy(V)
     m = length(Vh)
@@ -8390,6 +8417,15 @@ function rhombicdodecahedron2hex(E,V)
     return Eh,Vh
 end
 
+"""
+    surface_centroid(F::AbstractVector{NgonFace{N,T}}, V::Vector{Point{3,TV}}) where N where T<:Integer where TV<:Real 
+    
+Computes face centroids
+
+# Description
+This function returns the centroid for each face defined by the face vector `F`
+and vertex vector `V`.  
+"""
 function surface_centroid(F::AbstractVector{NgonFace{N,T}}, V::Vector{Point{3,TV}}) where N where T<:Integer where TV<:Real 
     V_centroid = Point{3,TV}(0.0, 0.0, 0.0) # Initialise as zeros
     aSum = 0.0 # Initialise summed area as zero
@@ -8400,4 +8436,130 @@ function surface_centroid(F::AbstractVector{NgonFace{N,T}}, V::Vector{Point{3,TV
         aSum += a # Add area contribution
     end    
     return V_centroid / aSum # Return normalised by summed area
+end
+
+"""
+    hexahedronElement(s::T) where T<:Real
+    
+Creates single hexahedron element
+
+# Description
+This function creates a single hexahedral element defined by `e`, of the type
+`Hex8{Int}`, and the vertex vector `V`. The input `s` controls the width of the 
+element. The element is centered around the origin. 
+"""
+function hexahedronElement(s=1.0::T) where T<:Real
+    e = Hex8{Int}(1,2,3,4,5,6,7,8)   
+    s2 = s/2.0 # Half-width
+    V = [Point{3,Float64}(-s2, -s2, -s2), 
+         Point{3,Float64}( s2, -s2, -s2), 
+         Point{3,Float64}( s2,  s2, -s2), 
+         Point{3,Float64}(-s2,  s2, -s2), 
+         Point{3,Float64}(-s2, -s2,  s2), 
+         Point{3,Float64}( s2, -s2,  s2), 
+         Point{3,Float64}( s2,  s2,  s2), 
+         Point{3,Float64}(-s2,  s2,  s2)]
+    return e, V
+end
+
+"""
+    hex2tet(e::Hex8{Int}, meshType = 1)      
+    hex2tet(E::Vector{Hex8{Int}}, meshType = 1)
+    hex2tet(E::Vector{Hex8{Int}}, meshType::Vector{Int})
+
+Converts hexahedra to tetrahedra
+
+# Description
+This function converts the hexahedral element `e` or vector of elements `E` to a
+vector of tetrahedral elements `E_tet`. There are many ways to do this 
+conversion. This function implements 14 types of conversion. The conversion type 
+is based on `meshType`. If `meshType` is an integer in the range 1-14 then only
+that type of conversion is used for all hexahedral elements provided. 
+Alternatively the user may let `meshType` be a vector of integers containing the
+type definition to use for each corresponding element.  
+"""
+function hex2tet(e::Hex8{Int}, meshType = 1)
+    if meshType <= 2  # Regular central tet types
+        numTetPerHex = 5
+        E_tet = Vector{Tet4{Int}}(undef, numTetPerHex)
+        if meshType == 1
+            # e = e[1, 2, 3, 4, 5, 6, 7, 8]
+        elseif meshType == 2            
+            e = e[[2, 3, 4, 1, 6, 7, 8, 5]] # Pemute by one in bottom plane
+        end             
+        E_tet[1] = Tet4{Int}(e[1], e[2], e[4], e[5])
+        E_tet[2] = Tet4{Int}(e[3], e[4], e[2], e[7])
+        E_tet[3] = Tet4{Int}(e[6], e[5], e[7], e[2])
+        E_tet[4] = Tet4{Int}(e[8], e[7], e[5], e[4])
+        E_tet[5] = Tet4{Int}(e[2], e[5], e[7], e[4])        
+    else # meshType >2 # Delaunay types
+        numTetPerHex = 6        
+        # Permute bottom = bottom
+        if meshType == 3
+            # e = e[[1, 2, 3, 4, 5, 6, 7, 8]]
+        elseif meshType == 4
+            e = e[[2, 3, 4, 1, 6, 7, 8, 5]]
+        elseif meshType == 5
+            e = e[[3, 4, 1, 2, 7, 8, 5, 6]]
+        elseif meshType == 6
+            e = e[[4, 1, 2, 3, 8, 5, 6, 7]] 
+        
+        # Permute bottom = top    
+        elseif meshType == 7
+            e = e[[8, 7, 6, 5, 4, 3, 2, 1]]
+        elseif meshType == 8
+            e = e[[7, 6, 5, 8, 3, 2, 1, 4]]
+        elseif meshType == 9
+            e = e[[6, 5, 8, 7, 2, 1, 4, 3]]
+        elseif meshType == 10
+            e = e[[5, 8, 7, 6, 1, 4, 3, 2]]
+        
+        # Permute front = top
+        elseif meshType == 11
+            e = e[[5, 6, 2, 1, 8, 7, 3, 4]]
+        elseif meshType == 12
+            e = e[[2, 1, 5, 6, 3, 4, 8, 7]] 
+
+        # Permute back = top
+        elseif meshType == 13
+            e = e[[7, 8, 4, 3, 6, 5, 1, 2]]
+        elseif meshType == 14
+            e = e[[4, 3, 7, 8, 1, 2, 6, 5]]
+        end   
+
+        E_tet = Vector{Tet4{Int}}(undef, numTetPerHex)
+        E_tet[1] = Tet4{Int}(e[5], e[2], e[1], e[4])
+        E_tet[2] = Tet4{Int}(e[6], e[2], e[5], e[4])                
+        E_tet[3] = Tet4{Int}(e[6], e[5], e[8], e[4])
+        E_tet[4] = Tet4{Int}(e[6], e[8], e[3], e[4])
+        E_tet[5] = Tet4{Int}(e[6], e[3], e[2], e[4])
+        E_tet[6] = Tet4{Int}(e[6], e[8], e[7], e[3])
+    end
+    return E_tet
+end
+
+function hex2tet(E::Vector{Hex8{Int}}, meshType = 1)
+    if meshType <= 2  # Regular central tet types
+        numTetPerHex = 5
+    else# meshType >2 # Delaunay types
+        numTetPerHex = 6
+    end
+    E_tet = Vector{Tet4{Int}}(undef, numTetPerHex*length(E))
+    for (i,e) in enumerate(E)    
+        i_tet = (i-1)*numTetPerHex + 1           
+        E_tet[i_tet:i_tet+(numTetPerHex-1)] = hex2tet(e, meshType)
+    end
+    return E_tet
+end
+
+function hex2tet(E::Vector{Hex8{Int}}, meshType::Vector{Int})
+    numElementsMeshType = [m>2 ? 6 : 5 for m in meshType]
+    E_tet = Vector{Tet4{Int}}(undef, sum(numElementsMeshType))
+    j1 = 1
+    for (i,e) in enumerate(E)  
+        j2 = j1 + numElementsMeshType[i]-1
+        E_tet[j1:j2] = hex2tet(e, meshType[i])
+        j1 = j2+1
+    end
+    return E_tet
 end

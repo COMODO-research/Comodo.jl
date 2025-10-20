@@ -8644,6 +8644,46 @@ end
     @test isapprox(V1C, VC_true, atol=eps_level)
 end
 
+@testset "hexahedronElement" begin
+    s = 2.5
+    e, V = hexahedronElement(s)
+    @test isa(e,Hex8)
+    @test length(V) == 8 
+    @test minimum([v[1] for v in V]) == -s/2.0
+    @test maximum([v[1] for v in V]) ==  s/2.0
+end
+
+@testset "hex2tet" begin
+    e, V = hexahedronElement(2.0)
+    E = [e]        
+    
+    for meshType in [1, 2]
+        E_tet = hex2tet(e, meshType)  
+        @test length(E_tet) == 5 
+    end
+
+    for meshType in 3:14
+        E_tet = hex2tet(e, meshType)  
+        @test length(E_tet) == 6
+    end 
+
+    E_tet1 = hex2tet(e, 1)
+    E_tet2 = hex2tet(E, 1)
+    @test E_tet1 == E_tet2
+
+    E_tet1 = hex2tet(e, 3)
+    E_tet2 = hex2tet(E, 3)
+    @test E_tet1 == E_tet2
+
+    Es,Vs = subhex(E,V,1)
+    meshType = [1, 1, 2, 2, 3, 4, 5, 14]
+    numElementsMeshType = [m>2 ? 6 : 5 for m in meshType]
+
+    E_tet = hex2tet(E, meshType) 
+    @test length(E_tet) == sum(numElementsMeshType) 
+end
+
+
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
 #     @testset "Demos" begin

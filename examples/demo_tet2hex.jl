@@ -4,8 +4,8 @@ using Comodo.GeometryBasics
 using Comodo.GLMakie.Colors
 
 #=
-This demo shows the use of `tet2hex` to convert tetrahedral elements to hexahedral elements
-domain. 
+This demo shows the use of `tet2hex` to convert tetrahedral elements to 
+hexahedral elements. 
 =#
 
 GLMakie.closeall()

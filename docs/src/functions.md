@@ -745,3 +745,18 @@ Comodo.curve2edges
 ```@docs 
 Comodo.subtri_dual
 ```
+
+## `rhombicdodecahedron2hex`
+```@docs 
+Comodo.rhombicdodecahedron2hex
+```
+
+## `hexahedronElement`
+```@docs 
+Comodo.hexahedronElement
+```
+
+## `hex2tet`
+```@docs 
+Comodo.hex2tet
+```

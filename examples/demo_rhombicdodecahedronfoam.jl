@@ -10,11 +10,13 @@ F = element2faces(E)
 ## Visualize mesh
 GLMakie.closeall()
 
+Fs, Vs = separate_vertices(F, V)
+
 strokewidth = 2
 strokecolor = :black
 cmap = reverse(cgrad(:Spectral, length(E), categorical = true))
 
 fig = Figure(size = (1200,1200))
 ax1 = AxisGeom(fig[1, 1], title = "Rhombic dodecahedron")
-hp1 = meshplot!(ax1, F, V)
+hp1 = meshplot!(ax1, Fs, Vs)
 display(fig)

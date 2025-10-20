@@ -6,8 +6,10 @@ using Comodo.GeometryBasics
 This demo shows the use of `subhex` to refine a a hexhedral mesh through splitting. 
 =#
 
-boxDim = [2.0,3.0,2.5] # Dimensions for the box in each direction
-boxEl = [2,3,1] # Number of elements to use in each direction 
+# boxDim = [2.0,3.0,2.5] # Dimensions for the box in each direction
+# boxEl = [2,3,1] # Number of elements to use in each direction 
+boxDim = [1.0, 1.0, 1.0] # Dimensions for the box in each direction
+boxEl = [1, 1, 1] # Number of elements to use in each direction 
 E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
 
 Eh0,Vh0 = subhex(E,V,1;direction=0)
@@ -50,4 +52,4 @@ hp1 = meshplot!(ax4, Fh3, Vh3, strokewidth=strokewidth)
 hp2 = edgeplot!(ax4, F, V, linewidth=linewidth, color=:red, depth_shift=-0.01f0)
 hpa = normalplot(ax4, Fh3, Vh3; color=:blue,linewidth=3)
 
-fig
+screen = display(GLMakie.Screen(), fig)
