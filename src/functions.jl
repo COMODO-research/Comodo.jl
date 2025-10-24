@@ -513,21 +513,27 @@ function lerp(x, y, xi::T) where {T<:Real}
     if length(x) != length(y)
         throw(DimensionMismatch("x and y must be the same length"))
     end
-    j = findfirst(>(xi), x)
-    if isnothing(j)
-        j = length(x)
+
+    d = x.-xi # Signed x direction distances 
+    j = findfirst(!=(sign(d[1])), sign.(d))#findfirst(sign.(d) .!= sign(d[1])) # Check for first sign change 
+    if isnothing(j) # xi not within range of x
+        _,j = findmin(abs.(d)) # Get index of nearest
+    end
+
+    if isone(j)                 
+        i = 2
+        j = 1
+    elseif j == length(x)        
         i = j-1
-    elseif isone(j)
-        i = 1
-        j = 2
     else
         i = j-1
-    end
+    end     
     w = abs(x[j]-x[i])
-    t = (xi-x[i])/w
+    t = abs(xi-x[i])/w
     yi = (1.0-t)*y[i] + t*y[j]
     return yi
 end
+
 lerp(x, y, xi::AbstractVector) = lerp.((x,), (y,), xi)
   
 """
