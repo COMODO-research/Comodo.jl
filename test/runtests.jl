@@ -8585,7 +8585,7 @@ end
         @test F_tri == F
     end
 
-    @testset "Non-closed surface (disc)" begin
+    @testset "Non-closed surface (disc)" verbose = true begin
         # Open disc 
         r = 1.0 # Radius
         n1 = 0
@@ -8622,7 +8622,7 @@ end
     end
 end
 
-@testset "rhombicdodecahedron2hex" begin
+@testset "rhombicdodecahedron2hex" verbose = true begin
     w = 1.0
     n = (2,2,3)
     E,V = rhombicdodecahedronfoam(w, n; merge=false, orientation=:align)
@@ -8632,7 +8632,7 @@ end
     @test length(Eh) == length(E)*4 # 4 hex elements per rhombicdodecahedron
 end
 
-@testset "surface_centroid" begin
+@testset "surface_centroid" verbose = true begin
     eps_level = 1e-6
 
     r = 10.0 # radius
@@ -8644,7 +8644,7 @@ end
     @test isapprox(V1C, VC_true, atol=eps_level)
 end
 
-@testset "hexahedronElement" begin
+@testset "hexahedronElement" verbose = true begin
     s = 2.5
     e, V = hexahedronElement(s)
     @test isa(e,Hex8)
@@ -8653,7 +8653,7 @@ end
     @test maximum([v[1] for v in V]) ==  s/2.0
 end
 
-@testset "hex2tet" begin
+@testset "hex2tet" verbose = true begin
     e, V = hexahedronElement(2.0)
     E = [e]        
     
@@ -8681,6 +8681,60 @@ end
 
     E_tet = hex2tet(E, meshType) 
     @test length(E_tet) == sum(numElementsMeshType) 
+end
+
+@testset "triplyperiodicminimal" verbose = true begin
+    for tpms_type in (:P, :D, :D2, :N, :G, :IWP, :FRD, :S, :HG)       
+        level = 0.0
+        m = triplyperiodicminimal((0.0, 0.0, 0.0), tpms_type)
+        @test isa(m,Float64)
+    end
+end
+
+@testset "triplyperiodicminimal_sheet" verbose = true begin
+    s=0.2
+    for tpms_type in (:P, :D, :D2, :N, :G, :IWP, :FRD, :S, :HG)       
+        level = 0.0
+        m = triplyperiodicminimal_sheet((0.0, 0.0, 0.0), s, tpms_type)
+        @test isa(m,Float64)
+    end
+end
+
+@testset "tpms" verbose = true begin
+    tpms_type =:G
+    F, V = tpms(tpms_type; x=range(0, 2*pi, 50), cap=true, side=:positive) 
+    @test isa(F,Vector{TriangleFace{Int}}) 
+    @test isa(V,Vector{Point{3,Float64}})     
+    
+    F, V = tpms(tpms_type; x=range(0, 2*pi, 50), cap=true, side=:negative) 
+    @test isa(F,Vector{TriangleFace{Int}}) 
+    @test isa(V,Vector{Point{3,Float64}})  
+end
+
+@testset "tpms_sheet" verbose = true begin
+    tpms_type =:G
+    s = 0.25
+    F, V = tpms_sheet(tpms_type, s; x=range(0, 2*pi, 50), cap=true) 
+    @test isa(F,Vector{TriangleFace{Int}}) 
+    @test isa(V,Vector{Point{3,Float64}})             
+end
+
+@testset "pointsvd" verbose = true begin
+    eps_level = 1e-6
+
+    F, V = geosphere(2, 1.0)
+    V_mean = Point{3,Float64}(5.0, 2.0, 3.0)
+    V = [Point{3,Float64}(4.0*v[1], 2.0*v[2], 0.75*v[3]) for v in V]
+    Q = RotXYZ(0.25*π, -0.25*π, 0.25*pi) # Define a rotation tensor using Euler angles
+    V = [Point{3, Float64}(Q*v) for v ∈ V] # Rotate the coordinates
+    V .+= V_mean # Shift to desired mean
+
+    SVD = pointsvd(V)
+    R = SVD.V
+
+    @test isa(SVD, LinearAlgebra.SVD{Float64, Float64, Matrix{Float64}, Vector{Float64}})
+    @test isapprox(Q[:,1], R[:,1], atol=eps_level) || isapprox(Q[:,1], -R[:,1], atol=eps_level)
+    @test isapprox(Q[:,2], R[:,2], atol=eps_level) || isapprox(Q[:,2], -R[:,2], atol=eps_level)
 end
 
 

@@ -8454,7 +8454,7 @@ This function creates a single hexahedral element defined by `e`, of the type
 `Hex8{Int}`, and the vertex vector `V`. The input `s` controls the width of the 
 element. The element is centered around the origin. 
 """
-function hexahedronElement(s=1.0::T) where T<:Real
+function hexahedronElement(s=1.0)
     e = Hex8{Int}(1,2,3,4,5,6,7,8)   
     s2 = s/2.0 # Half-width
     V = [Point{3,Float64}(-s2, -s2, -s2), 
@@ -8568,4 +8568,66 @@ function hex2tet(E::Vector{Hex8{Int}}, meshType::Vector{Int})
         j1 = j2+1
     end
     return E_tet
+end
+
+function triplyperiodicminimal(v, type=:P)
+    x = v[1]
+    y = v[2]
+    z = v[3]
+    if type == :P # Schwarz P-surface
+        M = cos(x) + cos(y) + cos(z)
+    elseif type == :D # Schwarz D-surface        
+        M = sin(x) * sin(y) * sin(z) + sin(x) * cos(y) * cos(z) + cos(x) * sin(y) * cos(z) + cos(x) * cos(y) * sin(z)        
+    elseif type == :D2 # Schwarz D-surface        
+        M = cos(x)*cos(y)*cos(z) - sin(x)*sin(y)*sin(z) 
+    elseif type == :N # Neovius
+        M = 3.0*(cos(x) + cos(y) + cos(z)) + (4.0*cos(x)*cos(y)*cos(z))
+    elseif type == :G # Gyroid 
+        M = sin(x)*cos(y) + sin(y)*cos(z) + sin(z)*cos(x)
+    elseif type == :IWP
+        M = 2.0 *( sin(x)*cos(y) +  sin(y)*cos(z) + sin(z)*cos(x)) - (cos(2.0*x)+cos(2.0*y)+cos(2.0*z))
+    elseif type == :FRD
+        M = 4.0*(cos(x)*cos(y)*cos(z))-(cos(2*x)*cos(2*y) + cos(2*y)*cos(2*z)+cos(2*z)*cos(2*x))
+    elseif type == :S
+        M = cos(2.0*x)*sin(y)*cos(z) + cos(x)*cos(2*y)*sin(z) + sin(x)*cos(y)*cos(2z)
+    elseif type == :HG # Lidinoid
+        M = 0.5 * ( sin(2.0*x) * cos(y) * sin(z) + 
+                    sin(2.0*y) * cos(z) * sin(x) + 
+                    sin(2.0*z) * cos(x) * sin(y) -
+                     0.5*(cos(2.0*x)*cos(2.0*y)) +
+                         (cos(2.0*y)*cos(2.0*z)) +
+                         (cos(2.0*z)*cos(2.0*x)) ) + 0.15
+    end 
+    return M
+end
+
+function triplyperiodicminimal_sheet(v, s, type=:P)     
+    f = triplyperiodicminimal(v, type)
+    return max(f-s/2.0,-f-s/2.0)
+end
+
+function tpms(type=:P; x=range(0,2*pi,100), y=x, z=x, level=0.0, cap = true, padValue=1e8, side=:positive)    
+    M = [triplyperiodicminimal((x,y,z), type) for x in x, y in y, z in z]    
+    if side == :negative
+        F,V = getisosurface(-M; x=x, y=y, z=z, level = -level, cap = cap, padValue=padValue)      
+    elseif side == :positive
+        F,V = getisosurface( M; x=x, y=y, z=z, level =  level, cap = cap, padValue=padValue)      
+    end
+    return F, V
+end
+
+function tpms_sheet(type=:P, s=0.1; x=range(0,2*pi,100), y=x, z=x, level=0.0, cap = true, padValue=1e8)    
+    M = [triplyperiodicminimal_sheet((x,y,z), s, type) for x in x, y in y, z in z]    
+    F,V = getisosurface(M; x=x, y=y, z=z, level =  level, cap = cap, padValue=padValue) 
+    return F, V
+end
+
+
+function pointsvd(V)
+    mean_V = mean(V)
+    M = Matrix{Float64}(undef, length(V), 3)
+    for (i,v) in enumerate(V)
+        M[i,:] = v-mean_V
+    end
+    return svd(M)
 end

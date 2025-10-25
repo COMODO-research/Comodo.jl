@@ -5,10 +5,7 @@ using Comodo.LinearAlgebra
 
 GLMakie.closeall()
 
-gyroid(v) = cos(v[1])*sin(v[2])+cos(v[2])*sin(v[3])+cos(v[3])*sin(v[1])    
-gyroid_shell(v,s) = max(gyroid(v)-s,-gyroid(v)-s)
-
-for testCase = 1:5
+for testCase = 1:4
     if testCase == 1 # Sphere 
         nSteps = 50
         # Define sphere using distance function
@@ -37,22 +34,14 @@ for testCase = 1:5
         nSteps = 50
         np = 3 # Number of "periods"
         xr,yr,zr = ntuple(_->range(0,2*pi*np,nSteps),3)
-        A = [gyroid((x,y,z)) for x in xr, y in yr, z in zr]
+        A = [triplyperiodicminimal((x,y,z), :G) for x in xr, y in yr, z in zr]
         level = 0.0
         cap = false
     elseif testCase == 4 # Gyroid capped    
         nSteps = 50
         np = 3 # Number of "periods"
         xr,yr,zr = ntuple(_->range(0,2*pi*np,nSteps),3)
-        A = [gyroid((x,y,z)) for x in xr, y in yr, z in zr]
-        level = 0.0
-        cap = true
-    elseif testCase == 5 # Gyroid "shell" capped    
-        nSteps = 100
-        s = 0.1
-        np = 2 # Number of "periods"
-        xr,yr,zr = ntuple(_->range(0,2*pi*np,nSteps),3)
-        A = [gyroid_shell((x,y,z),s) for x in xr, y in yr, z in zr]
+        A = [triplyperiodicminimal((x,y,z), :G) for x in xr, y in yr, z in zr]
         level = 0.0
         cap = true
     end
