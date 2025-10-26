@@ -8406,7 +8406,6 @@ element vector `E` and the vertex vector `V`, so a set of hexahedral elements
 defined by the element vector `Eh` and the vertex vector `Vh`. The conversion 
 uses a simple splitting up of the rhombicdodecahedron elements. 
 """
-
 function rhombicdodecahedron2hex(E::Vector{Rhombicdodeca14{T}},V::Vector{Point{3,TV}}) where T<:Integer where TV<:Real
     Eh = Vector{Hex8{Int}}(undef, length(E)*4)
     Vh = deepcopy(V)
@@ -8570,7 +8569,27 @@ function hex2tet(E::Vector{Hex8{Int}}, meshType::Vector{Int})
     return E_tet
 end
 
-function triplyperiodicminimal(v, type=:P)
+"""
+    triplyperiodicminimal(v, type=:P)
+
+Evaluates triply periodic minimal functions 
+
+# Description
+This function evaluates the triply periodic minimal function of the type `type` 
+at the coordinate defined by the point `v`. The point `v` should be a 3 element 
+abstract vector such as a Point{3,Float}. 
+The following types are supported: 
+type = :P   # Schwarz P-surface
+type = :D   # Schwarz D-surface        
+type = :D2  # Schwarz D-surface        
+type = :N   # Neovius
+type = :G   # Gyroid 
+type = :IWP # Schoen I-graph-wrapped package 
+type = :FRD # Schoen faces of rhombic-dodecahedron
+type = :S   # Fish-Kocher S-sheet
+type = :HG  # Lidinoid
+"""
+function triplyperiodicminimal(v::Union{Tuple{T, T, T}, Tv}, type=:P)  where {T <: Real, Tv <: AbstractVector}
     x = v[1]
     y = v[2]
     z = v[3]
@@ -8584,11 +8603,11 @@ function triplyperiodicminimal(v, type=:P)
         M = 3.0*(cos(x) + cos(y) + cos(z)) + (4.0*cos(x)*cos(y)*cos(z))
     elseif type == :G # Gyroid 
         M = sin(x)*cos(y) + sin(y)*cos(z) + sin(z)*cos(x)
-    elseif type == :IWP
+    elseif type == :IWP # Schoen I-graph-wrapped package 
         M = 2.0 *( sin(x)*cos(y) +  sin(y)*cos(z) + sin(z)*cos(x)) - (cos(2.0*x)+cos(2.0*y)+cos(2.0*z))
-    elseif type == :FRD
+    elseif type == :FRD # Schoen faces of rhombic-dodecahedron
         M = 4.0*(cos(x)*cos(y)*cos(z))-(cos(2*x)*cos(2*y) + cos(2*y)*cos(2*z)+cos(2*z)*cos(2*x))
-    elseif type == :S
+    elseif type == :S # Fish-Kocher S-sheet
         M = cos(2.0*x)*sin(y)*cos(z) + cos(x)*cos(2*y)*sin(z) + sin(x)*cos(y)*cos(2z)
     elseif type == :HG # Lidinoid
         M = 0.5 * ( sin(2.0*x) * cos(y) * sin(z) + 
@@ -8601,12 +8620,31 @@ function triplyperiodicminimal(v, type=:P)
     return M
 end
 
-function triplyperiodicminimal_sheet(v, s, type=:P)     
+"""
+    triplyperiodicminimal_sheet(v::T, s=0.25, type=:P) where T <: AbstractVector
+
+Evaluates sheet version of triply periodic minimal functions 
+
+# Description
+This function evaluates the triply periodic minimal function of the type `type` 
+at the coordinate defined by the point `v`. The point `v` should be a 3 element 
+abstract vector such as a Point{3,Float}. 
+"""
+function triplyperiodicminimal_sheet(v::Union{Tuple{T, T, T}, Tv}, s=0.25, type=:P) where {T <: Real, Tv <: AbstractVector}
     f = triplyperiodicminimal(v, type)
     return max(f-s/2.0,-f-s/2.0)
 end
 
-function tpms(type=:P; x=range(0,2*pi,100), y=x, z=x, level=0.0, cap = true, padValue=1e8, side=:positive)    
+"""
+    tpms(type=:P; x=range(0,2*pi,100)::T, y=x::T, z=x::T, level=0.0, cap = true, padValue=1e8, side=:positive) where T <: AbstractVector
+
+Computes triply periodic minimal surfaces
+
+# Description
+This function evaluates the triply periodic minimal surface of the type `type` 
+at the coordinates defined the abstract vectors x, y, and z.  
+"""
+function tpms(type=:P; x::T, y=x, z=x, level=0.0, cap = true, padValue=1e8, side=:positive) where T <: AbstractVector
     M = [triplyperiodicminimal((x,y,z), type) for x in x, y in y, z in z]    
     if side == :negative
         F,V = getisosurface(-M; x=x, y=y, z=z, level = -level, cap = cap, padValue=padValue)      
@@ -8616,18 +8654,35 @@ function tpms(type=:P; x=range(0,2*pi,100), y=x, z=x, level=0.0, cap = true, pad
     return F, V
 end
 
-function tpms_sheet(type=:P, s=0.1; x=range(0,2*pi,100), y=x, z=x, level=0.0, cap = true, padValue=1e8)    
+"""
+    tpms(type=:P; x=range(0,2*pi,100)::T, y=x::T, z=x::T, level=0.0, cap = true, padValue=1e8, side=:positive) where T <: AbstractVector
+
+Computes triply periodic minimal surfaces
+
+# Description
+This function evaluates the triply periodic minimal sheet surface of the type 
+`type` at the coordinates defined the abstract vectors x, y, and z.  
+"""
+function tpms_sheet(type=:P, s=0.1; x::T, y=x, z=x, level=0.0, cap = true, padValue=1e8) where T <: AbstractVector    
     M = [triplyperiodicminimal_sheet((x,y,z), s, type) for x in x, y in y, z in z]    
     F,V = getisosurface(M; x=x, y=y, z=z, level =  level, cap = cap, padValue=padValue) 
     return F, V
 end
 
+"""
+    pointsvd(V::Vector{T}) where T <: AbstractVector
 
-function pointsvd(V)
-    mean_V = mean(V)
+Point vector singular value decomposition 
+
+# Description
+This function computes the singular value decomposition for the points defined 
+by the point vector `V`.    
+"""
+function pointsvd(V::Vector{T}) where T <: AbstractVector
+    mean_V = mean(V) # Compute point set mean 
     M = Matrix{Float64}(undef, length(V), 3)
     for (i,v) in enumerate(V)
-        M[i,:] = v-mean_V
+        M[i,:] = v-mean_V # Centre point around mean and make row of matrix
     end
     return svd(M)
 end

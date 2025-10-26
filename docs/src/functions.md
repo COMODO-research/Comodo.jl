@@ -760,3 +760,28 @@ Comodo.hexahedronElement
 ```@docs 
 Comodo.hex2tet
 ```
+
+## `triplyperiodicminimal`
+```@docs 
+Comodo.triplyperiodicminimal
+```
+
+## `triplyperiodicminimal_sheet`
+```@docs 
+Comodo.triplyperiodicminimal_sheet
+```
+
+## `tpms`
+```@docs 
+Comodo.tpms
+```
+ 
+## `tpms_sheet`
+```@docs 
+Comodo.tpms_sheet
+```
+ 
+## `pointsvd`
+```@docs 
+Comodo.pointsvd
+```
