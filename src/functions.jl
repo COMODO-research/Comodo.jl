@@ -8626,13 +8626,16 @@ end
 Evaluates sheet version of triply periodic minimal functions 
 
 # Description
-This function evaluates the triply periodic minimal function of the type `type` 
-at the coordinate defined by the point `v`. The point `v` should be a 3 element 
-abstract vector such as a Point{3,Float}. 
+This function evaluates the "sheet" version of triply periodic minimal function 
+of the type `type` at the coordinate defined by the point `v`. The point `v` 
+should be a 3 element abstract vector such as a Point{3,Float}. The parameter 
+`s` sets the sheet centre. If for the regular `triplyperiodicminimal` we obtain 
+the function value `f` at the point `v`, then this function returns 
+`max(f-s, s-f)`. 
 """
-function triplyperiodicminimal_sheet(v::Union{Tuple{T, T, T}, Tv}, s=0.25, type=:P) where {T <: Real, Tv <: AbstractVector}
-    f = triplyperiodicminimal(v, type)
-    return max(f-s/2.0,-f-s/2.0)
+function triplyperiodicminimal_sheet(v::Union{Tuple{T, T, T}, Tv}, type=:P, s=0.0) where {T <: Real, Tv <: AbstractVector}
+    f = triplyperiodicminimal(v, type)-s
+    return max(f,-f)
 end
 
 """
@@ -8642,7 +8645,8 @@ Computes triply periodic minimal surfaces
 
 # Description
 This function evaluates the triply periodic minimal surface of the type `type` 
-at the coordinates defined the abstract vectors x, y, and z.  
+at the coordinates defined the abstract vectors x, y, and z. The  
+See also: `triplyperiodicminimal`
 """
 function tpms(type=:P; x::T, y=x, z=x, level=0.0, cap = true, padValue=1e8, side=:positive) where T <: AbstractVector
     M = [triplyperiodicminimal((x,y,z), type) for x in x, y in y, z in z]    
@@ -8661,11 +8665,18 @@ Computes triply periodic minimal surfaces
 
 # Description
 This function evaluates the triply periodic minimal sheet surface of the type 
-`type` at the coordinates defined the abstract vectors x, y, and z.  
+`type` at the coordinates defined the abstract vectors x, y, and z. The 
+parameter `s` controls the sheet centre and the sheet thickness is controlled by 
+`level`, which is the isosurface level. 
+See also: `triplyperiodicminimal_sheet`
 """
-function tpms_sheet(type=:P, s=0.1; x::T, y=x, z=x, level=0.0, cap = true, padValue=1e8) where T <: AbstractVector    
-    M = [triplyperiodicminimal_sheet((x,y,z), s, type) for x in x, y in y, z in z]    
-    F,V = getisosurface(M; x=x, y=y, z=z, level =  level, cap = cap, padValue=padValue) 
+function tpms_sheet(type=:P, s=0.1; x::T, y=x, z=x, level=0.0, cap = true, padValue=1e8, side=:positive) where T <: AbstractVector    
+    M = [triplyperiodicminimal_sheet((x,y,z), type, s) for x in x, y in y, z in z]    
+    if side == :negative
+        F,V = getisosurface(-M; x=x, y=y, z=z, level = -level, cap = cap, padValue=padValue)      
+    elseif side == :positive
+        F,V = getisosurface( M; x=x, y=y, z=z, level =  level, cap = cap, padValue=padValue)      
+    end
     return F, V
 end
 
