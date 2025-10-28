@@ -8695,7 +8695,7 @@ end
     s=0.2
     for tpms_type in (:P, :D, :D2, :N, :G, :IWP, :FRD, :S, :HG)       
         level = 0.0
-        m = triplyperiodicminimal_sheet((0.0, 0.0, 0.0), s, tpms_type)
+        m = triplyperiodicminimal_sheet((0.0, 0.0, 0.0), tpms_type, s)
         @test isa(m,Float64)
     end
 end
