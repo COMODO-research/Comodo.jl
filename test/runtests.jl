@@ -8709,12 +8709,20 @@ end
     F, V = tpms(tpms_type; x=range(0, 2*pi, 50), cap=true, side=:negative) 
     @test isa(F,Vector{TriangleFace{Int}}) 
     @test isa(V,Vector{Point{3,Float64}})  
+
+    F, V = tpms(tpms_type; x=collect(range(0, 2*pi, 50)), cap=true, side=:negative) 
+    @test isa(F,Vector{TriangleFace{Int}}) 
+    @test isa(V,Vector{Point{3,Float64}})  
 end
 
 @testset "tpms_sheet" verbose = true begin
     tpms_type =:G
     s = 0.25
-    F, V = tpms_sheet(tpms_type, s; x=range(0, 2*pi, 50), cap=true) 
+    F, V = tpms_sheet(tpms_type, s; x=range(0, 2*pi, 50), cap=true, side=:positive) 
+    @test isa(F,Vector{TriangleFace{Int}}) 
+    @test isa(V,Vector{Point{3,Float64}})             
+
+    F, V = tpms_sheet(tpms_type, s; x=collect(range(0, 2*pi, 50)), cap=true, side=:negative) 
     @test isa(F,Vector{TriangleFace{Int}}) 
     @test isa(V,Vector{Point{3,Float64}})             
 end
