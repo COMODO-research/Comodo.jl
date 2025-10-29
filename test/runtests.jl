@@ -27,7 +27,6 @@ end
     @test hSlider.selected_index[] == 1 # Test that slidercontrol did not alter index
 end
 
-
 @testset "slider2anim" verbose = true begin
     r = range(-2,2,10)
     startvalue = r[1]
@@ -77,9 +76,7 @@ end
     end
 end
 
-
 @testset "gridpoints" verbose = true begin
-
     @testset "using ranges" begin
         # Define ranges of different types
         a = 1:2
@@ -164,9 +161,7 @@ end
         a = Float64[]
         result = gridpoints(a)
         @test result == Point3{Float64}[]
-    end
-
-        
+    end   
 end
 
 @testset "gridpoints_equilateral" verbose = true begin
@@ -225,7 +220,6 @@ end
         @test isapprox(minimum(x),xSpan[1],atol=eps_level)
         @test isapprox(maximum(x),xSpan[2],atol=eps_level)
     end
-
 
     @testset "Return faces" begin
         xSpan = (-3,3)
@@ -423,7 +417,6 @@ end
 
 end 
 
-
 @testset "lerp" verbose = true begin 
 
     @testset "Errors" begin 
@@ -499,7 +492,6 @@ end
         result = dist(V1, V2)
         eps_level = maximum(eps.(result))
 
-
         @test size(result,1) == length(V1)
         @test size(result,2) == length(V2)
         @test isapprox(result, [2.141592653589793 3.296908309475615 3.296908309475615;
@@ -508,7 +500,6 @@ end
                 2.5664019743426345 2.5664019743426345 2.5664019743426345], atol = eps_level)
     end
 end
-
 
 @testset "mindist" begin     
     eps_level = 1e-4
@@ -539,7 +530,6 @@ end
     @test ind == [2,1,2]
 end 
 
-
 @testset "unique_dict_index" begin 
     arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
     result1, result2 = gunique(arr; return_index = Val(true))
@@ -551,7 +541,6 @@ end
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [1, 3]
 end 
-
 
 @testset "unique_dict_index_inverse" begin 
     arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
@@ -567,7 +556,6 @@ end
     @test result3 == [1, 1, 2]
 end 
 
-
 @testset "unique_dict_index_count" begin 
     arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
     result1, result2, result3 = gunique(arr; return_index = Val(true), return_counts = Val(true))
@@ -581,7 +569,6 @@ end
     @test result2 == [1, 3]
     @test result3 == [2, 1]
 end 
-
 
 @testset "unique_dict_index_inverse_count" begin 
     arr = [1, 2, 3, 3, 3, 4, 4, 4, 5]
@@ -599,7 +586,6 @@ end
     @test result4 == [2, 1]
 end 
 
-
 @testset "unique_dict_count" begin 
     arr = [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
     result1, result2 = gunique(arr; return_counts = Val(true))
@@ -611,7 +597,6 @@ end
     @test result1 == [[1, 2, 3], [4, 5,6]]
     @test result2 == [2,1]
 end
-
 
 @testset "unique_dict_inverse" begin 
     arr = [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
@@ -625,7 +610,6 @@ end
     @test result2 == [1, 1, 2]
 end 
 
-
 @testset "unique_dict" begin 
     arr = [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
     result1, result2, result3 = gunique(arr; return_index=Val(true), return_inverse=Val(true))
@@ -633,7 +617,6 @@ end
     @test result2 == [1, 4, 8, 10, 11]
     @test result3 == [1, 1, 1, 2, 2, 2, 2, 3, 3, 4, 5]
 end 
-
 
 @testset "occursonce" verbose = true begin
     @testset "vector input" begin 
@@ -688,7 +671,6 @@ end
         B_true = Bool[0, 0, 0, 1, 0, 1, 1]
         @test occursonce(A; sort_entries = true) == B_true
 
-
         # Vector of integers (pre-sorted)
         A = TriangleFace{Int}[[3,1,2],[2,1,2],[3,1,2],[4,1,2],[2,1,2],[5,1,2],[6,1,2]]
         B_true = Bool[0, 0, 0, 1, 0, 1, 1]
@@ -734,7 +716,6 @@ end
     @test r1 == [1, 2, 3, 4, 5]
 end 
 
-
 @testset "unique_simplices" verbose = true begin
     @testset "Single triangle" begin
         F = [TriangleFace{Int}(1, 2, 3)]       
@@ -758,7 +739,6 @@ end
         @test F_uni[ind2] == F
     end
 end
-
 
 @testset "ind2sub" verbose = true begin
 
@@ -890,7 +870,6 @@ end
     end
 end
 
-
 @testset "icosahedron" begin
     eps_level = 1e-6
     r = 1.0
@@ -904,7 +883,6 @@ end
     @test isapprox(V[1], [0.0, -s, -t], atol=eps_level)
 end
 
-
 @testset "octahedron" begin
     eps_level = 1e-6
     r = 1.0
@@ -915,7 +893,6 @@ end
     @test length(F) == 8
     @test isapprox(V[1], [-s,  -s, 0.0], atol=eps_level)
 end
-
 
 @testset "dodecahedron" begin
     eps_level = 1e-6    
@@ -932,7 +909,6 @@ end
     @test isapprox(V[1], [-s,-s,-s], atol=eps_level)
 end
 
-
 @testset "cube" begin
     eps_level = 1e-6
     r = 1.0
@@ -943,7 +919,6 @@ end
     @test length(F) == 6
     @test isapprox(V[1], [-s,  -s, -s], atol=eps_level)
 end
-
 
 @testset "tetrahedron" begin
     eps_level = 1e-6
@@ -957,7 +932,6 @@ end
     @test length(F) == 4
     @test isapprox(V[1], [-a,  b, c], atol=eps_level)
 end
-
 
 @testset "platonicsolid" begin
     eps_level = 1e-6
@@ -974,7 +948,6 @@ end
         @test isapprox(mean(norm.(V)), r, atol=eps_level)
     end
 end
-
 
 @testset "tofaces" verbose = true begin
     # Edges matrix and vector
@@ -1146,7 +1119,6 @@ end
     end
 end
 
-
 @testset "topoints" verbose = true begin
     @testset "Matrix input" begin        
         V = topoints(rand(10,3))
@@ -1190,7 +1162,6 @@ end
         @test length(V) == length(Vv)
     end
 end
-
 
 @testset "togeometrybasics_mesh" verbose = true begin
 
@@ -1516,7 +1487,6 @@ end
     end
 end
 
-
 @testset "subtri" verbose = true begin
     eps_level = 1e-4
     F,V = platonicsolid(4, 1.0) # icosahedron with radius 1.0     
@@ -1621,7 +1591,6 @@ end
     end
 
 end
-
 
 @testset "subquad" verbose = true begin
     eps_level = 1e-4
@@ -1863,7 +1832,6 @@ end
     
 end
 
-
 @testset "hexbox" verbose = true begin
     @testset "Single hex box" begin
         E,V,F,Fb,CFb_type = hexbox([1.0,1.0,1.0],[1,1,1])
@@ -1885,7 +1853,6 @@ end
         @test CFb_type == [1, 3, 6, 1, 3, 5, 1, 4, 6, 1, 4, 5, 2, 3, 6, 2, 3, 5, 2, 4, 6, 2, 4, 5]
     end
 end
-
 
 @testset "con_face_edge" verbose = true begin    
     @testset "Single triangle" begin
@@ -1925,7 +1892,6 @@ end
     end
 end
 
-
 @testset "con_edge_face" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]
@@ -1963,7 +1929,6 @@ end
         @test con_E2F == [[1], [1, 2], [1], [2], [2], [1], [2]]       
     end
 end
-
 
 @testset "con_face_face" verbose = true begin    
     @testset "Single triangle" begin
@@ -2008,7 +1973,6 @@ end
     end
 end
 
-
 @testset "con_face_face_v" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]
@@ -2047,7 +2011,6 @@ end
     end
 end
 
-
 @testset "con_vertex_simplex" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]
@@ -2084,7 +2047,6 @@ end
     end
 end
 
-
 @testset "con_vertex_face" verbose = true begin    
     @testset "Single triangle" begin
         F = TriangleFace{Int}[[1,2,3]]
@@ -2120,7 +2082,6 @@ end
         @test con_V2F == [[1], [1], [1, 2], [1, 2], [2], [2]]  
     end
 end
-
 
 @testset "con_vertex_edge" verbose = true begin    
     @testset "Single triangle" begin
@@ -2161,7 +2122,6 @@ end
         @test con_V2E == [[1, 7], [1, 3], [2, 3, 5, 8], [2, 4, 5, 7], [4, 6], [6, 8]]
     end
 end
-
 
 @testset "con_edge_edge" verbose = true begin    
     @testset "Single triangle" begin
@@ -2206,7 +2166,6 @@ end
         @test con_E2E == [[6, 3], [3, 7, 4, 6], [1, 2, 7], [2, 6, 5], [4, 7], [2, 4, 1], [5, 2, 3]]    
     end
 end
-
 
 @testset "con_vertex_vertex_f" verbose = true begin    
     @testset "Single triangle" begin
@@ -2520,7 +2479,6 @@ end
     @test Fm[1] == [1, 2, 3, 4]
 end
 
-
 @testset "indexmap and indexmap!" verbose = true begin
     F,V = geosphere(1,1)
     p = pointspacingmean(F,V)
@@ -2532,7 +2490,6 @@ end
     @test length(Vm) == maximum(reduce(vcat,Fm))
     @test length(Vm) == maximum(reduce(vcat,Fs))
 end
-
 
 @testset "smoothmesh_laplacian" verbose = true begin
 
@@ -2605,7 +2562,6 @@ end
         @test isapprox(Vs[ind],V_true,atol=eps_level)
     end
 end
-
 
 @testset "smoothmesh_hc" verbose = true begin
     eps_level = 1e-4
@@ -2688,7 +2644,6 @@ end
     end
     
 end
-
 
 @testset "quadplate" begin
     eps_level = 1e-4
@@ -2776,7 +2731,6 @@ end
     # Check errors
     @test_throws Exception quaddisc(r,n; method = :Catmull_Clark, orientation=:wrong)
 end
-
 
 @testset "subquadsphere" begin
     eps_level = 1e-4
@@ -2961,7 +2915,6 @@ end
     end        
 end
 
-
 @testset "vertex2simplexdata" verbose = true begin
     eps_level = 1e-4
 
@@ -3068,7 +3021,6 @@ end
         D_true = [[8.0 16.0 24.0; 32.0 40.0 48.0], [8.333333333333334 16.666666666666668 25.0; 33.333333333333336 41.666666666666664 50.0], [5.666666666666667 11.333333333333334 17.0; 22.666666666666668 28.333333333333332 34.0], [4.333333333333333 8.666666666666666 13.0; 17.333333333333332 21.666666666666668 26.0], [7.333333333333333 14.666666666666666 22.0; 29.333333333333332 36.666666666666664 44.0], [6.666666666666667 13.333333333333334 20.0; 26.666666666666668 33.333333333333336 40.0]]
         @test isapprox(DF[ind],D_true, atol=eps_level) 
 
-
         # Hexahedral elements
         DV = [i.*[1.0 2.0 3.0; 4.0 5.0 6.0] for i in eachindex(Vh)] # Matrix data for each face
         DF = vertex2simplexdata(Eh,DV)
@@ -3078,7 +3030,6 @@ end
 
     end        
 end
-
 
 @testset "simplexcenter" verbose = true  begin
     eps_level = 1e-4
@@ -3104,7 +3055,6 @@ end
         @test isapprox(VC[ind], VC_true, atol=eps_level)
     end
 end
-
 
 @testset "normalizevector"  verbose = true begin
     eps_level = 1e-4
@@ -3136,7 +3086,6 @@ end
         @test isapprox(NN,N, atol=eps_level)
     end
 end
-
 
 @testset "circlepoints" verbose = true begin
     eps_level = 1e-4
@@ -3203,7 +3152,6 @@ end
     end
 
 end
-
 
 @testset "loftlinear" verbose = true begin
     eps_level = 1e-4
@@ -3522,7 +3470,6 @@ end
     end
 end
 
-
 @testset "dirplot" verbose = true begin
     F,V = cube(1.0)    
     U = vertexnormal(F,V)
@@ -3566,14 +3513,12 @@ end
     end
 end
 
-
 @testset "normalplot" verbose = true begin
     F,V = cube(1.0)    
 
     fig = Figure(size=(800,800))
     ax = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Direction data plot")
     hp = poly!(ax,GeometryBasics.Mesh(V,F), strokewidth=3,color=:white, shading = FastShading)
-
 
     @testset "Errors" begin
         @test_throws ArgumentError normalplot(ax,GeometryBasics.Mesh(V,F); type_flag=:wrong, color=:black,linewidth=3,scaleval=nothing)
@@ -3644,7 +3589,6 @@ end
     @test all([all(a.==90) for a in a]) # All right angles in undeformed cube
     @test isapprox(sort(unique(vcat,a2)),[45.0, 135.0],atol=eps_level) 
 end
-
 
 @testset "quad2tri" begin
     F,V = cube(1.0)    
@@ -3766,7 +3710,6 @@ end
     @test isapprox(sum((d.-r).^2),0.0,atol=eps_level) # Should 
 end
 
-
 @testset "count_edge_face" verbose = true begin
 
     
@@ -3809,7 +3752,6 @@ end
 
 end
 
-
 @testset "boundaryedges" verbose = true begin
 
     @testset "Set of edges" begin
@@ -3843,7 +3785,6 @@ end
     end
 
 end
-
 
 @testset "boundaryfaces" verbose = true begin
     @testset "Tetrahedron (all boundary faces)" begin
@@ -4295,7 +4236,6 @@ end
 
 end
 
-
 @testset "meshgroup" verbose = true begin
 
     @testset "Errors" begin
@@ -4401,7 +4341,6 @@ end
     
 end
 
-
 @testset "distmarch" verbose = true begin
     eps_level = 1e-4
 
@@ -4482,11 +4421,9 @@ end
     end
 end
 
-
 # @testset "distseedpoints" verbose = true begin
 
 # end
-
 
 @testset "ray_triangle_intersect" verbose = true begin
     eps_level = 1e-4
@@ -4548,7 +4485,6 @@ end
         @test isa(indIntersect,Vector{Int})
     end
 end
-
 
 @testset "mesh_curvature_polynomial" verbose = true begin
     eps_level = 0.01
@@ -4613,8 +4549,6 @@ end
         @test isapprox(sqrt(abs(mean(G))),0.0,atol=eps_level)
     end
 end
-
-
 
 @testset "separate_vertices" verbose = true begin
     
@@ -4692,7 +4626,6 @@ end
 
 end
 
-
 @testset "curve_length" verbose = true begin
     eps_level = 1e-6
     r = 2.25
@@ -4706,7 +4639,6 @@ end
     @test isapprox(L,length_true,atol=eps_level)    
     @test L isa Vector{Float64}
 end
-
 
 @testset "evenly_sample" begin
     
@@ -5283,7 +5215,6 @@ end
 
 end
 
-
 @testset "scalesimplex" verbose = true begin
     eps_level = 1e-6
 
@@ -5357,7 +5288,6 @@ end
     end
 
 end
-
 
 @testset "subcurve" verbose = true begin
     eps_level = 1e-6
@@ -5553,7 +5483,6 @@ end
         [-0.33333333333333337, 0.2936331816031539, 0.8477864643086384], [-0.1545084971874737, -0.8090169943749475, 0.5], 
         [0.8194254478692206, 0.375, 0.36319552381099396]],atol=eps_level)
 
-
         Fs,Fsq,Vs = dualclad(F,V,0.5; connectivity=:edge)
         ind = round.(Int,range(1,length(Vs),6)) # Sample indices
 
@@ -5579,7 +5508,6 @@ end
         @test_throws Exception dualclad(F,V,0.5; connectivity=:face)
     end
 end
-
 
 @testset "tet2hex" verbose = true begin
     eps_level = 1e-6
@@ -5610,7 +5538,6 @@ end
     @test isa(Vh,Vector{eltype(V)})
 
 end
-
 
 @testset "element2faces" verbose = true begin
     @testset "hex8" begin
@@ -5685,7 +5612,6 @@ end
         @test F[1][1] == NgonFace{6, Int64}(3, 8, 2, 7, 1, 9)
     end
 
-
     @testset "Rhombicdodeca14" begin
         nf = 12
         E = [Rhombicdodeca14{Int}(1:14)]
@@ -5744,7 +5670,6 @@ end
     end
 end
 
-
 @testset "subhex" verbose = true begin
     boxDim = [1.0,2.0,3.0] # Dimensions for the box in each direction
     boxEl = [1,1,1] # Number of elements to use in each direction 
@@ -5779,7 +5704,6 @@ end
 
     @test_throws Exception subhex(E,V,-1;direction=0)
 end
-
 
 @testset "subpenta" verbose = true begin
     r = 1.0 # Radius
@@ -5817,7 +5741,6 @@ end
     @test_throws Exception subpenta(E,V,-1; direction=0)
 end
 
-
 @testset "rhombicdodecahedron" verbose = true begin
     eps_level = 1e-6
     F,V = rhombicdodecahedron(1.0)    
@@ -5831,7 +5754,6 @@ end
     F,V = rhombicdodecahedron(w)    
     @test isapprox(V,Vt.*w,atol=eps_level)
 end
-
 
 @testset "tri2quad" verbose = true begin
     eps_level = 1e-6
@@ -5965,7 +5887,6 @@ end
     end
 end
 
-
 @testset "tetgenmesh" verbose = true begin
     eps_level = 1e-4
 
@@ -6035,7 +5956,6 @@ end
         @test isa(V,typeof(Vb))
         @test length(Fb) == length(F1)+length(F2)
         @test isapprox(vol,vol_true,atol=eps_level)
-
 
         r1 = 2.0
         r2 = r1/2
@@ -6108,7 +6028,6 @@ end
     end
 
 end
-
 
 @testset "extrudefaces" verbose = true begin
     eps_level = 1e-6
@@ -6398,7 +6317,6 @@ end
     end
 end
 
-
 @testset "squircle" verbose = true begin
     eps_level = 1e-6    
     @testset "pure circle" begin
@@ -6573,7 +6491,6 @@ end
     end
 end
 
-
 @testset "faceanglesegment" verbose = true begin
     eps_level = 1e-8
 
@@ -6719,7 +6636,6 @@ end
 
 end
 
-
 @testset "rhombicdodecahedronfoam" verbose = true begin
 
     # rhombicdodecahedronfoam(w::T,n::Union{Tuple{Vararg{Int, 3}}, Array{Int, 3}}; merge = true, orientation = :align) where T<:Real
@@ -6750,7 +6666,6 @@ end
 
 end
 
-
 @testset "truncatedoctahedron" verbose = true begin
     eps_level = 1e-6
 
@@ -6771,8 +6686,6 @@ end
     F,V = truncatedoctahedron(w)    
     @test isapprox(V,Vt.*w,atol=eps_level)
 end
-
-
 
 @testset "kelvinfoam" verbose = true begin
     eps_level = 1e-6
@@ -6801,18 +6714,15 @@ end
     @test isapprox(V[ind], Point{3, Float64}[[1.05, -0.525, 0.0], [4.2, 1.5750000000000002, -1.05], [0.525, 3.1500000000000004, 2.1], [3.6750000000000003, 5.25, 2.1], [0.0, 5.25, 4.7250000000000005], [3.6750000000000003, 6.300000000000001, 5.25]], atol=eps_level)
 end
 
-
 @testset "minp" verbose = true begin    
     V = gridpoints(range(-1.0,pi,3),range(-pi,1.0,2),range(2.0,3.0,5))
     @test minp(V) == [-1.0,-pi,2.0]
 end
 
-
 @testset "maxp" verbose = true begin    
     V = gridpoints(range(-1.0,pi,3),range(-pi,1.0,2),range(2.0,3.0,5))
     @test maxp(V) == [pi,1.0,3.0]
 end
-
 
 @testset "ntrapezohedron" verbose = true begin
     eps_level = 1e-6
@@ -6826,7 +6736,6 @@ end
     @test length(F) == 2*n
     @test isapprox(V[ind], Point{3, Float64}[[2.1000000000000005, 0.0, -0.3288297781786662], [1.2858791391047212e-16, 2.1000000000000005, 0.3288297781786662], [-1.8186533479473213, 1.050000000000001, 0.3288297781786662], [-1.0500000000000012, -1.8186533479473213, -0.3288297781786662], [1.049999999999999, -1.8186533479473224, -0.3288297781786662], [0.0, 0.0, 4.580007978638879]], atol=eps_level)    
 end
-
 
 @testset "spacing2numvertices" verbose = true begin
     r = 2.0 # radius
@@ -6861,7 +6770,6 @@ end
     @test abs(NV-length(V2))<length(V2)/100
     @test abs(pointSpacingTrue-pointSpacingDesired)<pointSpacingDesired/100
 end
-
 
 @testset "joingeom" verbose = true begin    
     n1 = 3 # Number of refinement iterations
@@ -6925,7 +6833,6 @@ end
 
 end
 
-
 @testset "quadbox" verbose = true begin    
     eps_level = 1e-6
     pointSpacing = 0.5
@@ -6940,7 +6847,6 @@ end
     @test isapprox(V_max, boxDim/2.0, atol=eps_level)
 end
 
-
 @testset "tribox" verbose = true begin    
     eps_level = 1e-6
     boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
@@ -6953,7 +6859,6 @@ end
     @test isapprox(V_min,-boxDim/2.0, atol=eps_level)
     @test isapprox(V_max, boxDim/2.0, atol=eps_level)
 end
-
 
 @testset "Comodo._faces2box" verbose = true begin        
     pointSpacing = 0.5
@@ -6971,7 +6876,6 @@ end
     @test unique(C) == collect(1.0:1.0:6.0) # Contains the 6 labels        
 end
 
-
 @testset "tetbox" verbose = true begin    
     eps_level = 1e-6
     boxDim = [2.5,3.1,4] # Dimensions for the box in each direction
@@ -6987,7 +6891,6 @@ end
     @test length(Fb) == length(Cb)
     @test unique(Cb) == collect(1.0:1.0:6.0) # Contains the 6 labels    
 end
-
 
 @testset "pad3" verbose = true begin        
     A = rand(5,3,4)
@@ -7010,7 +6913,6 @@ end
     @test all(B[:,end-padAmount+1:end,:] .== padValue)
     @test all(B[:,:,end-padAmount+1:end] .== padValue)    
 end
-
 
 @testset "getisosurface" verbose = true begin        
     epsLevel = 1e-4
@@ -7083,7 +6985,6 @@ end
     @test length(boundaryedges(F)) == 0 # Is merged/closed due to caps
 end
 
-
 @testset "randangle" verbose = true begin         
     # Default input is 1 and should return Float64 
     A = randangle()    
@@ -7111,7 +7012,6 @@ end
     A = randangle(100000)
     @test all(A.<=pi .&& A.>=-pi)    
 end
-
 
 @testset "stepfunc" verbose = true begin        
     eps_level = 1e-8
@@ -7932,7 +7832,6 @@ end
     @test length(Vd) == length(V) # No additional points
 end
 
-
 @testset "erodeboundary!" verbose = true begin   
     w = 1.0
     _,V = square(w)
@@ -8745,6 +8644,23 @@ end
     @test isapprox(Q[:,2], R[:,2], atol=eps_level) || isapprox(Q[:,2], -R[:,2], atol=eps_level)
 end
 
+@testset "basisGramSchmidt" verbose = true begin
+    eps_level = 1e-6
+
+    Rz = RotXYZ(    0.0, 0.0, 0.25*π)
+    Rx = RotXYZ(-0.25*π,    0.0, 0.0)
+    u = Rz*Vec{3,Float64}(1.5, 0.0, 0.0)
+    v = Vec{3,Float64}(0.0, 2.0, 0.0)
+    w = Rx*Vec{3,Float64}(0.0, 0.0, 2.5)
+    A = [u,v,w]
+
+    E = basisGramSchmidt(A)
+    basisGramSchmidt!(A)
+    @test E == A
+    @test isapprox(dot(E[1], E[2]), 0.0, atol=eps_level) 
+    @test isapprox(dot(E[2], E[3]), 0.0, atol=eps_level) 
+    @test isapprox(dot(E[1], E[3]), 0.0, atol=eps_level) 
+end
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"

@@ -785,3 +785,13 @@ Comodo.tpms_sheet
 ```@docs 
 Comodo.pointsvd
 ```
+ 
+## `basisGramSchmidt`
+```@docs 
+Comodo.basisGramSchmidt
+``` 
+
+## `basisGramSchmidt!`
+```@docs 
+Comodo.basisGramSchmidt!
+```

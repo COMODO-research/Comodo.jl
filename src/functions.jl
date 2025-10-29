@@ -6,6 +6,8 @@ GeometryBasics.@fixed_vector PentahedronElement = AbstractElement
 GeometryBasics.@fixed_vector HexahedronElement = AbstractElement
 GeometryBasics.@fixed_vector TruncatedoctahedronElement = AbstractElement
 GeometryBasics.@fixed_vector RhombicdodecahedronElement = AbstractElement
+GeometryBasics.@fixed_vector TriangleElement = AbstractElement
+GeometryBasics.@fixed_vector PolygonElement = AbstractElement
 
 const Tet4{T} = TetrahedronElement{4,T} where T<:Integer
 const Tet10{T} = TetrahedronElement{10,T} where T<:Integer
@@ -16,6 +18,9 @@ const Hex8{T} = HexahedronElement{8,T} where T<:Integer
 const Hex20{T} = HexahedronElement{20,T} where T<:Integer
 const Truncatedocta24{T} = TruncatedoctahedronElement{24,T} where T<:Integer
 const Rhombicdodeca14{T} = RhombicdodecahedronElement{14,T} where T<:Integer
+const Tri3{T} = TriangleElement{3,T} where T<:Integer
+const Tri6{T} = TriangleElement{6,T} where T<:Integer
+const PolyN{T} = PolygonElement{N,T} where T<:Integer where N
 
 """
     ConnectivitySet(E_uni, con_E2F, con_E2E, F,  con_F2E, con_F2F, con_V2E, con_V2F, con_V2V, con_V2V_f, con_F2F_v)
@@ -8696,4 +8701,40 @@ function pointsvd(V::Vector{T}) where T <: AbstractVector
         M[i,:] = v-mean_V # Centre point around mean and make row of matrix
     end
     return svd(M)
+end
+
+"""
+    basisGramSchmidt(E::Union{Vector{Vec{N,T}},Vector{Point{N,T}}}) where N where T<:Real
+    
+Derive mutually orthogonal basevectors
+
+This function can be used to obtain a set of mutually orthogonal basis vectors 
+from a set of input vectors. The input is a vector of vectors (e.g. a Vec or 
+Point)
+"""
+function basisGramSchmidt(E::Union{Vector{Vec{N,T}},Vector{Point{N,T}}}) where N where T<:Real
+    return basisGramSchmidt!(deepcopy(E))
+end
+
+"""
+    basisGramSchmidt!(E::Union{Vector{Vec{N,T}}, Vector{Point{N,T}}}) where N where T<:Real
+    
+Derive mutually orthogonal basevectors
+
+See also: `basisGramSchmidt`
+"""
+function basisGramSchmidt!(E::Union{Vector{Vec{N,T}}, Vector{Point{N,T}}}) where N where T<:Real
+    k = length(E)
+    if k != N
+        throw(ArgumentError("Number of dimensions does not match number of vectors, use $N vectors for $N dimensions"))
+    end
+    for i in 1:k
+        E[i] = E[i]/norm(E[i])
+        for j in i+1:k
+            Ei = E[i]
+            Ej = E[j]
+            E[j] = Ej - dot(Ei,Ej) * Ei/norm(Ei)
+        end
+    end
+    return E
 end
