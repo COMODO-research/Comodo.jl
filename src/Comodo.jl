@@ -38,7 +38,7 @@ export DataStructures
 
 # Export (finite) element types
 export AbstractElement, TetrahedronElement, PentahedronElement, HexahedronElement, TruncatedoctahedronElement, RhombicdodecahedronElement
-export Tet4, Tet10, Tet15, Hex8, Hex20, Penta6, Penta15, Rhombicdodeca14, Truncatedocta24, Tri3, Tri6,  PolyN 
+export Tet4, Tet10, Tet15, Hex8, Hex20, Penta6, Penta15, Rhombicdodeca14, Truncatedocta24, Tri3, Tri6,  PolyN
 
 # Export types/structs
 export ConnectivitySet
@@ -81,6 +81,7 @@ export rectanglepoints, squarepoints, rectangle, square, pizza
 export cart2bary, bary2cart, barycoord, intriangle
 export spacing2numsteps, pointspacingmax, pointspacingmin, hexcylinder
 export equilateraltriangle, hermiteSegment, subpenta, polycentroid, curve2edges, subtri_dual, rhombicdodecahedron2hex
-export surface_centroid, hexahedronElement, hex2tet, triplyperiodicminimal, triplyperiodicminimal_sheet, tpms, tpms_sheet, pointsvd, basisGramSchmidt, basisGramSchmidt!
+export surface_centroid, hexahedronElement, hex2tet, triplyperiodicminimal, triplyperiodicminimal_sheet, tpms, tpms_sheet
+export pointsvd, basisGramSchmidt, basisGramSchmidt!, hexvolume
 
 end # module

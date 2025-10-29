@@ -795,3 +795,8 @@ Comodo.basisGramSchmidt
 ```@docs 
 Comodo.basisGramSchmidt!
 ```
+
+## `hexvolume`
+```@docs 
+Comodo.hexvolume
+```

@@ -6029,6 +6029,76 @@ end
 
 end
 
+@testset "surfacevolume" verbose = true begin
+    @testset "Sphere triangulation" begin        
+        eps_level = 0.1 # high due to mesh approximation
+        r = 2.5
+        n = 5
+        F,V = geosphere(n, r)
+        vol = surfacevolume(F, V)
+        volTheoretical = 4/3*pi*r^3
+        @test isapprox(vol, volTheoretical, atol=eps_level)
+    end
+    @testset "Box quadrangulation" begin        
+        eps_level = 1e-6
+        boxDim = [2.0, 3.0, 4.0]
+        boxEl = [2,3,4]
+        F, V = quadbox(boxDim,boxEl)
+        vol = surfacevolume(F, V)
+        volTheoretical = prod(boxDim)
+        @test isapprox(vol, volTheoretical, atol = eps_level)
+    end
+end
+
+@testset "tetvolume" verbose = true begin
+    @testset "Sphere" begin   
+        eps_level = 0.1 # high due to mesh approximation     
+        r = 1.0
+        F1,V1 = geosphere(3,r)
+        E,V,CE,Fb,Cb = tetgenmesh(F1,V1)  
+        volTheoretical = 4/3*pi*r^3
+        volVec = tetvolume(E, V)
+        vol = sum(volVec)
+        @test isapprox(vol, volTheoretical, atol=eps_level)
+    end
+   
+    @testset "Box" begin   
+        eps_level = 1e-6     
+        boxDim = [2.0, 3.0, 4.0] # Dimensions for the box in each direction
+        pointSpacing = 0.5
+        E, V, Fb, Cb = tetbox(boxDim,pointSpacing)
+        volTheoretical = prod(boxDim)
+        volVec = tetvolume(E, V)
+        vol = sum(volVec)
+        @test isapprox(vol, volTheoretical, atol=eps_level)
+    end
+end
+
+@testset "hexvolume" verbose = true begin
+    @testset "Sphere" begin   
+        eps_level = 0.1 # high due to mesh approximation     
+        r = 2.5
+        pointSpacing = 0.1
+        E, V = hexsphere(r,pointSpacing) 
+        volTheoretical = 4/3*pi*r^3
+        volVec = hexvolume(E, V)
+        vol = sum(volVec)
+        @test isapprox(vol, volTheoretical, atol=eps_level)
+    end
+   
+    @testset "Box" begin   
+        eps_level = 1e-6     
+        boxDim = [2.0, 3.0, 4.0] # Dimensions for the box in each direction
+        pointSpacing = 0.5
+        boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
+        E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
+        volTheoretical = prod(boxDim)
+        volVec = hexvolume(E, V)
+        vol = sum(volVec)
+        @test isapprox(vol, volTheoretical, atol=eps_level)
+    end
+end
+
 @testset "extrudefaces" verbose = true begin
     eps_level = 1e-6
 
@@ -8660,6 +8730,7 @@ end
     @test isapprox(dot(E[1], E[2]), 0.0, atol=eps_level) 
     @test isapprox(dot(E[2], E[3]), 0.0, atol=eps_level) 
     @test isapprox(dot(E[1], E[3]), 0.0, atol=eps_level) 
+    @test_throws ArgumentError basisGramSchmidt(rand(Point{3,Float64},4))
 end
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------

@@ -7344,7 +7344,7 @@ The optional inputs include the number of vertex steps to use to go from the
 inner to the outer surface. 
 The output features hexahedral elements `E` and the vertices `V`. 
 """
-function hexspherehollow(rOut,rIn,pointSpacing; numSteps=nothing)
+function hexspherehollow(rOut, rIn, pointSpacing; numSteps=nothing)
     if rIn>=rOut 
         throw(ArgumentError("Inner radius is too large as it should be smaller than the outer radius rOut=$rOut."))
     end
@@ -8737,4 +8737,38 @@ function basisGramSchmidt!(E::Union{Vector{Vec{N,T}}, Vector{Point{N,T}}}) where
         end
     end
     return E
+end
+
+"""
+    hexvolume(e::Hex8{Int}, V::Vector{Point{3,T}}) where T<:Real
+    hexvolume(E::Vector{Hex8{Int}}, V::Vector{Point{3,T}}) where T<:Real
+Compute hexahedral element volumes
+
+# Description
+This function computes hexahedral volumes. The input is either a single 
+hexahedron 'e' or a vector of hexahedra 'E'.  
+"""
+function hexvolume(e::Hex8{Int}, V::Vector{Point{3,T}}) where T<:Real
+    P0 = V[e[1]]
+    P1 = V[e[2]]
+    P2 = V[e[3]]
+    P3 = V[e[4]]
+    P4 = V[e[5]]
+    P5 = V[e[6]]
+    P6 = V[e[7]]
+    P7 = V[e[8]]
+
+    X1 = (P1-P0) + (P2-P3) + (P5-P4) + (P6-P7)
+    X2 = (P3-P0) + (P2-P1) + (P7-P4) + (P6-P5)
+    X3 = (P4-P0) + (P5-P1) + (P6-P2) + (P7-P3)
+    
+    return 1.0/64.0 * det([X1 X2 X3])
+end
+
+function hexvolume(E::Vector{Hex8{Int}}, V::Vector{Point{3,T}}) where T<:Real
+    volVec = Vector{Float64}(undef, length(E))
+    for (i,e) in enumerate(E)
+        volVec[i] = hexvolume(e, V)
+    end
+    return volVec
 end
