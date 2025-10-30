@@ -8695,12 +8695,28 @@ This function computes the singular value decomposition for the points defined
 by the point vector `V`.    
 """
 function pointsvd(V::Vector{T}) where T <: AbstractVector
+    # Form matrix
     mean_V = mean(V) # Compute point set mean 
     M = Matrix{Float64}(undef, length(V), 3)
     for (i,v) in enumerate(V)
         M[i,:] = v-mean_V # Centre point around mean and make row of matrix
+    end    
+    S = svd(M) # Singular value decomposition
+
+    # Force system to be non-inverting as rotation matrix
+    S.V[:,3] = cross(S.V[:,1], S.V[:,2]) 
+    
+    # Choose directions with mimimal rotation angle
+    Q1 = deepcopy(S.Vt) # Current rotation matrix
+    Q2 = deepcopy(Q1) # Create rotation matrix with inverted 2nd and 3rd axis
+    Q2[:,2] = -Q2[:,2] # Invert 2nd axis
+    Q2[:,3] = -Q2[:,3] # Invert 3rd axis   
+
+    if Rotations.params(AngleAxis(Q2))[1] < Rotations.params(AngleAxis(Q1))[1] # Check if second uses smaller angle
+       S.V[:,2] = -S.V[:,2] # Invert 2nd axis in V for svd
+       S.V[:,3] = -S.V[:,3] # Invert 3nd axis in V for svd       
     end
-    return svd(M)
+    return S
 end
 
 """
