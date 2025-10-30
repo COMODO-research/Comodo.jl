@@ -4,6 +4,11 @@ using Comodo.GeometryBasics
 using Comodo.Statistics
 using FileIO
 
+#=
+This demo shows the use of `tetvolume` to compute the volume for tetrahedral 
+elements. 
+=#
+
 GLMakie.closeall()
 
 for testCase = 1:5

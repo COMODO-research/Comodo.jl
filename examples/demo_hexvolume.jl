@@ -5,7 +5,7 @@ using Comodo.Statistics
 using FileIO
 
 #=
-This demo shows the use of `hexvol` to compute the volume for hexahedral 
+This demo shows the use of `hexvolume` to compute the volume for hexahedral 
 elements. 
 =#
 
