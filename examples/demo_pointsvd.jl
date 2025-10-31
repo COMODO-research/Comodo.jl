@@ -40,7 +40,7 @@ for testCase = 1:2
 
     Vr = [Point{3, Float64}(S.Vt*v) for v ∈ V] 
     
-    #Visualize mesh
+    # Visualize mesh
     s = norm(maxp(Vr)-minp(Vr)) # Vector size
     fig = Figure(size = (1600,800))
 

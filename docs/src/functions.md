@@ -800,3 +800,8 @@ Comodo.basisGramSchmidt!
 ```@docs 
 Comodo.hexvolume
 ```
+
+## `isunique`
+```@docs 
+Comodo.isunique
+```

@@ -8733,6 +8733,26 @@ end
     @test_throws ArgumentError basisGramSchmidt(rand(Point{3,Float64},4))
 end
 
+@testset "isunique" begin
+    f1 = [1,2,3,4,1,5,6,7,8]
+    f2 = TriangleFace{Int}(1,2,3)
+    f3 = TriangleFace{Int}(1,2,2)
+    f4 = QuadFace{Int}(1,2,2,4)
+    F5 = [TriangleFace{Int}(1,2,3), QuadFace{Int}(1,2,2,4)]
+
+    b1 = isunique(f1)
+    b2 = isunique(f2)
+    b3 = isunique(f3)
+    b4 = isunique(f4)
+    B5 = isunique.(F5)
+
+    @test b1 == false
+    @test b2 == true
+    @test b3 == false
+    @test b4 == false
+    @test B5 == [true, false]
+end
+
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
 #     @testset "Demos" begin

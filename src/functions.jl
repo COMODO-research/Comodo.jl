@@ -8758,6 +8758,7 @@ end
 """
     hexvolume(e::Hex8{Int}, V::Vector{Point{3,T}}) where T<:Real
     hexvolume(E::Vector{Hex8{Int}}, V::Vector{Point{3,T}}) where T<:Real
+
 Compute hexahedral element volumes
 
 # Description
@@ -8787,4 +8788,29 @@ function hexvolume(E::Vector{Hex8{Int}}, V::Vector{Point{3,T}}) where T<:Real
         volVec[i] = hexvolume(e, V)
     end
     return volVec
+end
+
+"""
+    isunique(X)
+    
+Checks if all entries are unique 
+
+# Description
+This function checks the entries of X and returns a `true` if all entries are 
+unique. If a non-unique (repeated) entry is encountered then a `false` is 
+returned. 
+This function can be useful for instance to check if a face has repeated 
+indices. For instance a TriangleFace{Int}(2,3,3) features the node 3 twice and 
+therefore describes an invalid or collapsed or line-like triangle. 
+"""
+function isunique(X)    
+    X_seen = Set{Int}() # Set to keep track of entries encountered    
+    for x in X                
+        if in(x, X_seen) # Has current entry been seen before?
+            return false                      
+        else # 'tis a new one so it is
+            push!(X_seen, x) # Add to the set of seen entries           
+        end        
+    end
+    return true # Return true as we made it through the whole of X
 end
