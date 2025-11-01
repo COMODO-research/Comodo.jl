@@ -8516,6 +8516,44 @@ end
     @test isapprox(C, C_true, atol=eps_level)
 end
 
+@testset "facecentroid" verbose = true begin
+    eps_level = 1e-6
+    
+    @testset "single triangle" begin
+        V = [Point{3,Float64}(-1.0, 0.0, 0.0), 
+             Point{3,Float64}( 1.0, 0.0, 0.0), 
+             Point{3,Float64}( 0.0, sqrt(3), 0.0)]
+        f = TriangleFace{Int}(1,2,3)
+        C = facecentroid(f,V)
+        @test isapprox(C, [0.0, sqrt(3)/3, 0.0], atol=eps_level)
+    end
+
+    @testset "single ngon" begin
+        V = circlepoints(1.0,3)
+        V2 = collect(range(V[end],V[1],6))
+        append!(V,V2[2:end-1])
+        f = NgonFace{7,Int}(collect(1:7))
+        C_true = Point{3, Float64}(2.1,3.4,-5.7) #randn(eltype(V))
+        V .+= C_true # Shift coordinates to desired centre 
+
+        C = facecentroid(f,V)
+        @test isapprox(C, C_true, atol=eps_level)
+
+        C = facecentroid([f],V)
+        @test isapprox(C[1], C_true, atol=eps_level)
+    end
+
+    @testset "Vector of mixed faces" begin
+        r = 1.0
+        Fs,Vs = geosphere(2,r) 
+        F,V = meshdual(Fs,Vs)
+        C = facecentroid(F,V)
+        ind = round.(Int,range(1,length(F),6))
+        @test isapprox(C[ind], Point{3, Float64}[[0.0, -0.5123909857915725, -0.8290660305398287], [-0.2996853941983697, 0.7845865479432427, 0.48490115374487275], [4.941889791345783e-18, -0.8297900882404469, -0.4991867786538794], [0.14743134826808835, -0.9209076724773484, 0.26063784614888935], [-0.2395649927161991, 0.4268938119751904, 0.838788005376097], [-0.690728697362865, 0.14805930801323208, -0.6664588046913896]], atol=eps_level)
+    end
+end
+
+
 @testset "curve2edges" verbose = true begin
     ind = [1,2,3,4]
     E = curve2edges(ind)

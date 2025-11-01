@@ -276,6 +276,26 @@ Comodo.quadsphere
 Comodo.simplex2vertexdata
 ```
 
+## `vertex2simplexdata`
+```@docs
+Comodo.vertex2simplexdata
+```
+
+## `simplexcenter`
+```@docs
+Comodo.simplexcenter
+```
+
+## `normalizevector`
+```@docs
+Comodo.normalizevector
+```
+
+## `circlepoints`
+```@docs
+Comodo.circlepoints
+```
+
 ## `subquadsphere`
 ```@docs
 Comodo.subquadsphere
@@ -736,6 +756,11 @@ Comodo.hermiteSegment
 Comodo.polycentroid
 ```
 
+## `facecentroid!`
+```@docs 
+Comodo.facecentroid!
+```
+
 ## `curve2edges`
 ```@docs 
 Comodo.curve2edges
@@ -810,3 +835,4 @@ Comodo.isunique
 ```@docs 
 Comodo.remove_snapped_faces!
 ```
+

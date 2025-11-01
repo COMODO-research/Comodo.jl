@@ -2564,22 +2564,70 @@ function simplex2vertexdata(F::Union{Vector{<: NgonFace},Vector{<: AbstractEleme
     return DV
 end
 
-function vertex2simplexdata(F,DV)
+"""
+    vertex2simplexdata(F::Union{Vector{<: NgonFace},Vector{<: AbstractElement}}, DV)
+
+Samples node data on elements
+
+# Description
+This function converts the input data `DV` which is for the nodes `V`, to the 
+equivalent data for the simplices (edges, faces, or elements) `F`. To compute 
+this data on a particular simplex, the average for all its nodes is computed. 
+"""
+function vertex2simplexdata(F::Union{Vector{<: NgonFace},Vector{<: AbstractElement}}, DV)
     return [mean(view(DV,f)) for f in F]
 end
 
+"""
+    simplexcenter(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
+
+Computs simplex centers
+
+# Description
+This function computes centre of each simplex in `F` by taking the mean of the
+coordivertex2simplexdatanates as specified by `V`.  
+"""
 function simplexcenter(F,V::Vector{Point{ND,TV}}) where ND where TV<:Real
     return vertex2simplexdata(F,V)
 end
 
+"""
+    normalizevector(a::Union{Point{ND,TV},Vec{ND,TV}}) where ND where TV<:Real  
+    normalizevector(A::Union{Vector{Point{ND,TV}},Vector{Vec{ND,TV}}}) where ND where TV<:Real
+
+Normalises vectors
+
+# Description
+This function normalises the vector `a` or vector of vectors `A` such that each
+vector's lenght is 1. 
+"""
+function normalizevector(a::Union{Point{ND,TV},Vec{ND,TV}}) where ND where TV<:Real    
+    return a./norm(a)    
+end
+
 function normalizevector(A::Union{Vector{Point{ND,TV}},Vector{Vec{ND,TV}}}) where ND where TV<:Real
-        return A./norm.(A)
+        return normalizevector.(A)
 end
 
-function normalizevector(A::Union{Point{ND,TV},Vec{ND,TV}}) where ND where TV<:Real    
-    return A./norm(A)    
-end
+"""
+    circlepoints(r::T,n::Int; dir=:acw, pc = Point{3, Float64}(0.0, 0.0, 0.0)) where T <: Real
+    circlepoints(r::Tuple{T,T},n::Int; dir=:acw, pc = Point{3, Float64}(0.0, 0.0, 0.0)) where T <: Real
+    circlepoints(f::FunctionType,n::Int; dir=:acw, pc = Point{3, Float64}(0.0, 0.0, 0.0)) where {FunctionType <: Function}
 
+Returns points on circle
+
+# Description
+This function returns `n` points on a circle. The radius for the circle is 
+specified by the value of `r`. If instead `r` is a tuple containing two entries 
+then these are assumed to represent the radius in the x and y direction 
+respectively. Instead of the radius the user may also specify a function `f` 
+which should specify the radius as a function of angle. 
+The following optional keyword arguments exist:   
+* `dir` sets the direction of the circle and is either `:acw` or `cw` to select 
+an anti-clockwise or a clockwise direction. The default is the former. 
+* `pc` defined the circle centre. The default is simply the origin i.e. 
+`Point{3, Float64}(0.0, 0.0, 0.0)`.
+"""
 function circlepoints(r::T,n::Int; dir=:acw, pc = Point{3, Float64}(0.0, 0.0, 0.0)) where T <: Real
     return [pc + Point{3, Float64}(r*cos(t),r*sin(t),0) for t in circlerange(n;dir=dir)]
 end
@@ -7469,11 +7517,15 @@ hood" but features defaults that are common for mesh visualisation and geometry
 processing. Optional inputs include the full set for `poly`. 
 """
 function meshplot!(ax, F::Vector{NgonFace{N,Int}}, V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.001f0, color=:white, strokewidth=0.5f0, shading=true, strokecolor=:black, kwargs...) where N where NV where TV<:Real
-    if N == 2 # Edges, use wireframe
+    if N == 2 # Edges, throw error
         throw(ArgumentError("Edge mesh detected. Use edgeplot! since meshplot! is for face based meshes."))
     else
-        return poly!(ax, GeometryBasics.Mesh(V, F); color=color, shading = shading, stroke_depth_shift=stroke_depth_shift, strokewidth=strokewidth, strokecolor=strokecolor, kwargs...)
+      return poly!(ax, GeometryBasics.Mesh(V, F); color=color, shading = shading, stroke_depth_shift=stroke_depth_shift, strokewidth=strokewidth, strokecolor=strokecolor, kwargs...)
     end
+end
+
+function meshplot!(ax, F::Vector{NgonFace{M,Int} where M}, V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.001f0, color=:white, strokewidth=0.5f0, shading=true, strokecolor=:black, kwargs...) where NV where TV<:Real
+    return poly!(ax, GeometryBasics.Mesh(V, F); color=color, shading = shading, stroke_depth_shift=stroke_depth_shift, strokewidth=strokewidth, strokecolor=strokecolor, kwargs...)
 end
 
 function meshplot!(ax, f::NgonFace{N,Int}, V::Vector{Point{NV,TV}}; kwargs...) where N where NV where TV<:Real
@@ -7550,7 +7602,7 @@ function meshdual(F,V)
         append!(V_dual,simplexcenter(L_boundary,V)) # Add mid-edge points
         append!(V_dual,V[boundaryNodeIndices]) # Add boundary points
     end 
-    F_dual = Vector{NgonFace}(undef,length(V))
+    F_dual = Vector{NgonFace{N,Int} where N}(undef,length(V))
     for i = 1:length(V)
         faceSet = con_V2F[i]
         iBoundary = findfirst(ind-> ind==i,boundaryNodeIndices)
@@ -8260,7 +8312,7 @@ Computes polygon centroid
 This function takes in a polygon defined by the point vector `V` and returns the
 centroid `C`. 
 """
-function polycentroid(V::Vector{Point{ND,TV}}) where ND where TV<:Real        
+function polycentroid(V::AbstractVector{Point{ND,TV}}) where ND where TV<:Real        
     N = length(V)
     C = zero(Point{ND,TV})
     W = 0.0
@@ -8270,6 +8322,28 @@ function polycentroid(V::Vector{Point{ND,TV}}) where ND where TV<:Real
         C += ((V[q]+V[mod1(q+1,N)])/2.0) * w
     end  
     return C./W
+end
+
+"""
+    facecentroid(f::NgonFace{N,T}, V::Vector{Point{ND,TV}}) where N where T<:Integer where ND where TV<:Real
+    facecentroid(F::Union{AbstractVector{NgonFace{M,T}}, AbstractVector{NgonFace{N, T} where N}, AbstractVector{NgonFace}}, V::Vector{Point{ND,TV}}) where {M, ND} where T<:Integer where TV<:Real
+
+Computes face centroid
+
+# Description
+This function takes in a face `f` for vector of faces `F`, and the vertices `V`
+and returns the face centroid(s). 
+"""
+function facecentroid(f::NgonFace{N,T}, V::Vector{Point{ND,TV}}) where N where T<:Integer where ND where TV<:Real
+    return polycentroid(V[f])
+end
+
+function facecentroid(F::Union{AbstractVector{NgonFace{M,T}}, AbstractVector{NgonFace{N, T} where N}, AbstractVector{NgonFace}}, V::Vector{Point{ND,TV}}) where {M, ND} where T<:Integer where TV<:Real
+    VC = Vector{eltype(V)}(undef,length(F))
+    for (i,f) in enumerate(F)
+        VC[i] = polycentroid(V[f])
+    end    
+    return VC
 end
 
 """
@@ -8840,7 +8914,7 @@ would "fix" the label list C to once again correspond to F.
 
 # function remove_snapped_faces!(F::AbstractVector{NgonFace{N,T} where N}) where N where T<:Integer
 
-function remove_snapped_faces!(F::Union{AbstractVector{NgonFace{M,T}}, AbstractVector{NgonFace{N, T} where N}}) where M where T<:Integer
+function remove_snapped_faces!(F::Union{AbstractVector{NgonFace{M,T}}, AbstractVector{NgonFace{N, T} where N}, AbstractVector{NgonFace}}) where M where T<:Integer
     indRemove = Vector{Int}()
     for (i,f) in enumerate(F)
         if !isunique(f)

@@ -12,7 +12,7 @@ This demo shows the use of the dualclag function.
 
 GLMakie.closeall()
 for testCase = 1:12
-    if testCase == 1 # SIngle triangle
+    if testCase == 1 # Single hexagon
         n = 6
         V = circlepoints(1.0,n; dir=:acw)
         # push!(V,eltype(V)(0.0,0.0,0.0))
@@ -76,7 +76,7 @@ for testCase = 1:12
     fig = Figure(size = (1200,1200))
     ax1 = AxisGeom(fig[1, 1], title = "dual surface")
     hp1 = meshplot!(ax1, F, V; color=(:white,0.6f0), transparency=true, strokewidth=0.25f0)
-    hp2 = meshplot!(ax1, GeometryBasics.Mesh(V_dual,F_dual); transparency=true, color=c, depth_shift = -0.02f0, stroke_depth_shift = -0.03f0, strokewidth=2.0f0)
+    hp2 = meshplot!(ax1, F_dual, V_dual; transparency=true, color=c, depth_shift = -0.02f0, stroke_depth_shift = -0.03f0, strokewidth=2.0f0)
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")
