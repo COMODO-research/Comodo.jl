@@ -756,9 +756,9 @@ Comodo.hermiteSegment
 Comodo.polycentroid
 ```
 
-## `facecentroid!`
+## `facecentroid`
 ```@docs 
-Comodo.facecentroid!
+Comodo.facecentroid
 ```
 
 ## `curve2edges`
