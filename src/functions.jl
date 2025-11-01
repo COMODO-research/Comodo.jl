@@ -8911,9 +8911,6 @@ removed faces. This list of indices is useful for instance to remove quantities
 related to faces, such as a label list `C`. Using `deleteat!(C, indRemove)` one 
 would "fix" the label list C to once again correspond to F. 
 """
-
-# function remove_snapped_faces!(F::AbstractVector{NgonFace{N,T} where N}) where N where T<:Integer
-
 function remove_snapped_faces!(F::Union{AbstractVector{NgonFace{M,T}}, AbstractVector{NgonFace{N, T} where N}, AbstractVector{NgonFace}}) where M where T<:Integer
     indRemove = Vector{Int}()
     for (i,f) in enumerate(F)
