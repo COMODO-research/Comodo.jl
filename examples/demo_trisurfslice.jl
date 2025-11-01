@@ -53,8 +53,7 @@ for testCase = 1:3
     plateElem = (1,1)
     FG1,VG1 = quadplate(plateDim,plateElem)
     VGn = [GeometryBasics.Point{3, Float64}(R'*v)+p for v ∈ VG1]
-    MG = GeometryBasics.Mesh(VGn,FG1)
-
+    
     fig = Figure(size=(800,800))
 
     ax1 = AxisGeom(fig[1, 1], title = "")    
@@ -65,7 +64,7 @@ for testCase = 1:3
     ax2 = AxisGeom(fig[1, 3], title = "A sliced mesh")    
     hp4 = meshplot!(ax2, Fn[Cn.<=0], Vn)
 
-    stepRange = range(-s,s,100)
+    stepRange = range(-s, s, 500)
     hSlider = Slider(fig[2, :], range = stepRange, startvalue = 0,linewidth=30)
 
     on(hSlider.value) do stepIndex 

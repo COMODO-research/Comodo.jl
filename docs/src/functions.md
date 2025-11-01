@@ -805,3 +805,8 @@ Comodo.hexvolume
 ```@docs 
 Comodo.isunique
 ```
+
+## `remove_snapped_faces!`
+```@docs 
+Comodo.remove_snapped_faces!
+```

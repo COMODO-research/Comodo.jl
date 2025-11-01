@@ -82,6 +82,6 @@ export cart2bary, bary2cart, barycoord, intriangle
 export spacing2numsteps, pointspacingmax, pointspacingmin, hexcylinder
 export equilateraltriangle, hermiteSegment, subpenta, polycentroid, curve2edges, subtri_dual, rhombicdodecahedron2hex
 export surface_centroid, hexahedronElement, hex2tet, triplyperiodicminimal, triplyperiodicminimal_sheet, tpms, tpms_sheet
-export pointsvd, basisGramSchmidt, basisGramSchmidt!, hexvolume, isunique
+export pointsvd, basisGramSchmidt, basisGramSchmidt!, hexvolume, isunique, remove_snapped_faces!
 
 end # module

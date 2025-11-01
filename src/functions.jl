@@ -3082,6 +3082,12 @@ function trisurfslice(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}},n = Ve
         end
     end    
     Fn,Vn,_ = remove_unused_vertices(Fn,Vn)
+    Fn, Vn = mergevertices(Fn, Vn) # This will snap nodes that are too close (collapsed triangles) together
+
+    # Check for collapsed triangles (these feature double indices after merging)
+    indRemove = remove_snapped_faces!(Fn)
+    deleteat!(Cn, indRemove)
+
     return Fn,Vn,Cn
 end
 
@@ -8813,4 +8819,36 @@ function isunique(X)
         end        
     end
     return true # Return true as we made it through the whole of X
+end
+
+"""
+    remove_snapped_faces!(F::AbstractVector{NgonFace{N,T}}) where N where T<:Integer
+
+Removes collapsed edge faces
+
+# Description
+This function removes faces where the two nodes on an edge have been merged to 
+one. This can occur when `mergevertices` is used and two edge nodes are very 
+close. In this case the face features a repeated index. For instance in the case
+of a triangle face where nodes 2 and 3 have been merged it is possible that the 
+face becomes `TriangleFace{Int}(1,2,2)`. This function removes such faces from 
+the input fave vector `F`. The output `indRemove` features the indices of the 
+removed faces. This list of indices is useful for instance to remove quantities 
+related to faces, such as a label list `C`. Using `deleteat!(C, indRemove)` one 
+would "fix" the label list C to once again correspond to F. 
+"""
+
+# function remove_snapped_faces!(F::AbstractVector{NgonFace{N,T} where N}) where N where T<:Integer
+
+function remove_snapped_faces!(F::Union{AbstractVector{NgonFace{M,T}}, AbstractVector{NgonFace{N, T} where N}}) where M where T<:Integer
+    indRemove = Vector{Int}()
+    for (i,f) in enumerate(F)
+        if !isunique(f)
+            push!(indRemove,i)
+        end
+    end
+    if !isempty(indRemove)        
+        deleteat!(F, indRemove) # Remove collapsed faces            
+    end
+    return indRemove
 end

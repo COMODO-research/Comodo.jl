@@ -8753,6 +8753,32 @@ end
     @test B5 == [true, false]
 end
 
+@testset "remove_snapped_faces!" verbose=true begin
+    @testset "Triangles" begin
+        F = [TriangleFace{Int}(1,2,3), TriangleFace{Int}(1,2,2), TriangleFace{Int}(3,3,3), TriangleFace{Int}(5,6,7)]
+        Fc = deepcopy(F)
+        indRemove = remove_snapped_faces!(F)
+        @test F == [Fc[1], Fc[4]]
+        @test indRemove == [2,3]
+    end
+
+    @testset "Quads" begin
+        F = [QuadFace{Int}(1,2,3,4), QuadFace{Int}(1,2,2,3), QuadFace{Int}(3,3,3,3), QuadFace{Int}(5,6,7,8)]
+        Fc = deepcopy(F)
+        indRemove = remove_snapped_faces!(F)
+        @test F == [Fc[1], Fc[4]]
+        @test indRemove == [2,3]
+    end
+
+    @testset "Mixed" begin
+        F = [TriangleFace{Int}(1,2,3), QuadFace{Int}(1,2,2,3), TriangleFace{Int}(3,3,3), NgonFace{5,Int}(5,6,7,8,9)]
+        Fc = deepcopy(F)
+        indRemove = remove_snapped_faces!(F)
+        @test F == [Fc[1], Fc[4]]
+        @test indRemove == [2,3]
+    end
+end
+
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
 #     @testset "Demos" begin
