@@ -2919,7 +2919,7 @@ end
     eps_level = 1e-4
 
     # Single face/element
-    F1 = [[1,2,3,4,5,6]]
+    F1 = [NgonFace{6,Int}(1,2,3,4,5,6)]
     V1 = [Point3(rand(3)) for _=1:length(F1[1])]
 
     # A quad mesh featuring a variation in terms of face areas and vertex connectivity 
