@@ -1603,7 +1603,7 @@ end
     end
 
     @testset "linear" begin
-        Fn, Vn = subquad(F, V, 0; method=:Linear)
+        Fn, Vn = subquad(F, V, 0; method=:linear)
         @test Fn == F
         @test Vn == V
 
@@ -1666,6 +1666,24 @@ end
         @test length(Fn) == 4^n*length(F)        
         @test eltype(V) == eltype(Vn)  
         @test isapprox(Vn[ind], Point{3, Float64}[[1.0, 0.0, 0.0], [-0.5, -0.43301270189221924, 1.7320508075688776], [0.07897949218749989, -0.4936936811124668, 0.4330127018922194], [0.23168945312500022, 0.40129790439034785, 1.0825317547305486], [-0.482421875, -0.19620888054491178, 0.2165063509461097], [-0.25976562500000017, -0.6664336115059938, 1.515544456622768]], atol=eps_level)        
+    end
+
+    @testset "directions" begin
+        plateDim = [30.0, 30.0]
+        plateElem = [3, 3]
+        orientation = :up
+        F, V, Eb, Cb = quadplate(plateDim, plateElem; orientation=orientation)
+        Fn0, Vn0 = subquad(F, V, 1; method=:linear, direction=0)
+        Fn1, Vn1 = subquad(F, V, 1; method=:linear, direction=1)
+        Fn2, Vn2 = subquad(F, V, 1; method=:linear, direction=2)
+        ind = round.(Int,range(1,length(Vn1),6)) # Sample indices       
+
+        @test length(Fn0) == 4*length(F)
+        @test length(Fn1) == 2*length(F)
+        @test length(Fn2) == 2*length(F)
+
+        @test isapprox(Vn1[ind], Point{3, Float64}[[-15.0, -15.0, 0.0], [-15.0, 5.0, 0.0], [-10.0, -15.0, 0.0], [10.0, -5.0, 0.0], [15.0, -10.0, 0.0], [-15.0, 10.0, 0.0]], atol=eps_level)        
+        @test isapprox(Vn2[ind], Point{3, Float64}[[-15.0, -15.0, 0.0], [-15.0, 5.0, 0.0], [-10.0, -15.0, 0.0], [10.0, -5.0, 0.0], [15.0, -10.0, 0.0], [-15.0, 10.0, 0.0]], atol=eps_level)        
     end
 
     @testset "errors" begin
@@ -8817,6 +8835,31 @@ end
     end
 end
 
+@testset "faceedgelattice" verbose=true begin
+    @testset "Triangles" begin
+        nf = 3
+        F, V = geosphere(2, 1.0)
+        scaleFactor = 0.5
+        Fl, Vl = faceedgelattice(F, V, scaleFactor)
+        @test length(Fl) == length(F)*nf
+    end
+
+    @testset "Quads" begin
+        nf = 4
+        F, V = quadsphere(2, 1.0)
+        scaleFactor = 0.5
+        Fl, Vl = faceedgelattice(F, V, scaleFactor)
+        @test length(Fl) == length(F)*nf
+    end
+
+    @testset "Ngon (hexagon)" begin
+        nf = 6
+        F,V = hexagonmesh(1.0, (4,4))
+        scaleFactor = 0.5
+        Fl, Vl = faceedgelattice(F, V, scaleFactor)
+        @test length(Fl) == length(F)*nf
+    end
+end
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
 #     @testset "Demos" begin

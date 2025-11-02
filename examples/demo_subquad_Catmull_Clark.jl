@@ -32,7 +32,7 @@ meshplot!(ax2, Fn2, Vn2, strokewidth=3)
 
 ax3 = AxisGeom(fig[2, 1], title = "Refined n=3")
 hp1 = edgeplot!(ax3, F, V, linewidth=8,color=:red)
-meshplot!(ax3, Fn3, Vn3, strokewidth=3)
+hp2 = meshplot!(ax3, Fn3, Vn3, strokewidth=3)
 Legend(fig[2, 1][1,2],[hp1,hp2],["Initial","Refined"])
 
 ax4 = AxisGeom(fig[2, 2], title = "Refined n=3, distance to sphere")

@@ -28,6 +28,7 @@ for testCase = 1:3
         F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
         M = GeometryBasics.Mesh(V,F)
     end
+    
     ## Refine mesh using `subquad` and the default "linear" method
     Fn1,Vn1 = subquad(F, V, 1) # Split once 
     Fn2,Vn2 = subquad(F, V, 2) # Split twice

@@ -80,8 +80,10 @@ export delaunay2D, simplicialcomplex, alphacomplex, indices_faces_at_boundary_ed
 export rectanglepoints, squarepoints, rectangle, square, pizza
 export cart2bary, bary2cart, barycoord, intriangle
 export spacing2numsteps, pointspacingmax, pointspacingmin, hexcylinder
-export equilateraltriangle, hermiteSegment, subpenta, polycentroid, curve2edges, subtri_dual, rhombicdodecahedron2hex
-export surface_centroid, hexahedronElement, hex2tet, triplyperiodicminimal, triplyperiodicminimal_sheet, tpms, tpms_sheet
-export pointsvd, basisGramSchmidt, basisGramSchmidt!, hexvolume, isunique, remove_snapped_faces!, facecentroid
+export equilateraltriangle, hermiteSegment, subpenta, polycentroid, curve2edges
+export subtri_dual, rhombicdodecahedron2hex, surface_centroid, hexahedronElement, hex2tet
+export triplyperiodicminimal, triplyperiodicminimal_sheet, tpms, tpms_sheet
+export pointsvd, basisGramSchmidt, basisGramSchmidt!, hexvolume
+export isunique, remove_snapped_faces!, facecentroid, faceedgelattice
 
 end # module

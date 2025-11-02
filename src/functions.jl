@@ -1463,13 +1463,14 @@ spline approximation.
 # References
 1. [E. Catmull and J. Clark, _Recursively generated B-spline surfaces on arbitrary topological meshes_, Computer-Aided Design, vol. 10, no. 6, pp. 350-355, Nov. 1978, doi: 10.1016/0010-4485(78)90110-0](https://doi.org/10.1016/0010-4485(78)90110-0).
 """
-function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; method=:linear, constrain_boundary=false) where TF<:Integer where ND where TV <: Real
+function subquad(F::Vector{NgonFace{4,TF}}, V::Vector{Point{ND,TV}}, n::Int; method=:linear, constrain_boundary=false, direction=0) where TF<:Integer where ND where TV <: Real
     if iszero(n)
         return F,V
     elseif isone(n)
         # Get edges
         E = meshedges(F) # Non-unique edges
         Eu,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
+
         # Check for boundary edges        
         count_E2F = count_edge_face(F,Eu,indReverse)
         B_boundary = isone.(count_E2F)
@@ -1482,21 +1483,41 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
             treatBoundary = false
         end
 
-        con_F2E = con_face_edge(F,Eu,indReverse)
-        con_E2F = con_edge_face(F,Eu,indReverse)
-        con_V2E = con_vertex_edge(Eu,V)
-        con_V2F = con_vertex_face(F,V)
+        if iszero(direction)
+            con_F2E = con_face_edge(F,Eu,indReverse)
+        else 
+            function get_edgeset_indices(indReverse, nf, type_index)
+                return indReverse[(type_index-1)*nf+1:type_index*nf]
+            end
+            if direction == 1
+                ind_E1 = get_edgeset_indices(indReverse, length(F), 2)
+                ind_E2 = get_edgeset_indices(indReverse, length(F), 4)
+            elseif direction == 2
+                ind_E1 = get_edgeset_indices(indReverse, length(F), 1)
+                ind_E2 = get_edgeset_indices(indReverse, length(F), 3)
+            end
+        end
+
+        if method ==:Catmull_Clark
+            con_E2F = con_edge_face(F,Eu,indReverse)
+            con_V2E = con_vertex_edge(Eu,V)
+            con_V2F = con_vertex_face(F,V)
+        end
 
         # Define vertices
         if method ==:linear
             Ve = simplexcenter(Eu,V) # Mid edge points
-            Vf = simplexcenter(F,V)  # Mid face points
-            Vn = [V;Ve;Vf] # Joined point set
+            if direction == 0 
+                Vf = simplexcenter(F,V)  # Mid face points
+                Vn = [V; Ve; Vf] # Joined point set
+            else
+                Vn = [V; Ve;] # Joined point set
+            end
         elseif method ==:Catmull_Clark
             # Mid face points
             Vf = simplexcenter(F,V) # Mid face points
             Ve_mid = simplexcenter(Eu,V) # Mid edge points
-
+            
             # Edge points 
             Ve = Vector{Point{ND,TV}}(undef,length(Eu)) # Initialize edge points
             for i in eachindex(Eu)      
@@ -1506,7 +1527,7 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
                     Ve[i] = (mean(Vf[con_E2F[i]],dims=1)[1] .+ Ve_mid[i])./2.0
                 end
             end
-
+            
             # Vertex points 
             Vv = deepcopy(V) # Initialize vertex points
             for (i,v_i) in enumerate(V) # Loop over all vertices
@@ -1522,7 +1543,12 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
                 end
             end
 
-            Vn = [Vv;Ve;Vf] # Joined point set
+            if direction == 0 
+                Vn = [Vv; Ve; Vf] # Joined point set
+            else
+                # Ve = simplexcenter(Eu,Vv) # Mid edge points
+                Vn = [Vv; Ve] # Joined point set
+            end
         else
             throw(ArgumentError("Incorrect method :$method. Use :linear or :Catmull_Clark"))
         end
@@ -1532,17 +1558,34 @@ function subquad(F::Vector{NgonFace{4,TF}},V::Vector{Point{ND,TV}},n::Int; metho
         nv = length(V)
         nf = length(F)
         ne = length(Eu)
-        for (i,f_i) in enumerate(F)            
-            Fn[i]      = QuadFace{TF}(          f_i[1], con_F2E[i][1]+nv,          i+nv+ne, con_F2E[i][4]+nv)        
-            Fn[i+nf]   = QuadFace{TF}(con_F2E[i][1]+nv,           f_i[2], con_F2E[i][2]+nv, i+nv+ne)                
-            Fn[i+2*nf] = QuadFace{TF}(         i+nv+ne, con_F2E[i][2]+nv,           f_i[3], con_F2E[i][3]+nv)    
-            Fn[i+3*nf] = QuadFace{TF}(con_F2E[i][4]+nv,          i+nv+ne, con_F2E[i][3]+nv, f_i[4])                                        
+        for (i,f_i) in enumerate(F)
+            if direction == 0            
+                Fn[i]      = QuadFace{TF}(          f_i[1], con_F2E[i][1]+nv,          i+nv+ne, con_F2E[i][4]+nv)        
+                Fn[i+nf]   = QuadFace{TF}(con_F2E[i][1]+nv,           f_i[2], con_F2E[i][2]+nv, i+nv+ne)                
+                Fn[i+2*nf] = QuadFace{TF}(         i+nv+ne, con_F2E[i][2]+nv,           f_i[3], con_F2E[i][3]+nv)    
+                Fn[i+3*nf] = QuadFace{TF}(con_F2E[i][4]+nv,          i+nv+ne, con_F2E[i][3]+nv, f_i[4])            
+            elseif direction == 1
+                Fn = Vector{QuadFace{TF}}(undef,length(F)*2)        
+                for (i,f_i) in enumerate(F)            
+                    f1 = QuadFace{TF}(f_i[1], f_i[2], ind_E1[i]+nv, ind_E2[i]+nv)
+                    f2 = QuadFace{TF}(ind_E2[i]+nv, ind_E1[i]+nv, f_i[3], f_i[4])                
+                    Fn[i] = f1
+                    Fn[i+nf] = f2
+                end
+            elseif direction == 2
+                Fn = Vector{QuadFace{TF}}(undef,length(F)*2)        
+                for (i,f_i) in enumerate(F)            
+                    f1 = QuadFace{TF}(ind_E1[i]+nv, f_i[2], f_i[3], ind_E2[i]+nv)
+                    f2 = QuadFace{TF}(f_i[1], ind_E1[i]+nv, ind_E2[i]+nv, f_i[4])                
+                    Fn[i] = f1
+                    Fn[i+nf] = f2
+                end
+            end
         end
-
         return Fn,Vn
     elseif n>1
         for _ =1:n
-            F,V = subquad(F,V,1;method=method, constrain_boundary=constrain_boundary)
+            F,V = subquad(F, V, 1; method=method, constrain_boundary=constrain_boundary, direction=direction)
         end
         return F,V
     else
@@ -8922,4 +8965,20 @@ function remove_snapped_faces!(F::Union{AbstractVector{NgonFace{M,T}}, AbstractV
         deleteat!(F, indRemove) # Remove collapsed faces            
     end
     return indRemove
+end
+
+
+function faceedgelattice(F1::Vector{NgonFace{N,TF}}, V1::Vector{Point{ND,TV}}, scaleFactor) where N where TF<:Integer where ND where TV <: Real
+    F1n,V1n = separate_vertices(F1,V1; scaleFactor = scaleFactor)    
+    Fq = Vector{QuadFace{TF}}(undef,N*length(F1))
+    Vq = [V1; V1n]
+    c = 1
+    n = length(V1)
+    for i in eachindex(F1)
+        for j = 1:N
+            Fq[c] = QuadFace{TF}(F1[i][j], F1[i][mod1(j+1,N)], F1n[i][mod1(j+1,N)]+n, F1n[i][mod1(j,N)]+n)
+            c+=1
+        end
+    end
+    return Fq, Vq
 end
