@@ -39,13 +39,15 @@ for testCase = 1:6
         R = ([1],)
         P = (pointSpacing)
     elseif testCase == 4 
-        w = 4.0
-        h = 8.0
+        w = 12.0
+        h = 6.0
         pointSpacing = 1.0
-        V = rectanglepoints(w,h,pointSpacing; dir=:acw)
-        
-        VT = (V,)
-        R = ([1],)
+        V1 = rectanglepoints(w,h,pointSpacing; dir=:acw)
+        r = 1.5
+        n = ceil(Int, (2*pi*r)/pointSpacing)
+        V2 = circlepoints(r, n; dir=:acw)    
+        VT = (V1,V2,)
+        R = ([1,2],)
         P = (pointSpacing)
     elseif testCase == 5
         rFun1(t) = 12.0 + 3.0.*sin(5*t)
