@@ -571,6 +571,11 @@ Comodo.elementEdges
 Comodo.tet4_tet10
 ```
 
+## `tet4_tet15`
+```@docs 
+Comodo.tet4_tet15
+```
+
 ## `penta6_penta15`
 ```@docs 
 Comodo.penta6_penta15

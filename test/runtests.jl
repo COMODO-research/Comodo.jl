@@ -5682,6 +5682,20 @@ end
         @test F[1] == [3, 6, 2, 5, 1, 7]
     end
 
+    @testset "Tet15" begin
+        E = [Tet15{Int}(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)]    
+        F = element2faces(E)
+        @test length(F) == length(E)*4
+        @test isa(F,Vector{NgonFace{6, Int}})
+        @test F[1] == [3, 6, 2, 5, 1, 7]
+
+        E = [Tet15{Int}(collect(1:15)), Tet15{Int}(collect(16:30)) ]    
+        F = element2faces(E)
+        @test length(F) == length(E)*4
+        @test isa(F,Vector{NgonFace{6, Int}})
+        @test F[1] == [3, 6, 2, 5, 1, 7]
+    end
+
     @testset "errors" begin
         E = [Hex20{Int}(collect(1:20))]                
         @test_throws Exception element2faces(E)
@@ -7308,6 +7322,39 @@ end
     ind = round.(Int,range(1,length(V_tet10),6))    
     @test E_tet10 == Tet10{Int64}[[1, 2, 3, 4, 10, 11, 12, 13, 14, 15], [2, 3, 4, 5, 11, 15, 14, 16, 17, 18], [6, 7, 8, 9, 19, 20, 21, 22, 23, 24]]
     @test V_tet10[ind] == Point{3, Float64}[[-1.0, 0.0, 0.0], [2.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.75, 0.5], [3.0, 0.0, 0.0], [3.0, 0.75, 0.5]]   
+end
+
+@testset "tet4_tet15" verbose = true begin               
+    # Test single element 
+    E = [Tet4{Int}(1,2,3,4)]
+    V = [Point{3,Float64}(-1.0,0.0,0.0),
+         Point{3,Float64}( 1.0,0.0,0.0),
+         Point{3,Float64}( 0.0,1.0,0.0),
+         Point{3,Float64}( 0.0,0.5,1.0),         
+         ]
+    E_tet15, V_tet15 = tet4_tet15(E,V)
+    
+    @test typeof(E_tet15) <: Vector{Tet15{Int}} 
+    @test E_tet15 == Tet15{Int64}[[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
+    @test V_tet15 == Point{3, Float64}[[-1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.5, 1.0], [0.0, 0.0, 0.0], [0.5, 0.5, 0.0], [-0.5, 0.5, 0.0], [-0.5, 0.25, 0.5], [0.5, 0.25, 0.5], [0.0, 0.75, 0.5], [0.0, 0.3333333333333333, 0.0], [0.0, 0.16666666666666666, 0.3333333333333333], [0.3333333333333333, 0.5, 0.3333333333333333], [-0.3333333333333333, 0.5, 0.3333333333333333], [0.0, 0.375, 0.25]]
+
+    # Test multiple elements 
+    E = [Tet4{Int}(1,2,3,4),Tet4{Int}(2,3,4,5),Tet4{Int}(6,7,8,9)]
+    V = [Point{3,Float64}(-1.0,0.0,0.0),
+         Point{3,Float64}( 1.0,0.0,0.0),
+         Point{3,Float64}( 0.0,1.0,0.0),
+         Point{3,Float64}( 0.0,0.5,1.0),
+         Point{3,Float64}( 1.0,1.0,1.0),
+         Point{3,Float64}( 2.0,0.0,0.0),
+         Point{3,Float64}( 4.0,0.0,0.0),
+         Point{3,Float64}( 3.0,1.0,0.0),
+         Point{3,Float64}( 3.0,0.5,1.0),
+         ]
+    E_tet15, V_tet15 = tet4_tet15(E,V)
+    
+    ind = round.(Int,range(1,length(V_tet15),6))    
+    @test E_tet15 == Tet15{Int64}[[1, 2, 3, 4, 10, 11, 12, 13, 14, 15, 25, 26, 27, 28, 36], [2, 3, 4, 5, 11, 15, 14, 16, 17, 18, 27, 29, 30, 31, 37], [6, 7, 8, 9, 19, 20, 21, 22, 23, 24, 32, 33, 34, 35, 38]]
+    @test V_tet15[ind] == Point{3, Float64}[[-1.0, 0.0, 0.0], [3.0, 1.0, 0.0], [1.0, 0.5, 0.5], [3.5, 0.25, 0.5], [0.6666666666666666, 0.5, 0.6666666666666666], [3.0, 0.375, 0.25]]
 end
 
 @testset "penta6_penta15" verbose = true begin                

@@ -72,7 +72,7 @@ export rhombicdodecahedronfoam, kelvinfoam, truncatedoctahedron, ntrapezohedron,
 export mag, indexmap!, indexmap, minp, maxp, spacing2numvertices
 export joingeom, quadbox, tribox, tetbox, pad3, getisosurface
 export randangle, stepfunc, perlin_noise, removepoints, inpolygon
-export elementEdges, tet4_tet10, penta6_penta15
+export elementEdges, tet4_tet10, tet4_tet15, penta6_penta15
 export findindexin, hexagonline, hexagongrid, hexagonmesh, fromtomesh, fromtomesh!
 export vectorpair_angle, triangulateboundary, faceinteriorpoint, hexsphere, hexspherehollow, circumcircle, incircle
 export meshplot!, edgeplot!, meshdual

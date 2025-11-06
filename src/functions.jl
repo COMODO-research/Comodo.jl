@@ -4856,6 +4856,16 @@ function element2faces(E::Vector{<: AbstractElement{N, T}}) where N where T
             F[ii+2] = NgonFace{6,T}(e[2],e[6],e[3],e[10],e[4],e[9 ])
             F[ii+3] = NgonFace{6,T}(e[3],e[7],e[1],e[8 ],e[4],e[10])
         end
+    elseif element_type <: Tet15{T}
+        nf = 4        
+        F = Vector{NgonFace{6,T}}(undef,length(E)*nf)
+        for (i,e) in enumerate(E)
+            ii = 1 + (i-1)*nf 
+            F[ii  ] = NgonFace{6,T}(e[3],e[6],e[2],e[5 ],e[1],e[7 ])
+            F[ii+1] = NgonFace{6,T}(e[1],e[5],e[2],e[9 ],e[4],e[8 ])
+            F[ii+2] = NgonFace{6,T}(e[2],e[6],e[3],e[10],e[4],e[9 ])
+            F[ii+3] = NgonFace{6,T}(e[3],e[7],e[1],e[8 ],e[4],e[10])
+        end
     elseif element_type <: Hex8{T}
         nf = 6
         F = Vector{QuadFace{T}}(undef,length(E)*nf)
@@ -6937,7 +6947,7 @@ elements, defined by the output element vector `E_tet10` and vertices
 """
 function tet4_tet10(E,V)
     tetEdges = elementEdges(E)
-    tetEdgesUnique,indReverse = gunique(tetEdges; return_unique=Val(true), return_inverse=Val(true), sort_entries=false)
+    tetEdgesUnique,indReverse = gunique(tetEdges; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
     Vn = simplexcenter(tetEdgesUnique,V)
     V_tet10 = [V; Vn]  # Old and new mid-edge points          
     E_tet10 = Vector{Tet10{Int}}(undef,length(E))        
@@ -6947,6 +6957,44 @@ function tet4_tet10(E,V)
     end
     return E_tet10, V_tet10
 end
+
+"""
+    tet4_tet10(E,V)
+
+Converts linear to quadratic tetrahedra
+
+# Description
+This function converts the input linear 4-noded tetrahedral elements, defined by 
+the element vector `E` and vertices `V`, to 15 noded quadratic tetrahedral 
+elements, defined by the output element vector `E_tet15` and vertices 
+`V_tet15`.
+"""
+function tet4_tet15(E,V)
+    tetEdges = elementEdges(E)
+    tetEdgesUnique, indReverseEdges = gunique(tetEdges; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
+
+    tetFaces = element2faces(E)
+    tetFacesUnique, indReverseFaces = gunique(tetFaces; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
+    
+    Vn1 = simplexcenter(tetEdgesUnique,V)
+    Vn2 = simplexcenter(tetFacesUnique,V)
+    Vn3 = simplexcenter(E,V)
+    
+    V_tet15 = [V; Vn1; Vn2; Vn3;]  # Original and the new mid-element, mid-edge, and mid-face points          
+    E_tet15 = Vector{Tet15{Int}}(undef,length(E))        
+    for (i,e) in enumerate(E)
+        ind_Vn1 = indReverseEdges[1+(i-1)*6:i*6] .+ length(V)
+        ind_Vn2 = indReverseFaces[1+(i-1)*4:i*4] .+ (length(V)+length(Vn1))
+        ind_Vn3 = i + (length(V)+length(Vn1)+length(Vn2))
+        E_tet15[i] = Tet15{Int}(e[1], e[2], e[3], e[4], # Original corners
+                                ind_Vn1[1], ind_Vn1[2], ind_Vn1[3], ind_Vn1[4], ind_Vn1[5], ind_Vn1[6], # Mid-edge points
+                                ind_Vn2[1], ind_Vn2[2], ind_Vn2[3], ind_Vn2[4], # Mid-face points
+                                ind_Vn3 # Mid-element point
+                                )
+    end
+    return E_tet15, V_tet15
+end 
+
 
 """
     penta6_penta15(E,V)
