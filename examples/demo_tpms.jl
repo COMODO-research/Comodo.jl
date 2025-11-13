@@ -25,7 +25,7 @@ hp3 = meshplot!(ax3, F1, V1, color=:brown, strokewidth=0.0)
 hp4 = meshplot!(ax3, F2, V2, color=(:white, 0.5), strokewidth=0.0, transparency=true)
 
 stepRange1 = range(-1.5, 1.5, 50)
-hSlider1 = Slider(fig[2, :], range = stepRange1, startvalue = s, linewidth=30)
+hSlider1 = Slider(fig[2, :], range = stepRange1, startvalue = level, linewidth=30)
 
 function update_iso_level( level)
     F1, V1 = tpms(type; x=x, level=level, cap = true, padValue=1e8, side=:positive)  
@@ -52,6 +52,5 @@ on(hSlider1.value) do level
     update_iso_level(level)
     ax3.title = "level=$level"
 end
-
 
 screen = display(GLMakie.Screen(), fig)
