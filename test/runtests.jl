@@ -3676,6 +3676,26 @@ end
     @test isempty(Vn)
 end
 
+@testset "remove_unused_vertices!" begin
+    F, V = geosphere(2, 1.0)
+    VC = simplexcenter(F, V)
+    F = [F[i] for i in findall(map(v -> v[3] > 0, VC))] # Remove some faces
+    Fn = deepcopy(F)
+    Vn = deepcopy(V)
+    indFix  = remove_unused_vertices!(Fn, Vn)
+
+    @test Fn isa Vector{TriangleFace{Int}}
+    @test Vn isa Vector{Point3{Float64}}
+    @test length(F) == length(Fn)
+    @test length(Vn) ==  maximum(reduce(vcat,Fn))
+    
+    # Check empty results
+    _, V = geosphere(2, 1.0)
+    indFix  = remove_unused_vertices!(Vector{TriangleFace{Int}}(), V)
+    @test isempty(V)
+    @test isempty(indFix)    
+end
+
 @testset "trisurfslice" begin
     eps_level = 1e-2
 
@@ -8907,6 +8927,122 @@ end
         @test length(Fl) == length(F)*nf
     end
 end
+
+@testset "subtri_centre" verbose=true begin
+    F = [TriangleFace{Int}(1,2,3)]
+    V = [Point{3,Float64}(-1.0, 0.0, 0.0), 
+            Point{3,Float64}( 1.0, 0.0, 0.0), 
+            Point{3,Float64}( 0.0, 1.0, 0.0)]        
+    Fn, Vn = subtri_centre(F, V)
+    @test length(Fn) == length(F)*3
+    @test Vn[4] == mean(V)
+    
+    F, V = geosphere(1, 1.0)
+    Fn, Vn = subtri_centre(F, V)
+    @test length(Fn) == length(F)*3 
+    
+    F, V = geosphere(0, 1.0)
+    n = 3
+    Fn, Vn = subtri_centre(F, V, n)
+    @test length(Fn) == length(F)*3^n 
+end
+
+@testset "removethreeconnected" verbose=true begin    
+    V = [Point{3, Float64}(-1.0, -0.5, 0.0), 
+        Point{3, Float64}( 1.0, -0.5, 0.0),
+        Point{3, Float64}( 0.0,  1.0, 0.0),
+        Point{3, Float64}( 0.0,  0.0, 0.0),
+        Point{3, Float64}( 2.0,  0.0, 0.0),
+        ]
+
+    F = [TriangleFace{Int}(1,2,4),
+        TriangleFace{Int}(2,3,4),
+        TriangleFace{Int}(3,1,4),
+        TriangleFace{Int}(3,2,5),
+        ]
+
+    Fn, Vn = removethreeconnected(F, V)
+    @test length(Fn) == 2
+    @test length(Vn) == 4
+
+    F, V = subtri_centre(F, V, 3)
+    Fn, Vn = removethreeconnected(F, V)
+    @test length(Fn) == 2
+    @test length(Vn) == 4
+
+    V = [Point{3, Float64}(-1.0, -0.5, 0.0), 
+        Point{3, Float64}( 1.0, -0.5, 0.0),
+        Point{3, Float64}( 0.0,  1.0, 0.0),
+        Point{3, Float64}( 0.0,  0.0, 0.0),
+        Point{3, Float64}( 2.0,  0.0, 0.0),
+        ]
+
+    F = [TriangleFace{Int}(1,2,4),
+        TriangleFace{Int}(2,3,4),
+        TriangleFace{Int}(3,1,4),
+        TriangleFace{Int}(3,2,5),
+        ]
+    Fc = deepcopy(F)
+    Vc = deepcopy(V)
+    F, V = subtri_centre(F, V, 1)
+    Fn, Vn = removethreeconnected(F, V; n=1)
+    @test Fn == Fc
+    @test Vn == Vc        
+end
+
+@testset "removethreeconnected!" verbose=true begin    
+    V = [Point{3, Float64}(-1.0, -0.5, 0.0), 
+        Point{3, Float64}( 1.0, -0.5, 0.0),
+        Point{3, Float64}( 0.0,  1.0, 0.0),
+        Point{3, Float64}( 0.0,  0.0, 0.0),
+        Point{3, Float64}( 2.0,  0.0, 0.0),
+        ]
+
+    F = [TriangleFace{Int}(1,2,4),
+        TriangleFace{Int}(2,3,4),
+        TriangleFace{Int}(3,1,4),
+        TriangleFace{Int}(3,2,5),
+        ]
+
+    Fn = deepcopy(F)
+    Vn = deepcopy(V)
+    removethreeconnected!(Fn, Vn)
+    @test length(Fn) == 2
+    @test length(Vn) == 4
+
+    F, V = subtri_centre(F, V, 3)
+    Fn = deepcopy(F)
+    Vn = deepcopy(V)
+    removethreeconnected!(Fn, Vn)
+    @test length(Fn) == 2
+    @test length(Vn) == 4
+
+    V = [Point{3, Float64}(-1.0, -0.5, 0.0), 
+        Point{3, Float64}( 1.0, -0.5, 0.0),
+        Point{3, Float64}( 0.0,  1.0, 0.0),
+        Point{3, Float64}( 0.0,  0.0, 0.0),
+        Point{3, Float64}( 2.0,  0.0, 0.0),
+        ]
+
+    F = [TriangleFace{Int}(1,2,4),
+        TriangleFace{Int}(2,3,4),
+        TriangleFace{Int}(3,1,4),
+        TriangleFace{Int}(3,2,5),
+        ]
+    Fc = deepcopy(F)
+    Vc = deepcopy(V)
+    F, V = subtri_centre(F, V, 1)
+        Fn = deepcopy(F)
+    Vn = deepcopy(V)
+    removethreeconnected!(Fn, Vn; n=1)
+    @test Fn == Fc
+    @test Vn == Vc        
+end
+
+# Fn = deepcopy(F)
+#     Vn = deepcopy(V)
+#     removethreeconnected!(Fn, Vn)
+
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
 #     @testset "Demos" begin

@@ -54,7 +54,7 @@ export subtri, subquad, geosphere,hemisphere,quad2tri
 export icosahedron, tetrahedron, cube, dodecahedron, octahedron, platonicsolid
 export tofaces, topoints, togeometrybasics_mesh
 export triplate, quadplate, subquadsphere, quadsphere, smoothmesh_laplacian, smoothmesh_hc
-export mergevertices, separate_vertices, remove_unused_vertices
+export mergevertices, separate_vertices, remove_unused_vertices, remove_unused_vertices!
 export edgecrossproduct, facearea, facenormal, vertexnormal, normalizevector
 export con_edge_face, con_edge_edge, con_face_edge, con_face_face, con_face_face_v, con_vertex_edge, con_vertex_vertex_f
 export con_vertex_face, con_vertex_vertex, con_vertex_simplex, meshconnectivity
@@ -84,6 +84,6 @@ export equilateraltriangle, hermiteSegment, subpenta, polycentroid, curve2edges
 export subtri_dual, rhombicdodecahedron2hex, surface_centroid, hexahedronElement, hex2tet
 export triplyperiodicminimal, triplyperiodicminimal_sheet, tpms, tpms_sheet
 export pointsvd, basisGramSchmidt, basisGramSchmidt!, hexvolume
-export isunique, remove_snapped_faces!, facecentroid, faceedgelattice
+export isunique, remove_snapped_faces!, facecentroid, faceedgelattice, subtri_centre, removethreeconnected, removethreeconnected!
 
 end # module

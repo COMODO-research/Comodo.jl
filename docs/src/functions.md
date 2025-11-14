@@ -306,6 +306,31 @@ Comodo.subquadsphere
 Comodo.loftlinear
 ```
 
+## `grid2surf`
+```@docs
+Comodo.grid2surf
+```
+
+## `dirplot`
+```@docs
+Comodo.dirplot
+```
+
+## `dirplot`
+```@docs
+Comodo.dirplot
+```
+
+## `remove_unused_vertices`
+```@docs
+Comodo.remove_unused_vertices
+```
+
+## `remove_unused_vertices!`
+```@docs
+Comodo.remove_unused_vertices!
+```
+
 ## `pointspacingmean`
 ```@docs
 Comodo.pointspacingmean
@@ -841,3 +866,12 @@ Comodo.isunique
 Comodo.remove_snapped_faces!
 ```
 
+## `faceedgelattice`
+```@docs 
+Comodo.faceedgelattice
+```
+
+## `subtri_centre`
+```@docs 
+Comodo.subtri_centre
+```

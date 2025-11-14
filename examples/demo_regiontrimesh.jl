@@ -9,7 +9,7 @@ domain.
 
 GLMakie.closeall()
 
-for testCase = 1:6
+for testCase = 1:7
     if testCase == 1 # Batman curve
         n = 120
         V = batman(n; stepwise=true)
@@ -18,6 +18,8 @@ for testCase = 1:6
         VT = (V,)
         R = ([1],)
         P = (pointSpacing)
+        gridtYpe = :equilateral
+        numSmoothSteps = 25
     elseif testCase == 2 
         n = 50
         r = 2.0
@@ -27,8 +29,10 @@ for testCase = 1:6
         VT = (V,)
         R = ([1],)
         P = (pointSpacing)
+        gridtYpe = :equilateral
+        numSmoothSteps = 25
     elseif testCase == 3 
-        n = 100
+        n = 120
         r = 1.0
         rFun(t) = r + 0.5.*sin(6*t)
         V = circlepoints(rFun,n; dir=:acw)    
@@ -38,7 +42,19 @@ for testCase = 1:6
         VT = (V,)
         R = ([1],)
         P = (pointSpacing)
-    elseif testCase == 4 
+        gridtYpe = :equilateral
+        numSmoothSteps = 25
+    elseif testCase == 4
+        w = 40.0
+        h = 20.0
+        pointSpacing = 2.0
+        V1 = rectanglepoints(w, h, pointSpacing; dir=:acw) 
+        VT = (V1,)
+        R = ([1],)
+        P = (pointSpacing)
+        gridtYpe = :Cartesian
+        numSmoothSteps = 0
+    elseif testCase == 5 
         w = 12.0
         h = 6.0
         pointSpacing = 1.0
@@ -49,7 +65,9 @@ for testCase = 1:6
         VT = (V1,V2,)
         R = ([1,2],)
         P = (pointSpacing)
-    elseif testCase == 5
+        gridtYpe = :equilateral
+        numSmoothSteps = 25
+    elseif testCase == 6
         rFun1(t) = 12.0 + 3.0.*sin(5*t)
         n1 = 120
         V1 = circlepoints(rFun1,n1)
@@ -73,7 +91,9 @@ for testCase = 1:6
         VT = (V1,V2,V3,V4,V5,V6) # Curves
         R = ([1,2],[2,3,4,5,6],[4],[5]) # Regions 
         P = (1,0.6,0.2,0.3)  # Point spacings
-    elseif testCase == 6    
+        gridtYpe = :equilateral
+        numSmoothSteps = 25
+    elseif testCase == 7    
         n1 = 100
         r1 = 20.0
         V1 = circlepoints(r1,n1)
@@ -101,18 +121,20 @@ for testCase = 1:6
         VT = (V1,V2,V3,V4,V5) # Curves
         R = ([1,2,3],[2,4,5],[5]) # Regions 
         P = (1.5,0.75,0.5)  # Point spacings
+        gridtYpe = :equilateral
+        numSmoothSteps = 25
     end
 
     VTp = deepcopy(VT) # Copy for plotting
 
-    F,V,C = regiontrimesh(VT,R,P)
+    F,V,C = regiontrimesh(VT,R,P; gridtype=gridtYpe, numSmoothSteps=numSmoothSteps)
 
     # Visualisation
     Fp,Vp = separate_vertices(F,V) # Give each face its own point set 
     Cp = simplex2vertexdata(Fp,C) # Convert face color data to vertex color data 
 
     fig = Figure(size=(1200,1000))
-    ax1 = AxisGeom(fig[1, 1], title="Multi-region meshing", azimuth=-pi/2, elevation=pi/2)
+    ax1 = AxisGeom(fig[1, 1], title="Triangulation", azimuth=-pi/2, elevation=pi/2)
     hp1 = meshplot!(ax1, Fp, Vp, color=Cp, colormap=Makie.Categorical(Makie.Reverse(:Spectral)))    
     Colorbar(fig[1, 1][1, 2], hp1)
 

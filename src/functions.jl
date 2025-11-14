@@ -1895,13 +1895,14 @@ connected to each edges. If `E_uni` contains N edges then the output contains
 N such lists. For non-boundary edges each edge should connect to 2 faces. 
 Boundary edges connect to just 1 face.  
 """
-function con_edge_face(F,E_uni=nothing,indReverse=nothing)
+function con_edge_face(F, E_uni=nothing, indReverse=nothing, con_F2E=nothing)
     if isnothing(E_uni) || isnothing(indReverse)
         E = meshedges(F)
         E_uni,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)    
     end
-    con_F2E = con_face_edge(F,E_uni,indReverse)
-    
+    if isnothing(con_F2E)
+        con_F2E = con_face_edge(F,E_uni,indReverse)
+    end
     con_E2F = [Vector{Int}() for _ in 1:length(E_uni)]
     for i_f in eachindex(F)
         for i in con_F2E[i_f]
@@ -2479,7 +2480,6 @@ function quadplate(plateDim::Union{Vector{T},Tuple{T,T}}, plateElem::Union{Vecto
         end
     end
     
-    # Eb = boundaryedges(F) # Boundary edges
     indBottom = 1:1:(plateElem[1]+1)
     indRight = (plateElem[1]+1):(plateElem[1]+1):length(V)
     indTop = length(V):-1:1+plateElem[2]*(plateElem[1]+1)
@@ -2946,6 +2946,26 @@ function grid2surf(V::Union{Vector{Point{ND,TV}},Grid3D{TV}}, num_steps; face_ty
     return F
 end
 
+"""
+    dirplot(ax,V::Vector{Point{ND,TV1}},U::Union{Vector{Point{ND,TV2}},Vector{Vec{ND,TV2}}}; color=:black, linewidth=3, scaleval=1.0, style=:from, kwargs...) where ND where TV1 <: Real where TV2 <: Real
+    dirplot(ax,V::Union{Point{ND,TV1},Vec{ND,TV1}},U::Union{Point{ND,TV2},Vec{ND,TV2}}; color=:black,linewidth=3,scaleval=1.0,style=:from, kwargs...) where ND where TV1 <: Real where TV2 <: Real
+
+Plots direction vectors
+
+# Description 
+This function visualises direction vectors. Rather than arrows the directions 
+are visualised as lines. The line origins are defined by the point vector `V` 
+while the line vectors are defined by the points (or vectors) in the vector `U`. 
+The following optional keyword inputs are supported: 
+* `scaleval`, this sets the scaling used. The default is 1.0 such that lengths match the lengths in `U`
+* `style`, this sets how the direction is position. When using `:from` (default)
+the vectors depart from the origin. If instead `:to` is used then the vectors 
+arrive at the origin. Finally if `:through` is used the vector passes through 
+the origin. 
+* Other optional keyword arguments supported are those for Makie's `wireframe` 
+function, such as `color` and `linewidth`, the defaults for these are here set 
+to `:black` and `3` respectively. 
+"""
 function dirplot(ax,V::Vector{Point{ND,TV1}},U::Union{Vector{Point{ND,TV2}},Vector{Vec{ND,TV2}}}; color=:black, linewidth=3, scaleval=1.0, style=:from, kwargs...) where ND where TV1 <: Real where TV2 <: Real
     E = [LineFace{Int}(i,i+length(V)) for i in 1:length(V)]    
     if style==:from        
@@ -3061,7 +3081,22 @@ function quad2tri(F::Vector{QuadFace{TF}},V::Vector{Point{ND,TV}}; convert_metho
     return Ft
 end
 
-function remove_unused_vertices(F::Union{Vector{<: NgonFace},Vector{<: AbstractElement}},V::Vector{Point{ND,TV}}) where ND where TV<:Real
+"""
+    remove_unused_vertices(F::Union{Vector{<: NgonFace},Vector{<: AbstractElement}}, V::Vector{Point{ND,TV}}) where ND where TV<:Real
+    remove_unused_vertices(f::Union{NgonFace{N,TF}, AbstractElement{N,TF}}, V::Vector{Point{ND,TV}}) where N where ND where TF<:Integer where TV<:Real        
+
+Removes unused vertices
+
+# Description 
+This function removes unused points from the input mesh defined by the vector of 
+faces `F` (or individual face `f`) and vector of vertices `V`. The output 
+consists of the cleaned mesh given by `Fc` (or `fc`) and `Vc`, and also the 
+"fixing indices" `indFix`. The latter can be used to fix indices that were for 
+`V` previously to be the equivalent indices for the new vertex vector `Vc`, 
+e.g. `indFix[ind]` would map the indices in `ind` to be mapped from being for 
+`V` to being valid for `Vc`. 
+"""
+function remove_unused_vertices(F::Union{Vector{<: NgonFace},Vector{<: AbstractElement}}, V::Vector{Point{ND,TV}}) where ND where TV<:Real
     if isempty(F) # If the face set is empty, return all empty outputs
         return F, Vector{Point{ND,TV}}(), Vector{Int}()
     else # Faces not empty, so check which indices are used and shorten V if needed        
@@ -3074,7 +3109,7 @@ function remove_unused_vertices(F::Union{Vector{<: NgonFace},Vector{<: AbstractE
     end
 end
 
-function remove_unused_vertices(f::Union{NgonFace{N,TF}, AbstractElement{N,TF}},V::Vector{Point{ND,TV}}) where N where ND where TF<:Integer where TV<:Real        
+function remove_unused_vertices(f::Union{NgonFace{N,TF}, AbstractElement{N,TF}}, V::Vector{Point{ND,TV}}) where N where ND where TF<:Integer where TV<:Real        
     fc = convert(typeof(f), 1:N) # Fixed indices in f    
     indFix = zeros(Int,length(V))
     @views indFix[f] = fc
@@ -3082,7 +3117,33 @@ function remove_unused_vertices(f::Union{NgonFace{N,TF}, AbstractElement{N,TF}},
     return fc, Vc, indFix         
 end
 
-function trisurfslice(F::Vector{TriangleFace{TF}},V::Vector{Point{ND,TV}},n = Vec{3, Float64}(0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance = 0.0, output_type=:full) where TF<:Integer where ND where TV<:Real 
+"""
+    remove_unused_vertices!(F::Union{Vector{<: NgonFace},Vector{<: AbstractElement}},V::Vector{Point{ND,TV}}) where ND where TV<:Real
+
+Removes unused vertices
+
+# Description 
+This function is the same as `remove_unused_vertices`, except that it is only 
+for vectors of faces `F` and overwrites the input.  
+"""
+function remove_unused_vertices!(F::Union{Vector{<: NgonFace},Vector{<: AbstractElement}},V::Vector{Point{ND,TV}}) where ND where TV<:Real
+    if isempty(F) # If the face set is empty, return all empty outputs
+        empty!(V) # Remove all from V as none are used
+        return Vector{Int}()
+    else # Faces not empty, so check which indices are used and shorten V if needed        
+        indUsed = sort(elements2indices(F)) # Indices used
+        indFix = zeros(Int,length(V))
+        keepat!(V,indUsed) # Remove unused points  
+        @views indFix[indUsed] .= 1:length(indUsed)        
+        for (i,f) in enumerate(F)
+            F[i] = eltype(F)(indFix[f])
+        end
+        return indFix      
+    end
+end
+
+
+function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = Vec{3, Float64}(0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance = 0.0, output_type=:full) where TF<:Integer where ND where TV<:Real 
     if !in(output_type,(:full,:above,:below))
         throw(ArgumentError("Invalid output_type :$output_type provided, use :full,:above, or :below"))
     end
@@ -4511,7 +4572,7 @@ meshed. If `R` contains multiple indices then the first index is assumed to be
 for the outer boundary curve, while all subsequent indices are for boundaries 
 defining holes in this region. 
 """
-function regiontrimesh(VT,R,P)
+function regiontrimesh(VT,R,P; numSmoothSteps=25, gridtype=:equilateral)
     V = Vector{Point{3,Float64}}() # eltype(VT)()
     F = Vector{TriangleFace{Int}}()
     C = Vector{Float64}()
@@ -4537,11 +4598,21 @@ function regiontrimesh(VT,R,P)
         # Adding interior points 
         xSpan =[minimum([v[1] for v in Vn]),maximum([v[1] for v in Vn])]
         ySpan =[minimum([v[2] for v in Vn]),maximum([v[2] for v in Vn])]
-        Vg = gridpoints_equilateral(xSpan,ySpan,pointSpacing)        
+        if gridtype == :equilateral
+            Vg = gridpoints_equilateral(xSpan,ySpan,pointSpacing)        
+        elseif gridtype == :Cartesian
+            γ = 1e-6 # Shear 
+            Vg = gridpoints(xSpan[1]:pointSpacing:xSpan[2], ySpan[1]:pointSpacing:ySpan[2], 0.0)
+        end
+
         zMean = mean([v[3] for v in Vn])
         Vn = append!(Vn,Vg)        
         Vn = [Point{3,Float64}(v[1],v[2],zMean) for v in Vn] # Force zero z-coordinate
-        
+        if gridtype == :Cartesian
+            f = [1.0 γ 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0] # Deformation gradient tensor
+            Vn = [Point{3,Float64}(f*v) for v in Vn] # Deform grid
+        end
+
         # Check for unique points 
         np = length(Vn)
         Vn,_,indMap = mergevertices(Vn; pointSpacing=pointSpacing)
@@ -4574,32 +4645,37 @@ function regiontrimesh(VT,R,P)
             constrained_segments = constrained_segments_ori
         end
     
-        # Remove 3 and 4 connected points
-        E_uni = meshedges(Fn; unique_only=false)
-        con_V2V = con_vertex_vertex(E_uni,Vn)
-        nCon = map(length,con_V2V)        
-        indLowCon = findall(nCon.>0 .&& nCon.<5)
-        indConstrained = reduce(vcat,reduce(vcat,constrained_segments))
-        indRemove = setdiff(indLowCon,indConstrained)     
-        if !isempty(indRemove)
-            Vn,indFix = removepoints(Vn,indRemove)
-            constrained_segments = [[indFix[c[1]]] for c in constrained_segments]
-    
-            # Redo triangulation after points have been removed
-            constrained_segments_ori = deepcopy(constrained_segments) # Clone since triangulate can add new constraint points
-            TRn = triangulate(Vn; boundary_nodes=constrained_segments,delete_ghosts=true)
-            Fn = [TriangleFace{Int}(tr) for tr in each_solid_triangle(TRn)] 
-            Vn = get_points(TRn)
-            constrained_segments = constrained_segments_ori
-        end    
+        # if gridtype == :equilateral
+            # Remove 3 and 4 connected points
+            E_uni = meshedges(Fn; unique_only=false)
+            con_V2V = con_vertex_vertex(E_uni,Vn)
+            nCon = map(length,con_V2V)        
+            indLowCon = findall(nCon.>0 .&& nCon.<5)
+            indConstrained = reduce(vcat,reduce(vcat,constrained_segments))
+            indRemove = setdiff(indLowCon,indConstrained)     
+            if !isempty(indRemove)
+                Vn,indFix = removepoints(Vn,indRemove)
+                constrained_segments = [[indFix[c[1]]] for c in constrained_segments]
+        
+                # Redo triangulation after points have been removed
+                constrained_segments_ori = deepcopy(constrained_segments) # Clone since triangulate can add new constraint points
+                TRn = triangulate(Vn; boundary_nodes=constrained_segments,delete_ghosts=true)
+                Fn = [TriangleFace{Int}(tr) for tr in each_solid_triangle(TRn)] 
+                Vn = get_points(TRn)
+                constrained_segments = constrained_segments_ori
+            end    
+        # end
         Fn,Vn,indFix = remove_unused_vertices(Fn,Vn)    
 
+        if gridtype == :Cartesian
+            f = [1.0 -γ 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0] # Deformation gradient tensor
+            Vn = [Point{3,Float64}(f*v) for v in Vn] # Deform grid
+        end
+
         # Smoothen mesh using Laplacian smoothing
-        Eb = boundaryedges(Fn)
-        indB = unique(reduce(vcat,Eb))
-        n = 25
-        λ = 0.5
-        Vn = smoothmesh_laplacian(Fn,Vn, n, λ; constrained_points=indB)
+        if numSmoothSteps>0
+            Vn = smoothmesh_laplacian(Fn,Vn, numSmoothSteps, 0.5; constrained_points=elements2indices(boundaryedges(Fn)))
+        end
 
         # Append to output 
         if !iszero(length(V))
@@ -9015,18 +9091,129 @@ function remove_snapped_faces!(F::Union{AbstractVector{NgonFace{M,T}}, AbstractV
     return indRemove
 end
 
+"""
+    faceedgelattice(F1::Vector{NgonFace{N,TF}}, V1::Vector{Point{ND,TV}}, scaleFactor) where N where TF<:Integer where ND where TV <: Real
 
-function faceedgelattice(F1::Vector{NgonFace{N,TF}}, V1::Vector{Point{ND,TV}}, scaleFactor) where N where TF<:Integer where ND where TV <: Real
-    F1n,V1n = separate_vertices(F1,V1; scaleFactor = scaleFactor)    
-    Fq = Vector{QuadFace{TF}}(undef,N*length(F1))
-    Vq = [V1; V1n]
+Creates face edge lattice
+
+# Description
+This uses the input surface mesh defined by the face vector `F` and the point 
+vector `V`, to derive an "edge lattice", i.e. a lattice of faces that span the 
+edges of the input mesh. 
+"""
+function faceedgelattice(F::Vector{NgonFace{N,TF}}, V::Vector{Point{ND,TV}}, scaleFactor) where N where TF<:Integer where ND where TV <: Real
+    Fn, Vn = separate_vertices(F, V; scaleFactor = scaleFactor)    
+    Fq = Vector{QuadFace{TF}}(undef, N*length(F))
+    Vq = [V; Vn]
     c = 1
-    n = length(V1)
-    for i in eachindex(F1)
+    n = length(V)
+    for i in eachindex(F)
         for j = 1:N
-            Fq[c] = QuadFace{TF}(F1[i][j], F1[i][mod1(j+1,N)], F1n[i][mod1(j+1,N)]+n, F1n[i][mod1(j,N)]+n)
+            Fq[c] = QuadFace{TF}(F[i][j], F[i][mod1(j+1,N)], Fn[i][mod1(j+1,N)]+n, Fn[i][mod1(j,N)]+n)
             c+=1
         end
     end
     return Fq, Vq
+end
+
+"""
+    subtri_centre(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}) where N where TF<:Integer where T<:Real
+    subtri_centre(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}, n::TI) where N where TF<:Integer where T<:Real where TI<:Integer
+
+Triangle splitting using centre
+
+# Description
+This function takes the input triangles defined by the vector `F` and the points
+defined by the vector `V` and subdevides each triangle by adding a new centre 
+coordinate and forming three new triangles using this centre and the triangle 
+edges. An optional input is `n` which sets the number of iterations to apply to
+apply the algorithm for. 
+"""
+function subtri_centre(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}) where N where TF<:Integer where T<:Real
+    Fn = Vector{TriangleFace{Int}}(undef,length(F)*3)
+    Vn = deepcopy(V)
+    Vc = Vector{Point{N,T}}(undef,length(F))    
+    n = length(V)
+    for (i,f) in enumerate(F)
+        i_n = 1 + 3*(i-1)
+        Fn[i_n  ] = TriangleFace{Int}(f[1], f[2], n+i)
+        Fn[i_n+1] = TriangleFace{Int}(f[2], f[3], n+i)
+        Fn[i_n+2] = TriangleFace{Int}(f[3], f[1], n+i)
+        Vc[i] = mean(view(V,f)) # Point{N,T}(mean(V[f]))
+    end
+    append!(Vn, Vc)
+    return Fn, Vn
+end
+
+function subtri_centre(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}, n::TI) where N where TF<:Integer where T<:Real where TI<:Integer
+    if n>0
+        Fn = deepcopy(F)
+        Vn = deepcopy(V)
+        for _ in 1:n
+            Fn, Vn = subtri_centre(Fn, Vn)
+        end
+        return Fn, Vn
+    else
+        return F, V
+    end    
+end
+
+"""
+    removethreeconnected(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}; n=-1) where N where TF<:Integer where T<:Real
+    
+Removes 3-connected points
+
+# Description
+This function takes the input triangles defined by the vector `F` and the points
+defined by the vector `V` and removes points that are connected to only 3 edges.
+By default the algorithm is applied iterative untill there are no 3-connected 
+sites any more. Usually however only 1 iteration is needed to removed all. 
+The optional keyword argument `n` can be used to set the maximum number of 
+iterations. The default behaviour is `n=-1` resulting in termination once 
+converged.  
+"""
+function removethreeconnected(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}; n=-1) where N where TF<:Integer where T<:Real
+    Fn = deepcopy(F)
+    Vn = deepcopy(V)
+    removethreeconnected!(Fn, Vn; n=n)
+    return Fn, Vn
+end
+
+"""
+    removethreeconnected!(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}; n=-1) where N where TF<:Integer where T<:Real
+    
+Removes 3-connected points
+
+# Description
+This function is the same as `removethreeconnected` but it overwrites it input. 
+"""
+function removethreeconnected!(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}; n=-1) where N where TF<:Integer where T<:Real
+    c = 1   
+    while true        
+        Eb = boundaryedges(F)
+        indBoundary = elements2indices(Eb) 
+        con_V2F = con_vertex_simplex(F,V)
+        numberFaceConnections = length.(con_V2F)
+        indProcess = setdiff(1:length(V), indBoundary)           
+        if !isempty(indProcess) && any(i-> i==3, numberFaceConnections[indProcess])
+            indDeleteFaces = Vector{Int}()            
+            for i in indProcess
+                if numberFaceConnections[i] == 3 # Three connected
+                    indFaceSet = con_V2F[i]
+                    E = filter(e -> !in(i,e), meshedges(F[indFaceSet]))
+                    indTriangle = edges2curve(E; remove_last = true)                
+                    push!(F, TriangleFace{Int}(indTriangle))        
+                    append!(indDeleteFaces, indFaceSet)
+                end
+            end
+            deleteat!(F, indDeleteFaces)
+            remove_unused_vertices!(F,V)
+        else 
+            break
+        end
+        if n>0 && c==n
+            break
+        end        
+        c+=1
+    end    
 end
