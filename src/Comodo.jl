@@ -84,6 +84,8 @@ export equilateraltriangle, hermiteSegment, subpenta, polycentroid, curve2edges
 export subtri_dual, rhombicdodecahedron2hex, surface_centroid, hexahedronElement, hex2tet
 export triplyperiodicminimal, triplyperiodicminimal_sheet, tpms, tpms_sheet
 export pointsvd, basisGramSchmidt, basisGramSchmidt!, hexvolume
-export isunique, remove_snapped_faces!, facecentroid, faceedgelattice, subtri_centre, removethreeconnected, removethreeconnected!
+export isunique, remove_snapped_faces!, facecentroid, faceedgelattice
+export subtri_centre, removethreeconnected, removethreeconnected!
+export tri2quad_merge!, tri2quad_merge_split!
 
 end # module

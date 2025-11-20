@@ -2256,9 +2256,9 @@ function mergevertices(V::Vector{Point{ND,TV}}; roundVertices = true, pointSpaci
         indUnique,indMap = gunique(VR; return_unique=Val(false),return_index=Val(true), return_inverse=Val(true),sort_entries=false)
         V = V[indUnique] # The unique node set
     else
-        V,indUnique,indMap = gunique(V; return_index=Val(true), return_inverse=Val(true),sort_entries=false)
+        V, indUnique, indMap = gunique(V; return_index=Val(true), return_inverse=Val(true),sort_entries=false)
     end
-    return V,indUnique,indMap
+    return V, indUnique, indMap
 end
 
 """ 
@@ -9216,4 +9216,135 @@ function removethreeconnected!(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}
         end        
         c+=1
     end    
+end
+
+"""
+    tri2quad_merge!(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}; numSmoothSteps=0) where N where TF<:Integer where T<:Real
+    
+Adjacent triangles to quads
+
+# Description
+This function aims to conver the triangles in the vector `F` to quadrilateral 
+elements in the output vector `Fq`. The method does this by merging triangles 
+that share an edge and which produce a high enough quality quadrilateral. First 
+a candidate quadrilateral is created for each edge in the input triangulation. 
+Next a quadrilateral quality metric is computed, namely the maximum angle 
+deviation from orthogonal, for each quad corner. If the maximum angle deviation 
+is lower than the `angleThreshold` (default is 45.0) then the quad may be kept. 
+The algoritm starts with the best quad and procedes by continuously selecting 
+the next best quad. At some point no new quads can be formed and the algorithm 
+terminates. Unconverted, left over, triangles are next returned in the vector 
+`Ft`. Finally, the mesh is smoothed using `numSmoothSteps` smoothing iterations
+(default is 25). 
+"""
+function tri2quad_merge!(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}; angleThreshold=45.0, numSmoothSteps=25) where N where TF<:Integer where T<:Real
+    # Create quad mesh which overlaps, each edge with a triangle pair will spawn a merged quad 
+    E_uni,indReverse = gunique(meshedges(F); return_unique=Val(true), return_inverse=Val(true), sort_entries=true)    
+    con_E2F = con_edge_face(F, E_uni, indReverse)
+    nonBoundaryEdgeIndices = findall(c-> length(c)==2,con_E2F)
+    Fq = Vector{QuadFace{Int}}(undef,length(nonBoundaryEdgeIndices))
+    for (i_Fq, i) in enumerate(nonBoundaryEdgeIndices)
+        f1 = F[con_E2F[i][1]]
+        f2 = F[con_E2F[i][2]]
+        ind1 = findfirst(==(E_uni[i][1]), f1) # Index in f1 for first point in edge
+        if f1[mod1(ind1+1,3)] == E_uni[i][2] # Edge belongs to triangle
+            Fq[i_Fq] = QuadFace{Int}(f1[mod1(ind1+2,3)],
+                                E_uni[i][1],
+                                filter(j -> !in(j,E_uni[i]), f2)[1], 
+                                E_uni[i][2])
+        else
+            Fq[i_Fq] = QuadFace{Int}(f1[mod1(ind1+1,3)],
+                                E_uni[i][2], 
+                                filter(j -> !in(j,E_uni[i]), f2)[1], 
+                                E_uni[i][1])
+        end
+    end
+
+    # Compute quad quality metric
+    A = edgeangles(Fq, V; deg=true)
+    angleDeviation = [abs.(a .- 90.0) for a in A] 
+    angleDeviationMean = mean.(angleDeviation) # Sum of angle difference from orthogonal
+    angleDeviationMax = maximum.(angleDeviation)
+    indSort = sortperm(angleDeviationMean) # Indices sorted by quality metric
+
+    # Accept quads one-by-one in order of the quality metrics
+    Seen=Set{Int}()
+    indDelete=Set{Int}()
+    for (j, i) in enumerate(nonBoundaryEdgeIndices[indSort])
+        i_Fq = indSort[j]
+        if angleDeviationMax[i_Fq] < angleThreshold
+            removeFlag = true
+            for faceIndex in con_E2F[i]
+                if in(faceIndex, Seen)
+                    push!(indDelete, i_Fq)
+                    removeFlag = false
+                    break
+                end
+            end
+            if removeFlag == true
+                push!(Seen, con_E2F[i][1])
+                push!(Seen, con_E2F[i][2])
+            end
+        else
+            push!(indDelete, i_Fq)
+        end
+    end
+    deleteat!(Fq, sort(collect(indDelete)))
+
+    # Get triangle list not merged into quads
+    Ft = deepcopy(F)
+    deleteat!(Ft, sort(collect(Seen)))
+
+    if numSmoothSteps>0
+        indConstrain = [elements2indices(boundaryedges(Fq)); elements2indices(boundaryedges(Ft))]
+        λ = 0.5
+        V = smoothmesh_laplacian(Fq, V, numSmoothSteps, λ; constrained_points = indConstrain)
+    end
+    return Fq, Ft
+end
+
+"""
+    tri2quad_merge_split!(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}; angleThreshold=45.0, numSmoothSteps=25) where N where TF<:Integer where T<:Real
+    
+Triangulation to quadrangulation through merging and splitting
+
+# Description
+This function converts the input triangulation defined by the face vector `F` 
+and the points `V` to a quadrangulation defined by `Fq` and `Vq`. The function 
+first uses `tri2quad_merge!` with the aim of creating a quad dominated mesh. 
+Next the remaining triangles are split into 3 quads each and the quads are split 
+into 4 quads each. The result is a quadrangulation that is 1 step refined with 
+respect to the input mesh. The third output `indInitial` provides the indices 
+of the input points. 
+Optional keyword arguments include the `angleThreshold` (default is 45.0) and 
+`numSmoothSteps` smoothing iterations (default is 25), see also see 
+`tri2quad_merge!`. 
+"""
+function tri2quad_merge_split!(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}; angleThreshold=45.0, numSmoothSteps=25) where N where TF<:Integer where T<:Real
+    Fq, Ft = tri2quad_merge!(F, V; angleThreshold=angleThreshold, numSmoothSteps=0)
+
+    # Split quads and convert remaining triangles     
+    Fq, Vq, indMap = remove_unused_vertices(Fq, V)    
+    Fqs, Vqs = subquad(Fq,Vq,1) 
+
+    Ft, Vt, indMap = remove_unused_vertices(Ft, V)    
+    Fts, Vts = tri2quad(Ft,Vt)
+    
+    indInitial = collect(1:length(Vq))    
+    append!(indInitial, collect(length(Vqs)+1:length(Vqs)+length(Vt)))
+
+    Fq = [Fqs; [f .+ length(Vqs) for f in Fts]]
+    Vq = [Vqs; Vts]
+    
+    pointSpacing = pointspacingmean(F,V)
+    Fq, Vq, _, indMap = mergevertices(Fq, Vq; pointSpacing=pointSpacing)
+    indInitial = unique(indMap[indInitial])
+
+    # Smoothing mesh 
+    if numSmoothSteps>0
+        indConstrain = elements2indices(boundaryedges(Fq)) # Hold on to boundary 
+        append!(indConstrain, indInitial) # And the initial points        
+        Vq = smoothmesh_hc(Fq, Vq, numSmoothSteps; constrained_points = indConstrain)
+    end
+    return Fq, Vq, indInitial
 end

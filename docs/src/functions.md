@@ -875,3 +875,23 @@ Comodo.faceedgelattice
 ```@docs 
 Comodo.subtri_centre
 ```
+
+## `removethreeconnected`
+```@docs 
+Comodo.removethreeconnected
+```
+
+## `removethreeconnected!`
+```@docs 
+Comodo.removethreeconnected!
+```
+
+## `tri2quad_merge!`
+```@docs 
+Comodo.tri2quad_merge!
+```
+
+## `tri2quad_merge_split!`
+```@docs 
+Comodo.tri2quad_merge_split!
+```

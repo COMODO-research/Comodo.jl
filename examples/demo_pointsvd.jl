@@ -7,7 +7,6 @@ using Comodo.Rotations
 using FileIO
 
 GLMakie.closeall()
-testCase = 2
 for testCase = 1:2
     if testCase == 1
         F, V = geosphere(2, 1.0)

@@ -9039,9 +9039,55 @@ end
     @test Vn == Vc        
 end
 
-# Fn = deepcopy(F)
-#     Vn = deepcopy(V)
-#     removethreeconnected!(Fn, Vn)
+@testset "tri2quad_merge!" verbose=true begin    
+    @testset "Set of 2 triangles" begin    
+        V = [Point{3,Float64}(0.0, 0.0, 0.0), 
+        Point{3,Float64}(2.0, 0.0, 0.0), 
+        Point{3,Float64}(2.0, 2.0, 0.0),
+        Point{3,Float64}(0.0, 2.0, 0.0),]
+        F = [TriangleFace{Int}(1,2,3),TriangleFace{Int}(3,4,1)]
+
+        Fq, Ft = tri2quad_merge!(F,V; angleThreshold=45.0, numSmoothSteps=0)
+        
+        @test eltype(Fq) == QuadFace{Int}
+        @test eltype(Ft) == TriangleFace{Int}
+        @test length(Fq) == 1 
+        @test length(Ft) == 0
+    end
+
+    @testset "Icosahedron" begin    
+        F,V = geosphere(0,1.0)
+        Fq, Ft = tri2quad_merge!(F,V; angleThreshold=45.0, numSmoothSteps=0)
+        @test eltype(Fq) == QuadFace{Int}
+        @test eltype(Ft) == TriangleFace{Int}
+    end
+end
+
+@testset "tri2quad_merge_split!" verbose=true begin    
+    @testset "Set of 2 triangles" begin    
+        V = [Point{3,Float64}(0.0, 0.0, 0.0), 
+        Point{3,Float64}(2.0, 0.0, 0.0), 
+        Point{3,Float64}(2.0, 2.0, 0.0),
+        Point{3,Float64}(0.0, 2.0, 0.0),]
+        F = [TriangleFace{Int}(1,2,3),TriangleFace{Int}(3,4,1)]
+
+        n = length(V)
+        Fq, Vq, indInitial = tri2quad_merge_split!(F,V; angleThreshold=45.0, numSmoothSteps=5)
+        
+        @test eltype(Fq) == QuadFace{Int}        
+        @test length(Fq) == 4 
+        @test length(indInitial) == n
+    end
+
+    @testset "Icosahedron" begin    
+        F,V = geosphere(0,1.0)
+        n = length(V)
+        Fq, Vq, indInitial = tri2quad_merge_split!(F,V; angleThreshold=45.0, numSmoothSteps=5)
+        @test eltype(Fq) == QuadFace{Int}
+        @test length(indInitial) == n
+    end
+end
+
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
