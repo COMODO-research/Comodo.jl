@@ -316,11 +316,6 @@ Comodo.grid2surf
 Comodo.dirplot
 ```
 
-## `dirplot`
-```@docs
-Comodo.dirplot
-```
-
 ## `remove_unused_vertices`
 ```@docs
 Comodo.remove_unused_vertices
