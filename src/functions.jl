@@ -9320,7 +9320,7 @@ Optional keyword arguments include the `angleThreshold` (default is 45.0) and
 `numSmoothSteps` smoothing iterations (default is 25), see also see 
 `tri2quad_merge!`. 
 """
-function tri2quad_merge_split!(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}; angleThreshold=45.0, numSmoothSteps=25) where N where TF<:Integer where T<:Real
+function tri2quad_merge_split!(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}}; angleThreshold=45.0, numSmoothSteps=25) where TF<:Integer where N where T<:Real
     Fq, Ft = tri2quad_merge!(F, V; angleThreshold=angleThreshold, numSmoothSteps=0)
 
     # Split quads and convert remaining triangles     
@@ -9347,4 +9347,97 @@ function tri2quad_merge_split!(F::Vector{TriangleFace{TF}}, V::Vector{Point{N,T}
         Vq = smoothmesh_hc(Fq, Vq, numSmoothSteps; constrained_points = indConstrain)
     end
     return Fq, Vq, indInitial
+end
+
+"""
+    tri2def(P1::Vector{Point{N,T}}, P2::Vector{Point{N,T}}) where N where T<:Real
+    tri2def(f::TriangleFace{Tf}, P1::Vector{Point{N,T}}, P2::Vector{Point{N,T}}) where Tf<:Integer where N where T<:Real     
+    tri2def(F::Vector{TriangleFace{Tf}}, P1::Vector{Point{N,T}}, P2::Vector{Point{N,T}}) where Tf<:Integer where N where T<:Real 
+
+Computes triagle deformation gradient tensor
+
+# Description
+This function computes triangle deformation gradient tensors. The input consits 
+of the initial and final point vectors `P1` and `P2` respectively. If no face(s)
+are provided then these points should define triplets such that a triangle is 
+formed by the three points in the point sets. If a single face `f` is provided 
+then the indices in `f` are used to define the triangle. If a single triangle is 
+defined the output is a single 3x3 `Matrix{Float}` defining the triangles 
+deformation gradient tensor. If instead a vector of triangles `F` is provided, 
+then the output consists of a vector of such matrices. 
+"""
+function tri2def(P1::Vector{Point{N,T}}, P2::Vector{Point{N,T}}) where N where T<:Real
+    # Get edge vectors
+    A = P1[2]-P1[1] # Edge 1 in initial state
+    B = P1[3]-P1[1] # Edge 2 in initial state
+    a = P2[2]-P2[1] # Edge 1 in deform. state
+    b = P2[3]-P2[1] # Edge 2 in deform. state
+
+    # Normalise edge vectors 
+    nA = normalizevector(A) 
+    nB = normalizevector(B)
+    na = normalizevector(a)
+    nb = normalizevector(b)
+
+    # Create (non-unique) rotation matrices to rotate triangles to 2D space
+    e1 = Point{3,Float64}(1.0, 0.0, 0.0)
+    e2 = Point{3,Float64}(0.0, 1.0, 0.0)
+    e3 = Point{3,Float64}(0.0, 0.0, 1.0)
+    nAxnB = normalizevector(cross(nA,nB))
+    naxnb = normalizevector(cross(na,nb))
+    R1 = e1*nA' + e2*normalizevector(cross(nAxnB,nA))' + e3*nAxnB' # R1 = rotation_between(nAxnB,e3)
+    R2 = e1*na' + e2*normalizevector(cross(naxnb,na))' + e3*naxnb' # R2 = rotation_between(naxnb,e3)
+
+    # Rotate edge vectors 
+    X2 = R1*A
+    X3 = R1*B
+    x2 = R2*a
+    x3 = R2*b
+
+    P1_2D = [0.0    0.0   1.0; 
+             X2[1]  X2[2] 1.0; 
+             X3[1]  X3[2] 1.0]
+    P2_2D = [0.0      0.0 1.0; 
+             x2[1]  x2[2] 1.0; 
+             x3[1]  x3[2] 1.0]
+    
+    F̃ = P1_2D\P2_2D # 2D deformation gradient tensor       
+    F =  Matrix{Float64}((R1'*F̃*R2)') # Rotate back to 3D deformation gradient tensor 
+    return F
+end
+
+function tri2def(f::TriangleFace{Tf}, P1::Vector{Point{N,T}}, P2::Vector{Point{N,T}}) where Tf<:Integer where N where T<:Real     
+    p1 = [P1[i] for i in collect(f)]
+    p2 = [P2[i] for i in collect(f)]    
+    return tri2def(p1, p2)
+end
+
+function tri2def(F::Vector{TriangleFace{Tf}}, P1::Vector{Point{N,T}}, P2::Vector{Point{N,T}}) where Tf<:Integer where N where T<:Real 
+    return [tri2def(f, P1, P2) for f in F]
+end
+
+"""
+    polarDecomposition(F)
+
+Computes polar decomposition of deformation gradient tensor
+
+# Description
+This function computes the polar decomposition of the input deformation gradient
+tensor `F`, which should be a 3x3 `Matrix{Float}` or equivalent. 
+The output consits of: 
+`U` the right stretch tensor
+`V` the left stretch tensor
+`Q` the rotation tensor part of `F`
+`W` in  the SVD  W, Σ, R = svd(F)
+`Σ` a vector containing the principal Stretches
+`R` in  the SVD  W, Σ, R = svd(F)
+"""
+function polarDecomposition(F)
+    W, Σ, R = svd(F) # Singular value decomposition    
+    R[:,3] = cross(R[:,1], R[:,2]) # Force system to be non-inverting as rotation matrix
+    W[:,3] = cross(W[:,1], W[:,2]) # Force system to be non-inverting as rotation matrix    
+    Q = W*R' # Rotation matrix
+    U = Q'*F # R*diagm(Σ)*R' # Right stretch tensor
+    V = F*Q' # Left stretch tensor
+    return U, V, Q, W, Σ, R
 end

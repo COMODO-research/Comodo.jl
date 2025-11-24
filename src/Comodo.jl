@@ -86,6 +86,6 @@ export triplyperiodicminimal, triplyperiodicminimal_sheet, tpms, tpms_sheet
 export pointsvd, basisGramSchmidt, basisGramSchmidt!, hexvolume
 export isunique, remove_snapped_faces!, facecentroid, faceedgelattice
 export subtri_centre, removethreeconnected, removethreeconnected!
-export tri2quad_merge!, tri2quad_merge_split!
+export tri2quad_merge!, tri2quad_merge_split!, tri2def, polarDecomposition
 
 end # module

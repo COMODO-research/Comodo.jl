@@ -890,3 +890,13 @@ Comodo.tri2quad_merge!
 ```@docs 
 Comodo.tri2quad_merge_split!
 ```
+
+## `tri2def`
+```@docs 
+Comodo.tri2def
+```
+
+## `polarDecomposition`
+```@docs 
+Comodo.polarDecomposition
+```

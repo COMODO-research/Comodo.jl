@@ -9047,7 +9047,7 @@ end
         Point{3,Float64}(0.0, 2.0, 0.0),]
         F = [TriangleFace{Int}(1,2,3),TriangleFace{Int}(3,4,1)]
 
-        Fq, Ft = tri2quad_merge!(F,V; angleThreshold=45.0, numSmoothSteps=0)
+        Fq, Ft = tri2quad_merge!(F,V; angleThreshold=45.0, numSmoothSteps=5)
         
         @test eltype(Fq) == QuadFace{Int}
         @test eltype(Ft) == TriangleFace{Int}
@@ -9060,7 +9060,14 @@ end
         Fq, Ft = tri2quad_merge!(F,V; angleThreshold=45.0, numSmoothSteps=0)
         @test eltype(Fq) == QuadFace{Int}
         @test eltype(Ft) == TriangleFace{Int}
+  
+        # Too strict 
+        F,V = geosphere(0,1.0)
+        Fq, Ft = tri2quad_merge!(F,V; angleThreshold=0.0, numSmoothSteps=0)
+        @test isempty(Fq)
+        @test Ft == F
     end
+
 end
 
 @testset "tri2quad_merge_split!" verbose=true begin    
@@ -9088,6 +9095,129 @@ end
     end
 end
 
+@testset "tri2quad_merge_split!" verbose=true begin    
+
+    @testset "Point sets" begin  
+        eps_level = 1e-6  
+        # Define true global deformation gradient tensor
+        # Stretches
+        λ₁ = 2.0
+        λ₂ = 0.5
+        λ₃ = 1.0
+
+        # Right stretch tensor
+        U = [λ₁  0.0 0.0;
+            0.0 λ₂  0.0;
+            0.0 0.0  λ₃]
+
+        # Rotation tensor
+        Q = RotXYZ(0.25*pi,0.0*pi, 0.25*π)
+
+        # Deformation gradient tensor
+        F = Q*U
+        
+        P1 = [Point{3,Float64}(0.0, 0.0, 0.0), 
+              Point{3,Float64}(2.0, 0.0, 0.0), 
+              Point{3,Float64}(2.0, 2.0, 0.0)]
+
+        # Create deformed coordinate set
+        P2 = [Point{3, Float64}(F*p) for p in P1]    
+        Fn = tri2def(P1, P2)
+        @test isapprox(F, Fn, atol=eps_level)
+    end
+
+    @testset "Single triangle" begin    
+        eps_level = 1e-6  
+        # Define true global deformation gradient tensor
+        # Stretches
+        λ₁ = 2.0
+        λ₂ = 0.5
+        λ₃ = 1.0
+
+        # Right stretch tensor
+        U = [λ₁  0.0 0.0;
+            0.0 λ₂  0.0;
+            0.0 0.0  λ₃]
+
+        # Rotation tensor
+        Q = RotXYZ(0.25*pi,0.0*pi, 0.25*π)
+
+        # Deformation gradient tensor
+        F = Q*U
+        
+        P1 = [Point{3,Float64}(0.0, 0.0, 0.0), 
+              Point{3,Float64}(2.0, 0.0, 0.0), 
+              Point{3,Float64}(2.0, 2.0, 0.0)]
+
+        t = TriangleFace{Int}(1,2,3)
+
+        # Create deformed coordinate set
+        P2 = [Point{3, Float64}(F*p) for p in P1]    
+        Fn = tri2def(t, P1, P2)
+        @test isapprox(F, Fn, atol=eps_level)
+    end
+
+    @testset "Set of 2 triangles" begin    
+        eps_level = 1e-6  
+        # Define true global deformation gradient tensor
+        # Stretches
+        λ₁ = 2.0
+        λ₂ = 0.5
+        λ₃ = 1.0
+
+        # Right stretch tensor
+        U = [λ₁  0.0 0.0;
+            0.0 λ₂  0.0;
+            0.0 0.0  λ₃]
+
+        # Rotation tensor
+        Q = RotXYZ(0.25*pi,0.0*pi, 0.25*π)
+
+        # Deformation gradient tensor
+        F = Q*U
+                
+        P1 = [Point{3,Float64}(0.0, 0.0, 0.0), 
+              Point{3,Float64}(2.0, 0.0, 0.0), 
+              Point{3,Float64}(2.0, 2.0, 0.0),
+              Point{3,Float64}(0.0, 2.0, 0.0)]
+        TRI = [TriangleFace{Int}(1,2,3),TriangleFace{Int}(3,4,1)]
+
+        # Create deformed coordinate set
+        P2 = [Point{3, Float64}(F*p) for p in P1]    
+
+        Fn_set = tri2def(TRI, P1, P2)
+        for Fn in Fn_set
+            @test isapprox(F, Fn, atol=eps_level)
+        end
+    end
+end
+
+@testset "polarDecomposition" verbose=true begin    
+    eps_level = 1e-6  
+
+    # Define true global deformation gradient tensor
+    # Stretches
+    λ₁ = 2.0
+    λ₂ = 0.5
+    λ₃ = 1.5
+
+    # Right stretch tensor
+    U = [λ₁  0.0 0.0;
+        0.0 λ₂  0.0;
+        0.0 0.0  λ₃]
+
+    # Rotation tensor
+    Q = RotXYZ(0.25*pi,0.25*pi, 0.25*π)
+
+    # Deformation gradient tensor
+    F = Q*U
+
+    Un, Vn, Qn, W, Σ, R = polarDecomposition(F)
+
+    @test isapprox(U, Un, atol=eps_level)
+    @test isapprox(Q, Qn, atol=eps_level)
+    @test isapprox(Σ, sort(diag(U), rev=true), atol=eps_level)
+end
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
