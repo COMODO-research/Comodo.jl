@@ -17,7 +17,7 @@ for testCase = 1:3
         F = [TriangleFace{Int}(1,2,3)]
     elseif testCase == 2
         r = 2.0
-        n = 3
+        n = 1
         F, V = geosphere(n,r; method=:Loop)  
     elseif testCase == 3
     # Loading a mesh
@@ -36,7 +36,7 @@ for testCase = 1:3
 
     fig = Figure(size=(1200,800))    
     ax1 = AxisGeom(fig[1,1]; title = "Triangle(s) with incircle(s)")
-    hp1 = meshplot!(ax1,F,V)
+    hp1 = meshplot!(ax1,F,V, strokewidth=2.0)
     scatter!(ax1, P, markersize=8, color = :red, depth_shift=depth_shift)
 
     np = 35
@@ -52,7 +52,7 @@ for testCase = 1:3
         Q = rotation_between(nz,n)
         VC[1+(i-1)*m:i*m] = [Q*R[i]*v+P[i] for v in Vc]
     end
-    lines!(ax1, VC, linewidth=1, color = :red, depth_shift=depth_shift)
+    lines!(ax1, VC, linewidth=2, color = :red, depth_shift=depth_shift)
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")

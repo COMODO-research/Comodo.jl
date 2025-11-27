@@ -13,7 +13,7 @@ for testCase = 1:3
         F = [TriangleFace{Int}(1,2,3)]
     elseif testCase == 2
         r = 2.0
-        n = 3
+        n = 2
         F, V = geosphere(n,r; method=:Loop)  
     elseif testCase == 3    
         fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")

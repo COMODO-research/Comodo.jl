@@ -188,7 +188,7 @@ for testCase = 1:6
     CE_Vs = simplex2vertexdata(Fs,CE_F)
     M = GeometryBasics.Mesh(Vs,Fs)
 
-    strokewidth = 1 
+    strokewidth = 0.5 
 
     fig = Figure(size=(800,800))
 
@@ -199,8 +199,10 @@ for testCase = 1:6
     scatter!(ax1, V_holes, color=:black, markersize=25)
 
     ax2 = AxisGeom(fig[1, 1][1, 2], title = "Cut mesh")
-    hp2 = meshplot!(ax2, Fs, Vs, color=CE_Vs, strokewidth=strokewidth,colorrange = (1,2), colormap=cmap)
-    hp3 = scatter!(ax2, V, color=:black, markersize=10)
+    meshplot!(ax2, Fbs, Vbs, color=(:white,0.15), transparency=true, colorrange = (1,3), colormap=cmap, strokewidth=0.0)
+
+    hp2 = meshplot!(ax2, Fs, Vs, color=CE_Vs, strokewidth=strokewidth, strokecolor=:black, colorrange = (1,2), colormap=cmap)
+    # hp3 = scatter!(ax2, V, color=:black, markersize=10)
 
     VE  = simplexcenter(E,V)
     ZE = [v[3] for v in VE]
@@ -230,7 +232,7 @@ for testCase = 1:6
             Ms = GeometryBasics.Mesh(Vs,Fs)
             hp2[1] = Ms
             hp2.color = CE_Vs
-            hp3[1] = V[elements2indices(E[indShow])]
+            # hp3[1] = V[elements2indices(E[indShow])]
         end
     end
     # hSlider.selected_index[]+=1

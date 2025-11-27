@@ -11,7 +11,7 @@ GLMakie.closeall()
 
 for testCase = 1:7
     if testCase == 1 # Batman curve
-        n = 120
+        n = 60
         V = batman(n; stepwise=true)
         pointSpacing = pointspacingmean(V; close_loop=true)
 
@@ -135,7 +135,7 @@ for testCase = 1:7
 
     fig = Figure(size=(1200,1000))
     ax1 = AxisGeom(fig[1, 1], title="Triangulation", azimuth=-pi/2, elevation=pi/2)
-    hp1 = meshplot!(ax1, Fp, Vp, color=Cp, colormap=Makie.Categorical(Makie.Reverse(:Spectral)))    
+    hp1 = meshplot!(ax1, Fp, Vp, strokewidth=1.0, color=Cp, colormap=Makie.Categorical(Makie.Reverse(:Spectral)))    
     Colorbar(fig[1, 1][1, 2], hp1)
 
     screen = display(GLMakie.Screen(), fig)

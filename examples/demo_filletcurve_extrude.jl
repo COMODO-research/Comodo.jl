@@ -19,11 +19,12 @@ for testCase = 1:4
         close_loop = false
     end
 
+    np = 53
     rMax = 0.5 
     n = 20
     h = 2.0
     VC = filletcurve(V; rMax=rMax,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
-    VC = evenly_sample(VC,50; spline_order = 2)
+    VC = evenly_sample(VC, np; spline_order = 2)
 
     Fe,Ve = extrudecurve(VC; extent=h, direction=:both, close_loop=false,face_type=:quad)
     
@@ -31,11 +32,11 @@ for testCase = 1:4
     fig = Figure(size=(1000,1000))
     ax1 = AxisGeom(fig[1, 1], title="Filleting a curve")
 
-    hp11 = lines!(ax1, V,linewidth=2,color=:black)
-    hp12 = scatter!(ax1, V,markersize=15,color=:black)
+    hp11 = lines!(ax1, V,linewidth=6,color=:black)
+    hp12 = scatter!(ax1, V,markersize=25,color=:black)
 
     Fes,Ves = separate_vertices(Fe,Ve)
-    hp3 = meshplot!(ax1, Fes, Ves, color=:lightgreen)
+    hp3 = meshplot!(ax1, Fes, Ves, color=(:green, 0.5), transparency=true, strokewidth=2.0)
     # # scatter!(ax1, V[1],markersize=25,color=:yellow)
     # # scatter!(ax1, V[end],markersize=25,color=:red)
 
@@ -43,14 +44,14 @@ for testCase = 1:4
     if close_loop == true
         push!(indPlot,1)
     end
-    hp2 = lines!(ax1, VC[indPlot],linewidth=6,color=:blue)
+    hp2 = lines!(ax1, VC[indPlot],linewidth=8,color=:blue, depth_shift=-0.01f0)
 
-    stepRange1 = range(0,1.5,500)
+    stepRange1 = range(0, 1.0, 50)
     hSlider1 = Slider(fig[2, 1], range = stepRange1, startvalue = 0,linewidth=30)
 
     on(hSlider1.value) do stepIndex1
         VC = filletcurve(V; rMax=stepIndex1,  constrain_method = :max, n=n, close_loop = close_loop, eps_level = 1e-6)
-        VC = evenly_sample(VC,53; spline_order = 2)
+        VC = evenly_sample(VC, np; spline_order = 2)
         indPlot = collect(1:length(VC))
         if close_loop == true
             push!(indPlot,1)

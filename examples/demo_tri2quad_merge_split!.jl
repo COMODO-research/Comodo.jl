@@ -40,7 +40,7 @@ for testCase = 1:3
         F, V = mergevertices(F,V)
     elseif testCase == 3
         # Loading a mesh
-        fileName_mesh = joinpath(comododir(),"assets","obj","motherChild_5k.obj")
+        fileName_mesh = joinpath(comododir(),"assets","obj","motherChild_2k.obj")
         M = load(fileName_mesh)
 
         # Obtain mesh faces and vertices
@@ -54,10 +54,10 @@ for testCase = 1:3
     # Visualisation
     fig = Figure(size=(1400,800))
     ax1 = AxisGeom(fig[1, 1], title="Input triangulation")
-    hp1 = meshplot!(ax1, F, V, color=:white)    
+    hp1 = meshplot!(ax1, F, V, color=:white, strokewidth=1.0)    
 
     ax2 = AxisGeom(fig[1, 2], title="Quadrangulation")
-    hp2 = meshplot!(ax2, Fq, Vq, color=:lightgreen)    
+    hp2 = meshplot!(ax2, Fq, Vq, color=:lightgreen, strokewidth=1.0)    
     
     Legend(fig[1, 3],[hp1, hp2],["Input triangulation", "Quads"])
 
