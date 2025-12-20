@@ -7,7 +7,7 @@ using QuadGK: quadgk, QuadGK
 using StaticArrays: StaticVector, Size, StaticArrays, StaticArraysCore
 using Rotations: RotMatrix3, RotXYZ, rotation_between, AngleAxis, Rotations
 using DataStructures: OrderedDict, DataStructures
-import MarchingCubes # For isosurface creation
+using MarchingCubes 
 using TetGen: tetrahedralize, TetGen
 using BSplineKit: BSplineOrder, BSplineKit
 using DelaunayTriangulation: triangulate, each_solid_triangle, get_points, DelaunayTriangulation
@@ -17,6 +17,9 @@ using GeometryBasics: LineFace, Point, NgonFace,
                       OffsetInteger, AbstractPoint, Vec, 
                       QuadFace, TriangleFace, faces, 
 											coordinates, Vec3, GeometryBasics
+import SpecialFunctions
+using SpecialFunctions: erfinv
+using Distributions
 
 include("functions.jl")
 
@@ -35,6 +38,8 @@ export GLMakie
 export LinearAlgebra
 export GeometryBasics
 export DataStructures
+export SpecialFunctions
+export Distributions
 
 # Export (finite) element types
 export AbstractElement, TetrahedronElement, PentahedronElement, HexahedronElement, TruncatedoctahedronElement, RhombicdodecahedronElement
@@ -71,7 +76,7 @@ export squircle, circlerange, edgefaceangles, faceanglesegment, eulerchar
 export rhombicdodecahedronfoam, kelvinfoam, truncatedoctahedron, ntrapezohedron, hexagonaltrapezohedron  #, tetrakaidecahedron
 export mag, indexmap!, indexmap, minp, maxp, spacing2numvertices
 export joingeom, quadbox, tribox, tetbox, pad3, getisosurface
-export randangle, stepfunc, perlin_noise, removepoints, inpolygon
+export stepfunc, perlin_noise, removepoints, inpolygon
 export elementEdges, tet4_tet10, tet4_tet15, penta6_penta15
 export findindexin, hexagonline, hexagongrid, hexagonmesh, fromtomesh, fromtomesh!
 export vectorpair_angle, triangulateboundary, faceinteriorpoint, hexsphere, hexspherehollow, circumcircle, incircle
@@ -88,5 +93,6 @@ export isunique, remove_snapped_faces!, facecentroid, faceedgelattice
 export subtri_centre, removethreeconnected, removethreeconnected!
 export tri2quad_merge!, tri2quad_merge_split!, tri2def, polarDecomposition
 export image2voxelmesh, smoothmesh_taubin, inmesh, mesh2bool
-
+export rand_incircle, rand_oncircle, rand_insphere, rand_onsphere, rand_onsphere_cone
+export cartesianIndexOffset, gradient
 end # module

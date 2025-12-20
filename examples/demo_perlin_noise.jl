@@ -3,6 +3,8 @@ using Comodo.GLMakie
 using Comodo.GeometryBasics
 using Random
 
+GLMakie.closeall()
+
 Random.seed!(1) # To ensure repeatable demo behaviour
 
 # Define grid

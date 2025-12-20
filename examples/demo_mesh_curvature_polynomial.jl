@@ -6,7 +6,7 @@ using FileIO
 
 GLMakie.closeall()
 
-for testCase = 1:8
+for testCase = 1:9
     if testCase == 1
         r = 25.25
         F,V = geosphere(5,r)  
@@ -63,6 +63,15 @@ for testCase = 1:8
         VC = simplexcenter(F,V) # Finding triangle centre coordinates
         F = [F[i] for i in findall(map(v-> v[3]>0,VC))] # Remove some faces using z of central coordinates
         F,V = remove_unused_vertices(F,V) # Cleanup/remove unused vertices after faces were removed
+    elseif testCase == 9
+        # Loading a mesh
+        fileName_mesh = joinpath(comododir(),"assets","stl","bracket_01_high.stl")
+        M = load(fileName_mesh)
+
+        # Obtain mesh faces and vertices
+        F = tofaces(faces(M))
+        V = topoints(coordinates(M))
+        F,V,_ = mergevertices(F,V)
     end
         
     M = GeometryBasics.Mesh(V,F)
@@ -73,7 +82,7 @@ for testCase = 1:8
     s = pointspacingmean(F,V)
     cMap = Makie.Reverse(:Spectral)
     f = 0.1
-    depth_shift = Float32(-0.01)
+    depth_shift = Float32(-0.02)
     strokewidth = 0.5
     linewidth = 1
 

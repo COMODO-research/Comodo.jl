@@ -7107,34 +7107,6 @@ end
     @test length(boundaryedges(F)) == 0 # Is merged/closed due to caps
 end
 
-@testset "randangle" verbose = true begin         
-    # Default input is 1 and should return Float64 
-    A = randangle()    
-    @test isa(A,Float64)    
-
-    # Vector 
-    len = 5
-    A = randangle(len)
-    @test isa(A,Vector{Float64})
-    @test length(A) == len
-
-    # Matrix
-    siz = (25,35)
-    A = randangle(siz)
-    @test isa(A,Matrix{Float64})
-    @test size(A) == siz
-    
-    # 3D Array 
-    siz = (5,4,3)
-    A = randangle(siz)
-    @test isa(A,Array{Float64,length(siz)})
-    @test size(A) == siz
-
-    # Check values are in the right range 
-    A = randangle(100000)
-    @test all(A.<=pi .&& A.>=-pi)    
-end
-
 @testset "stepfunc" verbose = true begin        
     eps_level = 1e-8
 
@@ -9379,6 +9351,233 @@ end
         @test B[1,1,1] == false
         m = round(Int, nSteps/2.0)
         @test B[m,m,m] == false
+    end
+end
+
+@testset "rand_oncircle" verbose=true begin 
+    eps_level = 1e-6
+    r = 2.0 # Radius
+    N = 100 # Number of points 
+    P = rand_oncircle(r,N; nDim=2)
+    @test isa(P, Vector{Point{2,Float64}})
+    @test all(isapprox.(norm.(P),r, atol=eps_level))
+
+    P = rand_oncircle(r,N; nDim=3)
+    @test isa(P, Vector{Point{3,Float64}})
+    @test all(isapprox.(norm.(P),r, atol=eps_level))
+
+    @test_throws Exception  rand_oncircle(r,N; nDim=4)
+end
+
+@testset "rand_incircle" verbose=true begin 
+    r = 2.0 # Radius
+    N = 100 # Number of points 
+    P = rand_incircle(r,N; nDim=2)
+    @test isa(P, Vector{Point{2,Float64}})
+    @test all(norm.(P).<r)
+
+    P = rand_incircle(r,N; nDim=3)
+    @test isa(P, Vector{Point{3,Float64}})
+    @test all(norm.(P).<r)
+
+    @test_throws Exception  rand_incircle(r,N; nDim=4)
+end
+
+@testset "rand_onsphere" verbose=true begin 
+    eps_level = 1e-6
+    r = 2.0 # Radius
+    N = 100 # Number of points 
+
+    p = rand_onsphere()
+    @test isa(p, Point{3,Float64})
+    @test isapprox(norm(p), 1.0, atol=eps_level)
+
+    p = rand_onsphere(r)
+    @test isa(p, Point{3,Float64})
+    @test isapprox(norm(p), r, atol=eps_level)
+
+    P = rand_onsphere(r,N)
+    @test isa(P, Vector{Point{3,Float64}})
+    @test all(isapprox.(norm.(P),r, atol=eps_level))
+end
+
+@testset "rand_insphere" verbose=true begin 
+    r = 2.0 # Radius
+    N = 100 # Number of points 
+
+    p = rand_insphere()
+    @test isa(p, Point{3,Float64})
+
+    p = rand_insphere(r)
+    @test isa(p, Point{3,Float64})
+    
+    P = rand_insphere(r,N)
+    @test isa(P, Vector{Point{3,Float64}})
+    @test all(norm.(P).<r)
+end
+
+@testset "rand_onsphere_cone" verbose=true begin 
+    eps_level = 1e-6
+    r = 2.0 # Radius
+    N = 2000 # Number of points 
+    θ = π/8 # Cone half-angle
+    
+    # Pure z-direction
+    n = Point{3,Float64}(0.0, 0.0, 1.0)
+    P = rand_onsphere_cone(r, θ, N, n)
+    @test isa(P, Vector{Point{3,Float64}})
+    @test all(isapprox.(norm.(P),r, atol=eps_level))
+    p = normalizevector(mean(P))
+    @test isapprox(p, n, atol=0.1) 
+
+    # Rotated vector
+    θn = 0.25*π
+    ϕn = -0.3*π
+    n = Point{3,Float64}(cos(ϕn)*sin(θn), sin(ϕn)*sin(θn), cos(θn))
+    P = rand_onsphere_cone(r, θ, N, n)
+    @test isa(P, Vector{Point{3,Float64}})
+    @test all(isapprox.(norm.(P),r, atol=eps_level))
+    p = normalizevector(mean(P))
+    @test isapprox(p, n, atol=0.1) 
+        
+    # Spherical
+    θn_P = [acos(dot(p,n)./r) for p in P]
+    maximum(θn_P)
+    minimum(θn_P)
+    @test isapprox(minimum(θn_P), 0.0, atol=0.1) 
+    @test isapprox(maximum(θn_P), θ, atol=0.1) 
+    @test all(θn_P.<θ)
+
+    # Test θ = π which should lead to random point on sphere
+    P = rand_onsphere_cone(r, π, N, n)
+    @test isapprox(mean(P), Point{3,Float64}(0.0, 0.0, 0.0), atol=0.1) 
+end
+
+@testset "cartesianIndexOffset" verbose=true begin 
+    siz = [3,4,5]
+    d = 1
+    offset = 2
+    cn = cartesianIndexOffset(siz, d, offset)
+    @test isa(cn, CartesianIndex)
+    @test cn == CartesianIndex(offset,0,0)
+    
+    d = 2
+    offset = 4
+    cn = cartesianIndexOffset(siz, d, offset)
+    @test isa(cn, CartesianIndex)
+    @test cn == CartesianIndex(0,offset,0)
+
+    d = 3
+    offset = -3
+    cn = cartesianIndexOffset(siz, d, offset)
+    @test isa(cn, CartesianIndex)
+    @test cn == CartesianIndex(0,0,offset)
+
+    d = [1,3]
+    offset = [2,-3]
+    cn = cartesianIndexOffset(siz, d, offset)
+    @test isa(cn, CartesianIndex)
+    @test cn == CartesianIndex(offset[1],0,offset[2])
+end
+
+@testset "gradient" verbose=true begin 
+    eps_level = 1e-6
+    @testset "errors" begin 
+        f = rand(3,4,2)
+        dims = 1
+        Δx = [1.0, 2.0] # Too short, we need 3 entries 
+        ind = [1, 2]
+        @test_throws Exception gradient(f, Δx, ind, dims)
+    end
+
+    @testset "1D" begin 
+        x = -3.0:1.0:3.0
+        f = sin.(x)
+        dims = 1
+        Δx = x[2]-x[1]
+
+        # First should be a forward difference
+        ind = 1
+        g = gradient(f, Δx, ind, dims)[1]
+        @test isapprox(g, (f[2]-f[1])/Δx, atol=eps_level)
+
+        # Last should be a back difference
+        ind = length(f)
+        g = gradient(f, Δx, ind, dims)[1]
+        @test isapprox(g, (f[end]-f[end-1])/Δx, atol=eps_level)
+
+        # Not at boundary should be central difference
+        ind = 2
+        g = gradient(f, Δx, ind, dims)[1]
+        @test isapprox(g, 0.5*(f[ind+1]-f[ind-1])/Δx, atol=eps_level)
+    end
+
+    @testset "2D" begin 
+        nx = 8
+        ny = 14
+        x = range(0.0, 2*pi, nx)
+        y = range(0.0, 2*pi, ny)
+        f = Matrix{Float64}(undef, length(x), length(y))
+        for (i, x) in enumerate(x)
+            for (j, y) in enumerate(y)
+                f[i,j] = sin(x)+cos(y)
+            end
+        end
+        dims = [1,2]
+        Δx = [x[2]-x[1], y[2]-y[1]]
+
+        # First should be a forward difference
+        ind = 1
+        g = gradient(f, Δx, ind, dims)
+        @test isapprox(g[1], (f[2,1]-f[1,1])/Δx[1], atol=eps_level)
+        @test isapprox(g[2], (f[1,2]-f[1,1])/Δx[2], atol=eps_level)
+
+        # Last should be a back difference
+        ind = length(f)
+        g = gradient(f, Δx, ind, dims)
+        @test isapprox(g[1], (f[end]-f[end-1])/Δx[1], atol=eps_level)
+        @test isapprox(g[2], (f[nx,ny]-f[nx,ny-1])/Δx[2], atol=eps_level)
+
+        # Not at boundary should be central difference
+        ind = nx+ceil(Int,ny/2)
+        c = CartesianIndices(f)[ind]
+        g = gradient(f, Δx, ind, dims)
+        @test isapprox(g[1], 0.5(f[c[1]+1,c[2]]-f[c[1]-1,c[2]])/Δx[1], atol=eps_level)
+        @test isapprox(g[2], 0.5(f[c[1],c[2]+1]-f[c[1],c[2]-1])/Δx[2], atol=eps_level)
+    end
+
+    @testset "Matrix entries" begin 
+        nx = 3
+        ny = 4
+        
+        f = fill(rand(2,3), nx, ny)  
+        for i in eachindex(f)
+            f[i] = rand(2,3)   
+        end   
+        x = range(0.0, 2*pi, nx)
+        y = range(0.0, 2*pi, ny)
+   
+        dims = [1,2]
+        Δx = [x[2]-x[1], y[2]-y[1]]
+
+        # First should be a forward difference
+        ind = 1
+        g = gradient(f, Δx, ind, dims)
+        @test isapprox(g[1], (f[2,1]-f[1,1])/Δx[1], atol=eps_level)
+        @test isapprox(g[2], (f[1,2]-f[1,1])/Δx[2], atol=eps_level)
+
+        # Last should be a back difference
+        ind = length(f)
+        g = gradient(f, Δx, ind, dims)
+        @test isapprox(g[1], (f[end]-f[end-1])/Δx[1], atol=eps_level)
+        @test isapprox(g[2], (f[nx,ny]-f[nx,ny-1])/Δx[2], atol=eps_level)
+
+        # Not at boundary should be central difference
+        ind = nx+ceil(Int,ny/2)
+        c = CartesianIndices(f)[ind]
+        g = gradient(f, Δx, ind, dims)
+        @test isapprox(g[1], 0.5(f[c[1]+1,c[2]]-f[c[1]-1,c[2]])/Δx[1], atol=eps_level)
+        @test isapprox(g[2], 0.5(f[c[1],c[2]+1]-f[c[1],c[2]-1])/Δx[2], atol=eps_level)
     end
 end
 

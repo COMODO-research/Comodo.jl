@@ -551,11 +551,6 @@ Comodo.pad3
 Comodo.getisosurface
 ```
 
-## `randangle`
-```@docs 
-Comodo.randangle
-```
-
 ## `stepfunc`
 ```@docs 
 Comodo.stepfunc

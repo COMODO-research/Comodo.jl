@@ -1709,7 +1709,7 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
     if closed
         if face_type == :tri           
             Fb,Vb = tridisc(r,1; ngon=5, method=:linear, orientation=:down)
-            Q = RotXYZ(0.0,0.0,pi/2.0) # Rotation matrix
+            Q = RotXYZ(0.0,0.0,π/2.0) # Rotation matrix
             Vb = [Point{3, Float64}(Q*v) for v in Vb] # Rotate vertices   
         elseif face_type == :quad  
             Fb,Vb = quaddisc(r,0; method=:linear, orientation=:down)                   
@@ -1725,7 +1725,7 @@ function hemisphere(n::Int,r::T; face_type=:tri, closed=false) where T <: Real
         append!(V,Vb)
         
         # Merge nodes
-        V,_,indMap = mergevertices(V; pointSpacing = ((pi/2)*r)/(1+2^n))
+        V,_,indMap = mergevertices(V; pointSpacing = ((π/2)*r)/(1+2^n))
         indexmap!(F,indMap)
     end
     
@@ -2305,7 +2305,7 @@ powers of 10. The order of magnitude is here defined as:
 Hence the order of the absolute number is returned and non-integer numbers are 
 supported. 
 Here is an example: 
-`mag.([1, pi, 9.9, 10, 99, 100, 999.9, 1000])`
+`mag.([1, π, 9.9, 10, 99, 100, 999.9, 1000])`
 returns:  
      `[0,  0,   0, 1,   1,   2,     2,    3]`
 """
@@ -2976,7 +2976,7 @@ the origin.
 function, such as `color` and `linewidth`, the defaults for these are here set 
 to `:black` and `3` respectively. 
 """
-function dirplot(ax,V::Vector{Point{ND,TV1}},U::Union{Vector{Point{ND,TV2}},Vector{Vec{ND,TV2}}}; color=:black, linewidth=3, scaleval=1.0, style=:from, kwargs...) where ND where TV1 <: Real where TV2 <: Real
+function dirplot(ax,V::Vector{Point{ND,TV1}}, U::Union{Vector{Point{ND,TV2}},Vector{Vec{ND,TV2}}}; color=:black, linewidth=3, scaleval=1.0, style=:from, kwargs...) where ND where TV1 <: Real where TV2 <: Real
     E = [LineFace{Int}(i,i+length(V)) for i in 1:length(V)]    
     if style==:from        
         P = deepcopy(V)
@@ -4308,8 +4308,8 @@ function sweeploft(Vc::Vector{Point{ND,TV}},V1::Vector{Point{ND,TV}},V2::Vector{
                 β_fix = -t_a[1]
             end
 
-            if β_fix>pi # Use shorter negative direction instead
-                β_fix = -(2.0*pi-β_fix)
+            if β_fix>π # Use shorter negative direction instead
+                β_fix = -(2.0*π-β_fix)
             end
         
             # Distribute the fix as around curve rotations for each intermediate step            
@@ -4326,7 +4326,7 @@ function sweeploft(Vc::Vector{Point{ND,TV}},V1::Vector{Point{ND,TV}},V2::Vector{
 end
 
 """
-    revolvecurve(Vc::Vector{Point{ND,TV}}; extent = 2.0*pi, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=true,face_type=:quad)  where ND where TV<:Real   
+    revolvecurve(Vc::Vector{Point{ND,TV}}; extent = 2.0*π, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=true,face_type=:quad)  where ND where TV<:Real   
 
 Revolves curves to build surfaces 
 
@@ -4336,7 +4336,7 @@ This function rotates the curve `Vc` by the angle `extent`, in the direction
 defined by `direction` (`:positive`, `:negative`, `:both`), around the vector 
 `n`, to build the output mesh defined by the faces `F` and vertices `V`. 
 """
-function revolvecurve(Vc::Vector{Point{ND,TV}}; extent = 2.0*pi, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing, periodicity=(false,false),face_type=:quad)  where ND where TV<:Real   
+function revolvecurve(Vc::Vector{Point{ND,TV}}; extent = 2.0*π, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing, periodicity=(false,false),face_type=:quad)  where ND where TV<:Real   
     
     # Compute num_steps from curve point spacing
     if isnothing(num_steps)
@@ -5629,9 +5629,9 @@ function filletcurve(V::Vector{Point{NV,TV}}; rMax::Union{Vector{T},T,Nothing}=n
             n1 = normalizevector(e1)
             n2 = normalizevector(e2)
             n3 = normalizevector(cross(n1,n2))
-            α = pi - acos(dot(n1,n2))    
-            if abs(α-pi) > eps_level        
-                β = pi/2 - α/2.0
+            α = π - acos(dot(n1,n2))    
+            if abs(α-π) > eps_level        
+                β = π/2 - α/2.0
 
                 n1_e = normalizevector(cross(n3,n1))
                 n2_e = normalizevector(cross(n3,n2))
@@ -5856,7 +5856,7 @@ function edgefaceangles(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=
 end
  
 """
-    faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=false, angleThreshold = pi/8, indStart = 1)  where NF where TF<:Integer where ND where TV<:Real 
+    faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=false, angleThreshold = π/8, indStart = 1)  where NF where TF<:Integer where ND where TV<:Real 
 
 Segments surfaces using face angles
 
@@ -5865,13 +5865,13 @@ This function takes in a surface mesh defined by the faces `F` and the vertices
 `V`, and segments the surface mesh based on face angles. The output consists of 
 a "feature label" vector `G` (a Vector{Int}, with the same length of `F`) 
 whereby adjacent faces whosee angle is smaller or equal to the `angleThreshold` 
-(default is pi/8) receive the same label. Hence this function allows one to find 
+(default is π/8) receive the same label. Hence this function allows one to find 
 all faces with a similar orientation, for instance all top or side faces of some 
 mesh. The function uses radians by default. However, buy specifying the optional 
 parameter `deg=true` the user request that angles and the `angleThreshold` are
 in degrees.  
 """
-function faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=false, angleThreshold = pi/8, indStart = 1)  where NF where TF<:Integer where ND where TV<:Real 
+function faceanglesegment(F::Vector{NgonFace{NF,TF}},V::Vector{Point{ND,TV}}; deg=false, angleThreshold = π/8, indStart = 1)  where NF where TF<:Integer where ND where TV<:Real 
 
     A,_,con_E2F = edgefaceangles(F,V; deg=deg)
     indToCheck = [indStart]
@@ -6314,9 +6314,9 @@ https://mathworld.wolfram.com/Trapezohedron.html
 """
 function ntrapezohedron(n,r=1.0)    
     m = 2*n # Number of faces
-    R = 0.5*csc(pi/n)*r # Radius scaled to obtain desired midradius
-    zc = r * sqrt(4-sec(pi/m)^2)/(4+8*cos(pi/n)) # z-offset of equatorial points
-    zt = r * 1/4*cos(pi/m)*cot(pi/m)*csc(3*pi/m)*sqrt(4-sec(pi/m)^2) # z-offset of poles
+    R = 0.5*csc(π/n)*r # Radius scaled to obtain desired midradius
+    zc = r * sqrt(4-sec(π/m)^2)/(4+8*cos(π/n)) # z-offset of equatorial points
+    zt = r * 1/4*cos(π/m)*cot(π/m)*csc(3*π/m)*sqrt(4-sec(π/m)^2) # z-offset of poles
 
     # Create equatorial points
     T = circlerange(m; dir=:acw) # Range of angles for points in circle
@@ -6558,13 +6558,13 @@ function _faces2box(F12,V12,F22,V22,F32,V32,boxDim)
     V12 = V12 .+ Point{3, Float64}([0.0,0.0, boxDim[3]/2])
     F11 = invert_faces(F12)
 
-    Q = RotXYZ(-0.5*pi,0.0,0.0)
+    Q = RotXYZ(-0.5*π,0.0,0.0)
     V22 = [Point{3, Float64}(Q*v) for v ∈ V22] 
     V21 = V22 .+ Point{3, Float64}([0.0,-boxDim[2]/2,0.0])
     V22 = V22 .+ Point{3, Float64}([0.0, boxDim[2]/2,0.0])
     F21 = invert_faces(F22)
 
-    Q = RotXYZ(0.0,0.5*pi,0.0)
+    Q = RotXYZ(0.0,0.5*π,0.0)
     V32 = [Point{3, Float64}(Q*v) for v ∈ V32] 
     V31 = V32 .+ Point{3, Float64}([-boxDim[1]/2,0.0,0.0])
     V32 = V32 .+ Point{3, Float64}([ boxDim[1]/2,0.0,0.0])
@@ -6678,27 +6678,6 @@ function getisosurface(A; level=0.0, cap=false, padValue=nothing, x::Union{Abstr
 end
 
 """
-    randangle(siz::Union{Int,Tuple{Vararg{Int, N}}, Vector{Int}} = 1) where N
-
-Returns random angles
-
-# Description 
-This function returns a random angle or array of random angles of the size 
-`siz`. The angles are in radians and values lie between -pi and pi. 
-"""
-function randangle(siz::Union{Int,Tuple{Vararg{Int, N}}, Vector{Int}} = 1) where N
-    if siz == 1
-        return rand()*pi*rand((-1,1))
-    else
-        A = Array{Float64}(undef,siz)    
-        for i in eachindex(A)
-            A[i] = pi * rand() * rand((-1.0,1.0))
-        end
-        return A
-    end    
-end
-
-"""
     stepfunc(type)
 
 Returns a step function
@@ -6729,7 +6708,7 @@ function stepfunc(type::Symbol=:linear)
     elseif type == :smoothstep
         f = t -> 3.0 * t^2 - 2.0 * t^3 
     elseif type == :cosine
-        f = t -> 0.5 - 0.5 * cos(t*pi) 
+        f = t -> 0.5 - 0.5 * cos(t*π) 
     elseif type == :linear
         # Nothing, already default
         # f = t -> t 
@@ -6767,7 +6746,7 @@ function perlin_noise(size_grid, sampleFactor; type=:Perlin)
     pixelSize = 1/sampleFactor # Pixel size assuming grid has unit steps
 
     # Create grid vectors 
-    A = randangle(size_grid) # Random angles    
+    A = 2π* rand(size_grid[1], size_grid[2]) # Random angles
     Ux = cos.(A) # Unit vector x-component
     Uy = sin.(A) # Unit vector y-component
 
@@ -7398,12 +7377,12 @@ function vectorpair_angle(v1,v2,n=nothing; deg = false)
 
     # Use otherside based on normal if provided 
     if !isnothing(n) && dot(n,cross(n1,n2)) < 0.0        
-        a = 2.0*pi - a
+        a = 2.0*π - a
     end
 
     # Output in desired format
     if deg
-        return a * (180.0/pi)
+        return a * (180.0/π)
     else
         return a
     end
@@ -8619,7 +8598,7 @@ function subtri_dual(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n=1; 
                         V_tri[i] = 0.5*v + 0.5*mean(V_tri[(numVerticesOriginal+numFacesOriginal).+indBoundaryEdges])                              
                     end
                 else                    
-                    α = (4.0-2.0*cos(2*pi/length(indRingNeighbourhood)))/9.0                
+                    α = (4.0-2.0*cos(2*π/length(indRingNeighbourhood)))/9.0                
                     V_tri[i] = (1.0-α)*v +  α*mean(V[indRingNeighbourhood])
                 end
             end                                                                    
@@ -8909,7 +8888,7 @@ function triplyperiodicminimal_sheet(v::Union{Tuple{T, T, T}, Tv}, type=:P, s=0.
 end
 
 """
-    tpms(type=:P; x=range(0,2*pi,100)::T, y=x::T, z=x::T, level=0.0, cap = true, padValue=1e8, side=:positive) where T <: AbstractVector
+    tpms(type=:P; x=range(0,2*π,100)::T, y=x::T, z=x::T, level=0.0, cap = true, padValue=1e8, side=:positive) where T <: AbstractVector
 
 Computes triply periodic minimal surfaces
 
@@ -8929,7 +8908,7 @@ function tpms(type=:P; x::T, y=x, z=x, level=0.0, cap = true, padValue=1e8, side
 end
 
 """
-    tpms(type=:P; x=range(0,2*pi,100)::T, y=x::T, z=x::T, level=0.0, cap = true, padValue=1e8, side=:positive) where T <: AbstractVector
+    tpms(type=:P; x=range(0,2*π,100)::T, y=x::T, z=x::T, level=0.0, cap = true, padValue=1e8, side=:positive) where T <: AbstractVector
 
 Computes triply periodic minimal surfaces
 
@@ -9657,4 +9636,134 @@ function mesh2bool(F, V, xr, yr, zr; tolEps = eps(Float64))
         end
     end
     return B
+end
+
+function rand_incircle(r::T, N::TN; nDim=3) where T<:Real where TN<:Integer
+    P = Vector{Point{nDim,Float64}}(undef,N)
+    if !in(nDim,[2,3])
+        throw(ArgumentError("Invalid number of dimensions for point type, use 2 or 3"))
+    end
+    for i in eachindex(P)
+        R = r*sqrt(rand())
+        θ = 2π * rand()
+        if nDim == 2
+            P[i] = Point{2,Float64}(R*cos(θ), R*sin(θ))
+        elseif nDim == 3
+            P[i] = Point{3,Float64}(R*cos(θ), R*sin(θ), 0.0)
+        end
+    end    
+    return P
+end
+
+function rand_oncircle(r::T, N::TN; nDim=3) where T<:Real where TN<:Integer
+    P = Vector{Point{nDim,Float64}}(undef,N)
+    if !in(nDim,[2,3])
+        throw(ArgumentError("Invalid number of dimensions for point type, use 2 or 3"))
+    end
+    for i in eachindex(P)        
+        θ = 2π * rand()
+        if nDim == 2
+            P[i] = Point{2, Float64}(r*cos(θ), r*sin(θ))
+        else
+            P[i] = Point{3, Float64}(r*cos(θ), r*sin(θ), 0.0)
+        end
+    end    
+    return P
+end
+
+function rand_onsphere(r=1.0)
+    ϕ = 2π * rand()
+    cos_θ = 2.0 * rand() - 1.0 # Uniform z-coord of unit sphere 
+    θ = acos(cos_θ)        
+    return Point{3, Float64}(r * sin(θ) * cos(ϕ), r * sin(θ) * sin(ϕ), r * cos(θ))
+end
+
+function rand_onsphere(r::T, N::TN) where T<:Real where TN<:Integer
+    P = Vector{Point{3,Float64}}(undef,N)
+    for i in eachindex(P)        
+        P[i] = rand_onsphere(r)
+    end
+    return P
+end
+
+function rand_insphere(r=1.0)     
+    ϕ = 2π * rand()
+    cos_θ = 2.0 * rand() - 1.0 # Uniform z-coord of unit sphere 
+    θ = acos(cos_θ)
+    R = r * cbrt(rand())        
+    return Point{3, Float64}(R * sin(θ) * cos(ϕ), R * sin(θ) * sin(ϕ), R * cos(θ))    
+end
+
+function rand_insphere(r::T, N::TN) where T<:Real where TN<:Integer
+    P = Vector{Point{3,Float64}}(undef,N)
+    for i in eachindex(P)        
+        P[i] = rand_insphere(r)
+    end
+    return P
+end
+
+function rand_onsphere_cone(r=1.0, β=π/4, N=100, n=Point{3,Float64}(0.0, 0.0, 1.0))   
+    nz = Point{3,Float64}(0.0, 0.0, 1.0)
+    if n != nz
+        Q = rotation_between(nz,n)         
+        rotate_bool = true
+    else
+        rotate_bool = false
+    end
+    if β == π
+        P = rand_onsphere(r, N)        
+    else
+        P = Vector{Point{3,Float64}}(undef, N)    
+        zMin = cos(β)            
+        for i in eachindex(P)        
+            ϕ = 2π * rand()
+            cos_θ = zMin + (1.0-zMin)*rand() # Uniform x-coord in cone circle                    
+            θ = acos(cos_θ) 
+            m = Point{3,Float64}(r*cos(ϕ)*sin(θ), r*sin(ϕ)*sin(θ), r*cos(θ))            
+            if rotate_bool 
+                P[i] = Q*m
+            else
+                P[i] = m
+            end        
+        end
+    end
+    return P
+end
+
+function cartesianIndexOffset(siz::Union{Tuple{Vararg{Int, N}}, Vector{Int}}, dims=1::Union{Int, Vector{Int}}, offset=1::Union{Int, Vector{Int}}) where N
+    v = zeros(Int,length(siz)) # Create vector of zeros
+    if isa(dims, Vector{Int}) 
+        v[dims] .= offset # Set offsets in vector
+    else
+        v[dims] = offset # Set offset in vector
+    end
+    return CartesianIndex(Tuple(v)) # Export vector converted to CartesianIndex
+end
+
+function gradient(f::AbstractArray{T}, Δx=1.0, ind=1, dims=1::Union{Int, Vector{Int}}) where T
+    siz = size(f)
+    c = CartesianIndices(f)[ind] # Index of element to compute gradient for   
+    if length(Δx) == 1 # Ensure we have Δx entries for each dimension 
+        Δx = fill(Δx,length(siz))
+    elseif length(Δx)!=length(siz) # Multiple provided but there is a mismatch with the number of dimensions
+        throw(ArgumentError("Δx should be a single number or match lenght(size(f))"))    
+    end
+    if T<:Real # f is some array of numbers
+        g = zeros(T, length(dims))
+    else # f is an array of arrays of numbers
+        g = fill(eltype(f)(zeros(eltype(f[1]),size(f[1]))), length(dims))
+    end
+    for (i,d) in enumerate(dims) # Loop over each dimension       
+        if siz[d]>1 # Compute gradient if there is more than 1 element in this direction (else leave 0.0)           
+            cn = cartesianIndexOffset(siz, d, 1) # Offset to get next allong dimension
+            if c[d] == 1 # At start edge for this dimension                
+                g[i] = (f[c+cn]-f[c])/Δx[i] # Forward difference
+            elseif c[d] == siz[d] # At end edge for this dimension                                
+                g[i] = (f[c]-f[c-cn])/Δx[i] # Backward difference
+            else                 
+                g[i] = 0.5* (f[c+cn]-f[c-cn])/Δx[i] # Central difference                       
+            end
+        end
+    end
+    return g       
 end

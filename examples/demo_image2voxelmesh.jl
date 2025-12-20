@@ -3,7 +3,6 @@ using Comodo.GLMakie
 using Comodo.GeometryBasics
 using Comodo.LinearAlgebra
 using Comodo.Statistics
-using Roots
 
 GLMakie.closeall()
 
