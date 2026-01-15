@@ -1,6 +1,7 @@
 using Comodo
 using Comodo.GLMakie
 using Comodo.GeometryBasics
+using Comodo.Statistics
 
 #=
 This demo shows the use of meshplot to visualise meshes. See also Makie's 
