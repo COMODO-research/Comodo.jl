@@ -77,4 +77,4 @@ To start contributing follow these steps:
 10. Once tests are passing and documentation has been added you can commit and push your changes and submit a pull request. 
 
 # License 
-Comodo.jl is released open source under the [Apache 2.0 license](https://github.com/COMODO-research/Comodo.jl/blob/main/LICENSE).
+Comodo.jl is released open source under the [Apache 2.0 license](https://github.com/COMODO-research/Comodo.jl/blob/main/LICENSE). This license covers all source code shared here, including [the examples](https://github.com/COMODO-research/Comodo.jl/blob/main/examples) provided. 
