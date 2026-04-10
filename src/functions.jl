@@ -729,7 +729,6 @@ end
 Converts linear indices to subscript indices. Assumes one-based indexing.
 
 # Description
-shading = tru
 Converts the linear indices in `ind`, for a matrix/array with size `siz`, to the 
 equivalent subscript indices.  
 """
@@ -5423,7 +5422,7 @@ function tetgenmesh(F::Array{NgonFace{N,TF}, 1},V::Vector{Point{3,TV}}; facetmar
     end
     
     # Add hole specifications 
-    if !isnothing(V_holes)
+    if !isnothing(V_holes) && !isempty(V_holes)
         input.holelist = reduce(hcat,V_holes)
     end
 
@@ -5497,6 +5496,14 @@ Computes tetrahedral volumes
 This function computes the volume for each tetrahedron defined by the input `E`, 
 a vector of Tet4 elements, and `V` the point coordinates. 
 """
+function tetvolume(V::Vector{Point{ND,TV}}) where ND where TV<:Real
+    dot(V[1]-V[4], cross(V[3]-V[4], V[2]-V[4]))
+end
+
+function tetvolume(e::Tet4{T},V::Vector{Point{ND,TV}}) where T<:Integer where ND where TV<:Real
+    dot(V[e[1]]-V[e[4]], cross(V[e[3]]-V[e[4]], V[e[2]]-V[e[4]]))
+end
+
 function tetvolume(E::Vector{Tet4{T}},V::Vector{Point{ND,TV}}) where T<:Integer where ND where TV<:Real
     vol = Vector{TV}(undef,length(E))
     for (i,e) in enumerate(E)
@@ -7656,7 +7663,7 @@ function incircle(P)
 end
 
 function incircle(f::TriangleFace{TF}, V::Vector{Point{3,TV}}) where TF<:Integer where TV<:Real      
-    return incircle(V[f])
+    return incircle(V[collect(f)])
 end
 
 function incircle(F::Vector{TriangleFace{TF}}, V::Vector{Point{3,TV}}) where TF<:Integer where TV<:Real
@@ -8164,27 +8171,39 @@ within the triangle defined by the input point vector `vf`. Optionally one can
 also provide the triangle face area `a` and normal direction `n`, if these 
 have already been computed. 
 """
-function barycoord(vf,p,i,a,n)     
-     vfp = Vector{eltype(vf)}(undef,length(vf))
-     for j in eachindex(vf)
-          if i!=j
-               vfp[j] = vf[j]
-          else 
-               vfp[j] = p
-          end
-     end
-     return dot(edgecrossproduct(vfp), n)/a
+function barycoord(vf::Vector{Point{3,TV}}, p::Point{3,TV}, i::Int, a::T, n::Union{Point{3,TV}, Vec{3,TV}}) where TV<:Real where T<:Real
+    vfp = Vector{eltype(vf)}(undef,length(vf))
+    for j in eachindex(vf)
+        if i==j # Set i-th point as the point p
+            vfp[j] = p
+        else # Copy other points
+            vfp[j] = vf[j]
+        end
+    end
+    return dot(edgecrossproduct(vfp), n)/a
 end
 
-function barycoord(vf,p,i)     
-     c = edgecrossproduct(vf)
-     a = norm(c) # Area
-     n = c/norm(c) # Normal vector     
-     return barycoord(vf,p,i,a,n)
+function barycoord(vf::Vector{Point{3,TV}}, p::Point{3,TV}, i) where TV<:Real     
+    c = edgecrossproduct(vf)
+    a = norm(c) # Area
+    n = c/norm(c) # Normal vector     
+    return barycoord(vf,p,i,a,n)
 end
+
+# function barycoord(vf::Vector{Point{3,TV}}, p::Point{3,TV}, i::Int, v=0.0) where TV<:Real   
+#     vfp = Vector{eltype(vf)}(undef,length(vf))
+#     for j in eachindex(vf)
+#         if i==j # Set i-th point as the point p
+#           vfp[j] = p
+#         else # Copy other points
+#           vfp[j] = vf[j]
+#         end
+#     end
+#     return tetvolume(vfp)/tetvolume(vf)
+# end
 
 """
-    cart2bary(f::NgonFace{NF,TF}, V::Vector{Point{ND,TV}}, p::Point{ND,TV}) where NF where TF<:Integer where ND where TV<:Real
+    cart2bary(f::NgonFace{NF,TF}, V::Vector{Point{3,TV}}, p::Point{3,TV}) where NF where TF<:Integer where TV<:Real
 
 Computes barycentric coordinates
 
@@ -8192,18 +8211,27 @@ Computes barycentric coordinates
 This function computes the barycentric coordinates for the point `p` within the 
 triangle defined by the face `f` and vertices `V`. 
 """
-function cart2bary(f::NgonFace{NF,TF}, V::Vector{Point{ND,TV}}, p::Point{ND,TV}) where NF where TF<:Integer where ND where TV<:Real
+function cart2bary(f::NgonFace{NF,TF}, V::Vector{Point{3,TV}}, p::Point{3,TV}) where NF where TF<:Integer where TV<:Real
     c = edgecrossproduct(f,V) # Shoelace vector
     a = norm(c) # Area
-    n = c/norm(c) # Normal vector
-    λ₁ = barycoord(V[f],p,1,a,n)
-    λ₂ = barycoord(V[f],p,2,a,n)
-    λ₃ = 1.0 - λ₁ - λ₂ # barycoord(V[f],p,3,a,n)
+    n = c/a # Normal vector
+    λ₁ = barycoord(V[collect(f)], p, 1, a, n)
+    λ₂ = barycoord(V[collect(f)], p, 2, a, n)
+    λ₃ = 1.0 - λ₁ - λ₂ # barycoord(V[f], p, 3, a, n)
     return Point{3,TV}(λ₁, λ₂, λ₃)
 end
 
+function cart2bary(e::Tet4{TF}, V::Vector{Point{3,TV}}, p::Point{3,TV}) where TF<:Integer where TV<:Real
+    v  = tetvolume(e, V) # Element volume 
+    λ₁ = tetvolume([      p, V[e[2]], V[e[3]], V[e[4]]])/v # Normalised p-2-3-4 tet volume
+    λ₂ = tetvolume([V[e[1]],       p, V[e[3]], V[e[4]]])/v # Normalised 1-p-3-4 tet volume
+    λ₃ = tetvolume([V[e[1]], V[e[2]],       p, V[e[4]]])/v # Normalised 1-2-p-4 tet volume
+    λ₄ = 1.0 - λ₁ - λ₂ - λ₃ # Remaining as 1 minus others 
+    return Point{4,TV}(λ₁, λ₂, λ₃, λ₄)
+end
+
 """
-    bary2cart(f::NgonFace{NF,TF}, V::Vector{Point{ND,TV}}, λ::Point{ND,TV}) where NF where TF<:Integer where ND where TV<:Real
+    bary2cart(f::Union{NgonFace{NF,TF}, Tet4{TF}}, V::Vector{Point{ND,TV}}, λ::Point{ND,TV}) where NF where TF<:Integer where ND where TV<:Real
 
 Computes Cartesian coordinates from barycentric coordinates
 
@@ -8212,8 +8240,12 @@ This function computes the Cartesian coordinates for the point `p` using the
 triangle defined by the face `f`, the triangle vertices `V` and the barycentric
 coordinates `λ`.  
 """
-function bary2cart(f::NgonFace{NF,TF}, V::Vector{Point{ND,TV}}, λ::Point{ND,TV}) where NF where TF<:Integer where ND where TV<:Real
-    return λ[1]*V[f[1]] + λ[2]*V[f[2]] + λ[3]*V[f[3]]
+function bary2cart(f::Union{NgonFace{NF,TF}, Tet4{TF}}, V::Vector{Point{ND,TV}}, λ::Point{NL,TV}) where NF where TF<:Integer where ND where NL where TV<:Real
+    p = Point{ND,TV}(zeros(ND))
+    for i in collect(f) # collect is used to avoid type change on V[i]
+        p += λ[i]*V[i]
+    end
+    return p 
 end
 
 """
@@ -8241,7 +8273,7 @@ end
 
 function intriangle(f, V::Vector{Point{ND,TV}}, p::Point{ND,TV}, a, n) where ND where TV<:Real           
      for i = 1:3                            
-        barycoord(V[f],p,i,a,n)<0.0 ? (return false) : continue
+        barycoord(V[collect(f)],p,i,a,n)<0.0 ? (return false) : continue
      end
      return true
 end
@@ -9767,3 +9799,19 @@ function gradient(f::AbstractArray{T}, Δx=1.0, ind=1, dims=1::Union{Int, Vector
     end
     return g       
 end
+
+#= 
+   Copyright 2024-2026 Kevin Mattheus Moerman
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+=#

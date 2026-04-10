@@ -35,7 +35,7 @@ for testCase = 1:6
         V_regions = [v_region]
         V_holes = Vector{Point{3,Float64}}()
         stringOpt = "paAqY"
-        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions,region_vol=[vol1],V_holes=[v_hole], stringOpt)
+        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions, region_vol=[vol1], V_holes=[v_hole], stringOpt=stringOpt)
     elseif testCase == 3
         r1 = 2.0
         r2 = r1/2
@@ -63,7 +63,7 @@ for testCase = 1:6
         V_regions = [v_region1,v_region2]
         V_holes = Vector{Point{3,Float64}}()
         stringOpt = "paAqY"
-        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions,region_vol=region_vol, stringOpt)
+        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions, region_vol=region_vol, V_holes=V_holes, stringOpt=stringOpt)
     elseif testCase == 4
         # Loading a mesh
         fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
@@ -91,7 +91,7 @@ for testCase = 1:6
         V_regions = [Point{3,Float64}(-50.0, 0.0, 0.0)]
         V_holes = [v_hole]
         stringOpt = "paAqYQ"
-        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions, V_holes=V_holes, region_vol=vol1, stringOpt)
+        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions, V_holes=V_holes, region_vol=vol1, stringOpt=stringOpt)
     elseif testCase == 5
         # Loading a mesh
         fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
@@ -131,7 +131,7 @@ for testCase = 1:6
         region_vol = [vol1,vol2]
 
         stringOpt = "paAqYQ"
-        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions,V_holes=V_holes, region_vol=region_vol, stringOpt)
+        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions,V_holes=V_holes, region_vol=region_vol, stringOpt=stringOpt)
     elseif testCase == 6
         # Loading a mesh
         fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
@@ -172,7 +172,7 @@ for testCase = 1:6
 
         stringOpt = "paAqYQ"
         element_type = Tet10{Int}
-        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions,V_holes=V_holes, region_vol=region_vol, stringOpt, element_type=element_type)
+        E,V,CE,Fb,Cb = tetgenmesh(Fb,Vb; facetmarkerlist=Cb, V_regions=V_regions,V_holes=V_holes, region_vol=region_vol, stringOpt=stringOpt, element_type=element_type)
     end
 
     ## Visualization
