@@ -56,7 +56,7 @@ New functionality to add:
 	* [**ComodoFerrite.jl**](https://github.com/COMODO-research/ComodoFerrite.jl)
 
 # How to contribute? 
-Your help would be greatly appreciated! If you can contribute please do so by posting a pull-request. We are very much open to fully acknowledging your contributions e.g. by listing you as a contributor properly wherever possible, by welcoming you on board as a long term contributor, or by inviting you to be a co-author on publications featuring Comodo functionality. 
+Your help would be greatly appreciated! If you can contribute please do so by posting a pull-request. We are very much open to fully acknowledging your contributions e.g. by listing you as a contributor properly wherever possible, by welcoming you on board as a long term contributor, or by inviting you to be a co-author on publications featuring Comodo functionality. Comodo.jl only accepts human generated contributions, as such content created using LLM's or other generative "AI" tools is not acceptable. 
 
 To start contributing follow these steps: 
 1. Fork this repository
