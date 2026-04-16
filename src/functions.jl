@@ -9504,7 +9504,7 @@ function image2voxelmesh(I::Array{TM, 3}, C::Vector{CartesianIndex{3}}; meshType
     if isempty(C)
         if meshType == :elements 
             M = Vector{Hex8{Int}}()
-        else
+        else # :faces or :boundaryfaces
             M = Vector{QuadFace{Int}}()
         end
         return M, Vector{Point{3, Float64}}(), Vector{TM}()

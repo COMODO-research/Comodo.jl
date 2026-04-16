@@ -9289,6 +9289,12 @@ end
     @test isempty(V)
     @test isempty(CM)
 
+    meshType = :faces
+    M, V, CM = image2voxelmesh(I, voxelSelection; meshType=meshType, voxelSize=voxelSize, origin=origin)
+    @test isempty(M)
+    @test isempty(V)
+    @test isempty(CM)
+
     # Check errors
     @test_throws Exception M, V, CM = image2voxelmesh(I, voxelSelection; meshType=:wrong, voxelSize=voxelSize, origin=origin)
 end
@@ -9337,7 +9343,6 @@ end
               Point{3, Float64}(0.0, 2.0*r, 0.0), # Out
               Point{3, Float64}(0.0, 0.0, 2.0*r), # Out
               Point{3, Float64}(0.0, 0.0, r)] # On
-
 
     # Single point
     b = inmesh(F,V, P_test[1], tolEps = eps(Float64), include_on=false)

@@ -6,7 +6,6 @@ using Distances: euclidean, Distances, Euclidean, pairwise, sqeuclidean
 using QuadGK: quadgk, QuadGK
 using StaticArrays: StaticVector, Size, StaticArrays, StaticArraysCore
 using Rotations: RotMatrix3, RotXYZ, rotation_between, AngleAxis, Rotations
-using DataStructures: OrderedDict, DataStructures
 using MarchingCubes 
 using TetGen: tetrahedralize, TetGen
 using BSplineKit: BSplineOrder, BSplineKit
@@ -37,7 +36,6 @@ export DelaunayTriangulation
 export GLMakie
 export LinearAlgebra
 export GeometryBasics
-export DataStructures
 export SpecialFunctions
 export Distributions
 
