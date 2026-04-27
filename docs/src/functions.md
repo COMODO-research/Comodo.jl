@@ -1,4 +1,4 @@
-# Functions
+<!-- # Functions
 
 ## `comododir`
 ```@docs
@@ -894,4 +894,6 @@ Comodo.tri2def
 ## `polarDecomposition`
 ```@docs 
 Comodo.polarDecomposition
-```
+``` -->
+
+
