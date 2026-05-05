@@ -5,6 +5,7 @@ using Comodo.LinearAlgebra
 using Comodo.GLMakie
 using Comodo.Rotations
 using Comodo.BSplineKit
+using Comodo.Distributions
 using Pkg
 
 @testset "comododir" verbose = true begin
@@ -9644,6 +9645,18 @@ end
         g = gradient(f, Δx, ind, dims)
         @test isapprox(g[1], 0.5(f[c[1]+1,c[2]]-f[c[1]-1,c[2]])/Δx[1], atol=eps_level)
         @test isapprox(g[2], 0.5(f[c[1],c[2]+1]-f[c[1],c[2]-1])/Δx[2], atol=eps_level)
+    end
+end
+
+@testset "mixture_VonMisesFisher" verbose=true begin 
+    μ = [[0.0, 0.0, 1.0], [0.0, -1.0, 0.0], [-1.0, 0.0, 0.0]]
+    κ = [25.0, 50.0, 100.0]
+    spl = mixture_VonMisesFisher(μ, κ)
+
+    @test isa(spl,MixtureModel)
+    for i in eachindex(μ)
+        @test spl.components[i].μ == μ[i] 
+        @test spl.components[i].κ == κ[i] 
     end
 end
 

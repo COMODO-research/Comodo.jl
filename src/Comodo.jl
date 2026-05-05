@@ -92,7 +92,7 @@ export subtri_centre, removethreeconnected, removethreeconnected!
 export tri2quad_merge!, tri2quad_merge_split!, tri2def, polarDecomposition
 export image2voxelmesh, smoothmesh_taubin, inmesh, mesh2bool
 export rand_incircle, rand_oncircle, rand_insphere, rand_onsphere, rand_onsphere_cone
-export cartesianIndexOffset, gradient
+export cartesianIndexOffset, gradient, mixture_VonMisesFisher
 end # module
 
 #= 

@@ -9552,7 +9552,22 @@ function image2voxelmesh(I::Array{TM, 3}, C::Vector{CartesianIndex{3}}; meshType
     end
 end
 
+"""
+    smoothmesh_taubin(F::Vector{NgonFace{N,TF}}, V::Vector{Point{ND,TV}}, n=1, λ=0.631398, μ=-0.673952; con_V2V=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
 
+Taubin smooth surface mesh
+
+# Description
+This function applies Taubin smoothing to the surface mesh defined by the faces 
+`F` and vertices `V`. 
+`n` defines the number of smooth iterations (default is 1)
+`λ` is a Taubin smoothing parameter (default is 0.631398)
+`μ` is a Taubin smoothing parameter (default is -0.673952) 
+`con_V2V` defines the vertex-vertex connectivity in the mesh (default is 
+`nothing` causing it to be computed by this function instead)
+`constrained_points` defines a set of points that should be constrained from 
+moving (default is `nothing`)
+"""
 function smoothmesh_taubin(F::Vector{NgonFace{N,TF}}, V::Vector{Point{ND,TV}}, n=1, λ=0.631398, μ=-0.673952; con_V2V=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
     if λ>1.0 || λ<0.0
         throw(ArgumentError("λ should be in the range 0-1"))
@@ -9596,17 +9611,30 @@ function smoothmesh_taubin(F::Vector{NgonFace{N,TF}}, V::Vector{Point{ND,TV}}, n
     return V
 end
 
+"""
+    inmesh(F, V::Vector{Point{3, TV}}, p::Point{3, Tp}; tolEps = eps(Float64), include_on=false) where TV<:Real where Tp <: Real
+    inmesh(F, V::Vector{Point{3, TV}}, P::Vector{Point{3, Tp}}; tolEps = eps(Float64), include_on=false) where TV<:Real where Tp <: Real
 
+Checks if point is inside mesh
+
+# Description
+This function returns a Boolean denoting if the input point `p` is inside the 3D
+surface mesh defined by the faces `F` and vertices `V`. 
+The optional input argument `tolEps` defines a tolerance for accepting interior 
+points. 
+"""
 function inmesh(F, V::Vector{Point{3, TV}}, p::Point{3, Tp}; tolEps = eps(Float64), include_on=false) where TV<:Real where Tp <: Real        
     P, _, T, D = ray_triangle_intersect(F, V, p, Point{3, Float64}(0.0, 0.0, 1.0); rayType = :ray, triSide = 0, tolEps = tolEps)        
     P_uni, indUni = mergevertices(P; pointSpacing=pointspacingmean(F, V)) # Get unique point indices 
     T_uni = T[indUni]
     D_uni = D[indUni]
     
-    if include_on && any(abs.(T_uni).< tolEps) # Point is on a face
-        return true
-    elseif any(abs.(T_uni).< tolEps) # Point is on a face 
-        return false
+    if any(abs.(T_uni).< tolEps) # Point is on a face
+        if include_on
+            return true
+        else 
+            return false
+        end
     else
         if length(P_uni)<2 || all(T_uni .< -tolEps) || all(T_uni .> tolEps) # Nothing or just 1, or all in front or all behind
             return false    
@@ -9633,6 +9661,18 @@ function inmesh(F, V::Vector{Point{3, TV}}, P::Vector{Point{3, Tp}}; tolEps = ep
     return B
 end
 
+"""
+    mesh2bool(F, V, xr, yr, zr; tolEps = eps(Float64))
+
+Creates mesh to Boolean array
+
+# Description
+This function derives a 3D Boolean array `B` for the 3D surface mesh defined by
+the faces `F` and vertices `V`. The Boolean array contains True entries for 
+points defined by the coordinate vectors `xr`, `yr`, `zr` that are inside of the 
+surface. The optional input argument `tolEps` defines a tolerance for accepting
+interior points. 
+"""
 function mesh2bool(F, V, xr, yr, zr; tolEps = eps(Float64))
     B = fill(false, length(yr), length(xr), length(zr)) #Array{Bool, 3}(undef, length(yr), length(xr), length(zr))
     z1 = zr[1]
@@ -9640,8 +9680,8 @@ function mesh2bool(F, V, xr, yr, zr; tolEps = eps(Float64))
     for (i,y) in enumerate(yr)
         for (j,x) in enumerate(xr)        
             P, _, T, D = ray_triangle_intersect(F, V, Point{3,Float64}(x,y,z1), Point{3, Float64}(0.0, 0.0, 1.0); rayType = :ray, triSide = 0, tolEps = tolEps)                
-            P_uni, indUni = mergevertices(P; pointSpacing=dz) # Get unique point indices 
-            if length(P_uni)>1
+            P_uni, indUni = mergevertices(P; pointSpacing=dz) # Get unique intersection point indices 
+            if length(P_uni)>1 # If more than 1 intersection found
                 T_uni = T[indUni]
                 D_uni = D[indUni]
                 indSort = sortperm(T_uni)
@@ -9670,6 +9710,15 @@ function mesh2bool(F, V, xr, yr, zr; tolEps = eps(Float64))
     return B
 end
 
+"""
+    rand_incircle(r::T, N::TN; nDim=3) where T<:Real where TN<:Integer
+
+Creates random points in circle
+
+# Description
+This function creates `N` points in a circle with radius `r`. The optional 
+argument `nDim` is 2 or 3 for 2D or 3D (default) points respectively. 
+"""
 function rand_incircle(r::T, N::TN; nDim=3) where T<:Real where TN<:Integer
     P = Vector{Point{nDim,Float64}}(undef,N)
     if !in(nDim,[2,3])
@@ -9687,6 +9736,15 @@ function rand_incircle(r::T, N::TN; nDim=3) where T<:Real where TN<:Integer
     return P
 end
 
+"""
+    rand_oncircle(r::T, N::TN; nDim=3) where T<:Real where TN<:Integer
+
+Creates random points on circle
+
+# Description
+This function creates `N` points on a circle with radius `r`. The optional 
+argument `nDim` is 2 or 3 for 2D or 3D (default) points respectively. 
+"""
 function rand_oncircle(r::T, N::TN; nDim=3) where T<:Real where TN<:Integer
     P = Vector{Point{nDim,Float64}}(undef,N)
     if !in(nDim,[2,3])
@@ -9703,6 +9761,16 @@ function rand_oncircle(r::T, N::TN; nDim=3) where T<:Real where TN<:Integer
     return P
 end
 
+"""
+    rand_onsphere(r=1.0)
+    rand_onsphere(r::T, N::TN) where T<:Real where TN<:Integer
+
+Creates random sphere surface points
+
+# Description
+This function creates `N` points on a sphere with radius `r`. If N is not 
+defined then a single point is returned. 
+"""
 function rand_onsphere(r=1.0)
     ϕ = 2π * rand()
     cos_θ = 2.0 * rand() - 1.0 # Uniform z-coord of unit sphere 
@@ -9718,6 +9786,16 @@ function rand_onsphere(r::T, N::TN) where T<:Real where TN<:Integer
     return P
 end
 
+"""
+    rand_insphere(r=1.0)
+    rand_insphere(r::T, N::TN) where T<:Real where TN<:Integer
+
+Creates random sphere interior points
+
+# Description
+This function creates `N` points inside a sphere with radius `r`. If N is not 
+defined then a single point is returned. 
+"""
 function rand_insphere(r=1.0)     
     ϕ = 2π * rand()
     cos_θ = 2.0 * rand() - 1.0 # Uniform z-coord of unit sphere 
@@ -9734,6 +9812,15 @@ function rand_insphere(r::T, N::TN) where T<:Real where TN<:Integer
     return P
 end
 
+"""
+    rand_onsphere_cone(r=1.0, β=π/4, N=100, n=Point{3,Float64}(0.0, 0.0, 1.0))
+
+Creates random points on sphere within cone
+
+# Description
+This function creates `N` points on a sphere with radius `r` which are located 
+within a cone defined by the cone angle `β`, and cone direction vector `n`.
+"""
 function rand_onsphere_cone(r=1.0, β=π/4, N=100, n=Point{3,Float64}(0.0, 0.0, 1.0))   
     nz = Point{3,Float64}(0.0, 0.0, 1.0)
     if n != nz
@@ -9762,6 +9849,22 @@ function rand_onsphere_cone(r=1.0, β=π/4, N=100, n=Point{3,Float64}(0.0, 0.0, 
     return P
 end
 
+"""
+    cartesianIndexOffset(siz::Union{Tuple{Vararg{Int, N}}, Vector{Int}}, dims=1::Union{Int, Vector{Int}}, offset=1::Union{Int, Vector{Int}}) where N
+
+Creates Cartesian index offset
+
+# Description
+This function creates a Cartesian index offset i,e, a CartesianIndex is returned 
+that can be added to an existing CartesianIndex to offset or shift it by a 
+certain amount in certain direction(s). 
+The input `siz` defines the size of the object to be indexed. 
+The input `dims` defines the dimention (Int) or dimensions (Vector{Int}) allong
+which to offset. 
+The input `offset` defines the offsets for each dimension given. If a single Int
+value is provided then this offset is used for all directions. Alternatively a 
+vector or integers can be provided to define offsets for each direction. 
+"""
 function cartesianIndexOffset(siz::Union{Tuple{Vararg{Int, N}}, Vector{Int}}, dims=1::Union{Int, Vector{Int}}, offset=1::Union{Int, Vector{Int}}) where N
     v = zeros(Int,length(siz)) # Create vector of zeros
     if isa(dims, Vector{Int}) 
@@ -9772,6 +9875,19 @@ function cartesianIndexOffset(siz::Union{Tuple{Vararg{Int, N}}, Vector{Int}}, di
     return CartesianIndex(Tuple(v)) # Export vector converted to CartesianIndex
 end
 
+"""
+    gradient(f::AbstractArray{T}, Δx=1.0, ind=1, dims=1::Union{Int, Vector{Int}}) where T
+
+Computes numerical gradient
+
+# Description
+This function computes the gradient of input array `f`. `Δx` defines the step 
+size in each direction. If `Δx` is a single number then the step size is assumed
+to be the same in each direction. The gradient is computed for the array 
+component with linear index `ind` and for the dimension(s) defined by `dims`. 
+The directions `dims` can be a single integer or a vector of integers for 
+multiple directions. 
+"""
 function gradient(f::AbstractArray{T}, Δx=1.0, ind=1, dims=1::Union{Int, Vector{Int}}) where T
     siz = size(f)
     c = CartesianIndices(f)[ind] # Index of element to compute gradient for   
@@ -9798,6 +9914,20 @@ function gradient(f::AbstractArray{T}, Δx=1.0, ind=1, dims=1::Union{Int, Vector
         end
     end
     return g       
+end
+
+"""
+    mixture_VonMisesFisher(μ, κ)
+
+Creates Von Mises - Fisher mixture model
+
+# Description
+This function returns a MixtureModel (see Distributions package) for the 
+VonMisesFisher distribution. The input consists of the mean directions `μ` 
+(a vector of vectors), and a concentration parameter vector `κ`. 
+"""
+function mixture_VonMisesFisher(μ, κ)
+    return MixtureModel(VonMisesFisher, [(μ[i], κ[i]) for i in eachindex(μ)])
 end
 
 #= 

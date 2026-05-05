@@ -895,3 +895,63 @@ Comodo.tri2def
 ```@docs 
 Comodo.polarDecomposition
 ```
+
+## `image2voxelmesh`
+```@docs 
+Comodo.image2voxelmesh
+```
+
+## `smoothmesh_taubin`
+```@docs 
+Comodo.smoothmesh_taubin
+```
+
+## `inmesh`
+```@docs 
+Comodo.inmesh
+```
+
+## `mesh2bool`
+```@docs 
+Comodo.mesh2bool
+```
+
+## `rand_incircle`
+```@docs 
+Comodo.rand_incircle
+```
+
+## `rand_oncircle`
+```@docs 
+Comodo.rand_oncircle
+```
+
+## `rand_onsphere`
+```@docs 
+Comodo.rand_onsphere
+```
+
+## `rand_insphere`
+```@docs 
+Comodo.rand_insphere
+```
+
+## `rand_onsphere_cone`
+```@docs 
+Comodo.rand_onsphere_cone
+```
+
+## `cartesianIndexOffset`
+```@docs 
+Comodo.cartesianIndexOffset
+```
+
+## `gradient`
+```@docs 
+Comodo.gradient
+```
+
+## `mixture_VonMisesFisher`
+```@docs 
+Comodo.mixture_VonMisesFisher
+```
