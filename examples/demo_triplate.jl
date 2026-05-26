@@ -10,6 +10,7 @@ F, V, Eb, Cb = triplate(plateDim1, pointSpacing1; orientation=orientation1, retu
 
 # Visualization
 GLMakie.closeall()
+cmap = Makie.Categorical(:Spectral) 
 
 Ebs,Vbs = separate_vertices(Eb,V)
 Cbs_V = simplex2vertexdata(Ebs,Cb)
