@@ -1,6 +1,7 @@
 using Comodo
 using Comodo.GLMakie
 using Comodo.GeometryBasics
+using Comodo.LinearAlgebra
 
 r = 1.0
 Fb,Vb = geosphere(1,r)

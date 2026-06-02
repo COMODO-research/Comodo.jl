@@ -5593,8 +5593,26 @@ end
         E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
         F = element2faces(E)
         @test length(F) == length(E)*6
-        @test isa(F,Vector{QuadFace{Int}})
+        @test isa(F, Vector{QuadFace{Int}})
         @test F[1] == [3,4,2,1]
+    end
+
+    @testset "hex20" begin
+        E8 = [Hex8{Int}(1,2,3,4,5,6,7,8)]
+        V8 = [Point{3,Float64}(-1.0, -1.0,  0.0),
+              Point{3,Float64}(-1.0,  1.0,  0.0),
+              Point{3,Float64}( 1.0,  1.0,  0.0),
+              Point{3,Float64}( 1.0, -1.0,  0.0),         
+              Point{3,Float64}(-1.0, -1.0,  1.0),
+              Point{3,Float64}(-1.0,  1.0,  1.0),
+              Point{3,Float64}( 1.0,  1.0,  1.0),
+              Point{3,Float64}( 1.0, -1.0,  1.0),
+              ]
+        E, V = hex8_hex20(E8, V8)    
+        F = element2faces(E)
+        @test length(F) == length(E)*6
+        @test isa(F, Vector{NgonFace{8, Int}})
+        @test F[1] == NgonFace{8, Int64}(4, 11, 3, 10, 2, 9, 1, 12)
     end
 
     @testset "tet4" begin
@@ -9659,6 +9677,52 @@ end
         @test spl.components[i].κ == κ[i] 
     end
 end
+
+
+@testset "hex8_hex20" verbose = true begin                 
+    # Test single element 
+    E = [Hex8{Int}(1,2,3,4,5,6,7,8)]
+    V = [Point{3,Float64}(-1.0, -1.0,  0.0),
+         Point{3,Float64}(-1.0,  1.0,  0.0),
+         Point{3,Float64}( 1.0,  1.0,  0.0),
+         Point{3,Float64}( 1.0, -1.0,  0.0),         
+         Point{3,Float64}(-1.0, -1.0,  1.0),
+         Point{3,Float64}(-1.0,  1.0,  1.0),
+         Point{3,Float64}( 1.0,  1.0,  1.0),
+         Point{3,Float64}( 1.0, -1.0,  1.0),
+         ]
+    E_hex20, V_hex20 = hex8_hex20(E,V)
+    
+    @test typeof(E_hex20) <: Vector{Hex20{Int}} 
+    @test E_hex20 == Hex20{Int64}[[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]]
+    @test V_hex20 == Point{3, Float64}[[-1.0, -1.0, 0.0], [-1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [1.0, -1.0, 0.0], 
+                                       [-1.0, -1.0, 1.0], [-1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, -1.0, 1.0], 
+                                       [-1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, -1.0, 0.0], 
+                                       [-1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [1.0, 0.0, 1.0], [0.0, -1.0, 1.0], 
+                                       [-1.0, -1.0, 0.5], [-1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [1.0, -1.0, 0.5]]
+
+    # Test multiple elements 
+    E = [Hex8{Int}(1, 2, 3, 4, 5, 6, 7, 8), Hex8{Int}(5, 6, 7, 8, 9, 10, 11, 12)]
+    V = [Point{3,Float64}(-1.0, -1.0,  0.0),
+         Point{3,Float64}(-1.0,  1.0,  0.0),
+         Point{3,Float64}( 1.0,  1.0,  0.0),
+         Point{3,Float64}( 1.0, -1.0,  0.0),         
+         Point{3,Float64}(-1.0, -1.0,  1.0),
+         Point{3,Float64}(-1.0,  1.0,  1.0),
+         Point{3,Float64}( 1.0,  1.0,  1.0),
+         Point{3,Float64}( 1.0, -1.0,  1.0),
+         Point{3,Float64}(-1.0, -1.0,  2.0),
+         Point{3,Float64}(-1.0,  1.0,  2.0),
+         Point{3,Float64}( 1.0,  1.0,  2.0),
+         Point{3,Float64}( 1.0, -1.0,  2.0),
+         ]
+    E_hex20, V_hex20 = hex8_hex20(E,V)
+    
+    ind = round.(Int,range(1,length(V_hex20),6))    
+    @test E_hex20 == Hex20{Int64}[[1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24], [5, 6, 7, 8, 9, 10, 11, 12, 17, 18, 19, 20, 25, 26, 27, 28, 29, 30, 31, 32]]
+    @test V_hex20[ind] == Point{3, Float64}[[-1.0, -1.0, 0.0], [1.0, 1.0, 1.0], [-1.0, 0.0, 0.0], [0.0, -1.0, 1.0], [0.0, 1.0, 2.0], [1.0, -1.0, 1.5]]
+end
+
 
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------

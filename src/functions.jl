@@ -4971,6 +4971,18 @@ function element2faces(E::Vector{<: AbstractElement{N, T}}) where N where T
             F[ii+4] = QuadFace{T}(e[2],e[3],e[7],e[6]) # Front
             F[ii+5] = QuadFace{T}(e[5],e[8],e[4],e[1]) # Back
         end
+    elseif element_type <: Hex20{T}
+        nf = 6
+        F = Vector{NgonFace{8,T}}(undef,length(E)*nf)
+        for (i,e) in enumerate(E)            
+            ii = 1 + (i-1)*nf
+            F[ii  ] = NgonFace{8,T}(e[4], e[11],  e[3], e[10],  e[2],  e[9],  e[1], e[12]) # Top
+            F[ii+1] = NgonFace{8,T}(e[5], e[13],  e[6], e[14],  e[7], e[15],  e[8], e[16]) # Bottom
+            F[ii+2] = NgonFace{8,T}(e[1],  e[9],  e[2], e[18],  e[6], e[13],  e[5], e[17]) # Side 1
+            F[ii+3] = NgonFace{8,T}(e[8], e[15],  e[7], e[19],  e[3], e[11],  e[4], e[20]) # Side 2
+            F[ii+4] = NgonFace{8,T}(e[2], e[10],  e[3], e[19],  e[7], e[14],  e[6], e[18]) # Front
+            F[ii+5] = NgonFace{8,T}(e[5], e[16],  e[8], e[20],  e[4], e[12],  e[1], e[17]) # Back
+        end
     elseif element_type <: Penta6{T}
         # Triangles
         nft = 2
@@ -7015,6 +7027,31 @@ function elementEdges(E::Vector{<: AbstractElement{N, T}}) where N where T
 end
 
 """
+    hex8_hex20(E,V)
+
+Converts linear to quadratic hexahedra
+
+# Description
+This function converts the input tri-linear 8-noded hexahedral elements, defined
+by the element vector `E` and vertices `V`, to 20 noded quadratic hexahedral 
+elements, defined by the output element vector `E_hex20` and vertices 
+`V_hex20`.
+"""
+function hex8_hex20(E,V)
+    hexEdges = elementEdges(E)
+    hexEdgesUnique,indReverse = gunique(hexEdges; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
+    Vn = simplexcenter(hexEdgesUnique,V)
+    Vq = [V; Vn]  # Old and new mid-edge points          
+    Eq = Vector{Hex20{Int}}(undef,length(E))        
+    for (i,e) in enumerate(E)
+        indNew = indReverse[1+(i-1)*12:i*12] .+ length(V)
+        println(length(indNew))
+        Eq[i] = Hex20{Int}([collect(e); indNew])
+    end
+    return Eq, Vq
+end
+
+"""
     tet4_tet10(E,V)
 
 Converts linear to quadratic tetrahedra
@@ -7039,7 +7076,7 @@ function tet4_tet10(E,V)
 end
 
 """
-    tet4_tet10(E,V)
+    tet4_tet15(E,V)
 
 Converts linear to quadratic tetrahedra
 
