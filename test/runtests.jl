@@ -5736,8 +5736,8 @@ end
     end
 
     @testset "errors" begin
-        E = [Hex20{Int}(collect(1:20))]                
-        @test_throws Exception element2faces(E)
+        F = [QuadFace(collect(1:4))]                
+        @test_throws Exception element2faces(F)
     end
 end
 

@@ -2224,14 +2224,14 @@ This function take the faces `F` and vertices `V` and merges points that are suf
 similar. Once points are merged the indices in `F` are corrected for the new reduced
 point set. 
 """
-function mergevertices(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}; roundVertices = true, pointSpacing=nothing, numDigitsMerge=nothing) where N where TF<:Integer where ND where TV<:Real
+function mergevertices(F::Union{Vector{<: NgonFace}, Vector{<: AbstractElement}}, V::Vector{Point{ND,TV}}; roundVertices = true, pointSpacing=nothing, numDigitsMerge=nothing) where ND where TV<:Real
     if isnothing(numDigitsMerge)         
         if isnothing(pointSpacing)
             pointSpacing = pointspacingmean(F,V)
         end
     end
     V,indUnique,indMap = mergevertices(V; roundVertices = roundVertices, pointSpacing=pointSpacing, numDigitsMerge=numDigitsMerge)
-    indexmap!(F,indMap)
+    indexmap!(F, indMap)
     return F,V,indUnique,indMap
 end
 
@@ -5076,7 +5076,7 @@ function element2faces(E::Vector{<: AbstractElement{N, T}}) where N where T
         end
         F = (F1,F2) # Collect faces in tuple
     else
-        throw(ArgumentError("$element_type not supported. Supported types are Hex8, Tet4, and Penta6."))
+        throw(ArgumentError("$element_type not supported."))
     end
     return F
 end
