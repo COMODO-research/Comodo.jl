@@ -4,8 +4,8 @@ using Comodo.GeometryBasics
 using Comodo.Statistics
 
 #=
-This demo shows the use of `hexbox` to generate a hexahedral mesh for a 3D box
-domain. 
+This demo shows the use of `hex8_hex20` to convert 8-noded hexahedral elements 
+to 2-noded hexehedral elements. 
 =#
 
 pointSpacing = 0.5
