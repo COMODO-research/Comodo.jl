@@ -7044,8 +7044,7 @@ function hex8_hex20(E,V)
     Vq = [V; Vn]  # Old and new mid-edge points          
     Eq = Vector{Hex20{Int}}(undef,length(E))        
     for (i,e) in enumerate(E)
-        indNew = indReverse[1+(i-1)*12:i*12] .+ length(V)
-        println(length(indNew))
+        indNew = indReverse[1+(i-1)*12:i*12] .+ length(V)     
         Eq[i] = Hex20{Int}([collect(e); indNew])
     end
     return Eq, Vq
