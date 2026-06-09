@@ -1,6 +1,7 @@
 using Comodo
 using Comodo.GLMakie
 using Comodo.GeometryBasics
+using Comodo.LinearAlgebra
 
 #=
 This demo shows the use of hermiteSegment to set up a Hermite spline using a set

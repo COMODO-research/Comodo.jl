@@ -20,4 +20,4 @@ fig = Figure(size=(1700, 1000))
 ax1 = AxisGeom(fig[1,1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "A hexahedral element")
 hp1 = meshplot!(ax1, Fs, Vs, color=(:white, 0.25), strokewidth=3, strokecolor=:blue, transparency=true)
 screen = display(GLMakie.Screen(), fig)
-GLMakie.set_title!(screen, "testCase = $testCase")
+fig

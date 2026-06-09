@@ -51,12 +51,11 @@ for testCase = 1:3
     Cbs = simplex2vertexdata(Fbs,Cb)
 
     ax1 = Axis3(fig[1, 1], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Input faces")
-    hp1 = poly!(ax1,GeometryBasics.Mesh(Vs,Fs), strokewidth=1,shading=FastShading,strokecolor=:black, color=:white, transparency=true, overdraw=false)
+    hp1 = meshplot!(ax1, Fs, Vs, transparency=true)
 
     ax2 = Axis3(fig[1, 2], aspect = :data, xlabel = "X", ylabel = "Y", zlabel = "Z", title = "Boundary faces")
-    hp1 = poly!(ax2,GeometryBasics.Mesh(Vbs,Fbs), strokewidth=1,shading=FastShading,strokecolor=:black, color=Cbs, transparency=true, overdraw=false)
+    hp2 = meshplot!(ax2, Fbs, Vbs, color=Cbs, transparency=true, overdraw=false)
 
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")
-
 end

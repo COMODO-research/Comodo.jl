@@ -35,7 +35,7 @@ for testCase = 1:3
     fig = Figure(size=(800,800))
     ax1 = AxisGeom(fig[1, 1], title = "Spot the cow")
     
-    hp1 = poly!(ax1,M, color=T, shading = FastShading, transparency=false,strokecolor=:black,strokewidth=1,stroke_depth_shift=-0.001f0)
+    hp1 = poly!(ax1, M, color=T, shading = true, strokecolor=:black, strokewidth=1, stroke_depth_shift=-0.001f0)
    
     screen = display(GLMakie.Screen(), fig)
     GLMakie.set_title!(screen, "testCase = $testCase")

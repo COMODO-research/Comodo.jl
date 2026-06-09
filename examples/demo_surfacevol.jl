@@ -6,20 +6,22 @@ using FileIO
 for testCase = 1:5
     if testCase == 1 # Triangulated sphere
         r = 1
-        F,V = geosphere(3,r)  
+        nSub = 5
+        F, V = geosphere(nSub, r)  
         println("Theoretical volume: " * string(4/3*pi*r^3))    
     elseif testCase == 2 # quad sphere 
         r = 1.0
-        F,V = quadsphere(5,r)    
+        pointSpacing = r/20.0
+        F, V = quadsphere(r, pointSpacing)    
         println("Theoretical volume: " * string(4/3*pi*r^3))    
     elseif testCase == 3 # quad cube
         r = 2*sqrt(3)/2
-        F,V = cube(r)    
+        F, V = cube(r)    
         println("Theoretical volume: " * string((2*(r./(sqrt(3))))^3))
     elseif testCase == 4 # triangulated cube
         r = 2*sqrt(3)/2
-        F,V = cube(r)    
-        F = quad2tri(F,V; convert_method = :angle)
+        F, V = cube(r)    
+        F = quad2tri(F, V; convert_method = :angle)
         println("Theoretical volume: " * string((2*(r./(sqrt(3))))^3))
     elseif testCase == 5 # Merged STL for single object
         # Loading a mesh
@@ -29,7 +31,7 @@ for testCase = 1:5
         # Obtain mesh faces and vertices
         F = tofaces(faces(M))
         V = topoints(coordinates(M))
-        F,V,_ = mergevertices(F,V)
+        F, V, _ = mergevertices(F,V)
     end
 
     vol = surfacevolume(F,V)

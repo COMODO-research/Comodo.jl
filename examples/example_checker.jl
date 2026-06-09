@@ -1,6 +1,5 @@
 module ExampleChecker
-
-const NUMTASKS = 10
+using Comodo
 
 function load_and_run!(filename::String, problems::Vector{String})::Bool
     #cmdline = "using Pkg; Pkg.activate(\"./..\"); include(\"$filename\")"
@@ -19,21 +18,19 @@ function load_and_run!(filename::String, problems::Vector{String})::Bool
     end
 end
 
-function main()
-    dircontent = readdir(".")
+function main()    
+    example_dir = joinpath(comododir(),"examples")
+    dircontent = readdir(example_dir)
     juliafiles = filter(x -> occursin(r"demo.*\.jl", x), dircontent)
-
-    problems = Vector{String}(undef, 0)
-    tasks = Task[]
-    for file in juliafiles
-        if length(tasks) >= NUMTASKS
-            wait.(tasks)
-            empty!(tasks)
-        end
+    
+    problems = Vector{String}(undef, 0)    
+    for file in juliafiles        
         println("Checking file: $file")
-        t = Task(() -> load_and_run!(file, problems))
-        push!(tasks, t)
-        schedule(t)
+        t = Task(() -> load_and_run!(joinpath(example_dir, file), problems))
+        schedule(t)        
+        while !istaskdone(t)  # Wait for task completion                  
+            sleep(1)
+        end
     end
 
     if !isempty(problems)

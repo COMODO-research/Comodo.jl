@@ -2532,7 +2532,7 @@ function subquadsphere(n::Int,r::T) where T <: Real
 end
 
 """
-    quadsphere(r,pointSpacing)
+    quadsphere(r, pointSpacing)
 
 Returns a quadrangulated sphere
 
@@ -2543,7 +2543,7 @@ approximate point spacing (which is most accurate for regions away from the
 original cube corners. The ouput consists of the faces `F`, the vertices `V`, 
 and the underlying cube face boundary labels `C`. 
 """
-function quadsphere(r,pointSpacing)
+function quadsphere(r, pointSpacing)
     boxDim = fill(2.0,3)#fill(r/2.0,3) # Dimensions for the box in each direction
     boxEl = fill(ceil.(Int,(r*π/2.0)./pointSpacing),3) # Number of elements to use in each direction 
     F,V,C = quadbox(boxDim,boxEl)
