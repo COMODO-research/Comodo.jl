@@ -791,6 +791,11 @@ Comodo.curve2edges
 Comodo.subtri_dual
 ```
 
+## `subtri_dual_local`
+```@docs 
+Comodo.subtri_dual_local
+```
+
 ## `rhombicdodecahedron2hex`
 ```@docs 
 Comodo.rhombicdodecahedron2hex
@@ -954,4 +959,24 @@ Comodo.gradient
 ## `mixture_VonMisesFisher`
 ```@docs 
 Comodo.mixture_VonMisesFisher
+```
+
+## `svdRotPerms`
+```@docs 
+Comodo.svdRotPerms
+```
+
+## `surface_svd`
+```@docs 
+Comodo.surface_svd
+```
+
+## `surface_align_svd`
+```@docs 
+Comodo.surface_align_svd
+```
+
+## `icp`
+```@docs 
+Comodo.icp
 ```

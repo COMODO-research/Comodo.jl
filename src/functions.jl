@@ -2571,7 +2571,7 @@ for the latter the simplex sizes are taken into account e.g. for edges, faces,
 and elements, the averaging is weighted to the length, area, or volume of the 
 simplex respectively. 
 """
-function simplex2vertexdata(F::Union{Vector{<: NgonFace},Vector{<: AbstractElement}},DF,V::Union{Nothing,Vector{Point{ND,TV}}}=nothing; con_V2F=nothing, weighting=:none) where ND where TV<:Real    
+function simplex2vertexdata(F::Union{Vector{<: NgonFace},Vector{<: AbstractElement}}, DF, V::Union{Nothing,Vector{Point{ND,TV}}}=nothing; con_V2F=nothing, weighting=:none) where ND where TV<:Real    
     if !in(weighting,(:none,:size))
         throw(ArgumentError("Invalid weighting option provided, use one of the following: :none, :size"))
     end
@@ -8713,6 +8713,24 @@ function subtri_dual(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n=1; 
 end
 
 """
+    subtri_dual_local(F, V, B; smooth=true)
+
+Local subtri_dual-based refinement
+
+# Description
+This function refines the input triangulated defined by the vector of faces `F` 
+and the vertices `V` using the subtri_dual method. Refinement only occurs for 
+the faces where the input Boolean vector `B` (which is the same length as `F`) 
+is true. 
+"""
+function subtri_dual_local(F, V, B; smooth=true)
+    Fs_sub, Vs = subtri_dual(F[B], V, 1; smooth=smooth, split_boundary=false)
+    Fs = F[.!B]
+    append!(Fs, Fs_sub)
+    return Fs, Vs    
+end
+
+"""
     rhombicdodecahedron2hex(E::Vector{Rhombicdodeca14{T}},V::Vector{Point{3,TV}}) where T<:Integer where TV<:Real
     
 Converts rhombicdodecahedrons to hexahedrons
@@ -9006,12 +9024,14 @@ Point vector singular value decomposition
 This function computes the singular value decomposition for the points defined 
 by the point vector `V`.    
 """
-function pointsvd(V::Vector{T}) where T <: AbstractVector
+function pointsvd(V::Vector{T}; centre=nothing) where T <: AbstractVector
     # Form matrix
-    mean_V = mean(V) # Compute point set mean 
+    if isnothing(centre)
+        centre = mean(V) # Compute point set mean as centre
+    end
     M = Matrix{Float64}(undef, length(V), 3)
     for (i,v) in enumerate(V)
-        M[i,:] = v-mean_V # Centre point around mean and make row of matrix
+        M[i,:] = v-centre # Centre point around mean and make row of matrix
     end    
     S = svd(M) # Singular value decomposition
 
@@ -9964,6 +9984,145 @@ VonMisesFisher distribution. The input consists of the mean directions `μ`
 """
 function mixture_VonMisesFisher(μ, κ)
     return MixtureModel(VonMisesFisher, [(μ[i], κ[i]) for i in eachindex(μ)])
+end
+
+"""
+    svdRotPerms(Q::RotMatrix3{T}) where T<:Real
+
+Creates axis inversion rotation matrix variations 
+
+# Description
+This function returns a vector of rotation matrices which are each variations 
+of the input rotation matrix `Q` in terms of axis inversion via rotation. 
+"""
+function svdRotPerms(Q) 
+    # Permutation set       
+    S =  (( 1,  1,  1), 
+          ( 1, -1, -1), 
+          (-1, 1, -1),           
+          (-1, -1, 1))    
+    Q_vec = Vector{RotMatrix3{Float64}}(undef,size(S,1)) # Vector to store matrix variations 
+    for (i,s) in enumerate(S)        
+        Q_vec[i] = RotMatrix3{Float64}([s[1].*Q[:,1] s[2].*Q[:,2] s[3].*Q[:,3]])              
+    end
+    return Q_vec
+end
+
+"""
+    surface_svd(F, V; centre=nothing)
+
+Surface singular value decomposition
+
+# Description
+This function computes the singular value decomposition of the surface defined 
+by the faces `F` and the vertices `V`. This function is similar to pointsvd. 
+However here the face centres, rather than the vertices, are used, and points 
+are weighted based on their normalised area. 
+"""
+function surface_svd(F, V; centre=nothing)
+    if isnothing(centre)
+        centre = surface_centroid(F, V) # Compute point set centroid as centre
+    end
+    VF = simplexcenter(F, V.-centre) # Face centres
+    A = facearea(F,V) # Face areas           
+    return pointsvd((A/sum(A)).*VF; centre = Point{3, Float64}(0.0, 0.0, 0.0)) # Face area weighted svd   
+end
+
+"""
+    surface_align_svd(F1, V1, F2, V2)    
+
+Aligns surfaces using SVD
+
+# Description
+This function alligns the input surfaces 1 and 2, defined by the corresponding 
+faces `F1` and `F2` and vertices `V1` and `V2`, using their singular value 
+decomposition directions. 
+"""
+function surface_align_svd(F1, V1, F2, V2)    
+    pc1 = surface_centroid(F1, V1)
+    pc2 = surface_centroid(F2, V2)
+    S1 = surface_svd(F1, V1; centre=pc1)
+    S2 = surface_svd(F2, V2; centre=pc2)
+
+    Q_set = svdRotPerms(S2.V)
+    VF1 = simplexcenter(F1, V1)
+    VF2 = simplexcenter(F2, V2)
+    A1 = facearea(F1,V1)
+    A1 ./=sum(A1)
+    # VF1r = [Point{3, Float64}(S1.Vt*v) for v ∈ VF1]
+    d = zeros(length(Q_set))
+    for (i,q) in enumerate(Q_set)
+        P = deepcopy(VF2)
+        d[i] = sum(A1.*mindist(VF1, [Point{3, Float64}(S1.V*q'*(v-pc2))+pc1 for v ∈ P]))
+    end
+    _, iUse = findmin(d)
+    Q_use =Q_set[iUse]'
+    return [Point{3, Float64}(S1.V*Q_use*(v-pc2))+pc1 for v ∈ V2] 
+end
+
+"""
+    _cp(V1, V2, s)
+
+Closest point mapping 
+
+# Description
+This function is a helper function for the iterative closest point function 
+`icp`. The `_cp` function performes a single iteration.  
+"""
+function _cp(V1, V2, s)
+    if s == 1 # 2 -> 1
+        D, indMin = mindist(V2, V1; getIndex=Val(true)) # Indices of nearest in V1 for each point in V2
+        R = kabsch_rot(V2, V1[indMin]) # Kabsch on nearest point set 
+        u = mean(V1[indMin] .- V2) # Use mean of difference vectors as displacement direction
+    elseif s == 2 # 1 <- 2
+        D, indMin = mindist(V1, V2; getIndex=Val(true)) # Indices of nearest in V1 for each point in V2
+        R = kabsch_rot(V2[indMin], V1) # Kabsch on nearest point set 
+        u = mean(V1 .- V2[indMin]) # Use mean of difference vectors as displacement direction
+    end
+    d = sum(D)
+    pm2 = mean(V2)    
+    return [Point{3, Float64}(R*(v-pm2))+pm2+u for v ∈ V2], d # Rotated/shifted point set
+end
+
+"""
+    icp(V1, V2; n=100, s=0)
+
+Iterative closest point mapping 
+
+# Description
+This function uses the iterative closest point method to align surface 2 with 
+surface 1. A maximum of `n` iterations is used. The optional argument `n` 
+defines the maximum number of iterations. The optional argument `s` determines
+what point set to compute nearest points for. The default is `s=0` in which 
+case the smallest set (fewest nodes) is used. If `s=1` then the first set is
+used, if `s=2` the second is used. 
+"""
+function icp(V1, V2; n=100, s=0, tol=1e-6)
+    if s == 0 # Pick smallest    
+        if length(V1) < length(V2)
+            s = 1        
+        else
+            s = 2
+        end
+    elseif !in(s,(1,2))
+        throw(ArgumentError("s should be 0, 1, or 2"))
+    end
+    V2p = deepcopy(V2) # Initialise as input points
+    if n>0
+        dPrev = Inf
+        i = 1
+        while true # Start iterating ICP method   
+            V2p, dNow = _cp(V1, V2p, s)
+            dd = abs(dPrev-dNow)
+            dPrev = dNow
+            if i == n || dd<tol
+                break
+            else
+                i += 1 # Increment counter
+            end
+        end
+    end
+    return V2p
 end
 
 #= 

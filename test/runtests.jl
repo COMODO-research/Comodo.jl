@@ -8766,6 +8766,38 @@ end
     end
 end
 
+@testset "subtri_dual_local" verbose = true begin
+    @testset "Closed surface (Sphere)" begin        
+        r = 10.0 # Sphere radius
+        n = 3 # Refinement steps
+        F, V = geosphere(n, r)
+        B = [mean(V[f])[1]< -r/2.0 for f in F]        
+        
+        F_tri, V_tri = subtri_dual_local(F, V, B; smooth=true)
+
+        E = meshedges(F[B]; unique_only=true) 
+        Eb = boundaryedges(F[B])
+        @test length(F_tri) == length(F[.!B]) + 2*length(E) - length(Eb)# Each edge spawns two faces for closed surface 
+        
+        F_tri, V_tri = subtri_dual_local(F, V, B; smooth=false)
+        @test V_tri[1:length(V)] == V # Test non-smoothing for input points 
+    end
+
+    @testset "Non-closed surface (disc)" verbose = true begin
+        r = 160.0 # Radius
+        n = 3
+        F, V = tridisc(r, n)
+        d = 100.0
+        B = [norm(mean(V[f]))<d for f in F]             
+        F_tri, V_tri = subtri_dual_local(F, V, B; smooth=false)
+
+        E = meshedges(F[B]; unique_only=true) 
+        Eb = boundaryedges(F[B])
+        @test length(F_tri) == length(F[.!B]) + 2*length(E) - length(Eb)# Each edge spawns two faces for closed surface 
+        @test V_tri[1:length(V)] == V # Test non-smoothing for input points
+    end
+end
+
 @testset "rhombicdodecahedron2hex" verbose = true begin
     w = 1.0
     n = (2,2,3)
@@ -9678,7 +9710,6 @@ end
     end
 end
 
-
 @testset "hex8_hex20" verbose = true begin                 
     # Test single element 
     E = [Hex8{Int}(1,2,3,4,5,6,7,8)]
@@ -9723,8 +9754,137 @@ end
     @test V_hex20[ind] == Point{3, Float64}[[-1.0, -1.0, 0.0], [1.0, 1.0, 1.0], [-1.0, 0.0, 0.0], [0.0, -1.0, 1.0], [0.0, 1.0, 2.0], [1.0, -1.0, 1.5]]
 end
 
+@testset "svdRotPerms" verbose=true begin 
+    Q = RotMatrix3{Float64}([1.0  0.0  0.0;
+                             0.0  1.0  0.0; 
+                             0.0  0.0  1.0])
 
+    Q_set = svdRotPerms(Q) 
+    @test Q_set == RotMatrix3{Float64}[[1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0], 
+                                       [1.0 -0.0 -0.0; 0.0 -1.0 -0.0; 0.0 -0.0 -1.0], 
+                                       [-1.0 0.0 -0.0; -0.0 1.0 -0.0; -0.0 0.0 -1.0], 
+                                       [-1.0 -0.0 0.0; -0.0 -1.0 0.0; -0.0 -0.0 1.0]]
+    
+end
 
+@testset "surface_svd" verbose=true begin 
+    # No centre provided but centered
+    F, V = geosphere(3,1.0)
+    V = [Point{3, Float64}(v[1]*2.0, v[2]*3.0, v[3]*0.5) for v in V]
+    S = surface_svd(F, V; centre=nothing)
+    R = S.V
+    n = [0.0, 1.0, 0.0]
+    @test ( isapprox(R[:,1], n, atol=1e-6) || isapprox(R[:,1], -n, atol=1e-6) )
+    n = [1.0, 0.0, 0.0]
+    @test ( isapprox(R[:,2], n, atol=1e-6) || isapprox(R[:,2], -n, atol=1e-6) )
+    n = [0.0, 0.0, 1.0]
+    @test ( isapprox(R[:,3], n, atol=1e-6) || isapprox(R[:,3], -n, atol=1e-6) )
+
+    # No centre provided and not centered
+    F, V = geosphere(3,1.0)
+    pc = Point{3, Float64}(5.0, 2.0,-10.0)
+    V = [Point{3, Float64}(v[1]*2.0, v[2]*3.0, v[3]*0.5) for v in V]
+    V .+= pc
+    S = surface_svd(F, V; centre=nothing)
+    R = S.V
+    n = [0.0, 1.0, 0.0]
+    @test ( isapprox(R[:,1], n, atol=1e-6) || isapprox(R[:,1], -n, atol=1e-6) )
+    n = [1.0, 0.0, 0.0]
+    @test ( isapprox(R[:,2], n, atol=1e-6) || isapprox(R[:,2], -n, atol=1e-6) )
+    n = [0.0, 0.0, 1.0]
+    @test ( isapprox(R[:,3], n, atol=1e-6) || isapprox(R[:,3], -n, atol=1e-6) )
+
+    #Centre provided
+    F, V = geosphere(3,1.0)
+    pc = Point{3, Float64}(5.0, 2.0,-10.0)
+    V = [Point{3, Float64}(v[1]*2.0, v[2]*3.0, v[3]*0.5) for v in V]
+    V .+= pc
+    S = surface_svd(F, V; centre=pc)
+    R = S.V
+    n = [0.0, 1.0, 0.0]
+    @test ( isapprox(R[:,1], n, atol=1e-6) || isapprox(R[:,1], -n, atol=1e-6) )
+    n = [1.0, 0.0, 0.0]
+    @test ( isapprox(R[:,2], n, atol=1e-6) || isapprox(R[:,2], -n, atol=1e-6) )
+    n = [0.0, 0.0, 1.0]
+    @test ( isapprox(R[:,3], n, atol=1e-6) || isapprox(R[:,3], -n, atol=1e-6) )
+end
+
+@testset "surface_align_svd" verbose=true begin 
+    # Get coordinates of set 1
+    fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
+    M = load(fileName_mesh)
+    F1 = tofaces(faces(M))
+    V1 = topoints(coordinates(M))
+    F1, V1,_,_ = mergevertices(F1,V1)
+
+    s = norm(maxp(V1)-minp(V1)) # rough object size metric
+    pm1 = surface_centroid(F1, V1)
+    pc1 = Point{3, Float64}(0.2*s, -0.1*s, 0.25*s)
+    V1 = [v-pm1 + pc1 for v ∈ V1] 
+
+    # Get coordinates of set 2 
+    F2 = deepcopy(F1)
+    V2 = deepcopy(V1)
+
+    pm2 = surface_centroid(F2, V2)
+    
+    Q = RotXYZ(0.0,-0.6*π,0.8*π) # Define a rotation tensor using Euler angles
+
+    pm2 = surface_centroid(F2, V2)
+    pc2 = Point{3, Float64}(-0.2*s, 0.1*s, -0.25*s)
+    V2 = [Point{3, Float64}(Q*(v-pm2)) + pc2 for v ∈ V2] 
+
+    V2p = surface_align_svd(F1, V1, F2, V2)
+
+    @test isapprox(V1, V2p, atol=1e-3) 
+end
+
+@testset "icp" verbose=true begin 
+    # Get coordinates of set 1
+    fileName_mesh = joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
+    M = load(fileName_mesh)
+    F1 = tofaces(faces(M))
+    V1 = topoints(coordinates(M))
+    F1, V1,_,_ = mergevertices(F1,V1)
+
+    s = norm(maxp(V1)-minp(V1)) # rough object size metric
+    pm1 = surface_centroid(F1, V1)
+    pc1 = Point{3, Float64}(0.2*s, -0.1*s, 0.25*s)
+    V1 = [v-pm1 + pc1 for v ∈ V1] 
+
+    # Get coordinates of set 2 
+    F2 = deepcopy(F1)
+    V2 = deepcopy(V1)
+
+    pm2 = surface_centroid(F2, V2)
+    X = [v[1]-pm2[1] for v in V2]
+    B = [mean(X[collect(f)])>0.0 for f in F2]
+    numPointsOriginal = length(V2)
+    F2, V2 = subtri_dual_local(F2, V2, B; smooth=false)
+
+    Q = RotXYZ(0.0,-0.6*π,0.8*π) # Define a rotation tensor using Euler angles
+
+    pm2 = surface_centroid(F2, V2)
+    pc2 = Point{3, Float64}(-0.2*s, 0.1*s, -0.25*s)
+    V2 = [Point{3, Float64}(Q*(v-pm2)) + pc2 for v ∈ V2] 
+
+    # Pre-align using SVD directions (principal component directions)
+    V2_p1 = surface_align_svd(F1, V1, F2, V2)
+
+    # Use ICP to align surface 2 with surface 1
+    s = 0 # Use smallest (0=default), first (1), or second (2) surface to compote distances to 
+    n = 100 # Maximum number of iterations
+    tol = 1e-6 # Tollerance on summed distance difference wrt previous iteration
+    
+    V2_p2 = icp(V1, V2_p1; n=100, s=0, tol=tol)
+    @test all(norm.(V1 .- V2_p2[1:numPointsOriginal]) .< 2.0)
+
+    V2_p2 = icp(V1, V2_p1; n=100, s=1, tol=tol)
+    @test all(norm.(V1 .- V2_p2[1:numPointsOriginal]) .< 2.0)
+
+    V2_p2 = icp(V1, V2_p1; n=100, s=2, tol=tol)
+    @test all(norm.(V1 .- V2_p2[1:numPointsOriginal]) .< 2.0)
+end
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
 #     @testset "Demos" begin

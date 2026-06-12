@@ -3,62 +3,68 @@ using Comodo.GLMakie
 using Comodo.GeometryBasics
 using Comodo.LinearAlgebra
 using Comodo.Statistics
-using FileIO
 
 #=
-This demo shows the use of `subtri_dual` to refine triangulated meshes. The
-dual subtriangulation method is sometimes referred to as √3-subdevision (see 
-also [1]). Following 2k subdevision steps each original triangle now represents 
-9ᵏ triangles. The implementation here largely follows reference [1] however 
-smoothing can be turned on/off using the `smooth` option (default is `true`). 
-In addition, there is the option to contrain the boundary during smoothing by 
-setting `constrain_boundary=true` (default `false`). Finally there is the option 
-to split the boundary edges by setting `split_boundary=true` (default is 
-`false`).      
-# References    
-[1] Kobbelt, √3-subdivision, 2000, SIGGRAPH 2000. 
+This demo shows the use of `subtri_dual_local` which uses the `subtri_dual` 
+function to locally refine triangulated meshes. 
 =#
 
 GLMakie.closeall()
-r = 160.0 # Radius
-n1 = 3
-F,V = tridisc(r,n1)
-split_boundary = true
-smooth = true        
 
+for testCase = 1:2
+    if testCase == 1
+        r = 160.0 # Radius
+        n1 = 3
+        F1, V1 = tridisc(r,n1)
 
-function subtri_dual_local!(F,V,B)
-    F_tri, V_tri = subtri_dual(F[B], V, 1; smooth=smooth, split_boundary=false)
-    F = F[.!B]
-    append!(F, F_tri)
-    # return mergevertices(F,V_tri)
-    return F, V_tri
+        d = 100.0
+        B1 = [norm(mean(V1[f]))<d for f in F1]
+
+        smooth = true        
+        F2, V2 = subtri_dual_local(F1, V1, B1; smooth=smooth)
+
+        d = 50.0
+        B2 = [norm(mean(V2[f]))<d for f in F2]
+        F3, V3= subtri_dual_local(F2, V2, B2)
+
+        ## Visualization
+        strokewidth1 = 1
+        lineWidth = 4
+
+        fig = Figure(size=(1600,800))
+
+        ax1 = AxisGeom(fig[1, 1], title = "Original", azimuth=-pi/2, elevation=pi/2)
+        meshplot!(ax1, F1, V1)
+
+        ax2 = AxisGeom(fig[1, 2], title = "Once refined", azimuth=-pi/2, elevation=pi/2)
+        meshplot!(ax2, F2, V2)
+
+        ax3 = AxisGeom(fig[1, 3], title = "Twice refined", azimuth=-pi/2, elevation=pi/2)
+        meshplot!(ax3, F3, V3)
+
+        screen = display(GLMakie.Screen(), fig)
+    elseif testCase == 2 
+        r = 10.0 # Radius
+        n1 = 3
+        F1, V1 = geosphere(n1, r)
+
+        B1 = [mean(V1[f])[1]< -r/2.0 for f in F1]
+
+        smooth = true        
+        F2, V2 = subtri_dual_local(F1, V1, B1; smooth=smooth)
+
+        ## Visualization
+        strokewidth1 = 1
+        lineWidth = 4
+
+        fig = Figure(size=(1600,800))
+
+        ax1 = AxisGeom(fig[1, 1], title = "Original")
+        meshplot!(ax1, F1, V1)
+
+        ax2 = AxisGeom(fig[1, 2], title = "Once refined")
+        meshplot!(ax2, F2, V2)
+
+        screen = display(GLMakie.Screen(), fig)
+    end
 end
-
-d = 100.0
-B = [norm(mean(V[f]))<d for f in F]
-F_tri, V_tri = subtri_dual_local!(F,V,B)
-
-d = 50.0
-B = [norm(mean(V_tri[f]))<d for f in F_tri]
-F_tri, V_tri= subtri_dual_local!(F_tri, V_tri,B)
-
-# n = 1
-# F_tri, V_tri = subtri_dual(F[B], V, n; smooth=true, split_boundary=false)
-
-
-## Visualization
-strokewidth1 = 0.5
-lineWidth = 4
-
-Fs, Vs = separate_vertices(F,V)
-
-fig = Figure(size=(1600,800))
-
-ax1 = AxisGeom(fig[1, 1], title = "Original")
-meshplot!(ax1, Fs, Vs, strokewidth=strokewidth1, strokecolor=:red, color=:white, transparency=false)
-
-ax2 = AxisGeom(fig[1, 2], title = "Refined")
-hp = meshplot!(ax2, F_tri, V_tri, strokewidth=strokewidth1, strokecolor=:red, color=:white, transparency=false)
-
-screen = display(GLMakie.Screen(), fig)

@@ -84,7 +84,7 @@ export rectanglepoints, squarepoints, rectangle, square, pizza
 export cart2bary, bary2cart, barycoord, intriangle
 export spacing2numsteps, pointspacingmax, pointspacingmin, hexcylinder
 export equilateraltriangle, hermiteSegment, subpenta, polycentroid, curve2edges
-export subtri_dual, rhombicdodecahedron2hex, surface_centroid, hexahedronElement, hex2tet
+export subtri_dual, subtri_dual_local, rhombicdodecahedron2hex, surface_centroid, hexahedronElement, hex2tet
 export triplyperiodicminimal, triplyperiodicminimal_sheet, tpms, tpms_sheet
 export pointsvd, basisGramSchmidt, basisGramSchmidt!, hexvolume
 export isunique, remove_snapped_faces!, facecentroid, faceedgelattice
@@ -93,6 +93,7 @@ export tri2quad_merge!, tri2quad_merge_split!, tri2def, polarDecomposition
 export image2voxelmesh, smoothmesh_taubin, inmesh, mesh2bool
 export rand_incircle, rand_oncircle, rand_insphere, rand_onsphere, rand_onsphere_cone
 export cartesianIndexOffset, gradient, mixture_VonMisesFisher, hex8_hex20
+export svdRotPerms, surface_svd, surface_align_svd, icp
 end # module
 
 #= 
