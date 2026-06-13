@@ -17,7 +17,7 @@ for testCase = 1:6
         println("Theoretical area: " * string(4*pi*r^2))    
     elseif testCase == 2
         r = 1.0
-        F,V = quadsphere(3,r)    
+        F,V = quadsphere(r, 0.1)    
         println("Theoretical area: " * string(4*pi*r^2))    
     elseif testCase == 3
         r = 2*sqrt(3)/2

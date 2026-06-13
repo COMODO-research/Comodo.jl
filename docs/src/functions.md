@@ -581,6 +581,16 @@ Comodo._indexPair2sortedEdge
 Comodo.elementEdges
 ```
 
+## `hex8_hex20`
+```@docs 
+Comodo.hex8_hex20
+```
+
+## `hex8_hex27`
+```@docs 
+Comodo.hex8_hex27
+```
+
 ## `tet4_tet10`
 ```@docs 
 Comodo.tet4_tet10

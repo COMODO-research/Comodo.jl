@@ -16,6 +16,7 @@ const Penta6{T} = PentahedronElement{6,T} where T<:Integer
 const Penta15{T} = PentahedronElement{15,T} where T<:Integer
 const Hex8{T} = HexahedronElement{8,T} where T<:Integer
 const Hex20{T} = HexahedronElement{20,T} where T<:Integer
+const Hex27{T} = HexahedronElement{27,T} where T<:Integer
 const Truncatedocta24{T} = TruncatedoctahedronElement{24,T} where T<:Integer
 const Rhombicdodeca14{T} = RhombicdodecahedronElement{14,T} where T<:Integer
 const Tri3{T} = TriangleElement{3,T} where T<:Integer
@@ -3338,6 +3339,7 @@ _element_facetype(E::Vector{<: Tet10{T}}) where {T<: Integer} = NgonFace{6,T}
 _element_facetype(E::Vector{<: Tet15{T}}) where {T<: Integer} = NgonFace{6,T}
 _element_facetype(E::Vector{<: Hex8{T}}) where {T<: Integer} = QuadFace{T}
 _element_facetype(E::Vector{<: Hex20{T}}) where {T<: Integer} = NgonFace{8,T}
+_element_facetype(E::Vector{<: Hex27{T}}) where {T<: Integer} = NgonFace{8,T}
 _element_facetype(E::Vector{<: Penta6{T}}) where {T<: Integer} = (TriangleFace{T},QuadFace{T})
 _element_facetype(E::Vector{<: Penta15{T}}) where {T<: Integer} = (NgonFace{6,T},NgonFace{8,T}) 
 
@@ -4662,26 +4664,25 @@ function regiontrimesh(VT,R,P; numSmoothSteps=25, gridtype=:equilateral)
             constrained_segments = constrained_segments_ori
         end
     
-        # if gridtype == :equilateral
-            # Remove 3 and 4 connected points
-            E_uni = meshedges(Fn; unique_only=false)
-            con_V2V = con_vertex_vertex(E_uni,Vn)
-            nCon = map(length,con_V2V)        
-            indLowCon = findall(nCon.>0 .&& nCon.<5)
-            indConstrained = reduce(vcat,reduce(vcat,constrained_segments))
-            indRemove = setdiff(indLowCon,indConstrained)     
-            if !isempty(indRemove)
-                Vn,indFix = removepoints(Vn,indRemove)
-                constrained_segments = [[indFix[c[1]]] for c in constrained_segments]
+        # Remove 3 and 4 connected points
+        E_uni = meshedges(Fn; unique_only=false)
+        con_V2V = con_vertex_vertex(E_uni,Vn)
+        nCon = map(length,con_V2V)        
+        indLowCon = findall(nCon.>0 .&& nCon.<5)
+        indConstrained = reduce(vcat,reduce(vcat,constrained_segments))
+        indRemove = setdiff(indLowCon,indConstrained)     
+        if !isempty(indRemove)
+            Vn,indFix = removepoints(Vn,indRemove)
+            constrained_segments = [[indFix[c[1]]] for c in constrained_segments]
+    
+            # Redo triangulation after points have been removed
+            constrained_segments_ori = deepcopy(constrained_segments) # Clone since triangulate can add new constraint points
+            TRn = triangulate(Vn; boundary_nodes=constrained_segments,delete_ghosts=true)
+            Fn = [TriangleFace{Int}(tr) for tr in each_solid_triangle(TRn)] 
+            Vn = get_points(TRn)
+            constrained_segments = constrained_segments_ori
+        end    
         
-                # Redo triangulation after points have been removed
-                constrained_segments_ori = deepcopy(constrained_segments) # Clone since triangulate can add new constraint points
-                TRn = triangulate(Vn; boundary_nodes=constrained_segments,delete_ghosts=true)
-                Fn = [TriangleFace{Int}(tr) for tr in each_solid_triangle(TRn)] 
-                Vn = get_points(TRn)
-                constrained_segments = constrained_segments_ori
-            end    
-        # end
         Fn,Vn,indFix = remove_unused_vertices(Fn,Vn)    
 
         if gridtype == :Cartesian
@@ -4704,7 +4705,26 @@ function regiontrimesh(VT,R,P; numSmoothSteps=25, gridtype=:equilateral)
     end
     V,_,indMap = mergevertices(V; pointSpacing = mean(P))
     indexmap!(F,indMap)    
-    
+
+    if gridtype == :Cartesian
+        # ----------------------------------------------------   
+        # Temporary fix to remove collapsed triangles at edges 
+        a = 0.5*mean(P)^2     
+        tol = a/1e3
+        E = meshedges(F)
+        BE = occursonce(E; sort_entries=true)
+        B = fill(true, length(F))
+        nf = length(F)
+        for i in 1:1:length(F)        
+            if BE[i] || BE[i+nf] || BE[i+2*nf]            
+                if facearea(F[i],V)<tol
+                    B[i] = false
+                end
+            end 
+        end
+        F = F[B]
+        # ----------------------------------------------------
+    end
     return F,V,C 
 end
 
@@ -4983,6 +5003,18 @@ function element2faces(E::Vector{<: AbstractElement{N, T}}) where N where T
             F[ii+4] = NgonFace{8,T}(e[2], e[10],  e[3], e[19],  e[7], e[14],  e[6], e[18]) # Front
             F[ii+5] = NgonFace{8,T}(e[5], e[16],  e[8], e[20],  e[4], e[12],  e[1], e[17]) # Back
         end
+    elseif element_type <: Hex27{T}
+        nf = 6
+        F = Vector{NgonFace{8,T}}(undef,length(E)*nf)
+        for (i,e) in enumerate(E)            
+            ii = 1 + (i-1)*nf
+            F[ii  ] = NgonFace{8,T}(e[4], e[11],  e[3], e[10],  e[2],  e[9],  e[1], e[12]) # Top
+            F[ii+1] = NgonFace{8,T}(e[5], e[13],  e[6], e[14],  e[7], e[15],  e[8], e[16]) # Bottom
+            F[ii+2] = NgonFace{8,T}(e[1],  e[9],  e[2], e[18],  e[6], e[13],  e[5], e[17]) # Side 1
+            F[ii+3] = NgonFace{8,T}(e[8], e[15],  e[7], e[19],  e[3], e[11],  e[4], e[20]) # Side 2
+            F[ii+4] = NgonFace{8,T}(e[2], e[10],  e[3], e[19],  e[7], e[14],  e[6], e[18]) # Front
+            F[ii+5] = NgonFace{8,T}(e[5], e[16],  e[8], e[20],  e[4], e[12],  e[1], e[17]) # Back
+        end
     elseif element_type <: Penta6{T}
         # Triangles
         nft = 2
@@ -5074,9 +5106,7 @@ function element2faces(E::Vector{<: AbstractElement{N, T}}) where N where T
             j = 1+(i-1)*length(F02)
             F2[j:j+length(F02)-1] = [QuadFace{Int}(view(e,f)) for f in F02]    
         end
-        F = (F1,F2) # Collect faces in tuple
-    else
-        throw(ArgumentError("$element_type not supported."))
+        F = (F1,F2) # Collect faces in tuple    
     end
     return F
 end
@@ -5395,7 +5425,6 @@ input parameters are available:
 * `stringOpt`, the TetGen command string to use. See also the TetGen documentation. 
 """
 function tetgenmesh(F::Array{NgonFace{N,TF}, 1},V::Vector{Point{3,TV}}; facetmarkerlist=nothing, V_regions=nothing, region_vol=nothing, V_holes=nothing, stringOpt="paAqYQ", element_type=Tet4{TF})  where N where TF<:Integer where TV<:Real
-
     # Initialise TetGen input
     input = TetGen.RawTetGenIO{Cdouble}()
 
@@ -5473,8 +5502,6 @@ function tetgenmesh(F::Array{NgonFace{N,TF}, 1},V::Vector{Point{3,TV}}; facetmar
     else
         return E,V,CE,Fb,Cb
     end
-    
-    
 end
 
 """
@@ -7029,7 +7056,7 @@ end
 """
     hex8_hex20(E,V)
 
-Converts linear to quadratic hexahedra
+Converts linear to serendipity quadratic hexahedra
 
 # Description
 This function converts the input tri-linear 8-noded hexahedral elements, defined
@@ -7046,6 +7073,42 @@ function hex8_hex20(E,V)
     for (i,e) in enumerate(E)
         indNew = indReverse[1+(i-1)*12:i*12] .+ length(V)     
         Eq[i] = Hex20{Int}([collect(e); indNew])
+    end
+    return Eq, Vq
+end
+
+"""
+    hex8_hex27(E,V)
+
+Converts linear to quadratic hexahedra
+
+# Description
+This function converts the input tri-linear 8-noded hexahedral elements, defined
+by the element vector `E` and vertices `V`, to 27 noded quadratic hexahedral 
+elements, defined by the output element vector `E_hex27` and vertices 
+`V_hex27`.
+"""
+function hex8_hex27(E,V)
+    hexEdges = elementEdges(E)
+    hexEdgesUnique, indReverseEdges = gunique(hexEdges; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
+    Vn_midedge = simplexcenter(hexEdgesUnique,V)
+
+    hexFaces = element2faces(E)
+    hexFacesUnique, indReverseFaces = gunique(hexFaces; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)    
+    Vn_midface = simplexcenter(hexFacesUnique,V)
+
+    Vn_midelement = simplexcenter(E,V)
+
+    Vq = [V; Vn_midedge; Vn_midface; Vn_midelement]  # Old and new mid-edge points          
+    Eq = Vector{Hex27{Int}}(undef,length(E))        
+    for (i,e) in enumerate(E)
+        indNewEdges = indReverseEdges[1+(i-1)*12:i*12] .+ length(V)     
+        indNewFaces = indReverseFaces[1+(i-1)*6:i*6] .+ length(V) .+ length(Vn_midedge)              
+        # Comodo: Top, Bottom, Side 1, Side 2, Front, Back
+        # FEBio: Side 1, Front, Side 2, Back, Top, Bottom
+        indNewFaces = indNewFaces[[3, 5, 4, 6, 1, 2]] # Re-order for FEBio compatibility
+        indNewElement = i + length(V) + length(Vn_midedge) + length(Vn_midface)         
+        Eq[i] = Hex27{Int}([collect(e); indNewEdges; indNewFaces; indNewElement])
     end
     return Eq, Vq
 end

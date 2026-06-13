@@ -3956,9 +3956,10 @@ end
     T = Int
     @test Comodo._element_facetype(Vector{Tet4{T}}(undef,3))  == TriangleFace{T}
     @test Comodo._element_facetype(Vector{Tet10{T}}(undef,3))  == NgonFace{6,T}
-    # @test Comodo._element_facetype(Vector{Tet15{T}}(undef,3))  == NgonFace{6,T}
+    @test Comodo._element_facetype(Vector{Tet15{T}}(undef,3))  == NgonFace{6,T}
     @test Comodo._element_facetype(Vector{Hex8{T}}(undef,3))  == QuadFace{T}
     @test Comodo._element_facetype(Vector{Hex20{T}}(undef,3))  == NgonFace{8,T}
+    @test Comodo._element_facetype(Vector{Hex27{T}}(undef,3))  == NgonFace{8,T}
     @test Comodo._element_facetype(Vector{Penta6{T}}(undef,3))  == (TriangleFace{T},QuadFace{T})
     @test Comodo._element_facetype(Vector{Penta15{T}}(undef,3))  == (NgonFace{6,T},NgonFace{8,T})            
 end
@@ -5252,6 +5253,25 @@ end
     @test isa(C,Vector{Float64})
     @test length(F) == length(C)
 
+    # Test Cartesian grid type
+    w = 40.0
+    h = 20.0
+    pointSpacing = 2.0
+    V1 = rectanglepoints(w, h, pointSpacing; dir=:acw) 
+    VT = (V1,)
+    R = ([1],)
+    P = (pointSpacing)
+    gridtYpe = :Cartesian
+    numSmoothSteps = 0
+    F,V,C = regiontrimesh(VT,R,P; gridtype=gridtYpe, numSmoothSteps=numSmoothSteps)
+
+    @test isa(F,Vector{TriangleFace{Int}})
+    @test isa(V,Vector{Point{3,Float64}})
+    @test isa(C,Vector{Float64})
+    @test length(F) == length(C) # Color length matches faces
+
+    # A = edgeangles(F,V; deg = true)
+    # @test isapprox(A[1], [45.0, 45.0, 90.0], atol=1e-6)
 end
 
 @testset "scalesimplex" verbose = true begin
@@ -5609,6 +5629,24 @@ end
               Point{3,Float64}( 1.0, -1.0,  1.0),
               ]
         E, V = hex8_hex20(E8, V8)    
+        F = element2faces(E)
+        @test length(F) == length(E)*6
+        @test isa(F, Vector{NgonFace{8, Int}})
+        @test F[1] == NgonFace{8, Int64}(4, 11, 3, 10, 2, 9, 1, 12)
+    end
+
+    @testset "hex27" begin
+        E8 = [Hex8{Int}(1,2,3,4,5,6,7,8)]
+        V8 = [Point{3,Float64}(-1.0, -1.0,  0.0),
+              Point{3,Float64}(-1.0,  1.0,  0.0),
+              Point{3,Float64}( 1.0,  1.0,  0.0),
+              Point{3,Float64}( 1.0, -1.0,  0.0),         
+              Point{3,Float64}(-1.0, -1.0,  1.0),
+              Point{3,Float64}(-1.0,  1.0,  1.0),
+              Point{3,Float64}( 1.0,  1.0,  1.0),
+              Point{3,Float64}( 1.0, -1.0,  1.0),
+              ]
+        E, V = hex8_hex27(E8, V8)    
         F = element2faces(E)
         @test length(F) == length(E)*6
         @test isa(F, Vector{NgonFace{8, Int}})
@@ -6922,6 +6960,8 @@ end
 
     @testset "Errors" begin        
         @test_throws Exception joingeom(F1)        
+        @test_throws Exception joingeom(F1,V1,V2)
+        @test_throws Exception joingeom([F1, F2], [V1])
     end
 
     @testset "Single face/vertex set" begin
@@ -7865,8 +7905,24 @@ end
     hp1 = meshplot!(ax1, GeometryBasics.Mesh(V1,F1); strokewidth=2)    
     @test typeof(hp1) == Poly{Tuple{GeometryBasics.Mesh{3, Float64, TriangleFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{TriangleFace{Int64}}}}} 
 
+    # Ngonfaces    
+    E = [Hex8{Int}(1,2,3,4,5,6,7,8)]
+    V = [Point{3,Float64}(-1.0, -1.0,  0.0),
+         Point{3,Float64}(-1.0,  1.0,  0.0),
+         Point{3,Float64}( 1.0,  1.0,  0.0),
+         Point{3,Float64}( 1.0, -1.0,  0.0),         
+         Point{3,Float64}(-1.0, -1.0,  1.0),
+         Point{3,Float64}(-1.0,  1.0,  1.0),
+         Point{3,Float64}( 1.0,  1.0,  1.0),
+         Point{3,Float64}( 1.0, -1.0,  1.0),
+         ]
+    E_hex20, V_hex20 = hex8_hex20(E,V)
+    F = element2faces(E_hex20)
+    hp1 = meshplot!(ax1, F1, V1)    
+    @test typeof(hp1) == Poly{Tuple{GeometryBasics.Mesh{3, Float64, TriangleFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{TriangleFace{Int64}}}}}
+
     # Error for edges
-    @test_throws Exception meshplot!(ax1, GeometryBasics.Mesh(V1,E1); strokewidth=2)    
+    @test_throws Exception meshplot!(ax1, E1, V1; strokewidth=2)    
 end
 
 @testset "edgeplot!" verbose = true begin        
@@ -9754,6 +9810,53 @@ end
     @test V_hex20[ind] == Point{3, Float64}[[-1.0, -1.0, 0.0], [1.0, 1.0, 1.0], [-1.0, 0.0, 0.0], [0.0, -1.0, 1.0], [0.0, 1.0, 2.0], [1.0, -1.0, 1.5]]
 end
 
+@testset "hex8_hex27" verbose = true begin                 
+    # Test single element 
+    E = [Hex8{Int}(1,2,3,4,5,6,7,8)]
+    V = [Point{3,Float64}(-1.0, -1.0,  0.0),
+         Point{3,Float64}(-1.0,  1.0,  0.0),
+         Point{3,Float64}( 1.0,  1.0,  0.0),
+         Point{3,Float64}( 1.0, -1.0,  0.0),         
+         Point{3,Float64}(-1.0, -1.0,  1.0),
+         Point{3,Float64}(-1.0,  1.0,  1.0),
+         Point{3,Float64}( 1.0,  1.0,  1.0),
+         Point{3,Float64}( 1.0, -1.0,  1.0),
+         ]
+    E_hex27, V_hex27 = hex8_hex27(E,V)
+    
+    @test typeof(E_hex27) <: Vector{Hex27{Int}} 
+    @test E_hex27 == Hex27{Int64}[[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23, 25, 24, 26, 21, 22, 27]]
+    @test V_hex27 == Point{3, Float64}[[-1.0, -1.0, 0.0], [-1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [1.0, -1.0, 0.0], 
+                                       [-1.0, -1.0, 1.0], [-1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, -1.0, 1.0], 
+                                       [-1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, -1.0, 0.0], 
+                                       [-1.0, 0.0, 1.0], [0.0, 1.0, 1.0], [1.0, 0.0, 1.0], [0.0, -1.0, 1.0], 
+                                       [-1.0, -1.0, 0.5], [-1.0, 1.0, 0.5], [1.0, 1.0, 0.5], [1.0, -1.0, 0.5], 
+                                       [0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [-1.0, 0.0, 0.5], [1.0, 0.0, 0.5], 
+                                       [0.0, 1.0, 0.5], [0.0, -1.0, 0.5], [0.0, 0.0, 0.5]]
+
+    # Test multiple elements 
+    E = [Hex8{Int}(1, 2, 3, 4, 5, 6, 7, 8), Hex8{Int}(5, 6, 7, 8, 9, 10, 11, 12)]
+    V = [Point{3,Float64}(-1.0, -1.0,  0.0),
+         Point{3,Float64}(-1.0,  1.0,  0.0),
+         Point{3,Float64}( 1.0,  1.0,  0.0),
+         Point{3,Float64}( 1.0, -1.0,  0.0),         
+         Point{3,Float64}(-1.0, -1.0,  1.0),
+         Point{3,Float64}(-1.0,  1.0,  1.0),
+         Point{3,Float64}( 1.0,  1.0,  1.0),
+         Point{3,Float64}( 1.0, -1.0,  1.0),
+         Point{3,Float64}(-1.0, -1.0,  2.0),
+         Point{3,Float64}(-1.0,  1.0,  2.0),
+         Point{3,Float64}( 1.0,  1.0,  2.0),
+         Point{3,Float64}( 1.0, -1.0,  2.0),
+         ]
+    E_hex27, V_hex27 = hex8_hex27(E,V)
+    
+    ind = round.(Int,range(1,length(V_hex27),6))    
+    @test E_hex27 == Hex27{Int64}[[1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 35, 37, 36, 38, 33, 34, 44], 
+                                  [5, 6, 7, 8, 9, 10, 11, 12, 17, 18, 19, 20, 25, 26, 27, 28, 29, 30, 31, 32, 40, 42, 41, 43, 34, 39, 45]]
+    @test V_hex27[ind] == Point{3, Float64}[[-1.0, -1.0, 0.0], [-1.0, 1.0, 2.0], [1.0, 0.0, 1.0], [1.0, 0.0, 2.0], [1.0, 0.0, 0.5], [0.0, 0.0, 1.5]]
+end
+
 @testset "svdRotPerms" verbose=true begin 
     Q = RotMatrix3{Float64}([1.0  0.0  0.0;
                              0.0  1.0  0.0; 
@@ -9875,15 +9978,26 @@ end
     s = 0 # Use smallest (0=default), first (1), or second (2) surface to compote distances to 
     n = 100 # Maximum number of iterations
     tol = 1e-6 # Tollerance on summed distance difference wrt previous iteration
-    
+
+    # s=0 and first is smallest leading to s=1
     V2_p2 = icp(V1, V2_p1; n=100, s=0, tol=tol)
-    @test all(norm.(V1 .- V2_p2[1:numPointsOriginal]) .< 2.0)
+    @test all(norm.(V1 .- V2_p2[1:numPointsOriginal]) .< 3.0)
 
+    # s=0 and second is smallest leading to s=2
+    V1_p2 = icp(V2_p1, V1; n=100, s=0, tol=tol)
+    @test all(norm.(V1_p2 .- V2_p1[1:numPointsOriginal]) .< 3.0)
+
+    # Specifically request s=1
     V2_p2 = icp(V1, V2_p1; n=100, s=1, tol=tol)
-    @test all(norm.(V1 .- V2_p2[1:numPointsOriginal]) .< 2.0)
+    @test all(norm.(V1 .- V2_p2[1:numPointsOriginal]) .< 3.0)
 
+    # Specifically request s=2
     V2_p2 = icp(V1, V2_p1; n=100, s=2, tol=tol)
-    @test all(norm.(V1 .- V2_p2[1:numPointsOriginal]) .< 2.0)
+    @test all(norm.(V1 .- V2_p2[1:numPointsOriginal]) .< 3.0)
+
+    # Test errors
+    s = 3
+    @test_throws ArgumentError icp(V1, V2_p1; n=100, s=s, tol=tol)
 end
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"

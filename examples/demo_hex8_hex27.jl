@@ -4,20 +4,21 @@ using Comodo.GeometryBasics
 using Comodo.Statistics
 
 #=
-This demo shows the use of `hex8_hex20` to convert 8-noded hexahedral elements 
-to 20-noded hexehedral elements. 
+This demo shows the use of `hex8_hex27` to convert 8-noded hexahedral elements 
+to 27-noded hexehedral elements. 
 =#
 
-pointSpacing = 0.5
+
+pointSpacing = 1.0
 boxDim = [2.5,3.1,4] # Dimensionsions for the box in each direction
 boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
 
 E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
 
-E_hex20, V_hex20 = hex8_hex20(E,V)
+E_hex27, V_hex27 = hex8_hex27(E,V)
 
-F_hex20 = element2faces(E_hex20)
-indBoundary = boundaryfaceindices(F_hex20)
+F_hex27 = element2faces(E_hex27)
+indBoundary = boundaryfaceindices(F_hex27)
 
 # Visualisation
 cmap = Makie.Categorical(:Spectral) 
@@ -29,11 +30,11 @@ M = GeometryBasics.Mesh(Vbs,Fbs)
 fig = Figure(size=(1600,800))
 
 ax1 = AxisGeom(fig[1, 1], title = "Boundary faces with boundary markers for the hexahedral mesh")
-hp1 = meshplot!(ax1, Fb, V)
+hp1 = meshplot!(ax1, Fb, V, color=(:white,0.5), transparency=true)
 scatter!(ax1, V, color=:black, markersize=15)
 
 ax2 = AxisGeom(fig[1, 2], title = "Boundary faces with boundary markers for the hexahedral mesh")
-hp2 = meshplot!(ax2, F_hex20[indBoundary], V_hex20)
-scatter!(ax2, V_hex20, color=:black, markersize=15)
+hp2 = meshplot!(ax2, F_hex27[indBoundary], V_hex27, color=(:white,0.5), transparency=true)
+scatter!(ax2, V_hex27, color=:black, markersize=15)
 
 fig

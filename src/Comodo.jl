@@ -41,7 +41,7 @@ export Distributions
 
 # Export (finite) element types
 export AbstractElement, TetrahedronElement, PentahedronElement, HexahedronElement, TruncatedoctahedronElement, RhombicdodecahedronElement
-export Tet4, Tet10, Tet15, Hex8, Hex20, Penta6, Penta15, Rhombicdodeca14, Truncatedocta24, Tri3, Tri6,  PolyN
+export Tet4, Tet10, Tet15, Hex8, Hex20, Hex27, Penta6, Penta15, Rhombicdodeca14, Truncatedocta24, Tri3, Tri6,  PolyN
 
 # Export types/structs
 export ConnectivitySet
@@ -92,7 +92,7 @@ export subtri_centre, removethreeconnected, removethreeconnected!
 export tri2quad_merge!, tri2quad_merge_split!, tri2def, polarDecomposition
 export image2voxelmesh, smoothmesh_taubin, inmesh, mesh2bool
 export rand_incircle, rand_oncircle, rand_insphere, rand_onsphere, rand_onsphere_cone
-export cartesianIndexOffset, gradient, mixture_VonMisesFisher, hex8_hex20
+export cartesianIndexOffset, gradient, mixture_VonMisesFisher, hex8_hex20, hex8_hex27
 export svdRotPerms, surface_svd, surface_align_svd, icp
 end # module
 

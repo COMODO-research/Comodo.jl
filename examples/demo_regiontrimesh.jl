@@ -1,6 +1,7 @@
 using Comodo
 using Comodo.GLMakie
 using Comodo.GeometryBasics
+using Comodo.Statistics
 
 #=
 This demo shows the use of `regiontrimesh` to fill curves with triangular elements. 
@@ -129,6 +130,12 @@ for testCase = 1:7
 
     F,V,C = regiontrimesh(VT,R,P; gridtype=gridtYpe, numSmoothSteps=numSmoothSteps)
 
+    A = facearea(F,V)
+    println("testCase: ", testCase)
+    println("min:  ", minimum(A))
+    println("max:  ", maximum(A))
+    println("mean: ",    mean(A))
+    
     # Visualisation
     Fp,Vp = separate_vertices(F,V) # Give each face its own point set 
     Cp = simplex2vertexdata(Fp,C) # Convert face color data to vertex color data 
