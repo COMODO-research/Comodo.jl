@@ -4723,6 +4723,7 @@ function regiontrimesh(VT,R,P; numSmoothSteps=25, gridtype=:equilateral)
             end 
         end
         F = F[B]
+        C = C[B]
         # ----------------------------------------------------
     end
     return F,V,C 
