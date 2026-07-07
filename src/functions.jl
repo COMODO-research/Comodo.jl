@@ -3153,6 +3153,7 @@ function remove_unused_vertices!(F::Union{Vector{<: NgonFace},Vector{<: Abstract
 end
 
 
+
 function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = Vec{3, Float64}(0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance = 0.0, output_type=:full) where TF<:Integer where ND where TV<:Real 
     if !in(output_type,(:full,:above,:below))
         throw(ArgumentError("Invalid output_type :$output_type provided, use :full,:above, or :below"))
@@ -3167,6 +3168,7 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
     LV = d.<0.0
     
     Fn =  Vector{TriangleFace{TF}}()
+    En =  Vector{LineFace{TF}}()
     Cn =  Vector{Int}()
     Vn = deepcopy(V)
     D = Dict{Vector{Int},Int}() # For pointing from edge to intersection point index
@@ -3200,14 +3202,19 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
                         push!(Fn,TriangleFace{TF}(D[e1],indP[2],indP[3]))
                         push!(Fn,TriangleFace{TF}(D[e1],indP[3],D[e2]))
                         push!(Cn,1)
-                        push!(Cn,1)
+                        push!(Cn,1)                        
                     end
                     
                     if output_type == :below || output_type == :full
                         push!(Fn,TriangleFace{TF}(indP[1],D[e1],D[e2]))
-                        push!(Cn,-1)                        
+                        push!(Cn,-1)                                               
                     end
 
+                    if output_type == :below || output_type == :full
+                        push!(En, LineFace{TF}(D[e1], D[e2])) 
+                    else#if output_type == :above
+                        push!(En, LineFace{TF}(D[e2], D[e1]))                     
+                    end
                 else # 1-above, 2 below
                     indP = f[mod1.(findfirst(.!lf) .+ (0:2),3)]
 
@@ -3227,15 +3234,21 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
                         push!(Fn,TriangleFace{TF}(D[e1],indP[2],indP[3]))
                         push!(Fn,TriangleFace{TF}(D[e1],indP[3],D[e2]))
                         push!(Cn,-1)
-                        push!(Cn,-1)
+                        push!(Cn,-1)                        
                     end
 
                     if output_type == :above || output_type == :full
                         push!(Fn,TriangleFace{TF}(indP[1],D[e1],D[e2]))
-                        push!(Cn,1)                        
+                        push!(Cn,1)                                                
+                    end
+                    
+                    if output_type == :below || output_type == :full
+                        push!(En, LineFace{TF}(D[e2], D[e1])) 
+                    else#if output_type == :above
+                        push!(En, LineFace{TF}(D[e1], D[e2])) 
                     end
                 end
-            end
+            end            
         else # Not any below -> all above
             if output_type == :full || output_type == :above            
                 push!(Fn,f)
@@ -3243,14 +3256,18 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
             end    
         end
     end    
-    Fn,Vn,_ = remove_unused_vertices(Fn,Vn)
-    Fn, Vn = mergevertices(Fn, Vn) # This will snap nodes that are too close (collapsed triangles) together
-
+    
+    Fn,Vn,indFix = remove_unused_vertices(Fn,Vn)
+    En = [LineFace{TF}(indFix[e]) for e in En]
+    
+    Fn, Vn, _, indFix = mergevertices(Fn, Vn) # This will snap nodes that are too close (collapsed triangles) together
+    En = [LineFace{TF}(indFix[e]) for e in En]
+    
     # Check for collapsed triangles (these feature double indices after merging)
     indRemove = remove_snapped_faces!(Fn)
     deleteat!(Cn, indRemove)
 
-    return Fn,Vn,Cn
+    return Fn, Vn, Cn, En
 end
 
 function count_edge_face(F,E_uni=nothing,indReverse=nothing)::Vector{Int}
