@@ -3702,51 +3702,39 @@ end
 
     r = 2.5 # Sphere radius
     F,V = geosphere(3,r)
+    A = sum(facearea(F, V))
 
-    p = [0.0,0.0,0.0]; # Point on cutting plane
-    n = normalizevector(Vec{3, Float64}(0.0,0.0,1.0))# Cutting plane normal
-    snapTolerance = 1e-6
-    output_type = :full
+    function checkRad(En, Vn, rTrue, eps_level)
+        ind_En = unique(reduce(vcat,En))
+        d = [norm(v) for v in Vn[ind_En]]         
+        return isapprox((mean(d)-rTrue).^2, 0.0, atol=eps_level) 
+    end
 
-    Fn,Vn,Cn = trisurfslice(F,V,n,p; output_type=output_type, snapTolerance=snapTolerance)
+    @testset "Slicing sphere, test radius of cut" begin        
+        snapTolerance = 1e-6
+        p = [0.0, 0.0, 0.0]  # Point on cutting plane
+        N = [Vec{3, Float64}(1.0, 0.0, 0.0), 
+                Vec{3, Float64}(0.0, 1.0, 0.0), 
+                Vec{3, Float64}(0.0, 0.0, 1.0)]
+        for output_type = [:full, :above, :below]            
+            for n in N # For each cutting plane normal                
+                Fn, Vn, Cn, En = trisurfslice(F,V,n,p; output_type=output_type, snapTolerance=snapTolerance)
+                An = sum(facearea(Fn, Vn))
+                println(An)
+                if output_type == :full
+                   @test isapprox(An, A, atol=eps_level) 
+                else
+                   @test isapprox(An, A/2.0, atol=eps_level) 
+                end                                
+                @test checkRad(En, Vn, r, eps_level) # Check if cut defines a circle of expected radius
+            end
+        end
+    end
 
-    # Check error
-    @test_throws ArgumentError trisurfslice(F,V,n,p; output_type=:wrong)
-
-    # Check if cut defines a circle of expected radius    
-    Fn_below = Fn[Cn.<0]
-    En_below = boundaryedges(Fn_below)
-    ind_below = unique(reduce(vcat,En_below))
-    d = [norm(v) for v in Vn[ind_below]]
-    @test isapprox(sum((d.-r).^2),0.0,atol=eps_level) # Should 
-
-    p = [0.0,0.0,0.0]; # Point on cutting plane
-    n = normalizevector(Vec{3, Float64}(0.0,1.0,1.0))# Cutting plane normal
-    snapTolerance = 1e-6
-    output_type = :full
-
-    Fn,Vn,Cn = trisurfslice(F,V,n,p; output_type=output_type)
-
-    # Check if cut defines a circle of expected radius    
-    Fn_below = Fn[Cn.<0]
-    En_below = boundaryedges(Fn_below)
-    ind_below = unique(reduce(vcat,En_below))
-    d = [norm(v) for v in Vn[ind_below]]
-    @test isapprox(sum((d.-r).^2),0.0,atol=eps_level) # Should 
-
-    p = [0.0,0.0,0.0]; # Point on cutting plane
-    n = normalizevector(Vec{3, Float64}(1.0,1.0,1.0))# Cutting plane normal
-    snapTolerance = 1e-6
-    output_type = :full
-
-    Fn,Vn,Cn = trisurfslice(F,V,n,p; output_type=output_type)
-
-    # Check if cut defines a circle of expected radius    
-    Fn_below = Fn[Cn.<0]
-    En_below = boundaryedges(Fn_below)
-    ind_below = unique(reduce(vcat,En_below))
-    d = [norm(v) for v in Vn[ind_below]]
-    @test isapprox(sum((d.-r).^2),0.0,atol=eps_level) # Should 
+    # Check Errors
+    @testset "Errors" begin
+        @test_throws ArgumentError trisurfslice(F,V,n,p; output_type=:wrong)
+    end
 end
 
 @testset "count_edge_face" verbose = true begin
@@ -4468,61 +4456,100 @@ end
 @testset "ray_triangle_intersect" verbose = true begin
     eps_level = 1e-4
 
+    function raytrace_interp(F, V, indIntersect, B)    
+        VP = Vector{Point{3, Float64}}(undef, length(indIntersect))
+        for (indexPoint, indexFace) in enumerate(indIntersect)                        
+            v = Point{3, Float64}(0.0, 0.0, 0.0)
+            for (i, j) in enumerate(collect(F[indexFace])) # For each node and corresponding barycentric coordinate/weight
+                 v += V[j] .* B[indexPoint][i] # Add contribution weighted by 
+            end 
+            VP[indexPoint] = v       
+        end    
+        return VP 
+    end
+
     # Single cube
     r = sqrt(3)
     F,V = cube(r)    
     F = quad2tri(F,V,convert_method = :forward)
     @testset "ray" begin 
-        ray_origin = Point3{Float64}(0.25,0.0,1.5) # Slight off so we hit one triangle, not two at the edge
-        ray_vector = Vec3{Float64}(0.0,0.0,-1)
+        ray_origin = Point3{Float64}(0.25, 0.0, 1.5) # Slightly off so we hit one triangle, not two at the edge
+        ray_vector = Vec3{Float64}(0.0, 0.0, -1.0)
 
-        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 1)
-        @test isapprox(P,Point3{Float64}[[0.25, 0.0, 1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int}) # indIntersect == 3
+        P, indIntersect, T, det_vals, B = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 1)        
+        @test isapprox(P, Point3{Float64}[[0.25, 0.0, 1.0]],atol=eps_level)
+        @test isa(indIntersect, Vector{Int}) 
 
-        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 0)
-        @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0], [0.25, 0.0, 1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int})
+        VP = raytrace_interp(F, V, indIntersect, B)    
+        @test isapprox(P, VP, atol=eps_level)
 
-        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = -1)
-        @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int})
+        P, indIntersect, T, det_vals, B = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 0)
+        @test isapprox(P, Point3{Float64}[[0.25, 0.0, -1.0], [0.25, 0.0, 1.0]],atol=eps_level)
+        @test isa(indIntersect, Vector{Int})
+
+        VP = raytrace_interp(F, V, indIntersect, B)    
+        @test isapprox(P, VP, atol=eps_level)
+
+        P, indIntersect, T, det_vals, B = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = -1)
+        @test isapprox(P, Point3{Float64}[[0.25, 0.0, -1.0]],atol=eps_level)
+        @test isa(indIntersect, Vector{Int})
+
+        VP = raytrace_interp(F, V, indIntersect, B)    
+        @test isapprox(P, VP, atol=eps_level)
 
         ray_origin = Point3{Float64}(0.0,0.0,1.5) # At centre so hits an edge between two triangles
         ray_vector = Vec3{Float64}(0.0,0.0,-1)
-        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 0, tolEps = 1e-3)
-        @test isapprox(P,Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, -1.0], 
+        P, indIntersect, T, det_vals, B = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :ray, triSide = 0, tolEps = 1e-3)
+        @test isapprox(P, Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, -1.0], 
                                          [0.0, 0.0,  1.0], [0.0, 0.0,  1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int})
+        @test isa(indIntersect, Vector{Int})
+        
+        VP = raytrace_interp(F, V, indIntersect, B)    
+        @test isapprox(P, VP, atol=eps_level)
     end
 
     @testset "line type" begin 
-        ray_origin = Point3{Float64}(0.25,0.0,1.5) # Slight off so we hit one triangle, not two at the edge
-        ray_vector = Vec3{Float64}(0.0,0.0,-1) # Shorst so only one hit
+        ray_origin = Point3{Float64}(0.25, 0.0, 1.5) # Slightly off so we hit one triangle, not two at the edge
+        ray_vector = Vec3{Float64}(0.0, 0.0, -1.0) # Shorst so only one hit
 
-        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 1)
+        P, indIntersect, T, det_vals, B = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 1)
         @test isapprox(P,Point3{Float64}[[0.25, 0.0, 1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int}) # indIntersect == 3
+        @test isa(indIntersect,Vector{Int}) 
 
-        ray_vector = Vec3{Float64}(0.0,0.0,-3) # Long so two hits potentially
+        VP = raytrace_interp(F, V, indIntersect, B)    
+        @test isapprox(P, VP, atol=eps_level)
 
-        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 1)
+        ray_vector = Vec3{Float64}(0.0, 0.0, -3.0) # Long so two hits potentially
+
+        P, indIntersect, T, det_vals, B = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 1)
         @test isapprox(P,Point3{Float64}[[0.25, 0.0, 1.0]],atol=eps_level)
-        @test isa(indIntersect,Vector{Int}) # indIntersect == 3
+        @test isa(indIntersect,Vector{Int}) 
 
-        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 0)
+        VP = raytrace_interp(F, V, indIntersect, B)    
+        @test isapprox(P, VP, atol=eps_level)
+
+        P, indIntersect, T, det_vals, B = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 0)
         @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0], [0.25, 0.0, 1.0]],atol=eps_level)
         @test isa(indIntersect,Vector{Int})
 
-        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = -1)
+        VP = raytrace_interp(F, V, indIntersect, B)    
+        @test isapprox(P, VP, atol=eps_level)
+
+        P, indIntersect, T, det_vals, B = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = -1)
         @test isapprox(P,Point3{Float64}[[0.25, 0.0, -1.0]],atol=eps_level)
         @test isa(indIntersect,Vector{Int})
 
-        ray_origin = Point3{Float64}(0.0,0.0,1.5) # At centre so hits an edge between two triangles
-        P,indIntersect = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 0, tolEps = 1e-3)
+        VP = raytrace_interp(F, V, indIntersect, B)    
+        @test isapprox(P, VP, atol=eps_level)
+
+        ray_origin = Point3{Float64}(0.0, 0.0, 1.5) # At centre so hits an edge between two triangles
+        P, indIntersect, T, det_vals, B = ray_triangle_intersect(F,V,ray_origin,ray_vector; rayType = :line, triSide = 0, tolEps = 1e-3)
         @test isapprox(P,Point3{Float64}[[0.0, 0.0, -1.0], [0.0, 0.0, -1.0], 
                                          [0.0, 0.0,  1.0], [0.0, 0.0,  1.0]],atol=eps_level)
         @test isa(indIntersect,Vector{Int})
+        
+        VP = raytrace_interp(F, V, indIntersect, B)    
+        @test isapprox(P, VP, atol=eps_level)        
     end
 end
 

@@ -238,7 +238,7 @@ Cs = simplex2vertexdata(Fs,C,Vs)
 
 ax1 = AxisGeom(fig[1, 1])
 hp1 = meshplot!(ax1, Fbs, Vbs, strokewidth=strokewidth, color=Cbs, strokecolor=:black, colormap = cmap, stroke_depth_shift=-0.001f0)
-Colorbar(fig[1, 2], hp11)
+Colorbar(fig[1, 2], hp1)
 
 stepRange1 = range(30.0,150.0, 100)
 hSlider1 = Slider(fig[2, :], range = stepRange1, startvalue = tBranch,linewidth=30)

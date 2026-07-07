@@ -26,8 +26,8 @@ for testCase = 1:2
     fig = Figure(size=(800,800))
 
     ax1 = AxisGeom(fig[1, 1], title = "Mesh edges")
-    hp1 = meshplot!(ax1, F, V, strokewidth=5.0)
-    hp2 = edgeplot!(ax1, edgeSet, V, color=:red, linewidth=3)
+    hp1 = meshplot!(ax1, F, V, strokewidth=4.0)# color=(:white, 0.5), transparency=true)
+    hp2 = edgeplot!(ax1, edgeSet, V, color=:red, linewidth=2)
 
     Legend(fig[1,2], [hp1, hp2], ["Mesh", "Edges"])
 

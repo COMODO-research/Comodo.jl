@@ -33,63 +33,66 @@ for testCase = 1:3
 
     # Input parameters
     p = mean(V,dims=1)[1]; # Point on cutting plane
-    n = normalizevector(Vec{3, Float64}(0.0,1.0,1.0))# Cutting plane normal
+    n = normalizevector(Vec{3, Float64}(0.0, 1.0, 1.0))# Cutting plane normal
     snapTolerance = 1e-6
 
     cutType = :full
-    Fn,Vn,Cn = trisurfslice(F,V,n,p; output_type=cutType)
-    Fn,Vn = separate_vertices(Fn,Vn)
-    CnV = simplex2vertexdata(Fn,Cn)
-    Mn = GeometryBasics.Mesh(Vn,Fn)
-
+    Fn, Vn, Cn, En = trisurfslice(F,V,n,p; output_type=cutType)
 
     ## Visualization
     cmap = colormap = cgrad(:Spectral, 5, categorical = true)
-
+    
+    Fns, Vns = separate_vertices(Fn, Vn)
+    Cns_V = simplex2vertexdata(Fns, Cn)
+    
     s = 1.25*maximum([maximum(map(v-> v[i],V)) - minimum(map(v-> v[i],V)) for i ∈ 1:3])
 
-    R = rotation_between(n,[0.0,0.0,1.0])
+    R = rotation_between(n,[0.0, 0.0, 1.0])
     plateDim = (s,s)
     plateElem = (1,1)
     FG1,VG1 = quadplate(plateDim,plateElem)
-    VGn = [GeometryBasics.Point{3, Float64}(R'*v)+p for v ∈ VG1]
+    VGn = [Point{3, Float64}(R'*v)+p for v ∈ VG1]
     
-    fig = Figure(size=(800,800))
+    fig = Figure(size=(1200, 800))
 
     ax1 = AxisGeom(fig[1, 1], title = "")    
-    hp1 = edgeplot!(ax1, FG1, VGn, linewidth=5, color=:red)
-    hp2 = meshplot!(ax1, Fn, Vn, color=CnV, colorrange = (-2.5,2.5),colormap=cmap)
-    hp3 = Colorbar(fig[1, 2], hp2, ticks=-2:1:2)
+    hp1 = edgeplot!(ax1, FG1, VGn, linewidth=5, color=:red) # Show plate 
+    hp2 = meshplot!(ax1, Fns, Vns, color=Cns_V, colorrange = (-2.5, 2.5), colormap=cmap) # Show mesh colored to sliced state
+    Colorbar(fig[1, 2], hp2, ticks=-2:1:2)
 
     ax2 = AxisGeom(fig[1, 3], title = "A sliced mesh")    
-    hp4 = meshplot!(ax2, Fn[Cn.<=0], Vn)
+    hp3 = meshplot!(ax2, Fn[Cn.<=0], Vn) # Show one side of sliced mesh 
+    hp4 = edgeplot!(ax2, En, Vn, linewidth=3, color=:blue) # Show cut edge
 
+    Legend(fig[1, 4], [hp3, hp4], ["Sliced surface", "Cut boundary edges"])
     stepRange = range(-s, s, 500)
     hSlider = Slider(fig[2, :], range = stepRange, startvalue = 0,linewidth=30)
 
     on(hSlider.value) do stepIndex 
         pp = p + stepIndex*n
-        Fn,Vn,Cn = trisurfslice(F,V,n,pp; output_type=cutType) 
-    
+        Fn, Vn, Cn, En = trisurfslice(F,V,n,pp; output_type=cutType) 
+        
         if isempty(Fn)
             Mn = GeometryBasics.Mesh(V,F)
             CnV = zeros(length(V))
         else
-            Fn,Vn = separate_vertices(Fn,Vn)
-            CnV = simplex2vertexdata(Fn,Cn)
-            Mn = GeometryBasics.Mesh(Vn,Fn)
+            Fns, Vns = separate_vertices(Fn, Vn)
+            Cns_V = simplex2vertexdata(Fns, Cn)
+            Mn = GeometryBasics.Mesh(Vns, Fns)
         end
         
         VGn = [Point{3, Float64}(R'*v)+pp for v ∈ VG1] # Rotate plane    
-        MG = GeometryBasics.Mesh(VGn,FG1)
-
-        hp1[1] = MG
+        
+        hp1[1] = GeometryBasics.Mesh(VGn, FG1)
         hp2[1] = Mn
-        hp2.color = CnV
-
-        Mn = GeometryBasics.Mesh(Vn,Fn[Cn.<=0])
-        hp4[1] = Mn
-
+        hp2.color = Cns_V
+        hp3[1] = GeometryBasics.Mesh(Vn, Fn[Cn.<=0])
+        if isempty(En)
+            hp4.visible=false
+        else
+            hp4.visible=true
+            hp4[1] = GeometryBasics.Mesh(Vn, En)
+        end
     end
 
     slidercontrol(hSlider,ax1)
