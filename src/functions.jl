@@ -3167,6 +3167,7 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
     LV = d.<0.0
     
     Fn =  Vector{TriangleFace{TF}}()
+    En =  Vector{LineFace{TF}}()
     Cn =  Vector{Int}()
     Vn = deepcopy(V)
     D = Dict{Vector{Int},Int}() # For pointing from edge to intersection point index
@@ -3200,14 +3201,19 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
                         push!(Fn,TriangleFace{TF}(D[e1],indP[2],indP[3]))
                         push!(Fn,TriangleFace{TF}(D[e1],indP[3],D[e2]))
                         push!(Cn,1)
-                        push!(Cn,1)
+                        push!(Cn,1)                        
                     end
                     
                     if output_type == :below || output_type == :full
                         push!(Fn,TriangleFace{TF}(indP[1],D[e1],D[e2]))
-                        push!(Cn,-1)                        
+                        push!(Cn,-1)                                               
                     end
 
+                    if output_type == :below || output_type == :full
+                        push!(En, LineFace{TF}(D[e1], D[e2])) 
+                    else#if output_type == :above
+                        push!(En, LineFace{TF}(D[e2], D[e1]))                     
+                    end
                 else # 1-above, 2 below
                     indP = f[mod1.(findfirst(.!lf) .+ (0:2),3)]
 
@@ -3227,15 +3233,21 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
                         push!(Fn,TriangleFace{TF}(D[e1],indP[2],indP[3]))
                         push!(Fn,TriangleFace{TF}(D[e1],indP[3],D[e2]))
                         push!(Cn,-1)
-                        push!(Cn,-1)
+                        push!(Cn,-1)                        
                     end
 
                     if output_type == :above || output_type == :full
                         push!(Fn,TriangleFace{TF}(indP[1],D[e1],D[e2]))
-                        push!(Cn,1)                        
+                        push!(Cn,1)                                                
+                    end
+                    
+                    if output_type == :below || output_type == :full
+                        push!(En, LineFace{TF}(D[e2], D[e1])) 
+                    else#if output_type == :above
+                        push!(En, LineFace{TF}(D[e1], D[e2])) 
                     end
                 end
-            end
+            end            
         else # Not any below -> all above
             if output_type == :full || output_type == :above            
                 push!(Fn,f)
@@ -3243,14 +3255,18 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
             end    
         end
     end    
-    Fn,Vn,_ = remove_unused_vertices(Fn,Vn)
-    Fn, Vn = mergevertices(Fn, Vn) # This will snap nodes that are too close (collapsed triangles) together
-
+    
+    Fn,Vn,indFix = remove_unused_vertices(Fn,Vn)
+    En = [LineFace{TF}(indFix[e]) for e in En]
+    
+    Fn, Vn, _, indFix = mergevertices(Fn, Vn) # This will snap nodes that are too close (collapsed triangles) together
+    En = [LineFace{TF}(indFix[e]) for e in En]
+    
     # Check for collapsed triangles (these feature double indices after merging)
     indRemove = remove_snapped_faces!(Fn)
     deleteat!(Cn, indRemove)
 
-    return Fn,Vn,Cn
+    return Fn, Vn, Cn, En
 end
 
 function count_edge_face(F,E_uni=nothing,indReverse=nothing)::Vector{Int}
@@ -3389,55 +3405,57 @@ for a proper curve.
 """
 function edges2curve(Eb::Vector{LineFace{T}}; remove_last = false) where T <: Integer
     # TO DO: 
-    # Handle while loop safety/breaking
-    # Cope with non-ordered meshes (normals not coherent) 
+    # Handle while loop safety/breaking    
 
     if isempty(Eb)
         return Vector{T}[] # Return empty
     else
         numEdges = length(Eb)        
-        con_V2E = con_vertex_edge(Eb) # Vertex-edge connectivity
-        con_E2E = con_edge_edge(Eb,con_V2E) # Edge-edge connectivity
+        con_V2E = con_vertex_edge(Eb) # Vertex-edge connectivity        
         numConnectedEdges = length.(con_V2E)
-        indStartEnd = findall(numConnectedEdges .== 1)
-        if length(indStartEnd) == 2 # Non-closed curve           
-            if Eb[con_V2E[indStartEnd[1]][1]][1] == indStartEnd[1]
-                i = con_V2E[indStartEnd[1]][1]
+        maxNumConnectedEdges = maximum(numConnectedEdges)
+        if maxNumConnectedEdges>2
+            throw(ErrorException("Invalid edges. Edges may contain branches"))
+        end
+
+        indStartEnd = findall(numConnectedEdges .== 1) # Points connected to just 1 edge
+        if length(indStartEnd) == 2 # Non-closed curve as there are two points connected to 1 edge 
+            i_start_edge = con_V2E[indStartEnd[1]][1] # Index of start edge             
+            if Eb[i_start_edge][1] == indStartEnd[1] # First point of start edge corresponds to a start 
+                i_point = 1
             else
-                i = con_V2E[indStartEnd[2]][1]
+                i_point = 2
             end
         elseif length(indStartEnd) == 0 # Consistent with closed loop
-            i = 1
+            i_start_edge = 1
+            i_point = 1
         else
             throw(ErrorException("Invalid edges. Edges may contain branches or multiple disconnected sets"))
         end
 
-        seen = fill(false,numEdges) # Bool to keep track of visited points
-        ind = [Eb[i][1]] # Add first edge point and grow this list
-        while !all(seen) # loop until all edges have been visited        
-            push!(ind,Eb[i][2]) # Add edge end point (start is already in list)
-            seen[i] = true # Label current edge as visited       
-            e_ind = con_E2E[i] # Indices for connected edges
-            if length(e_ind)>2 # Branch point detected
+        seen = fill(false, numEdges) # Bool to keep track of visited points
+        seen[i_start_edge] = true
+        ind = [Eb[i_start_edge][i_point]] # Add first edge point and grow this list        
+        push!(ind, Eb[i_start_edge][mod1(i_point+1, 2)]) # Add edge end point (start is already in list)
+        while !all(seen) # loop until all edges have been visited                     
+            e_ind = con_V2E[ind[end]] # Indices for edges connected to end point            
+            e_ind = e_ind[[!seen[j] for j in e_ind]] #Indices of connected edges not visited yet             
+            if length(e_ind)>1 # Branch point detected
                 throw(ErrorException("Invalid edges or branch point detected. Current edge is connected to more than two edges."))    
-            else
-                if Eb[e_ind[1]][1]==ind[end] #Check if 1st point of 1st edge equals end
-                    i = e_ind[1]
-                elseif length(e_ind)>1 && Eb[e_ind[2]][1]==ind[end] #Check if 1st point of 2nd edge equals end
-                    i = e_ind[2]
-                end
+            else   
+                seen[e_ind[1]] = true # Label current edge as visited                    
+                if Eb[e_ind[1]][1]==ind[end] # First point on new edge is the end so add first 
+                    push!(ind, Eb[e_ind[1]][2])
+                else # First point is not the end so add it  
+                    push!(ind, Eb[e_ind[1]][1])
+                end                
             end
-
-            if seen[i] & !all(seen)
-                throw(ErrorException("Invalid edges. Edges may contain multiple disconnected sets, such as multiple closed loops."))
-            end            
         end
         if remove_last 
             return ind[1:end-1]
         else
             return ind
         end
-
     end
 end
 
