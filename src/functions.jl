@@ -3816,20 +3816,22 @@ When `triSide=0` both inward and outward intersections are considered.
 1. [Möller, Tomas; Trumbore, Ben (1997). _Fast, Minimum Storage Ray-Triangle Intersection_. Journal of Graphics Tools. 2: 21-28. doi: 10.1080/10867651.1997.10487468.](https://doi.org/10.1080/10867651.1997.10487468)
 """
 function ray_triangle_intersect(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV1}}, ray_origin::Union{Point{ND,TV2},Vec{ND,TV2}}, ray_vector::Union{Point{ND,TV3},Vec{ND,TV3}}; rayType = :ray, triSide = 1, tolEps = eps(Float64)) where TF <: Integer where ND where TV1<:Real where TV2<:Real where TV3<:Real
-    P = Vector{Point{ND,TV1}}(); sizehint!(P, length(F))
+    P = Vector{Point{3,TV1}}(); sizehint!(P, length(F))
     indIntersect = Vector{Int}(); sizehint!(indIntersect, length(F))
     T = Vector{TV1}(); sizehint!(T, length(F))
     det_vals = Vector{TV1}(); sizehint!(det_vals, length(F))
+    B = Vector{Point{3,TV1}}(); sizehint!(B, length(F))
     for (i,f) in enumerate(F)
-        p, t, det_val = ray_triangle_intersect(f,V,ray_origin,ray_vector; rayType = rayType, triSide = triSide, tolEps = tolEps)        
+        p, t, det_val, b = ray_triangle_intersect(f,V,ray_origin,ray_vector; rayType = rayType, triSide = triSide, tolEps = tolEps)        
         if !isnan(p[1])            
             push!(P, p)
             push!(indIntersect, i)
             push!(T, t)
             push!(det_vals, det_val)
+            push!(B, b)
         end
     end
-    return P, indIntersect, T, det_vals
+    return P, indIntersect, T, det_vals, B
 end
 
 function ray_triangle_intersect(f::TriangleFace{Int}, V::Vector{Point{ND,TV1}}, ray_origin::Union{Point{ND,TV2},Vec{ND,TV2}}, ray_vector::Union{Point{ND,TV3},Vec{ND,TV3}}; rayType = :ray, triSide = 1, tolEps = eps(Float64)) where ND where TV1<:Real where TV2<:Real where TV3<:Real
@@ -3853,11 +3855,12 @@ function ray_triangle_intersect(f::TriangleFace{Int}, V::Vector{Point{ND,TV1}}, 
         boolDet = det_val < -tolEps
     end
 
-    p = Point{ND,TV1}(NaN,NaN,NaN)
+    p = Point{3,TV1}(NaN,NaN,NaN)
     t = TV1(NaN)
+    b = Point{3,TV1}(NaN,NaN,NaN)
     if boolDet        
         s = ray_origin.-P1
-        u = dot(s,ray_cross_e2)/det_val    
+        u = dot(s,ray_cross_e2)/det_val            
         if u >= 0 && u <= 1 # On triangle according to u            
             s_cross_e1 = cross(s,vec_edge_1)
             v = dot(ray_vector,s_cross_e1)/det_val
@@ -3866,11 +3869,12 @@ function ray_triangle_intersect(f::TriangleFace{Int}, V::Vector{Point{ND,TV1}}, 
                 t = dot(vec_edge_2,s_cross_e1)/det_val                      
                 if rayType == :ray || (rayType == :line && t>=0 && t<=1.0)                                                   
                     p = ray_origin .+ t.*ray_vector # same as: P1 .+ u.*P21 .+ v.*P31
+                    b = Point{3,TV1}(u, v, 1.0 - u - v)
                 end
             end
         end    
     end    
-    return p, t, det_val
+    return p, t, det_val, b
 end
 
 """
