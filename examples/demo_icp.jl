@@ -44,10 +44,10 @@ V2 = [Point{3, Float64}(Q*(v-pm2)) + pc2 for v ∈ V2]
 V2_p1 = surface_align_svd(F1, V1, F2, V2)
 
 # Use ICP to align surface 2 with surface 1
-s = 0 # Use smallest (0=default), first (1), or second (2) surface to compote distances to 
+s = 0 # Use smallest (0=default), first (1), or second (2) surface to compute distances to 
 n = 100 # Maximum number of iterations
 tol = 1e-6 # Tollerance on summed distance difference wrt previous iteration
-V2_p2 = icp(V1, V2_p1; n=100, s=0, tol=tol)
+V2_p2 = icp(V1, V2_p1; n=n, s=s, tol=tol)
 
 # Visualization
 GLMakie.closeall()
