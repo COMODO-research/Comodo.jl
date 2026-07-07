@@ -3703,7 +3703,8 @@ end
     r = 2.5 # Sphere radius
     F,V = geosphere(3,r)
     A = sum(facearea(F, V))
-
+    p = [0.0, 0.0, 0.0]  # Point on cutting plane
+    
     function checkRad(En, Vn, rTrue, eps_level)
         ind_En = unique(reduce(vcat,En))
         d = [norm(v) for v in Vn[ind_En]]         
@@ -3711,8 +3712,7 @@ end
     end
 
     @testset "Slicing sphere, test radius of cut" begin        
-        snapTolerance = 1e-6
-        p = [0.0, 0.0, 0.0]  # Point on cutting plane
+        snapTolerance = 1e-6        
         N = [Vec{3, Float64}(1.0, 0.0, 0.0), 
                 Vec{3, Float64}(0.0, 1.0, 0.0), 
                 Vec{3, Float64}(0.0, 0.0, 1.0)]
@@ -3733,6 +3733,7 @@ end
 
     # Check Errors
     @testset "Errors" begin
+        n = Vec{3, Float64}(0.0, 0.0, 1.0)
         @test_throws ArgumentError trisurfslice(F,V,n,p; output_type=:wrong)
     end
 end
