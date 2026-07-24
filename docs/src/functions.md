@@ -990,3 +990,8 @@ Comodo.surface_align_svd
 ```@docs 
 Comodo.icp
 ```
+
+## `cylinder`
+```@docs 
+Comodo.cylinder
+```

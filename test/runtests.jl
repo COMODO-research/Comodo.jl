@@ -10027,6 +10027,72 @@ end
     s = 3
     @test_throws ArgumentError icp(V1, V2_p1; n=100, s=s, tol=tol)
 end
+
+@testset "cylinder" verbose=true begin 
+    eps_level = 1e-4
+
+    r = 5.0 # Cylinder radius
+    h = 5.0 # Cylinder height
+    nr = 10 # Number of points in radial dir
+    nh = 8 # Number of points in height dir
+
+    F, V = cylinder(r, h, nr, nh; direction=:positive, face_type=:quad, face_orientation=:outward)
+    z = [v[3] for v in V]
+    rV = [norm(v[1:2]) for v in V]
+    @test length(V) == nr*nh 
+    @test length(F) == nr*(nh-1)
+    @test isa(F, Vector{QuadFace{Int}})
+    @test isapprox(maximum(z),   h, atol=eps_level)
+    @test isapprox(minimum(z), 0.0, atol=eps_level)
+    @test isapprox(mean(rV), r, atol=eps_level)
+
+    F, V = cylinder(r, h, nr, nh; direction=:both, face_type=:forwardslash, face_orientation=:outward)
+    z = [v[3] for v in V]
+    rV = [norm(v[1:2]) for v in V]
+    @test length(V) == nr*nh 
+    @test length(F) == 2*nr*(nh-1)
+    @test isa(F, Vector{TriangleFace{Int}})
+    @test isapprox(maximum(z),  h/2.0, atol=eps_level)
+    @test isapprox(minimum(z), -h/2.0, atol=eps_level)
+    @test isapprox(mean(rV), r, atol=eps_level)
+    
+    # Test in outward normals grows shape
+    N = vertexnormal(F, V)
+    VN = V.+N
+    rVN = [norm(v[1:2]) for v in VN]
+    @test isapprox(mean(rVN), r+1.0, atol=0.1)
+
+    F, V = cylinder(r, h, nr, nh; direction=:both, face_type=:forwardslash, face_orientation=:inward)
+    z = [v[3] for v in V]
+    rV = [norm(v[1:2]) for v in V]
+    @test length(V) == nr*nh 
+    @test length(F) == 2*nr*(nh-1)
+    @test isa(F, Vector{TriangleFace{Int}})
+    @test isapprox(maximum(z),  h/2.0, atol=eps_level)
+    @test isapprox(minimum(z), -h/2.0, atol=eps_level)
+    @test isapprox(mean(rV), r, atol=eps_level)
+
+    # Test in inward normals shrink shape
+    N = vertexnormal(F, V)
+    VN = V.+N
+    rVN = [norm(v[1:2]) for v in VN]
+    @test isapprox(mean(rVN), r-1.0, atol=0.1)
+
+    face_type_set = (:forwardslash, :backslash, :tri_even)
+    for face_type in face_type_set
+        F, V = cylinder(r, h, nr, nh; direction=:positive, face_type=face_type, face_orientation=:outward)
+        z = [v[3] for v in V]
+        rV = [norm(v[1:2]) for v in V]
+        @test length(V) == nr*nh 
+        @test length(F) == 2*nr*(nh-1)
+        @test isa(F, Vector{TriangleFace{Int}})
+        @test isapprox(maximum(z),    h, atol=eps_level)
+        @test isapprox(minimum(z),  0.0, atol=eps_level)
+        @test isapprox(mean(rV), r, atol=0.1)
+    end
+    @test_throws ArgumentError F, V = cylinder(r, h, nr, nh; direction=:positive, face_type=:quad, face_orientation=:wrong)
+end
+
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
 #     @testset "Demos" begin

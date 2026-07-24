@@ -3603,14 +3603,14 @@ yields a closed cylinder
 * `face_type` is a symbol that is either `:quad` (default), `tri`, `tri_slash`, 
 or `quad2tri`. 
 """
-function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing,close_loop=false,face_type=:quad) where ND where TV<:Real
-
-    if close_loop
-        n1 = facenormal([collect(1:length(V1))],V1)[1] # Curve normal vector
-        if dot(n,n1)<0 # Check if anti-aligned with extrusion direction
-            V1 = circshift(reverse(V1),1) # Reverse curve order
-        end
-    end
+function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=nothing, close_loop=false, face_type=:quad) where ND where TV<:Real
+    
+    # if close_loop
+    #     n1 = facenormal([collect(1:length(V1))],V1)[1] # Curve normal vector
+    #     if dot(n,n1)<0 # Check if anti-aligned with extrusion direction
+    #         V1 = circshift(reverse(V1),1) # Reverse curve order
+    #     end
+    # end
 
     # Derive num_steps from curve point spacing if missing    
     if isnothing(num_steps)
@@ -3625,24 +3625,24 @@ function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive,
         throw(ArgumentError("num_steps=$num_steps is not valid. num_steps should be larger than 0."))
     end
     
-    # Create offset point depending on direction of extrude
-    if direction == :positive # Along n from V1
-        p = extent.*n
-    elseif direction == :negative # Against n from V1
-        p = -extent.*n
+    # Create offset points depending on direction of extrude
+    p = Point{ND,TV}(extent.*n) # Offset point
+    if direction == :positive # Along n from V1        
+        V1_ex = deepcopy(V1)
+        V2_ex = [v+p for v in V1_ex] # Shift in positive direction 
+    elseif direction == :negative # Against n from V1                
+        V1_ex = [V1[i] for i in length(V1):-1:1] # Reversed version of V1
         if close_loop 
-            circshift!(reverse!(V1),1)
-        else
-            reverse!(V1)
-        end
-    elseif direction == :both # Extrude both ways from V1
-        p = extent.*n
-        V1 = [(eltype(V1))(v.-p./2) for v in V1] #Shift V1 in negative direction
+            circshift!(V1_ex,1)        
+        end        
+        V2_ex = [v-p for v in V1_ex] # Shift in negative direction 
+    elseif direction == :both # Extrude both ways from V1                       
+        V2_ex = [v+p/2.0 for v in V1] # Shift V1 in positive direction
+        V1_ex = [v-p/2.0 for v in V1] # Shift V1 in negative direction        
     else
         throw(ArgumentError("$direction is not a valid direction, Use :positive, :in, or :both.")) 
     end
-    V2 = [(eltype(V1))(v.+p) for v in V1]  
-    return loftlinear(V1,V2;num_steps=num_steps,close_loop=close_loop,face_type=face_type)
+    return loftlinear(V1_ex, V2_ex; num_steps=num_steps, close_loop=close_loop, face_type=face_type)
 end
 
 """
@@ -10208,6 +10208,47 @@ function icp(V1, V2; n=100, s=0, tol=1e-6)
         end
     end
     return V2p
+end
+
+"""
+    cylinder(r::Tr, h::Th, nr::Int, nh::Int; direction=:both, face_type=:quad, face_orientation=:outward) where Tr<:Real where Th<:Real    
+
+Quadrangulated or triangulated open cylinder
+
+# Description
+This function generates a surface mesh for a cylinder. 
+
+Input parameters: 
+    `r`  : Sets the cylinder radius
+    `h`  : Sets the cylinder height
+    `nr` : Sets the number of points in the radial direction
+    `nh` : Set the number of points in the height direction
+
+Keyword arguments: 
+    `direction` : Sets the direction the cylinder is constructed in.
+        `:both` Up- and downward from origin
+        `:positive` Just upward
+        `:negative` Just downward
+    `face_type` : Sets the face type 
+        `:quad`, results in a regular quadrilateral mesh
+        `:forwardslash`, results in a triangulated mesh where quads are "forward" slashed
+        `:backslash`, results in a triangulated mesh where quads are "backward" slashed
+        `:tri_even`, results in a triangulated mesh where quads are "forward" slashed
+        `:quad2tri`, results in a triangulated mesh where quads are converted to triangles based on angles
+    `face_orientation` : Sets the face orientation
+        `:outward`: The face normals will point out of the cylinder
+        `:inward`: The face normals will point into the cylinder
+"""
+function cylinder(r::Tr, h::Th, nr::Int, nh::Int; direction=:both, face_type=:quad, face_orientation=:outward) where Tr<:Real where Th<:Real    
+    if face_orientation == :outward
+        circledir = :acw
+    elseif face_orientation == :inward
+        circledir = :cw
+    else        
+        throw(ArgumentError("Invalid face_orientation option provided, valid options are :inward and :outward"))
+    end    
+    Vc = circlepoints(r, nr; dir=circledir) # Circle points
+    return extrudecurve(Vc; extent=h, direction=direction, n=Vec{3, Float64}(0.0, 0.0, 1.0), num_steps=nh, close_loop=true, face_type=face_type)
 end
 
 #= 
