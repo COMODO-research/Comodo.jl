@@ -13,16 +13,35 @@ Loosely Comodo could stand for **Com**putational **Mo**delling for **D**esign **
 Comodo.jl started out as a modern re-implementation in Julia of the MATLAB toolbox [GIBBON](https://github.com/gibbonCode/GIBBON). However, rather than literally porting each functional unit, it instead aims to follow a similar philosophy and cover similar but more advanced core functionality.
 
 # Installation
+## Simple installation
+The following adds the latest release version to your Julia environment. 
 ```julia
 julia> ]
 (@v1.xx) pkg> add Comodo
 ```
+## Installation for testing, viewing examples, and co-development 
+If you would like to see all the Comodo files and examples (and perhaps also develop/change some of the functionality and examples), you can use the following to get the latest version of Comodo: 
+* Create a folder, e.g. named `dev_Comodo` (a folder to view and develop Comodo in)
+* Open a terminal and navigate to this new folder.
+* Trigger Julia here by calling `julia`
+* From Julia now enter the following to activate 
+```julia
+julia> ]
+(@v1.xx) pkg> activate .
+```
+This will create and activate a new environment called `dev_Comodo`. 
+* Now Comodo can be added "for development" to this environment using: 
+```julia
+julia> ]
+(@dev_Comodo) pkg> dev --local Comodo
+```
+* Other packages can now be added to this environment as desired, e.g. [FEBio.jl](https://github.com/febiosoftware/FEBio.jl).
+* Next if one is working in an editor like VS Code or Codium, one can open the `dev_Comodo` folder there to start using this environment. 
 
 # Getting started
-To get started install the package, study the documentation, and test some of the demos provided in the [`examples`](https://github.com/COMODO-research/Comodo.jl/tree/main/examples) folder. 
+To get started install the package, study the documentation, and test some of the demos provided in the [`examples`](https://github.com/COMODO-research/Comodo.jl/tree/main/examples) folder. If you did a simple `add` based installation you may not see the example files easily on your sytem. However you can download the examples from here as well. If you used the `dev --local` way of "installing" Comodo then the examples are available in the environment you defined. 
 
 <img src="https://github.com/COMODO-research/Comodo_data_docs/blob/main/img_anim/comodo_snippets.gif" alt="Comodo snippets" width="50%"/>
-
 
 # Documentation 
 [Functional Documentation](https://comodo-research.github.io/Comodo.jl/dev/)
