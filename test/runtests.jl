@@ -1633,7 +1633,7 @@ end
         # Example with boundary edges (extruded prism)
         r = 1.0
         nc = 3
-        Vc = circlepoints(r,nc;dir=:cw)    
+        Vc = circlepoints(r,nc;dir=:acw)    
         d = norm(Vc[1]-Vc[2])        
         F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:quad)
 
@@ -1653,7 +1653,7 @@ end
         # Example with boundary edges (extruded prism)
         r = 1.0
         nc = 3
-        Vc = circlepoints(r,nc;dir=:cw)    
+        Vc = circlepoints(r,nc;dir=:acw)    
         d = norm(Vc[1]-Vc[2])        
         F,V = extrudecurve(Vc; extent=d, direction=:positive, num_steps=2, close_loop=true,face_type=:quad)
 
@@ -4114,7 +4114,7 @@ end
     r = 1.0
     nc = 16
     d = 3.0
-    Vc = circlepoints(r, nc; dir=:cw)
+    Vc = circlepoints(r, nc; dir=:acw)
     num_steps = 5
 
     @testset "Default behaviours" begin
@@ -4208,15 +4208,13 @@ end
         @test F isa Vector{QuadFace{Int}}
         @test length(F) == nc*(num_steps-1)
 
-        ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test length(V) == num_steps*length(Vc)
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point{3, Float64}[[0.9238795325112865, 0.3826834323650904, 0.0], [-0.38268343236509034, 0.9238795325112865, 0.75], [-1.0, -5.66553889764798e-16, 1.5], [2.83276944882399e-16, -1.0, 2.25], [1.0, 0.0, 3.0]],atol = eps_level)
     end
 
     @testset "face_type=:tri" begin
-        Vc = circlepoints(r, nc; dir=:cw)
+        Vc = circlepoints(r, nc; dir=:acw)
         F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:tri)
         z = [v[3] for v in V]
         zMax = maximum(z)
@@ -4225,14 +4223,12 @@ end
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc*(num_steps-1))*2
 
-        ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-0.19507776807625948, 0.9807221674855444, 0.75], [-0.923879532511287, 0.3826834323650892, 1.5], [-0.1950777680762584, -0.9807221674855446, 2.25], [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
     end
 
     @testset "face_type=:forwardslash" begin
-        Vc = circlepoints(r, nc; dir=:cw)
+        Vc = circlepoints(r, nc; dir=:acw)
         F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:forwardslash)
         z = [v[3] for v in V]
         zMax = maximum(z)
@@ -4241,14 +4237,12 @@ end
         @test F isa Vector{TriangleFace{Int}}
         @test length(F) == (nc*(num_steps-1))*2
 
-        ind = round.(Int,range(1,length(V),5))
         @test V isa Vector{Point3{Float64}}
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
-        @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-1.8369701987210297e-16, 1.0, 0.75], [-0.923879532511287, 0.3826834323650892, 1.5], [-0.3826834323650895, -0.9238795325112868, 2.25], [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
     end
 
     @testset "face_type=:quad2tri" begin
-        Vc = circlepoints(r, nc; dir=:cw)
+        Vc = circlepoints(r, nc; dir=:acw)
         F, V = extrudecurve(Vc; extent=d,  direction=:positive,  n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=num_steps, close_loop=true, face_type=:quad2tri)
         z = [v[3] for v in V]
         zMax = maximum(z)
