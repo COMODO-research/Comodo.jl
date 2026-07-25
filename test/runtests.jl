@@ -4256,7 +4256,6 @@ end
         @test isapprox(zMax,d,atol = eps_level) && isapprox(zMin,0.0,atol = eps_level)
         @test isapprox(V[ind],Point{3, Float64}[[1.0, 0.0, 0.0], [-1.8369701987210297e-16, 1.0, 0.75], [-0.923879532511287, 0.3826834323650892, 1.5], [-0.3826834323650895, -0.9238795325112868, 2.25], [0.9238795325112867, -0.3826834323650897, 3.0]],atol = eps_level)
     end
-
 end
 
 @testset "meshgroup" verbose = true begin
@@ -5024,10 +5023,10 @@ end
         @test isapprox(maximum(ϕ),0.0,atol=eps_level)
     end
     
-    @testset "Nothing for num_steps" begin        
+    @testset "0 for num_steps" begin        
         face_type =:quad
         close_loop = true
-        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=n,num_steps=nothing,periodicity=(close_loop,false),face_type=face_type)
+        F,V = revolvecurve(Vc; extent=θ,  direction=:positive, n=n, num_steps=0, periodicity=(close_loop,false), face_type=face_type)
         @test length(V)/nc == ceil(Int,(2*θ)/pointspacingmean(Vc))
     end
 
@@ -10074,6 +10073,7 @@ end
 
     face_type_set = (:forwardslash, :backslash, :tri_even)
     for face_type in face_type_set
+        println(face_type)
         F, V = cylinder(r, h, nr, nh; direction=:positive, face_type=face_type, face_orientation=:outward)
         z = [v[3] for v in V]
         rV = [norm(v[1:2]) for v in V]
@@ -10084,7 +10084,114 @@ end
         @test isapprox(minimum(z),  0.0, atol=eps_level)
         @test isapprox(mean(rV), r, atol=0.1)
     end
+
+    # Test nh=0
+    face_type_set = (:forwardslash, :backslash, :tri_even)
+    for face_type in face_type_set
+        F, V = cylinder(r, h, nr, 0; direction=:positive, face_type=face_type, face_orientation=:outward)
+        nh = round(Int, length(V)/nr)
+        z = [v[3] for v in V]
+        rV = [norm(v[1:2]) for v in V]
+        @test length(V) == nr*nh 
+        @test length(F) == 2*nr*(nh-1)
+        @test isa(F, Vector{TriangleFace{Int}})
+        @test isapprox(maximum(z),    h, atol=eps_level)
+        @test isapprox(minimum(z),  0.0, atol=eps_level)
+        @test isapprox(mean(rV), r, atol=0.1)
+    end
+
     @test_throws ArgumentError F, V = cylinder(r, h, nr, nh; direction=:positive, face_type=:quad, face_orientation=:wrong)
+end
+
+@testset "tricylinder" verbose=true begin
+    eps_level = 1e-2
+
+    r = 2.0 # Cylinder radius
+    h = 8.0 # Cylinder height
+
+    # Using splitting for regular cap meshes
+    n_set = (1, 1, 2, 2)
+    pointSpacing_set = (1.0, 0.5, 0.3, 0.3)
+    face_type_set = (:tri, :tri, :backslash, :forwardslash)
+    nh = 5
+
+    # Loop over options
+    for i in eachindex(n_set)
+        # Split iteration based
+        F, V, C = tricylinder(r, h, n_set[i]; nh=nh, face_type=face_type_set[i])
+        F_side = F[C.==3]
+        indSide = elements2indices(F_side)
+        nr = 6*(2^n_set[i])
+        @test length(F_side) == 2*nr*(nh-1)
+
+        z = [v[3] for v in V]
+        rV = [norm(v[1:2]) for v in V[indSide]]
+        @test isa(F, Vector{TriangleFace{Int}})
+        @test isapprox(maximum(z),  h/2.0, atol=eps_level)
+        @test isapprox(minimum(z), -h/2.0, atol=eps_level)
+        @test isapprox(mean(rV), r, atol=eps_level)
+
+        # Point spacing based
+        F, V, C = tricylinder(r, h, pointSpacing_set[i]; nh=nh, face_type=face_type_set[i])
+        F_side = F[C.==3]
+        indSide = elements2indices(F_side)
+        nr = round(Int, length(indSide)/nh)
+        @test length(F_side) == 2*nr*(nh-1)
+
+        z = [v[3] for v in V]
+        rV = [norm(v[1:2]) for v in V[indSide]]
+        @test isa(F, Vector{TriangleFace{Int}})
+        @test isapprox(maximum(z),  h/2.0, atol=eps_level)
+        @test isapprox(minimum(z), -h/2.0, atol=eps_level)
+        @test isapprox(mean(rV), r, atol=eps_level)
+    end
+    
+    n = 2
+    F, V, C = tricylinder(r, h, n; nh=0, face_type=:forwardslash)
+    F_side = F[C.==3]
+    indSide = elements2indices(F_side)
+    z = [v[3] for v in V]
+    rV = [norm(v[1:2]) for v in V[indSide]]
+    @test isa(F, Vector{TriangleFace{Int}})
+    @test isapprox(maximum(z),  h/2.0, atol=eps_level)
+    @test isapprox(minimum(z), -h/2.0, atol=eps_level)
+    @test isapprox(mean(rV), r, atol=eps_level)
+end
+
+@testset "quadcylinder" verbose=true begin
+    eps_level = 1e-4
+    r = 5.0
+    h = 10.0  
+    n = 2
+    nh = 5
+    F, V, C = quadcylinder(r, h, n; nh=nh)
+    F_side = F[C.==3]
+    indSide = elements2indices(F_side)
+
+    nr = 8*(2^n)
+    @test length(F_side) == nr*(nh-1)
+    @test length(indSide) == nr*nh
+
+    z = [v[3] for v in V]
+    rV = [norm(v[1:2]) for v in V[indSide]]
+
+    @test isa(F, Vector{QuadFace{Int}})
+    @test isapprox(maximum(z),  h/2.0, atol=eps_level)
+    @test isapprox(minimum(z), -h/2.0, atol=eps_level)
+    @test isapprox(mean(rV), r, atol=eps_level)
+
+    #Testing nh = 0 
+    F, V, C = quadcylinder(r, h, n; nh=0)
+
+    F_side = F[C.==3]
+    indSide = elements2indices(F_side)
+    z = [v[3] for v in V]
+    rV = [norm(v[1:2]) for v in V[indSide]]
+
+    @test isa(F, Vector{QuadFace{Int}})
+    @test isapprox(maximum(z),  h/2.0, atol=eps_level)
+    @test isapprox(minimum(z), -h/2.0, atol=eps_level)
+    @test isapprox(mean(rV), r, atol=eps_level)
 end
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------

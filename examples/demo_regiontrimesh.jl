@@ -19,7 +19,7 @@ for testCase = 1:7
         VT = (V,)
         R = ([1],)
         P = (pointSpacing)
-        gridtYpe = :equilateral
+        gridtype = :equilateral
         numSmoothSteps = 25
     elseif testCase == 2 
         n = 50
@@ -30,7 +30,7 @@ for testCase = 1:7
         VT = (V,)
         R = ([1],)
         P = (pointSpacing)
-        gridtYpe = :equilateral
+        gridtype = :equilateral
         numSmoothSteps = 25
     elseif testCase == 3 
         n = 120
@@ -43,7 +43,7 @@ for testCase = 1:7
         VT = (V,)
         R = ([1],)
         P = (pointSpacing)
-        gridtYpe = :equilateral
+        gridtype = :equilateral
         numSmoothSteps = 25
     elseif testCase == 4
         w = 40.0
@@ -53,7 +53,7 @@ for testCase = 1:7
         VT = (V1,)
         R = ([1],)
         P = (pointSpacing)
-        gridtYpe = :Cartesian
+        gridtype = :Cartesian
         numSmoothSteps = 0
     elseif testCase == 5 
         w = 12.0
@@ -66,7 +66,7 @@ for testCase = 1:7
         VT = (V1,V2,)
         R = ([1,2],)
         P = (pointSpacing)
-        gridtYpe = :equilateral
+        gridtype = :equilateral
         numSmoothSteps = 25
     elseif testCase == 6
         rFun1(t) = 12.0 + 3.0.*sin(5*t)
@@ -92,7 +92,7 @@ for testCase = 1:7
         VT = (V1,V2,V3,V4,V5,V6) # Curves
         R = ([1,2],[2,3,4,5,6],[4],[5]) # Regions 
         P = (1,0.6,0.2,0.3)  # Point spacings
-        gridtYpe = :equilateral
+        gridtype = :equilateral
         numSmoothSteps = 25
     elseif testCase == 7    
         n1 = 100
@@ -122,13 +122,13 @@ for testCase = 1:7
         VT = (V1,V2,V3,V4,V5) # Curves
         R = ([1,2,3],[2,4,5],[5]) # Regions 
         P = (1.5,0.75,0.5)  # Point spacings
-        gridtYpe = :equilateral
+        gridtype = :equilateral
         numSmoothSteps = 25
     end
 
     VTp = deepcopy(VT) # Copy for plotting
 
-    F,V,C = regiontrimesh(VT,R,P; gridtype=gridtYpe, numSmoothSteps=numSmoothSteps)
+    F,V,C = regiontrimesh(VT,R,P; gridtype=gridtype, numSmoothSteps=numSmoothSteps)
 
     A = facearea(F,V)
     println("testCase: ", testCase)

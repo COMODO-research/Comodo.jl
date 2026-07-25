@@ -3603,17 +3603,10 @@ yields a closed cylinder
 * `face_type` is a symbol that is either `:quad` (default), `tri`, `tri_slash`, 
 or `quad2tri`. 
 """
-function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=nothing, close_loop=false, face_type=:quad) where ND where TV<:Real
+function extrudecurve(V1::Vector{Point{ND,TV}}; extent=1.0, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=0, close_loop=false, face_type=:quad) where ND where TV<:Real
     
-    # if close_loop
-    #     n1 = facenormal([collect(1:length(V1))],V1)[1] # Curve normal vector
-    #     if dot(n,n1)<0 # Check if anti-aligned with extrusion direction
-    #         V1 = circshift(reverse(V1),1) # Reverse curve order
-    #     end
-    # end
-
     # Derive num_steps from curve point spacing if missing    
-    if isnothing(num_steps)
+    if num_steps == 0 # If zero we'll compute num_steps based on curve point spacing
         num_steps = spacing2numsteps(extent, pointspacingmean(V1; close_loop=close_loop); close_loop=false)                
         if face_type==:tri
             num_steps = num_steps + Int(iseven(num_steps)) # Force uneven
@@ -4358,10 +4351,10 @@ This function rotates the curve `Vc` by the angle `extent`, in the direction
 defined by `direction` (`:positive`, `:negative`, `:both`), around the vector 
 `n`, to build the output mesh defined by the faces `F` and vertices `V`. 
 """
-function revolvecurve(Vc::Vector{Point{ND,TV}}; extent = 2.0*π, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0),num_steps=nothing, periodicity=(false,false),face_type=:quad)  where ND where TV<:Real   
+function revolvecurve(Vc::Vector{Point{ND,TV}}; extent = 2.0*π, direction=:positive, n=Vec{3, Float64}(0.0,0.0,1.0), num_steps=0, periodicity=(false,false),face_type=:quad)  where ND where TV<:Real   
     
     # Compute num_steps from curve point spacing
-    if isnothing(num_steps)
+    if num_steps==0 # If zero compute baed on point spacing
         rMax = 0.0
         for v in Vc
             rNow = dot(normalizevector(cross(cross(n,v),n)),v)
@@ -4369,7 +4362,7 @@ function revolvecurve(Vc::Vector{Point{ND,TV}}; extent = 2.0*π, direction=:posi
                 rMax = max(rMax,rNow)
             end
         end
-        num_steps = spacing2numsteps(rMax*extent,pointspacingmean(Vc); close_loop=true)
+        num_steps = spacing2numsteps(rMax*extent, pointspacingmean(Vc); close_loop=true)
     end
     
     # Set up angle range
@@ -8473,7 +8466,7 @@ function hexcylinder(r::Tr, h::Th, n::Int; nh=0, direction=:both) where Tr<:Real
     F,V = quaddisc(r,n; method=:Catmull_Clark)        
     if nh<2
         if nh==0
-            pointSpacing = pointspacingmax(F,V)
+            pointSpacing = (2π*r)/(8*2^n) # Edge point spacing
             nh = spacing2numsteps(h, pointSpacing; close_loop=false)    
         else 
             throw(ArgumentError("Invalid number of nodes nh in height direction. Should be at least 2 (or use 0 to automatically determine nh)"))
@@ -10222,7 +10215,9 @@ Input parameters:
     `r`  : Sets the cylinder radius
     `h`  : Sets the cylinder height
     `nr` : Sets the number of points in the radial direction
-    `nh` : Set the number of points in the height direction
+    `nh` : Sets the number of node steps to use in the z-direction. If 0, which 
+           is the (default) then the number is instead set to achieve the cap 
+           point spacing in the height direction. 
 
 Keyword arguments: 
     `direction` : Sets the direction the cylinder is constructed in.
@@ -10230,16 +10225,19 @@ Keyword arguments:
         `:positive` Just upward
         `:negative` Just downward
     `face_type` : Sets the face type 
-        `:quad`, results in a regular quadrilateral mesh
-        `:forwardslash`, results in a triangulated mesh where quads are "forward" slashed
-        `:backslash`, results in a triangulated mesh where quads are "backward" slashed
-        `:tri_even`, results in a triangulated mesh where quads are "forward" slashed
-        `:quad2tri`, results in a triangulated mesh where quads are converted to triangles based on angles
-    `face_orientation` : Sets the face orientation
+        `:quad`: results in a regular quadrilateral mesh
+        `:forwardslash`: results in a triangulated mesh where quads are "forward" slashed
+        `:backslash`: results in a triangulated mesh where quads are "backward" slashed
+        `:tri`: results in an approximately equilateral triangle mesh 
+                (see also `grid2surf`)
+        `:tri_even`: results in an approximately equilateral triangle mesh
+                    (see also `grid2surf`)
+        `:quad2tri`: results in a triangulated mesh where quads are converted to triangles based on angles
+    `face_orientation`: Sets the face orientation
         `:outward`: The face normals will point out of the cylinder
         `:inward`: The face normals will point into the cylinder
 """
-function cylinder(r::Tr, h::Th, nr::Int, nh::Int; direction=:both, face_type=:quad, face_orientation=:outward) where Tr<:Real where Th<:Real    
+function cylinder(r::Tr, h::Th, nr::Int, nh=0::Int; direction=:both, face_type=:quad, face_orientation=:outward) where Tr<:Real where Th<:Real    
     if face_orientation == :outward
         circledir = :acw
     elseif face_orientation == :inward
@@ -10248,7 +10246,189 @@ function cylinder(r::Tr, h::Th, nr::Int, nh::Int; direction=:both, face_type=:qu
         throw(ArgumentError("Invalid face_orientation option provided, valid options are :inward and :outward"))
     end    
     Vc = circlepoints(r, nr; dir=circledir) # Circle points
-    return extrudecurve(Vc; extent=h, direction=direction, n=Vec{3, Float64}(0.0, 0.0, 1.0), num_steps=nh, close_loop=true, face_type=face_type)
+    
+    F, V = extrudecurve(Vc; extent=h, direction=direction, n=Vec{3, Float64}(0.0, 0.0, 1.0), num_steps=nh, close_loop=true, face_type=face_type)
+    if in(face_type, (:tri, :tri_even))
+        for (i,v) in enumerate(V)
+            rEst = norm(v[1:2])
+            V[i] = Point{3, Float64}(r*v[1]./rEst, r*v[2]./rEst, v[3])
+        end
+    end
+    return F, V
+end
+
+"""
+    tricylinder(r::Tr, h::Th, n::Int; nh=0, face_type=:tri) where Tr<:Real where Th<:Real 
+    tricylinder(r::Tr, h::Th, pointSpacing::Union{Float64, Float32}; nh=0, face_type=:tri) where Tr<:Real where Th<:Real     
+
+Returns triangulated capped cylinder
+
+# Description
+This function generates a surface mesh for a closed triangulated cylinder. Two 
+variants are provided, i.e. one where the 3rd input is an integer and one where 
+it is a float. 
+If the 3rd input is an integer it is interpreted as defining the 
+number of split iterations `n` to for the caps (see also `tridisc`). 
+
+Input parameters: 
+    `r`  : Sets the cylinder radius
+    `h`  : Sets the cylinder height
+    `n` : Sets the number of split iterations of the cap (see also `tridisc`)
+    
+If the 3rd input is a float it is interpreted as defining the desired point 
+spacing to use for the caps. 
+
+Input parameters: 
+    `r`  : Sets the cylinder radius
+    `h`  : Sets the cylinder height
+    `pointSpacing` : Sets the desired point spacing for the caps
+
+Keyword arguments: 
+    `nh` : Sets the number of node steps to use in the z-direction. If 0, which 
+           is the (default) then the number is instead set to achieve the cap 
+           point spacing in the height direction. 
+    `face_type`: Sets the face type         
+        `:forwardslash`: results in a triangulated mesh where quads are "forward"
+                         slashed
+        `:backslash`: results in a triangulated mesh where quads are "backward" 
+                      slashed
+        `:tri`: results in an approximately equilateral triangle mesh 
+                (see also `grid2surf`)
+"""
+function tricylinder(r::Tr, h::Th, n::Int; nh=0, face_type=:tri) where Tr<:Real where Th<:Real 
+    if !in(face_type, (:tri, :forwardslash, :backslash))
+        throw(ArgumentError("Invalid face_type, valid options are :tri, :forwardslash, and :backslash"))
+    end
+
+    # Create regular triangulated disc 
+    F1, V1 = tridisc(r, n; ngon=6, method=:Loop, orientation=:up)
+
+    # Get boundary curve     
+    indBoundaryCurve = edges2curve(boundaryedges(F1); remove_last = true)
+
+    # Check number of steps in height direction
+    if nh==0 # If zero we'll compute based on edge point spacing of disc
+        pointSpacing = (2π*r)/(6*2^n) # Edge point spacing 
+        if face_type == :tri    
+            nh = 1 + ceil(Int, h./(pointSpacing*sqrt(3.0)/2.0))
+        else
+            nh = 1 + ceil(Int, h./pointSpacing)
+        end
+    end
+
+    # For the :tri face type the number should be uneven to ensure nodes coincide with the discs at either end
+    if face_type == :tri && iseven(nh) 
+        nh+=1 # Add one to force uneven
+    end
+
+    # Construct cylinder faces using boundary curve 
+    F3, V3 = extrudecurve(V1[indBoundaryCurve]; extent=h, direction=:both, n=Vec{3, Float64}(0.0, 0.0, 1.0), num_steps=nh, close_loop=true, face_type=face_type)
+    if face_type == :tri
+        for (i,v) in enumerate(V3)
+            rEst = norm(v[1:2])
+            V3[i] = Point{3, Float64}(r*v[1]./rEst, r*v[2]./rEst, v[3])
+        end
+    end
+    
+    # Position discs at the either end 
+    p = Point{3, Float64}(0.0, 0.0, h/2.0)
+    F2 = invert_faces(F1) # Invert the faces of the other disc cap
+    V2 = [v-p for v in V1] # Create V3 by shifting V1
+    V1 .+= p # Manipulate V1
+
+    # Join and merge geometry 
+    F, V, C = joingeom(F1, V1, F2, V2, F3, V3) # Just join 
+    F, V = mergevertices(F, V) # Now merge nodes 
+    return F, V, C
+end
+
+function tricylinder(r::Tr, h::Th, pointSpacing::Union{Float64, Float32}; nh=0, face_type=:tri) where Tr<:Real where Th<:Real 
+    if !in(face_type, (:tri, :forwardslash, :backslash))
+        throw(ArgumentError("Invalid face_type, valid options are :tri, :tri_even, :forwardslash, and :backslash"))
+    end
+    
+    # Create cylinder body 
+    nr = ceil(Int, (2π*r)./pointSpacing) # Derived number of radial points to approximate point spacing
+    if nh==0 # If zero we'll compute based on point spacing provided
+        if face_type == :tri    
+            nh = 1 + ceil(Int, h./(pointSpacing*sqrt(3.0)/2.0))
+        else
+            nh = 1 + ceil(Int, h./pointSpacing)
+        end
+    end
+    
+    F3, V3 = cylinder(r, h, nr, nh; direction=:both, face_type=face_type, face_orientation=:outward)
+
+    # Get boundary curves     
+    E3 = boundaryedges(F3) # Boundary edges 
+    G = meshgroup(E3)
+    curveIndexSet = fill(zeros(Int, nr), 2) #Vector{Vector{Int}}(undef,2)
+    for gLabel in 1:2#maximum(G)        
+        indBoundaryCurve = edges2curve(E3[G.==gLabel]; remove_last = true)
+        z = V3[indBoundaryCurve[1]][3]        
+        if z>0.0 # Handling top curve 
+            curveIndexSet[1] = reverse(indBoundaryCurve)                          
+        else # Bottom
+            curveIndexSet[2] = indBoundaryCurve
+        end
+    end
+    V1c = deepcopy(V3[curveIndexSet[1]])
+    F1, V1, _ = regiontrimesh((V1c,), ([1],), (pointSpacing))
+
+    V2c = deepcopy(V3[curveIndexSet[2]])
+    F2, V2, _ = regiontrimesh((V2c,), ([1],), (pointSpacing))
+    invert_faces!(F2)
+
+    # Join and merge geometry 
+    F, V, C = joingeom(F1, V1, F2, V2, F3, V3) # Just join 
+    F, V = mergevertices(F, V) # Now merge nodes 
+    return F, V, C
+end
+
+"""
+    quadcylinder(r::Tr, h::Th, n::Int; nh=0) where Tr<:Real where Th<:Real 
+
+Returns quadrangulated capped cylinder
+
+# Description
+This function generates a surface mesh for a closed quadrangulated cylinder. 
+
+Input parameters: 
+    `r`  : Sets the cylinder radius
+    `h`  : Sets the cylinder height
+    `n` : Sets the number of split iterations of the cap (see also `quaddisc`)
+    
+Keyword arguments: 
+    `nh` : Sets the number of node steps to use in the z-direction. If 0, which 
+           is the (default) then the number is instead set to achieve the cap 
+           point spacing in the height direction.     
+"""
+function quadcylinder(r::Tr, h::Th, n::Int; nh=0) where Tr<:Real where Th<:Real 
+    # Create regular quadrangulated disc 
+    F1, V1 = quaddisc(r, n)
+
+    # Get boundary curve     
+    indBoundaryCurve = edges2curve(boundaryedges(F1); remove_last = true)
+
+    # Check number of steps in height direction
+    if nh==0 # If zero we'll compute based on edge point spacing of disc
+        pointSpacing = (2π*r)/(8*2^n) # Edge point spacing
+        nh = 1 + ceil(Int, h./pointSpacing)
+    end
+
+    # Construct cylinder faces using boundary curve 
+    F3, V3 = extrudecurve(V1[indBoundaryCurve]; extent=h, direction=:both, n=Vec{3, Float64}(0.0, 0.0, 1.0), num_steps=nh, close_loop=true, face_type=:quad)
+
+    # Position discs at the either end 
+    p = Point{3, Float64}(0.0, 0.0, h/2.0)
+    F2 = invert_faces(F1) # Invert the faces of the other disc cap
+    V2 = [v-p for v in V1] # Create V3 by shifting V1
+    V1 .+= p # Manipulate V1
+
+    # Join and merge geometry 
+    F, V, C = joingeom(F1, V1, F2, V2, F3, V3) # Just join 
+    F, V = mergevertices(F, V) # Now merge nodes 
+    return F, V, C
 end
 
 #= 

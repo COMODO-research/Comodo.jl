@@ -995,3 +995,13 @@ Comodo.icp
 ```@docs 
 Comodo.cylinder
 ```
+
+## `tricylinder`
+```@docs 
+Comodo.tricylinder
+```
+
+## `quadcylinder`
+```@docs 
+Comodo.quadcylinder
+```
