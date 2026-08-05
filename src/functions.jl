@@ -582,7 +582,7 @@ point set is provided twice, then the optional parameter `skipSelf` can be set
 t0 `true` (default is `false`) if "self distances" (e.g. the nth point to the 
 nth point) are to be avoided.  
 """
-function mindist(V1,V2; getIndex::Val{B1}=Val(false), skipSelf = false ) where {B1}
+function mindist(V1::Union{Vector{Point{ND,TV1}}, Vector{Vec{ND,TV1}}}, V2::Union{Vector{Point{ND,TV2}}, Vector{Vec{ND,TV2}}}; getIndex::Val{B1}=Val(false), skipSelf = false ) where {B1} where ND where TV1<:Real where TV2<:Real
     T = promote_type(eltype(eltype(V1)), eltype(eltype(V2)))
     D, d = similar(V1, T), similar(V2, T)
     if B1
@@ -593,7 +593,7 @@ function mindist(V1,V2; getIndex::Val{B1}=Val(false), skipSelf = false ) where {
             if skipSelf && i==j
                 d[j] = Inf
             else
-                d[j] = euclidean(v1,v2) # norm(v1,v2) 
+                d[j] = euclidean(v1, v2) # norm(v1,v2) 
             end       
         end
         if B1
@@ -608,6 +608,7 @@ function mindist(V1,V2; getIndex::Val{B1}=Val(false), skipSelf = false ) where {
         return D
     end
 end
+
 
 """
     occursonce(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N  
@@ -2314,7 +2315,7 @@ function mag(n::T) where T <: Real
 end
 
 """
-    smoothmesh_laplacian(F,V,con_V2V=nothing; n=1, λ=0.5)
+    smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, λ=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
 
 # Description
 
@@ -2328,7 +2329,7 @@ in the range (0,1). If `λ=0` then no smoothing occurs. If `λ=1` then pure
 Laplacian mean based smoothing occurs. For intermediate values a linear blending
 between the two occurs.  
 """
-function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, λ=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
+function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}}, V::Vector{Point{ND,TV}}, n=1, λ=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
     
     if λ>1.0 || λ<0.0
         throw(ArgumentError("λ should be in the range 0-1"))
@@ -10429,6 +10430,92 @@ function quadcylinder(r::Tr, h::Th, n::Int; nh=0) where Tr<:Real where Th<:Real
     F, V, C = joingeom(F1, V1, F2, V2, F3, V3) # Just join 
     F, V = mergevertices(F, V) # Now merge nodes 
     return F, V, C
+end
+
+"""
+    wsdf(xr::Union{Vector{T}, AbstractRange{T}}, yr::Union{Vector{T}, AbstractRange{T}}, zr::Union{Vector{T}, AbstractRange{T}}, P::Union{Vector{Point{ND,TV}}, Vector{Vec{ND,TV}}}, R::Vector{TR}; closest_type=:weighted) where {T<:Real, TV<:Real, TR<:Real, ND}
+
+Weighted signed distance function
+
+# Description
+This function computes the weighted signed distance function. The input consists 
+of coordinates ranges `xr`, `yr`, and `zr`, which define a 3D grid of 
+coordinates for the voxel centres for the output image array `M`. The input `P` 
+is a vector of points and `R` defines the weight for each of these points. The 
+output consists of the 3D array `M` whose values are the weighted 
+distance of the type `(d/r - 1.0)`, where d is the distance from a voxel centre 
+to a point in `P` and `r` is the corresponding weight for that point in `R`. 
+If the point set `P` define a vessel centre line structure then `R` is 
+equivalent to a radius for each point. The distance metric in `M` will then be 
+0.0 at the vessel surface, be positive outside the vessel, and be negative 
+inside the vessel. The returned distance values in `M` are for the closests 
+points in `P`. The optional keyword argument `closest_type` controls what are 
+considered the closests points, i.e. if the normals Euclidian distance is used 
+to find the closest points or if the weighted distance is used. Note that the 
+output features the weighted distance irrespective of `closest_type`, in other 
+words the choice of `closest_type` only influences what is considered the 
+closest point, not what distance is returned.  
+
+    `closest_type`: If set to `:weighted` (default) then the closest point check
+                    is based on the weighted distance `(d/r - 1.0)`. 
+                    If set to `:nearest` then the closest point check is based 
+                    on the Euclidean distance `d`. 
+
+"""
+function wsdf(xr::Union{Vector{T}, AbstractRange{T}}, 
+              yr::Union{Vector{T}, AbstractRange{T}}, 
+              zr::Union{Vector{T}, AbstractRange{T}}, 
+              P::Union{Vector{Point{ND,TV}}, Vector{Vec{ND,TV}}}, 
+              R::Vector{TR}; closest_type=:weighted) where {T<:Real, TV<:Real, TR<:Real, ND}
+    M = Array{Float64, 3}(undef, (length(xr), length(yr), length(zr))) # Allocate distance image
+    for (i, x) in enumerate(xr)
+        for (j, y) in enumerate(yr)
+            for (k, z) in enumerate(zr)
+                p_ijk = Point{3,Float64}(x, y, z) # Current grid point
+                M[i, j, k] = _wsdf(p_ijk, P, R; closest_type=closest_type)
+            end
+        end
+    end        
+    return M
+end
+
+"""
+    _wsdf(p_ijk::Point{ND,TV}, P::Union{Vector{Point{ND,TV}}, Vector{Vec{ND,TV}}}, R::Vector{TR}; closest_type=:weighted) where {TV<:Real, TR<:Real, ND}
+
+Local function for wsdf
+
+# Description
+This is a local function for wsdf which computes the weighted signed distance 
+for a single point of the input grid. 
+
+See also: `wsdf`
+"""
+function _wsdf(p_ijk::Point{ND,TV}, 
+              P::Union{Vector{Point{ND,TV}}, Vector{Vec{ND,TV}}}, 
+              R::Vector{TR}; closest_type=:weighted) where {TV<:Real, TR<:Real, ND}
+
+    dMin = Inf # Initialise minimum as Inf so any distance will be lower
+    if closest_type == :nearest
+        indMin = 0 # Start of index for lowest distance point as zero
+        for (indNow, p) in enumerate(P) # Loop over all object points                            
+            dNow = norm(p_ijk-p)
+            if dNow<dMin # Current distance smallest so far
+                dMin = dNow # Update minimum
+                indMin = indNow # Update index of minimum
+            end                    
+        end                
+        return dMin/R[indMin] - 1.0 # Weighted signed distance 
+    elseif closest_type == :weighted
+        for (indNow, p) in enumerate(P) # Loop over all object points                            
+            dNow = norm(p_ijk-p)/R[indNow] - 1.0 # Weighted signed distance 
+            if dNow<dMin # Current distance smallest so far
+                dMin = dNow # Update minimum
+            end                    
+        end                
+        return dMin     
+    else
+        throw(ArgumentError("Invalid closest_type option provided, valid options are :nearest and :weighted"))
+    end 
 end
 
 #= 

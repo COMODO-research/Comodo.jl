@@ -10194,6 +10194,76 @@ end
     @test isapprox(mean(rV), r, atol=eps_level)
 end
 
+@testset "wsdf" verbose=true begin
+    eps_level = 1e-2
+
+    # Upward line point set
+    n = 20
+    h = 15.0
+    V = collect(range(Point{3,Float64}(0.0, 0.0, -h/2.0), Point{3,Float64}(0.0, 0.0, h/2.0), n))
+    r = 10.0
+    R = fill(10.0, n)
+
+    # Define grid ranges
+    voxelSize = (1.0, 1.0, 1.0)
+    xr = -1.2*r:voxelSize[1]:1.2*r
+    yr = -1.3*r:voxelSize[2]:1.3*r
+    zr = -h/2.0:voxelSize[3]:h/2.0
+
+    @testset "weighted" begin
+        # Now compute radius weighted signed distance field
+        M = wsdf(xr, yr, zr, V, R; closest_type=:weighted)
+        siz = size(M)
+
+        # Check type
+        @test isa(M, Array{Float64, 3})
+
+        # Check size
+        @test siz[1] == length(xr)
+        @test siz[2] == length(yr)
+        @test siz[3] == length(zr)
+
+        # Check geometry retrievable from image 
+        FM, VM = getisosurface(M; x=xr, y=yr, z=zr, level=0.0, cap=false, padValue=1e8) # level set surface
+
+        rM = mean([sqrt(p[1]^2+p[2]^2) for p in VM]) # Mean radius
+        @test isapprox(rM, r, atol=eps_level) # Check radius
+
+        z = [p[3] for p in VM]
+        hM = maximum(z)-minimum(z)
+        @test isapprox(hM, h, atol=eps_level)
+    end
+
+    @testset "nearest" begin
+        # Now compute radius weighted signed distance field
+        M = wsdf(xr, yr, zr, V, R; closest_type=:nearest)
+        siz = size(M)
+
+        # Check type
+        @test isa(M, Array{Float64, 3})
+
+        # Check size
+        @test siz[1] == length(xr)
+        @test siz[2] == length(yr)
+        @test siz[3] == length(zr)
+
+        # Check geometry retrievable from image 
+        FM, VM = getisosurface(M; x=xr, y=yr, z=zr, level=0.0, cap=false, padValue=1e8) # level set surface
+
+        rM = mean([sqrt(p[1]^2+p[2]^2) for p in VM]) # Mean radius
+        @test isapprox(rM, r, atol=eps_level) # Check radius
+
+        z = [p[3] for p in VM]
+        hM = maximum(z)-minimum(z)
+        @test isapprox(hM, h, atol=eps_level)
+    end
+
+    @testset "Errors" begin
+        @test_throws ArgumentError wsdf(xr, yr, zr, V, R; closest_type=:wrong)      
+    end
+
+end
+
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
 #     @testset "Demos" begin

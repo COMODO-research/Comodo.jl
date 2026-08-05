@@ -94,6 +94,7 @@ export image2voxelmesh, smoothmesh_taubin, inmesh, mesh2bool
 export rand_incircle, rand_oncircle, rand_insphere, rand_onsphere, rand_onsphere_cone
 export cartesianIndexOffset, gradient, mixture_VonMisesFisher, hex8_hex20, hex8_hex27
 export svdRotPerms, surface_svd, surface_align_svd, icp, cylinder, tricylinder, quadcylinder
+export wsdf
 end # module
 
 #= 

@@ -1005,3 +1005,13 @@ Comodo.tricylinder
 ```@docs 
 Comodo.quadcylinder
 ```
+
+## `wsdf`
+```@docs 
+Comodo.wsdf
+```
+
+## `_wsdf`
+```@docs 
+Comodo._wsdf
+```
