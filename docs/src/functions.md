@@ -341,6 +341,31 @@ Comodo.pointspacingmin
 Comodo.pointspacingmax
 ```
 
+## `extrudecurve`
+```@docs
+Comodo.extrudecurve
+```
+
+## `meshgroup`
+```@docs
+Comodo.meshgroup
+```
+
+## `distmarch`
+```@docs
+Comodo.distmarch
+```
+
+## `distseedpoints`
+```@docs
+Comodo.distseedpoints
+```
+
+## `seedpoints2mesh`
+```@docs
+Comodo.seedpoints2mesh
+```
+
 ## `ray_triangle_intersect`
 ```@docs
 Comodo.ray_triangle_intersect

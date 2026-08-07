@@ -3153,13 +3153,29 @@ function remove_unused_vertices!(F::Union{Vector{<: NgonFace},Vector{<: Abstract
     end
 end
 
+"""
+    trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{3,TV1}}, 
+                n :: Union{Point{3,TV2}, Vec{3, TV2}}, 
+                p :: Union{Point{3,TV3}, Vec{3, TV3}}; 
+                snapTolerance = 0.0, output_type=:full) where {TF<:Integer, TV1<:Real, TV2<:Real, TV3<:Real} 
 
+Slices triangulated surface
 
-function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = Vec{3, Float64}(0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance = 0.0, output_type=:full) where TF<:Integer where ND where TV<:Real 
+# Description 
+This slices the triangulated surface defined by the faces `F` and the vertices 
+`V`. 
+"""
+function trisurfslice(F::Vector{TriangleFace{TF}}, 
+                      V::Vector{Point{3,TV1}}, 
+                      n :: Union{Point{3,TV2}, Vec{3, TV2}}, 
+                      p :: Union{Point{3,TV3}, Vec{3, TV3}}; 
+                      snapTolerance = 0.0, output_type=:full, indCut=nothing) where {TF<:Integer, TV1<:Real, TV2<:Real, TV3<:Real} 
+
     if !in(output_type,(:full,:above,:below))
         throw(ArgumentError("Invalid output_type :$output_type provided, use :full,:above, or :below"))
     end
-    intersectFunc(v1,v2,d,n) = v1 .- d/dot(n,v2.-v1) .* (v2.-v1)
+
+    intersectFunc(v1,v2,d) = v1 .- d/dot(n,v2.-v1) .* (v2.-v1)
     
     # Compute dot product with normal of slicing plane
     d = map(v-> dot(n,v.-p),V)
@@ -3173,10 +3189,10 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
     Cn =  Vector{Int}()
     Vn = deepcopy(V)
     D = Dict{Vector{Int},Int}() # For pointing from edge to intersection point index
-    for f in F
+    for (indexFace, f) in enumerate(F)
         lf = LV[f]
         
-        if any(lf) # Some or all below
+        if any(lf) && (isnothing(indCut) || in(indexFace, indCut)) # Some or all below
             if all(lf) # All below
                 if output_type == :full || output_type == :below            
                     push!(Fn,f)
@@ -3189,13 +3205,13 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
                     
                     e1 = sort(indP[[1,2]])
                     if !haskey(D,e1)
-                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[2]],d[indP[1]],n))
+                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[2]],d[indP[1]]))
                         D[e1] = length(Vn)
                     end
                     
                     e2 = sort(indP[[1,3]])
                     if !haskey(D,e2)
-                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[3]],d[indP[1]],n))
+                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[3]],d[indP[1]]))
                         D[e2] = length(Vn)
                     end
 
@@ -3221,13 +3237,13 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
 
                     e1 = sort(indP[[1,2]])
                     if !haskey(D,e1)
-                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[2]],d[indP[1]],n))
+                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[2]],d[indP[1]]))
                         D[e1] = length(Vn)
                     end                    
 
                     e2 = sort(indP[[1,3]])
                     if !haskey(D,e2)
-                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[3]],d[indP[1]],n))
+                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[3]],d[indP[1]]))
                         D[e2] = length(Vn)
                     end
                     
@@ -3713,94 +3729,181 @@ function meshgroup(F; con_type = :v, indStart=1, stop_at = nothing)
 end
 
 """
-    distmarch(F,V::Vector{Point{ND,TV}},indStart; d=nothing, dd=nothing, dist_tol=1e-3,con_V2V=nothing,l=nothing) where ND where TV<:Real
+    distmarch(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, indStart::Vector{Int}; d=nothing, dd=nothing, l=nothing, con_V2V=nothing, dist_stop=Inf) where {N, ND, TV<:Real}
 
 Compute on surface distance
 
 # Description
 This function computes along mesh-edge distances for the points with the 
-indices contained in `indStart`. 
+indices contained in `indStart`. The surface mesh is defined by the faces `F` 
+and the vertices `V`. The distance computation method is akin to the Dijkstra 
+algorithm. 
+The input consists of: 
+    `F`         : A vector of faces
+    `V`         : A vector of points
+    `indStart`  : A vector of integer indices into `V`
+Optional keyword arguments: 
+    `d`         : A precomputed/initial distance field (equivalent to the output
+                  `d`). Default is `nothing`.
+    `dd`        : A precomputed point pair distance dictionary (equivalent to 
+                  the output `dd`). Default is `nothing`.
+    `l`         : A precomputed/initial region labelling (equivalent to the 
+                  output `l`). Default is `nothing`.
+    `con_V2V`   : A precomputed vertex-to-vertex connectivity. Default is 
+                  `nothing`.
+    `dist_stop` : A distance after which the algorithm terminates. Default is 
+                  `Inf` such that is completes the complete distances. 
+The output consists of: 
+    `d`     : The distance for each point in `V`
+    `dd`    : A dict containing point-to-point (edge or quasi-edge) distances 
+              for each point pair. The point pair indices are the keys. 
+    `l`     : The nearest point labelling wrt `indStart` for each point in `V`. 
+              A value of 1 indicates point `indStart[1]` is closest.  
 """
-function distmarch(F,V::Vector{Point{ND,TV}},indStart; d=nothing, dd=nothing, dist_tol=1e-3,con_V2V=nothing,l=nothing) where ND where TV<:Real
-
-    # Get vertex-vertex connectivity
+function distmarch(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, indStart::Vector{Int}; d=nothing, dd=nothing, l=nothing, con_V2V=nothing, dist_stop=Inf) where {N, ND, TV<:Real}   
+    # Get/compute vertex-vertex connectivity
     if isnothing(con_V2V)
-        con_V2V = con_vertex_vertex_f(F,V) 
+        con_V2V = con_vertex_vertex_f(F, V) # Face connectivity is used such that "diagonals" for n-gons with n>3 are included
     end
 
-    # Compute "Laplacian umbrella" distances
+    # Compute "Laplacian umbrella" point-to-point distances 
     if isnothing(dd)
-        dd = Dict{Vector{Int},Float64}()  
-        for (i,v) in enumerate(V)
-            for j in con_V2V[i]
-                k = sort([i,j])
-                if !haskey(dd,k)
-                    dd[sort(k)] = norm(v-V[j])
+        numEdgesEst = length(V)+length(F)-2 # Estimate of number of edges based on Euler's characteristic X = nV-nE+nF = 2 
+        dd = Dict{Tuple{Int64, Int64}, Float64}(); sizehint!(dd, numEdgesEst)
+        for (i, v) in enumerate(V) # For each point 
+            @inbounds for j in con_V2V[i] # For each point in Laplacian umbrella
+                k = sort((i, j)) # Create the sorted edge key
+                if !haskey(dd, k) # If this is a new edge key
+                    dd[k] = norm(v-V[j]) # Store distance for this edge
                 end 
             end
         end
     end
 
-    # Get/allocate distance vector
     if isnothing(d)
-        d = fill(Inf,length(V))
+        d = fill(Inf, length(V)) # Initialise distance vector as all Inf values
     end
 
     if isnothing(l)
-        l = fill(0,length(V))
+        l = fill(0, length(V)) # Initialise region/group indices as just zeros
     end
 
-    # Set start distances to zero 
-    is_isolated =  isempty.(con_V2V)
-    d[is_isolated] .= NaN # Set isolated (non-connected) points to NaN
-    d[indStart] .= 0.0
-    l[indStart] .= 1:length(indStart)
+    # Set isolated (non-connected) point distances to NaN 
+    for (i, c) in enumerate(con_V2V)
+        if isempty(c)
+            d[i] = NaN
+        end
+    end
+
+    # Set start distances and start group ids
+    for (groupId, i) in enumerate(indStart)
+        d[i] = 0.0 # Set to zero
+        l[i] = groupId # Set as start group
+    end
     
-    notGrowing = false
-    dist_sum_previous = -1.0 # Set negative initially 
-    count_inf_previous = length(d)-length(indStart) # number of Inf values currently
-    while true                          
-        for i in eachindex(V) # For each point            
-            for j in con_V2V[i] # Check umbrella neighbourhood
-                # Get closest point and distance from umbrella
-                minVal,minInd = findmin([d[j],dd[sort([i,j])]+d[i]])            
-                if minInd==2
-                    d[j] = minVal # Distance                          
-                    l[j] = l[i] # Index
+    # Start marching
+    indGrow = Set{Int}(indStart) # Current set to check distance for
+    madeChange = false # Keep track of update flag
+    while true                     
+        indGrowNext = Set{Int}()#; sizehint!(indGrowNext, length(V))   
+        @inbounds for i in indGrow # For each point in current grow set           
+            @inbounds for j in con_V2V[i] # Check umbrella neighbourhood
+                minVal, minInd = findmin([d[j], dd[sort((i, j))]+d[i]]) # Get closest point and distance from umbrella
+                if minInd==2 # If shortcut found
+                    if minVal<=dist_stop # If the distance is smaller than the max grow distance
+                        d[j] = minVal # Assign updated distance to region point                          
+                        l[j] = l[i] # Assign updated index to region point
+                        madeChange = true # Change made so update now
+                        push!(indGrowNext, j)
+                    end
                 end
             end            
         end
-        bool_inf = isinf.(d) # Booling to check number of points left at Inf
-        count_inf = count(bool_inf)
-        if count_inf == count_inf_previous #!any(isinf.(d)) # Start checking once all are no longer Inf
-            dist_sum = sum(d[.!is_isolated .&& .!bool_inf])
-            if notGrowing # If we were here before
-                if abs(dist_sum-dist_sum_previous)<dist_tol                                        
-                    break                    
-                end
-            end
-            notGrowing = true # Flip to denote we've been here           
-            dist_sum_previous = dist_sum # Now start computing the sum to check convergence
-        end
-        count_inf_previous = count_inf
+        indGrow = indGrowNext # Update grow set
+        if madeChange == true
+            madeChange = false # Set back to false
+        else # madeChange == false, so no changes were made i.e stuck
+            break # Stop and exit while loop
+        end        
     end
     d[isinf.(d)] .= NaN # Change Inf to NaN
-    return d,dd,l
+    return d, dd, l
 end
 
-# function distseedpoints(F,V,numPoints; ind=[1],dist_tol=1e-3)
-    
-#     con_V2V = con_vertex_vertex_f(F,V) 
-#     d,dd,l = distmarch(F,V,ind; dist_tol=dist_tol,con_V2V=con_V2V)
+"""
+    distseedpoints(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, numPoints::Int; indSeed=[1], con_V2V=nothing) where {N, ND, TV<:Real}
 
-#     if numPoints>1
-#         @showprogress 1 "<distseedpoints>: Seeding points..." for q in 2:numPoints            
-#             push!(ind,findmax(d)[2])
-#             d,dd,l = distmarch(F,V,ind; dist_tol=dist_tol, dd=dd,d=d,con_V2V=con_V2V,l=l)        
-#         end
-#     end
-#     return ind,d,l
-# end
+Seeds approximately equidistant points
+
+# Description
+This function uses geodesic distance marching (see `distmarch`) to find the 
+indices `ind` for `numPoints` points in `V` which are located as far away from 
+eachother as possible given the input mesh. As such the points can be 
+approximately equidistant.  
+
+The input consists of: 
+    `F`         : A vector of faces
+    `V`         : A vector of points
+    `numPoints` : The number of desired seed points 
+Optional keyword arguments: 
+    `indSeed`  : The initial seed point index vector (indices into `V`)
+    `con_V2V`   : A precomputed vertex-to-vertex connectivity. Default is 
+                  `nothing`.
+The output consists of: 
+    `indSeed    : The seed point index vector (indices into `V`)
+    `d`         : The distance to the nearest seed point for each point in `V`
+    `l`         : The nearest point labelling wrt `indSeed` for each point in `V`. 
+                  A value of 1 indicates point `indStart[1]` is closest.  
+"""
+function distseedpoints(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, numPoints::Int; indSeed=[1], con_V2V=nothing) where {N, ND, TV<:Real}
+    # Get/compute vertex-vertex connectivity
+    if isnothing(con_V2V)
+        con_V2V = con_vertex_vertex_f(F, V) # Face connectivity is used such that "diagonals" for n-gons with n>3 are included
+    end
+    
+    # Compute initial distances
+    d, dd, l = distmarch(F, V, indSeed; con_V2V=con_V2V)
+
+    # Iteratively find new points furthest away from others
+    if numPoints>length(indSeed)
+        for _ in length(indSeed):1:numPoints-1            
+            push!(indSeed, findmax(d)[2]) # Add furthest point to set
+            d, dd, l = distmarch(F, V, indSeed; dd=dd, d=d, con_V2V=con_V2V, l=l) # Recompute distances       
+        end
+    end
+    return indSeed, d, l
+end
+
+"""
+    seedpoints2mesh(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, ind::Vector{Int}, l::Vector{Int}) where {N, ND, TV<:Real}
+
+Generates mesh from seed points
+
+# Description
+This function aims to produce a Delaunay like surface from the input seed point
+specification. 
+
+The input consists of: 
+    `F`         : A vector of faces
+    `V`         : A vector of points
+    `indSeed`   : A vector of seed point indices into `V`
+    `l`         : The nearest point labelling wrt `indSeed` for each point in `V`. 
+                  A value of 1 indicates point `indStart[1]` is closest. 
+The output consists of: 
+    `Fp`        : A vector of faces for the output surface
+    `Vp`        : A vector of points for the output surface (the input seed points)
+"""
+function seedpoints2mesh(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, indSeed::Vector{Int}, l::Vector{Int}) where {N, ND, TV<:Real}
+    Vp = V[indSeed] # The seed point vector
+    Fp = Vector{TriangleFace{Int}}() # The output face set
+    for f in F
+        ii = l[f] # The region labels for the point in f
+        if length(unique(ii))==3
+            push!(Fp, TriangleFace{Int}(ii))
+        end
+    end
+    return Fp, Vp
+end
 
 """
     ray_triangle_intersect(F::Vector{TriangleFace{Int}},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
@@ -5991,15 +6094,15 @@ Computes the Euler characteristic
 This function computes the Euler characteristic for the input surface defined by 
 the faces `F` and vertices `V`. The edges `E` are on optional input. 
 The Euler characteristic is defined as: 
-`X = nV-nE-nF`
+`X = nV-nE+nF`
 , where `nV`, `nE`, and `nF` define the number of surface vertices, edges, and 
 faces respectively. It is assumed all inputs are set of unique entities, e.g. 
 no vertices, edges, or faces occur multiple times. 
 """
-function eulerchar(F,V=nothing,E=nothing)
+function eulerchar(F, V=nothing, E=nothing)
     nf = length(F)
     if isnothing(V)
-        nv = maximum(reduce(vcat,F)) # Use largest index (assumes all points used in mesh)
+        nv = maximum(reduce(vcat, F)) # Use largest index (assumes all points used in mesh)
     else
         nv = length(V)
     end

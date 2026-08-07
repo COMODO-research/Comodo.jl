@@ -3701,9 +3701,9 @@ end
     eps_level = 1e-2
 
     r = 2.5 # Sphere radius
-    F,V = geosphere(3,r)
+    F, V = geosphere(3,r)
     A = sum(facearea(F, V))
-    p = [0.0, 0.0, 0.0]  # Point on cutting plane
+    p = Point{3, Float64}(0.0, 0.0, 0.0)  # Point on cutting plane
     
     function checkRad(En, Vn, rTrue, eps_level)
         ind_En = unique(reduce(vcat,En))
@@ -3718,7 +3718,7 @@ end
                 Vec{3, Float64}(0.0, 0.0, 1.0)]
         for output_type = [:full, :above, :below]            
             for n in N # For each cutting plane normal                
-                Fn, Vn, Cn, En = trisurfslice(F,V,n,p; output_type=output_type, snapTolerance=snapTolerance)
+                Fn, Vn, Cn, En = trisurfslice(F, V, n, p; output_type=output_type, snapTolerance=snapTolerance)
                 An = sum(facearea(Fn, Vn))
                 println(An)
                 if output_type == :full
@@ -4443,9 +4443,52 @@ end
     end
 end
 
-# @testset "distseedpoints" verbose = true begin
+@testset "distseedpoints" verbose=true begin
+    F, V = geosphere(3, 1.0)
+    for numPoints = 1:2:10
+        ind, d, l = distseedpoints(F, V, numPoints)   
+        @test length(d) == length(V)
+        @test length(l) == length(V)
+        @test length(ind) == numPoints
+        @test sort(unique(l)) == collect(1:numPoints)
+    end
 
-# end
+    # Check the use of initial seed points: equal lengths
+    indSeed = [1,2, length(V)]
+    numPoints = length(indSeed)
+    ind, d, l = distseedpoints(F, V, numPoints; indSeed = indSeed)   
+    @test ind == indSeed
+
+    # Less points
+    indSeed = [1,2, length(V)]
+    numPoints = length(indSeed)-1
+    ind, d, l = distseedpoints(F, V, numPoints; indSeed = indSeed)   
+    @test ind == indSeed
+
+    # More points
+    indSeed = [1,2, length(V)]
+    numPoints = length(indSeed)+1
+    ind, d, l = distseedpoints(F, V, numPoints; indSeed = indSeed)   
+    @test all([in(i, ind) for i in indSeed])
+    @test length(ind) == numPoints
+end
+
+@testset "seedpoints2mesh" verbose=true begin
+    F, V = geosphere(4, 1.0) # Fine mesh
+
+    # Number of desired points
+    numPoints = 250  
+
+    # Do distance marching based point seeding 
+    ind,d,l = distseedpoints(F, V, numPoints)   
+
+    # Convert seeds to downsampled mesh 
+    Fp, Vp = seedpoints2mesh(F, V, ind, l)
+
+    @test isa(Fp, Vector{TriangleFace{Int}})
+    @test isa(Vp, Vector{Point{3, Float64}})
+    @test length(Vp) == numPoints
+end
 
 @testset "ray_triangle_intersect" verbose = true begin
     eps_level = 1e-4
@@ -10261,8 +10304,10 @@ end
     @testset "Errors" begin
         @test_throws ArgumentError wsdf(xr, yr, zr, V, R; closest_type=:wrong)      
     end
-
 end
+
+
+
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
