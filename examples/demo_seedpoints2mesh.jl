@@ -14,6 +14,7 @@ M = load(fileName_mesh)
 F = tofaces(faces(M))
 V = topoints(coordinates(M))
 F,V,_ = mergevertices(F,V)
+# F, V = subtri(F,V,1)
 
 ## Seeding points 
 
@@ -37,12 +38,12 @@ fig = Figure(size=(1800, 600))
 
 ax1 = AxisGeom(fig[1, 1], title = "Distances")
 hp1 = meshplot!(ax1, F, V, color=d, colormap=cMap_dist, strokewidth=0.0)
-hp2 = scatter!(ax1, V[ind], color=:black, markersize=10, depth_shift=-0.01f0)
+hp2 = scatter!(ax1, V[ind], color=:black, markersize=5, depth_shift=-0.01f0)
 Colorbar(fig[1, 2], hp1)
 
 ax2 = AxisGeom(fig[1, 3], title = "Point regions, n=$numPoints points")
 hp3 = meshplot!(ax2, F, V, color=l, colormap=cMap_cat, strokewidth = 0.1)
-hp4 = scatter!(ax2, V[ind], color=:black, markersize=10, depth_shift=-0.01f0)
+hp4 = scatter!(ax2, V[ind], color=:black, markersize=5, depth_shift=-0.01f0)
 Colorbar(fig[1, 4], hp3)
 
 ax3 = AxisGeom(fig[1, 5], title = "Reconstructed surface")
@@ -54,9 +55,9 @@ stepRange = 1:1:1000
 hSlider = Slider(fig[2, :], range = stepRange, startvalue = numPoints, linewidth=30)
 
 on(hSlider.value) do numPoints 
-    ind,d,l = distseedpoints(F,V,numPoints; ind=[1])   
+    ind,d,l = distseedpoints(F,V,numPoints; indSeed=[1])   
 
-    Fp, Vp = seedpoints2mesh(F, V, ind, d, l)
+    Fp, Vp = seedpoints2mesh(F, V, ind, l)
     
     ax2.title = "Point regions, n=$numPoints points"
     hp1.color = d

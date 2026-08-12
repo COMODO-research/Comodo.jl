@@ -46,9 +46,7 @@ stepRange = 1:1:1000
 hSlider = Slider(fig[2, :], range = stepRange, startvalue = numPoints, linewidth=30)
 
 on(hSlider.value) do numPoints 
-    ind,d,l = distseedpoints(F,V,numPoints; ind=[1])   
-
-    Fp, Vp = seedpoints2mesh(F, V, ind, d, l)
+    ind,d,l = distseedpoints(F, V, numPoints; indSeed=[1])   
     
     ax2.title = "Point regions, n=$numPoints points"
     hp1.color = d

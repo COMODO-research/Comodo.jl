@@ -25,7 +25,7 @@ fig = Figure(size=(1600,800))
 
 ax1 = AxisGeom(fig[1, 1], title = "Boundary faces with boundary markers for the hexahedral mesh")
 hp2 = meshplot!(ax1, Fbs, Vbs; strokewidth=3, color=Cbs_V, colormap=cmap)
-# hp3 = normalplot(ax2,M_Fb; type_flag=:face, color=:black,linewidth=3)
+hp3 = normalplot(ax1, Fbs, Vbs; type_flag=:face, color=:black,linewidth=3)
 
 Colorbar(fig[1, 2], hp2)
 
