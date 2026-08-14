@@ -52,12 +52,15 @@ for testCase = 1:3
     Fq, Vq, indInitial = tri2quad_merge_split!(F, V; angleThreshold=45.0, numSmoothSteps=25)
     
     # Visualisation
+    Fs, Vs = separate_vertices(F, V)
+    Fqs, Vqs = separate_vertices(Fq, Vq)
+
     fig = Figure(size=(1400,800))
     ax1 = AxisGeom(fig[1, 1], title="Input triangulation")
-    hp1 = meshplot!(ax1, F, V, color=:white, strokewidth=1.0)    
+    hp1 = meshplot!(ax1, Fs, Vs, color=:white, strokewidth=1.0)    
 
     ax2 = AxisGeom(fig[1, 2], title="Quadrangulation")
-    hp2 = meshplot!(ax2, Fq, Vq, color=:lightgreen, strokewidth=1.0)    
+    hp2 = meshplot!(ax2, Fqs, Vqs, color=:lightgreen, strokewidth=1.0)    
     
     Legend(fig[1, 3],[hp1, hp2],["Input triangulation", "Quads"])
 

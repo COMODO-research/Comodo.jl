@@ -2520,17 +2520,29 @@ returns a cube. For subdivision the `:Catmull_Clark` subquad algorithm is used
 pushing nodes to the sphere surface. The ouput consists of the faces `F` and the 
 vertices `V`. 
 """
-function subquadsphere(n::Int,r::T) where T <: Real
-    F,V = platonicsolid(2,r)    
-    if n>0
-        if n==1
-            F,V = subquad(F,V,1;method=:linear)    
-        else
-            F,V = subquad(F,V,n;method=:Catmull_Clark)
+function subquadsphere(n::Int, r::T; method=:Catmull_Clark, template=:cube) where T <: Real
+    if template == :cube
+        F, V = platonicsolid(2, r)    
+    elseif template == :rhombicdodecahedron
+        F, V = rhombicdodecahedron(r.*sqrt(2))
+        _pushtoradius!(V, r)
+    else
+        throw(ArgumentError("Invalid template option provided, use one of the following: :cube, :rhombicdodecahedron"))
+    end
+    C = collect(1:length(F))
+
+    if n>0 # If refinement steps are requested
+        @inbounds for i in 1:n # Now iteratively refine
+            if i==1
+                F, V = subquad(F, V, 1; method=:linear) # Refine once using linear method
+            else
+                F, V = subquad(F, V, 1; method=method) # Refine once using method provided
+            end
+            _pushtoradius!(V, r) # Push nodes to sphere
         end
-        _pushtoradius!(V,r)
-    end    
-    return F, V
+        C = repeat(C, outer=4^n) # Expand labels as each split needs 4x replication
+    end
+    return F, V, C
 end
 
 """
@@ -4733,8 +4745,8 @@ function regiontrimesh(VT,R,P; numSmoothSteps=25, gridtype=:equilateral)
         end
         
         # Adding interior points 
-        xSpan =[minimum([v[1] for v in Vn]),maximum([v[1] for v in Vn])]
-        ySpan =[minimum([v[2] for v in Vn]),maximum([v[2] for v in Vn])]
+        xSpan =[minimum([v[1] for v in Vn]), maximum([v[1] for v in Vn])]
+        ySpan =[minimum([v[2] for v in Vn]), maximum([v[2] for v in Vn])]
         if gridtype == :equilateral
             Vg = gridpoints_equilateral(xSpan,ySpan,pointSpacing)        
         elseif gridtype == :Cartesian
@@ -4742,9 +4754,14 @@ function regiontrimesh(VT,R,P; numSmoothSteps=25, gridtype=:equilateral)
             Vg = gridpoints(xSpan[1]:pointSpacing:xSpan[2], ySpan[1]:pointSpacing:ySpan[2], 0.0)
         end
 
-        zMean = mean([v[3] for v in Vn])
+        if length(Vn[1]) == 3
+            zMean = mean([v[3] for v in Vn])
+        else
+            zMean = 0.0
+        end
+
         Vn = append!(Vn,Vg)        
-        Vn = [Point{3,Float64}(v[1],v[2],zMean) for v in Vn] # Force zero z-coordinate
+        Vn = [Point{3,Float64}(v[1],v[2], zMean) for v in Vn] # Force mean z-coordinate
         if gridtype == :Cartesian
             f = [1.0 γ 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0] # Deformation gradient tensor
             Vn = [Point{3,Float64}(f*v) for v in Vn] # Deform grid

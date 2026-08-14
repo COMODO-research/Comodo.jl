@@ -2754,31 +2754,58 @@ end
 @testset "subquadsphere" begin
     eps_level = 1e-4
     
-    # Test cube case with no refinement
-    r = 1.5
-    F, V = subquadsphere(0, r)    
-    @test length(V) == 8
-    @test length(F) == 6
-    @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
-    
-    # Test 1-step refinement (uses linear subdivision)
-    r = 2.0
-    F, V = subquadsphere(1, r)
-    @test length(V) == 8+3*4+6
-    @test length(F) == 6*4
-    @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
+    @testset "cube" begin
+        # Test cube case with no refinement
+        r = 1.5
+        F, V, C = subquadsphere(0, r)    
+        @test length(V) == 8
+        @test length(F) == 6
+        @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
+        @test length(unique(C)) == 6
 
-    # Test >1 step refinement 
-    r = 1.0
-    F, V = subquadsphere(3, r)
-    ind = round.(Int,range(1,length(V),6))
-    V_true = Point{3, Float64}[[-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], [-0.3689702423132517, 0.8530661876868645, 0.3689702423132517], [0.35078880366009596, 0.5289708759735062, -0.7727464186902068], [-0.20218457191067402, 0.0, 0.9793474352247509], [0.18095633824105684, -0.5526166627775921, -0.8135537030036464], [0.49847402263276075, -0.7092582727896996, -0.49847402263276075]]
-    @test V isa Vector{Point3{Float64}}
-    @test length(V) == 386
-    @test isapprox(V[ind], V_true, atol=eps_level)
-    @test F isa Vector{QuadFace{Int}}
-    @test length(F) == 384
-    @test F[1] == [1, 99, 291, 285]
+        # Test 1-step refinement (uses linear subdivision)
+        r = 2.0
+        F, V, C = subquadsphere(1, r)
+        @test length(V) == 8+3*4+6
+        @test length(F) == 6*4
+        @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
+        @test length(unique(C)) == 6
+
+        # Test >1 step refinement 
+        r = 1.0
+        F, V, C = subquadsphere(3, r)
+        ind = round.(Int,range(1,length(V),6))
+        V_true = Point{3, Float64}[[-0.5773502691896258, -0.5773502691896257, -0.5773502691896257], [-0.3694576301676106, 0.8526441925104903, 0.3694576301676106], [0.3546415409651608, 0.5281590848186655, -0.7715421949222], [-0.19905462210160246, 0.0, 0.9799883965741574], [0.18400808576774796, -0.5502420980049302, -0.8144781506923449], [0.5000945816212081, -0.7069729972680836, -0.5000945816212081]]
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == 386
+        @test isapprox(V[ind], V_true, atol=eps_level)
+        @test F isa Vector{QuadFace{Int}}
+        @test length(F) == 384
+        @test F[1] == [1, 99, 291, 285]
+        @test length(unique(C)) == 6
+    end
+
+
+    @testset "rhombicdodecahedron" begin       
+        # Test cube case with no refinement
+        r = 1.5
+        n = 0
+        F, V, C = subquadsphere(n, r; template=:rhombicdodecahedron)
+
+        @test length(V) == 14
+        @test length(F) == 12
+        @test isapprox(norm.(V), fill(r, length(V)), atol=eps_level)
+        @test length(unique(C)) == 12
+
+        # Test refined version 
+        r = 1.5
+        n = 3
+        F, V, C = subquadsphere(n, r; template=:rhombicdodecahedron)
+
+        @test length(F) == 12*4^n
+        @test isapprox(norm.(V), fill(r, length(V)), atol=eps_level)
+        @test length(unique(C)) == 12
+    end
 end
 
 @testset "simplex2vertexdata" verbose = true begin
@@ -3070,7 +3097,7 @@ end
         ind = round.(Int,range(1,length(VC),5))
         @test VC isa typeof(V)
         @test length(VC) == length(F)
-        VC_true = Point{3, Float64}[[-0.48624303129694313, -0.48624303129694313, -0.6913184394948764], [-0.5330679123349682, -0.1754002930303379, -0.7870889972738774], [0.1897860460691325, -0.9236437317570111, -0.1897860460691325], [0.17540029303033788, -0.7870889972738774, -0.5330679123349682], [0.48624303129694313, -0.6913184394948764, -0.48624303129694313]]
+        VC_true = Point{3, Float64}[[-0.4880862135232343, -0.48808621352323434, -0.6899970245250848], [-0.5315713537976239, -0.17776434703183086, -0.7868413826784946], [0.18881035930699008, -0.9244699175360369, -0.18881035930699008], [0.17776434703183086, -0.7868413826784945, -0.5315713537976239], [0.4880862135232342, -0.6899970245250847, -0.4880862135232342]]
         @test isapprox(VC[ind], VC_true, atol=eps_level)
     end
 end
@@ -10306,7 +10333,27 @@ end
     end
 end
 
+@testset "quadsphere" begin
+    eps_level = 1e-4
+    
+    # Test cube case with no refinement
+    r = 1.5
+    pointSpacing = r*10.0
+    F, V, C = quadsphere(r, pointSpacing)
 
+    @test length(V) == 8
+    @test length(F) == 6
+    @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
+    @test length(unique(C)) == 6
+
+    # Test refined version with point spacing
+    r = 2.0
+    pointSpacing = r/10.0
+    F, V, C = quadsphere(r, pointSpacing)
+
+    @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
+    @test length(unique(C)) == 6
+end
 
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
