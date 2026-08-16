@@ -10638,6 +10638,21 @@ function _wsdf(p_ijk::Point{ND,TV},
     end 
 end
 
+function cutfrom(FM::Vector{TriangleFace{Int}}, VM::Vector{Point{3, TV}}, P_cut_origins, P_cut_vec, D_cut_vec) where {TV<:Real}
+    for (ray_origin, ray_vector, dNow) in zip(P_cut_origins, P_cut_vec, D_cut_vec)
+        _, indFaceIntersect, T, _, _ = ray_triangle_intersect(FM, VM, ray_origin, ray_vector; rayType = :ray, triSide = -1)
+        if !isempty(indFaceIntersect)
+            _, indMin = findmin(abs.(T))
+            indIntersect = collect(FM[indFaceIntersect[indMin]])            
+            d, _, _ = distmarch(FM, VM, indIntersect)
+            indCut = findall([maximum(d[f])<=dNow for f in FM])
+            FM, VM, CM, _ = trisurfslice(FM, VM, -ray_vector, ray_origin; output_type=:full, indCut=indCut)
+            FM = FM[CM.>0]
+        end
+    end
+    return FM, VM
+end
+
 #= 
    Copyright 2024-2026 Kevin Mattheus Moerman
 
