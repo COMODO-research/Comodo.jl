@@ -10638,7 +10638,22 @@ function _wsdf(p_ijk::Point{ND,TV},
     end 
 end
 
-function cutfrom(FM::Vector{TriangleFace{Int}}, VM::Vector{Point{3, TV}}, P_cut_origins, P_cut_vec, D_cut_vec) where {TV<:Real}
+"""
+    cutends(FM::Vector{TriangleFace{Int}}, VM::Vector{Point{3, TV}}, P_cut_origins, P_cut_vec, D_cut_vec) where {TV<:Real}
+
+Cuts surfaces locally 
+
+# Description
+This function cuts the input surface, defined by the faces `FM` and points `VM`, 
+locally using cutting slices. The vector `P_cut_origins` defines a point on each
+cutting plate. The vector `P_cut_vec` contains the cutting plane normal vectors, 
+in addition the vectors define the direction of cutting. The vector `D_cut_vec`
+contains the distances to use to define the local cutting. The local cutting 
+takes place by ray tracing from the points in `P_cut_origins` allong the 
+directions `P_cut_vec`, next distance marching up to `D_cut_vec` defines the 
+region subjected to cutting.  
+"""
+function cutends(FM::Vector{TriangleFace{Int}}, VM::Vector{Point{3, TV}}, P_cut_origins, P_cut_vec, D_cut_vec) where {TV<:Real}
     for (ray_origin, ray_vector, dNow) in zip(P_cut_origins, P_cut_vec, D_cut_vec)
         _, indFaceIntersect, T, _, _ = ray_triangle_intersect(FM, VM, ray_origin, ray_vector; rayType = :ray, triSide = -1)
         if !isempty(indFaceIntersect)
@@ -10651,6 +10666,63 @@ function cutfrom(FM::Vector{TriangleFace{Int}}, VM::Vector{Point{3, TV}}, P_cut_
         end
     end
     return FM, VM
+end
+
+"""
+subedge(E::Vector{LineFace{Int}}, V::Vector{Point{N, TV}}, n::Int; method=:linear) where {N, TV<:Real}
+
+Splits edges iteratively
+
+# Description
+This function splits the edges defined by the edges `E` an and points `V`. The 
+algorithm runs `n` times and uses the method specified by the user. The 
+following methods are supported: 
+`:linear`   : This is the default method and uses linear splitting of each edge
+`:smooth`   : This uses "Loop" like edge subdivision for non branch/end points. 
+              For this method the original points are replaced by a 6/8 and 1/8 
+              weighted averaged for the original and the neighbouring points 
+              respectively.  
+"""
+function subedge(E::Vector{LineFace{Int}}, V::Vector{Point{N, TV}}, n::Int; method=:linear) where {N, TV<:Real}
+    if !in(method,(:linear, :smooth))
+        throw(ArgumentError("Invalid method provided, valid options are :linear, and :smooth"))
+    end
+
+    if iszero(n) 
+        # n=0 so just return input 
+        return E, V
+    elseif isone(n)
+        # n=1 so do one iteration 
+        m = length(V)
+        if method==:smooth
+            Vs = Vector{Point{N, TV}}(undef, m)
+            con_V2V = con_vertex_vertex(E, V) # Get vertex-vertex connectivity
+            for (i, v_i) in enumerate(V)
+                if length(con_V2V[i])==2 # If non-branch or end point
+                    # Replace input points with weighted/smoothed point
+                    Vs[i] = 6/8*v_i + 1/8*(V[con_V2V[i][1]]+V[con_V2V[i][2]]) 
+                else
+                    Vs[i] = v_i
+                end
+            end
+        else
+            Vs = deepcopy(V)
+        end
+        append!(Vs, simplexcenter(E, V)) 
+        Es = Vector{LineFace{Int}}(undef, 2*length(E))
+        @inbounds for (i, e) in enumerate(E)
+            ii = 1 + (i-1)*2
+            Es[ii]   = LineFace{Int}(e[1], i+m)
+            Es[ii+1] = LineFace{Int}(i+m, e[2])
+        end
+        return Es, Vs
+    elseif n>1
+        # n is more than 1 so repeat single iteration n times
+        for _ in 1:n
+            E, V = subedge(E, V, 1; method=method)
+        end
+        return E, V
+    end
 end
 
 #= 

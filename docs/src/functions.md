@@ -1040,3 +1040,13 @@ Comodo.wsdf
 ```@docs 
 Comodo._wsdf
 ```
+
+## `cutends`
+```@docs 
+Comodo.cutends
+```
+
+## `subedge`
+```@docs 
+Comodo.subedge
+```

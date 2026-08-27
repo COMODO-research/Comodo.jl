@@ -10333,7 +10333,7 @@ end
     end
 end
 
-@testset "quadsphere" begin
+@testset "quadsphere" verbose=true begin
     eps_level = 1e-4
     
     # Test cube case with no refinement
@@ -10355,6 +10355,153 @@ end
     @test length(unique(C)) == 6
 end
 
+@testset "subedge" verbose=true begin
+    @testset "Single edge" begin
+        V = [   Point{3, Float64}( 0.0,  0.0,  0.0),
+                Point{3, Float64}( 1.0,  0.0,  0.0)]
+
+        E = [   LineFace{Int}(1, 2)]
+
+        # Test no splitting
+        Es, Vs = subedge(E, V, 0)
+        @test Es == E
+        @test Vs == V
+
+        # Test single split step
+        Es, Vs = subedge(E, V, 1)
+        @test Vs[end] == mean(V) # New point is mid edge
+
+        for method in (:linear, :smooth)
+            indInitial = 1:length(V)
+            for n = 0:2
+                Es, Vs = subedge(E, V, n; method=method)
+
+                # No type changes
+                @test typeof(V) == typeof(Vs)
+                @test typeof(E) == typeof(Es)
+
+                # Correct number of points and edges
+                @test length(Vs) == length(V) + (2^n-1)*length(E)
+                @test length(Es) == (2^n)*length(E) 
+
+                # Initial unchanged for both methods for straight line
+                @test V== Vs[indInitial]
+            end
+        end
+    end
+
+    @testset "Branched edges" begin
+        V = [   Point{3, Float64}( 0.0,  0.0,  0.0),
+                Point{3, Float64}( 0.5,  0.0,  0.0), 
+                Point{3, Float64}( 1.0,  0.0, -0.5), 
+                Point{3, Float64}( 0.0,  0.5,  0.0),
+                Point{3, Float64}( 0.0,  1.0,  0.5),
+                Point{3, Float64}(-0.5,  0.0,  0.0),
+                Point{3, Float64}(-1.0,  0.0,  0.5),
+                Point{3, Float64}( 0.0, -0.5,  0.0),
+                Point{3, Float64}( 0.0, -1.0, -0.5),
+                ]
+
+        E = [   LineFace{Int}(1, 2),
+                LineFace{Int}(2, 3),
+                LineFace{Int}(1, 4),
+                LineFace{Int}(4, 5),
+                LineFace{Int}(1, 6),
+                LineFace{Int}(6, 7), 
+                LineFace{Int}(1, 8),
+                LineFace{Int}(8, 9), 
+            ]
+        
+        for method in (:linear, :smooth)
+            indInitial = 1:length(V)
+            con_V2V = con_vertex_vertex(E, V)
+            indBranch = findall(length.(con_V2V) .>2)         
+            for n = 0:2
+                Es, Vs = subedge(E, V, n; method=method)
+
+                # No type changes
+                @test typeof(V) == typeof(Vs)
+                @test typeof(E) == typeof(Es)
+
+                # Correct number of points and edges
+                @test length(Vs) == length(V) + (2^n-1)*length(E)
+                @test length(Es) == (2^n)*length(E) 
+
+                if method==:linear
+                    # Initial unchanged for linear
+                    @test V == Vs[indInitial]
+                elseif method==:smooth
+                    # Branch points remain unchanged
+                    @test V[indBranch] == Vs[indBranch]
+                end
+            end
+        end
+    end
+
+    @testset "Errors" begin
+        V = [   Point{3, Float64}( 0.0,  0.0,  0.0),
+                Point{3, Float64}( 1.0,  0.0,  0.0)]
+        E = [   LineFace{Int}(1, 2)]
+        @test_throws ArgumentError subedge(E, V, 1; method=:wrong) 
+    end
+end
+
+@testset "cutends" verbose=true begin
+    voxelSize = (2.0, 2.0, 2.0)
+
+    pointSpacing = 2.0 
+    rb = 60.0
+    nc = 150
+    V1 = [Point{3, Float64}(rb*cos(t), rb*sin(t), 0.0) for t in range(0.0, 1.3*pi, nc)]
+    R1 = collect(range(40.0, 20.0, nc))
+
+    # Define grid for distance computation, here based on input curve
+    rMax = maximum(R1)
+    p_min = minp(V1)
+    p_max = maxp(V1)
+    numVoxelsAdd = 2
+    p_offset = Point{3,Float64}(rMax+numVoxelsAdd*voxelSize[1], rMax+numVoxelsAdd*voxelSize[2], rMax+numVoxelsAdd*voxelSize[3])
+    p_origin = p_min - p_offset
+    p_end = p_max + p_offset
+
+    # Define grid ranges
+    xr = p_origin[1]:voxelSize[1]:p_end[1]
+    yr = p_origin[2]:voxelSize[2]:p_end[2]
+    zr = p_origin[3]:voxelSize[3]:p_end[3]
+
+    # Now computed radius weighted signed distance field
+    M = wsdf(xr, yr, zr, V1, R1; closest_type=:weighted)
+    siz = size(M)
+
+    # Compute level set surface for visualisation
+    FM, VM = getisosurface(M; x=xr, y=yr, z=zr, level=0.0, cap=false, padValue=1e8)      
+    # VM = smoothmesh_hc(FM, VM, 25)
+
+    ## Cut branches
+
+    # Define cutting vectors and origins e.g. graph end points and end directions
+    nz = Point{3, Float64}(0.0, 0.0, 1.0)
+    P_cut_vec = normalizevector.([cross(V1[1], nz), cross(nz, V1[end])]) # Vectors pointing to distance origin
+    # P_cut_vec = [normalizevector(V1[1]-V1[2]), normalizevector(V1[end]-V1[end-1])] # Vectors pointing to distance origin
+    P_cut_origins = [V1[1], V1[end]] # Origins for vectors
+    D_cut_vec = [π.*R1[1], π.*R1[end]] # Distance from origin to consider for cut
+
+    FMc, VMc = cutends(FM, VM, P_cut_origins, P_cut_vec, D_cut_vec)
+
+    Eb = boundaryedges(FMc)
+    G = meshgroup(Eb)
+    numGroups = maximum(G)
+
+    ind1 = elements2indices(Eb[G.==1])
+    ind2 = elements2indices(Eb[G.==2])
+    p1 = mean(VMc[ind1])
+    p2 = mean(VMc[ind2])
+    @test numGroups == 2 # Should have two boundary curves after cut
+
+    # Rough check if centers of boundaries are close to P_cut_origins
+    @test isapprox(p1, P_cut_origins[1], atol=pointSpacing) || isapprox(p1, P_cut_origins[2], atol=pointSpacing)
+    @test isapprox(p2, P_cut_origins[1], atol=pointSpacing) || isapprox(p2, P_cut_origins[2], atol=pointSpacing)
+end
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"

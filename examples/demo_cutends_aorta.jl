@@ -4,6 +4,8 @@ using Comodo.GeometryBasics
 using Comodo.LinearAlgebra
 using Comodo.Rotations
 
+using Geogram # https://github.com/COMODO-research/Geogram.jl
+
 GLMakie.closeall()
 
 voxelSize = (2.0, 2.0, 2.0)
@@ -89,8 +91,9 @@ n11 = length(V11)
 n22 = length(V22)
 n33 = length(V33)
 n44 = length(V44)
+nz = Point{3, Float64}(0.0, 0.0, 1.0)
 indCut = [1, n11, n11+n22, n11+n22+n33, n11+n22+n33+n44]
-v1 = normalizevector(V1[indCut[1]] -  V1[indCut[1]+1])
+v1 = normalizevector(cross(nz, V1[1])) #normalizevector(V1[indCut[1]] -  V1[indCut[1]+1])
 v2 = normalizevector(V1[indCut[2]] -  V1[indCut[2]-1])
 v3 = normalizevector(V1[indCut[3]] -  V1[indCut[3]-1])
 v4 = normalizevector(V1[indCut[4]] -  V1[indCut[4]-1])
@@ -100,7 +103,13 @@ P_cut_vec = [v1, v2, v3, v4, v5] # Vectors pointing to distance origin
 P_cut_origins = V1[indCut] # Origins for vectors
 D_cut_vec = π.*R1[indCut] # Distance from origin to consider for cut
 
-FMc, VMc = cutfrom(FM, VM, P_cut_origins, P_cut_vec, D_cut_vec)
+FMc, VMc = cutends(FM, VM, P_cut_origins, P_cut_vec, D_cut_vec)
+
+# Remeshing the surface 
+pointSpacing = 5.0
+ns = spacing2numvertices(FMc, VMc, pointSpacing) 
+
+FMc, VMc = ggremesh(FMc, VMc; nb_pts=ns)
 
 ## Visualization
 fig = Figure(size=(1600,800))
@@ -114,6 +123,6 @@ scatter!(ax1, P_cut_origins, markersize = 25, color = :black)
 arrows3d!(ax1, P_cut_origins, 30.0 .*P_cut_vec, color = :black)
 
 ax2 = AxisGeom(fig[1, 3], title = "Cut surface")
-hm1 = meshplot!(ax2, FMc, VMc, color=:white, strokewidth=0.1)
+hm1 = meshplot!(ax2, FMc, VMc, color=:white, strokewidth=0.5)
 
 screen = display(GLMakie.Screen(), fig)
