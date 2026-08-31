@@ -4771,8 +4771,7 @@ end
     @test L isa Vector{Float64}
 end
 
-@testset "evenly_sample" begin
-    
+@testset "evenly_sample" verbose = true begin
     eps_level = 1e-4
 
     # Even sampling should be nearly perfect for a linear curve 
@@ -4822,10 +4821,9 @@ end
         @test typeof(V) == typeof(Vi) # Did not manipulate input type
         @test length(Vi) == n # Correct length
     end
-
 end
 
-@testset "Comodo.integrate_segment_" begin
+@testset "Comodo.integrate_segment_" verbose = true begin
     eps_level = 1e-6
     r = 3.25
     nc = 1000
@@ -4836,20 +4834,20 @@ end
     @test isapprox(L,2*pi*r,atol=eps_level)
 end
 
-@testset "Comodo.make_geospline" begin
+@testset "make_geospline" verbose = true begin
     eps_level = 1e-6
     r = 3.25
     nc = 10
     V = circlepoints(r,nc)
-    S,L,D = Comodo.make_geospline(V; rtol=1e-8, niter=10, spline_order=4, close_loop=true)
+    S, L, D = make_geospline(V; rtol=1e-8, niter=10, spline_order=4, close_loop=true)
     
     @test isa(S,SplineInterpolation)
-    @test isapprox(V,S.(L),atol=eps_level)
+    @test isapprox(V, S.(L), atol=eps_level)
 
-    S,L,D = Comodo.make_geospline(V; rtol=1e-8, niter=10, spline_order=4, close_loop=false)
+    S, L, D = make_geospline(V; rtol=1e-8, niter=10, spline_order=4, close_loop=false)
     
     @test isa(S,SplineInterpolation)
-    @test isapprox(V,S.(L),atol=eps_level)
+    @test isapprox(V, S.(L), atol=eps_level)
 end
 
 @testset "evenly_space" verbose = true begin
