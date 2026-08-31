@@ -4136,6 +4136,10 @@ end
 """
     curve_length(V::Vector{Point{ND,TV}}; close_loop=false) where ND where TV<:Real
 
+Computes curve length
+
+# Description
+
 This function computes the stepwise length of the input curve defined by the ND 
 points in `V`. The output is a vector containing the distance for each point, 
 and the total length therefore the last entry. 
@@ -4175,56 +4179,94 @@ end
 """
     evenly_sample(V::Vector{Point{ND,TV}}, n::Int; rtol = 1e-8, niter = 1) where ND where TV<:Real
 
-Evenly samples curves. 
+Evenly samples curve 
 
 # Description
 
 This function aims to evenly resample the input curve defined by the ND points 
-`V` using `n` points. The function returns the resampled points as well as the 
-spline interpolator `S` used. The output points can also be retriebed by using: 
-`S.(range(0.0, 1.0, n))`. 
+`V` using `n` points. 
 Note that the even sampling is defined in terms of the curve length for a 4th 
 order natural B-spline that interpolates the input data. Hence if significant 
 curvature exists for the B-spline between two adjacent data points then the 
 spacing between points in the output may be non-uniform (despite the along 
 B-spline distance being uniform). 
+
+Input parameters: 
+    `V` : A vector of points defining the curve
+    `n` : The number of points to use for resampling
+
+Keyword arguments: 
+    `rtol`  : The `rtol` parameter, default is 1e-8, for `quadgk` based 
+              integration
+    `niter` : The number of iterations for repeated geodesic distance 
+              estimation. The default is 1.          
+    `spline_order`  : The `BSplineOrder` spline order, default is 4. 
+    `close_loop`    : `true` or `false` to set if the curve is to be assumed 
+                      closed or not. 
 """
 function evenly_sample(V::Vector{Point{ND,TV}}, n::Int; rtol=1e-8, niter=1, spline_order=4, close_loop=false) where ND where TV<:Real
+    S, _, D = make_geospline(V; rtol=rtol, niter=niter, spline_order=spline_order, close_loop=close_loop)
 
-    S,_,D = make_geospline(V; rtol=rtol, niter=niter, spline_order=spline_order, close_loop=close_loop)
-
-    # Even range for curve distance 
-    if close_loop 
-        l_end = D - D/n
-    else
-        l_end = D
+    if close_loop # Closed curve so interpolate up to 1 step back from closed end distance 
+        l_end = D - D/n 
+    else # Open curve
+        l_end = D # End is simply D which is the total curve length 
     end
-    l = range(0.0, l_end, n)     
+    l = range(0.0, l_end, n) # Even range for curve distance
 
     return S.(l) # Evaluate interpolator at even distance increments
 end
 
-function make_geospline(V::Vector{Point{ND,TV}}; rtol = 1e-8, niter = 10, spline_order=4, close_loop=false) where ND where TV<:Real
+"""
+    make_geospline(V::Vector{Point{ND,TV}}; rtol = 1e-8, niter = 10, spline_order=4, close_loop=false) where ND where TV<:Real
+
+Creates geodesic spline 
+
+# Description
+
+This function returns a geodesic spline interpolator for the input curve defined 
+by the ND points `V`. The spline interpolator `S` is parameterised using 
+curve length. Hence for a curve of length L an evenly spaced set of n points 
+can be obtained using: `S.(range(0.0, L, n))`.  
+Note that the even sampling is defined in terms of the curve length for a 4th 
+order natural B-spline that interpolates the input data. Hence if significant 
+curvature exists for the B-spline between two adjacent data points then the 
+spacing between points in the output may be non-uniform (despite the along 
+B-spline distance being uniform). 
+
+Input parameters: 
+    `V`  : A vector of points defining the curve
+
+Keyword arguments: 
+    `rtol`  : The `rtol` parameter, default is 1e-8, for `quadgk` based 
+              integration
+    `niter` : The number of iterations for repeated geodesic distance 
+              estimation. The default is 1.          
+    `spline_order`  : The `BSplineOrder` spline order, default is 4. 
+    `close_loop`    : `true` or `false` to set if the curve is to be assumed 
+                      closed or not.          
+"""
+function make_geospline(V::Vector{Point{ND,TV}}; rtol = 1e-8, niter = 1, spline_order=4, close_loop=false) where ND where TV<:Real
     LL = curve_length(V) # Initialise as along curve (multi-linear) distance
     if close_loop
-        D = last(LL) + norm(V[1]-V[end])
+        D = last(LL) + norm(V[1]-V[end]) # Use last plus end step to close loop
         bc = BSplineKit.Periodic(D) # Use periodic bc for closed curves
     else
-        D = last(LL)  
-        bc = BSplineKit.Natural() # Otherwise use natural
+        D = last(LL) # Just last distance
+        bc = BSplineKit.Natural() # Use natural
     end
     S = BSplineKit.interpolate(LL, deepcopy(V), BSplineOrder(spline_order), bc) # Create interpolator
 
-    L = zeros(eltype(LL),length(LL)) # Initialise spline length vector
+    L = zeros(eltype(LL), length(LL)) # Initialise spline length vector
     @inbounds for _ in 1:niter
         dS = BSplineKit.Derivative() * S  # spline derivative        
         @inbounds for i in 2:lastindex(LL) 
             # Compute length of segment [i-1, i]   
-            L[i] = L[i - 1] + integrate_segment_(dS,LL[i-1], LL[i],rtol)    
+            L[i] = L[i - 1] + integrate_segment_(dS, LL[i-1], LL[i], rtol)    
         end
         
         if close_loop 
-            D = last(L) + integrate_segment_(dS,LL[end], D,rtol)           
+            D = last(L) + integrate_segment_(dS, LL[end], D, rtol)           
             bc = BSplineKit.Periodic(D)                   
         else
             D = last(L)
@@ -4232,16 +4274,47 @@ function make_geospline(V::Vector{Point{ND,TV}}; rtol = 1e-8, niter = 10, spline
         S = BSplineKit.interpolate(L, deepcopy(V), BSplineOrder(spline_order), bc) # Create interpolator
         LL = L
     end
-    return S,L,D
+    return S, L, D
 end
 
-function integrate_segment_(dS,l1,l2,rtol)
+function integrate_segment_(dS, l1, l2, rtol)
     segment_length, _ = quadgk(l1, l2; rtol) do t
         norm(dS(t))  # integrate |S'(t)| in segment [i, i + 1]
     end    
     return segment_length
 end
 
+"""
+    evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8, niter = 1, spline_order=4, close_loop=false, must_points=nothing) where ND where TV<:Real
+
+Evenly space curve points. 
+
+# Description
+
+This function aims to evenly space the input curve defined by the ND points 
+`V` using the point spacing `pointSpacing` points. 
+The function returns the resampled points as well as the 
+spline interpolator `S` used. The output points can also be retriebed by using: 
+`S.(range(0.0, 1.0, n))`. 
+Note that the even sampling is defined in terms of the curve length for a 4th 
+order natural B-spline that interpolates the input data. Hence if significant 
+curvature exists for the B-spline between two adjacent data points then the 
+spacing between points in the output may be non-uniform (despite the along 
+B-spline distance being uniform). 
+
+Input parameters: 
+    `V` : A vector of points defining the curve
+    `pointSpacing` : The point spacing to use for resampling
+    
+Keyword arguments: 
+    `rtol`  : The `rtol` parameter, default is 1e-8, for `quadgk` based 
+              integration
+    `niter` : The number of iterations for repeated geodesic distance 
+              estimation. The default is 1.          
+    `spline_order`  : The `BSplineOrder` spline order, default is 4. 
+    `close_loop`    : `true` or `false` to set if the curve is to be assumed 
+                      closed or not. 
+"""
 function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8, niter = 1, spline_order=4, close_loop=false, must_points=nothing) where ND where TV<:Real
     if isnothing(pointSpacing)
         pointSpacing = pointspacingmean(V)

@@ -26,7 +26,7 @@ for testCase = 1:3
         must_points = [3,7,11,15,19,23,27,31]
         
         # Evenly sample curve
-        Vi1 = evenly_space(V, 0.5; close_loop = false, niter=10, spline_order = 4) # Returns points and spline interpolation object
+        Vi1 = evenly_space(V, 0.3; close_loop = false, niter=10, spline_order = 4) # Returns points and spline interpolation object
         Vi2 = evenly_space(V, 0.3; close_loop = true, niter=10, spline_order = 4,must_points = must_points) # Returns points and spline interpolation object
     elseif testCase == 3
         V = batman(25; stepwise = true, dir=:acw)
@@ -34,7 +34,7 @@ for testCase = 1:3
         must_points = [4,8,12, 16, 17, 18, 19, 23, 27, 31, ]
 
         # Evenly sample curve    
-        Vi1 = evenly_space(V, 0.15; close_loop = false, niter=10, spline_order = 4) # Returns points and spline interpolation object
+        Vi1 = evenly_space(V, 0.1; close_loop = false, niter=10, spline_order = 4) # Returns points and spline interpolation object
         Vi2 = evenly_space(V, 0.1; close_loop = true, niter=10, spline_order = 4, must_points = must_points) # Returns points and spline interpolation object
     end
 
