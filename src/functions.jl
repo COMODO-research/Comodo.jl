@@ -482,10 +482,10 @@ of control points provided.
 
 This function returns `n` points for an m-th order Bézier spline, based on the 
 m control points contained in the input vector `P`. This function supports point
-vectors with elements of the type `AbstractPoint{3}` (e.g.
-`Point{3, Float64}`) or `Vector{Float64}`.
+vectors with elements of the type `Point{ND, TV}` (e.g.
+`Point{3, Float64}`).
 """
-function nbezier(P::Vector{Point{ND,TV}},n::Integer) where ND where TV<:Real
+function nbezier(P::Vector{Point{ND,TV}}, n::Integer) where ND where TV<:Real
     if n<2
         throw(ArgumentError("n is too low. Request at least two data points"))
     end
@@ -1123,9 +1123,9 @@ function tofaces(FM::Vector{<:NgonFace} )
 end
 
 """
-    topoints(VM::Matrix{T}) where T<: Real
-    topoints(VM::Union{Array{Vec{N, T}, 1}, GeometryBasics.StructArray{TT,1} }) where TT <: AbstractPoint{N,T} where T <: Real where N   
-    topoints(VM::Vector{Vector{T}}) where T <: Real  
+    topoints(VM::Matrix{TV}) where TV<:Real
+    topoints(VM::Array{Vec{N, TV}, 1}) where N where TV<:Real
+    topoints(VM::Vector{Vector{TV}}) where TV<:Real
     topoints(VM::Vector{Point{ND,TV}}) where ND where TV <: Real    
 
 Converts input to GeometryBasics compliant simple points without meta content.
@@ -1345,24 +1345,24 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
         return F,V
     elseif isone(n)
         E = meshedges(F)
-        Eu,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
+        Eu, indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
         # Check for boundary edges        
-        count_E2F = count_edge_face(F,Eu,indReverse)
+        count_E2F = count_edge_face(F, Eu, indReverse)
         B_boundary = isone.(count_E2F)
         if any(B_boundary)
             treatBoundary = true
             Eb = @view Eu[B_boundary]
-            indB = unique(reduce(vcat,Eb))
-            con_V2V = con_vertex_vertex(Eb,V)
+            indB = unique(reduce(vcat, Eb))
+            con_V2V = con_vertex_vertex(Eb, V)
         else
             treatBoundary = false
         end
 
         nv = length(V)
         nf = length(F)
-        Fn = Vector{TriangleFace{TF}}(undef,4*nf)        
-        for (i,f) in enumerate(F)                        
-            Fn[i]      = TriangleFace{TF}(indReverse[i],indReverse[i+nf],indReverse[i+2*nf]) .+ nv
+        Fn = Vector{TriangleFace{TF}}(undef, 4*nf)        
+        for (i, f) in enumerate(F)                        
+            Fn[i]      = TriangleFace{TF}(indReverse[i], indReverse[i+nf], indReverse[i+2*nf]) .+ nv
             Fn[i+nf]   = TriangleFace{TF}(Fn[i][1], Fn[i][3], f[1])
             Fn[i+2*nf] = TriangleFace{TF}(Fn[i][2], Fn[i][1], f[2])
             Fn[i+3*nf] = TriangleFace{TF}(Fn[i][3], Fn[i][2], f[3])
@@ -1373,10 +1373,10 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
         # Create new vertices depending on method
         if method == :linear # Simple linear splitting
             # Create complete point set
-            Vn = [V; simplexcenter(Eu,V)]  # Old and new mid-edge points          
+            Vn = [V; simplexcenter(Eu, V)]  # Old and new mid-edge points          
         elseif method == :Loop #Loop subdivision 
             # New mid-edge like vertices
-            Vm = Vector{Point{ND,TV}}(undef,length(Eu)) 
+            Vm = Vector{Point{ND,TV}}(undef, length(Eu)) 
             for (i,e) in enumerate(Eu) # For each edge index       
                 if treatBoundary && B_boundary[i]              
                     Vm[i] = 1/2 .*(V[e[1]] .+ V[e[2]]) # Normal mid-edge point
@@ -1408,19 +1408,19 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
                         indTouch = filter(!=(i), f)    
                         for i in indTouch 
                             if i ∉ indVerticesTouch 
-                                push!(indVerticesTouch,i)
+                                push!(indVerticesTouch, i)
                             end
                         end
                     end
                     N = length(indVerticesTouch)                
 
-                    v_sum = sum(@view(V[indVerticesTouch]),dims=1)[1]                
+                    v_sum = sum(@view(V[indVerticesTouch]), dims=1)[1]                
                     β = 1/N * (5/8-(3/8 +1/4*cos((2*π)/N))^2)        
                     Vv[i] = (1-N*β) .* v_i .+ β*v_sum   
                 end
             end    
             # Create complete point set
-            Vn = [Vv;Vm] # Updated originals and new "mid-edge-ish" points
+            Vn = [Vv; Vm] # Updated originals and new "mid-edge-ish" points
         else
             throw(ArgumentError("Incorrect method :$method. Use :linear or :Loop"))
         end
@@ -1429,7 +1429,7 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
 
     elseif n>1
         for _ = 1:n
-            F,V = subtri(F,V,1; method=method, constrain_boundary=constrain_boundary)
+            F,V = subtri(F, V, 1; method=method, constrain_boundary=constrain_boundary)
         end
         return F,V
     else
@@ -2097,13 +2097,12 @@ only the number of vertices, i.e. `length(V)` is needed, if `V` is not provided
 it is assumed that `length(V)` corresponds to the largest index in `F`. The 
 vertex-face connectivity `con_V2F` is needed, hence is computed when not provided.  
 """
-function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
+function con_vertex_vertex_f(F, V=nothing, con_V2F=nothing)
     if isnothing(V)
         n = maximum(reduce(vcat,F))
     else 
         n = length(V)
-    end
-    
+    end    
     if isnothing(con_V2F)
         con_V2F = con_vertex_face(F,V)
     end
@@ -2119,7 +2118,6 @@ function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
         end
     end
     return con_V2V
-
 end
 
 """
@@ -2137,28 +2135,34 @@ only the number of vertices, i.e. `length(V)` is needed, if `V` is not provided
 it is assumed that `length(V)` corresponds to the largest index in `E`. The 
 vertex-edge connectivity `con_V2E` is needed, hence is computed when not provided.  
 """
-function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
-    if isnothing(V)
-        n = maximum(reduce(vcat,E))
-    else 
-        n = length(V)
-    end
-    if isnothing(con_V2E)
-        con_V2E = con_vertex_edge(E,V)
-    end
-
-    con_V2V = [Vector{Int}() for _ in 1:n]
-    @inbounds for i_v in 1:n
-        if !isempty(con_V2E[i_v])
-            for i in unique(reduce(vcat,E[con_V2E[i_v]]))
-                if i_v!=i
-                    push!(@views(con_V2V[i_v]),i)
+function con_vertex_vertex(E, V=nothing, con_V2E=nothing)
+    if isempty(E)
+        return Vector{Vector{Int}}() # Empty connectivity set 
+    else
+        N = length(E[1])        
+        if N>2 # The input consists of faces rather than edges 
+            E = meshedges(E)    
+        end
+        if isnothing(V)
+            n = maximum(reduce(vcat,E))
+        else 
+            n = length(V)
+        end
+        if isnothing(con_V2E)
+            con_V2E = con_vertex_edge(E,V)
+        end
+        con_V2V = [Vector{Int}() for _ in 1:n]
+        @inbounds for i_v in 1:n
+            if !isempty(con_V2E[i_v])
+                for i in unique(reduce(vcat,E[con_V2E[i_v]]))
+                    if i_v!=i
+                        push!(@views(con_V2V[i_v]),i)
+                    end
                 end
             end
         end
+        return con_V2V    
     end
-
-    return con_V2V
 end
 
 """
@@ -3774,7 +3778,7 @@ The output consists of:
 """
 function distmarch(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, indStart::Vector{Int}; d=nothing, dd=nothing, l=nothing, con_V2V=nothing, dist_stop=Inf) where {N, ND, TV<:Real}   
     # Get/compute vertex-vertex connectivity
-    if isnothing(con_V2V)
+    if isnothing(con_V2V)        
         con_V2V = con_vertex_vertex_f(F, V) # Face connectivity is used such that "diagonals" for n-gons with n>3 are included
     end
 
@@ -3816,18 +3820,18 @@ function distmarch(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, indStart
     # Start marching
     indGrow = Set{Int}(indStart) # Current set to check distance for
     madeChange = false # Keep track of update flag
+    maxD = 0.0
     while true                     
         indGrowNext = Set{Int}()#; sizehint!(indGrowNext, length(V))   
         @inbounds for i in indGrow # For each point in current grow set           
             @inbounds for j in con_V2V[i] # Check umbrella neighbourhood
-                minVal, minInd = findmin([d[j], dd[sort((i, j))]+d[i]]) # Get closest point and distance from umbrella
+                minVal, minInd = findmin([ d[j], d[i] + dd[sort((i, j))] ]) # Get closest point and distance from umbrella
                 if minInd==2 # If shortcut found
-                    if minVal<=dist_stop # If the distance is smaller than the max grow distance
-                        d[j] = minVal # Assign updated distance to region point                          
-                        l[j] = l[i] # Assign updated index to region point
-                        madeChange = true # Change made so update now
-                        push!(indGrowNext, j)
-                    end
+                    maxD = max(maxD, minVal)                    
+                    d[j] = minVal # Assign updated distance to region point                          
+                    l[j] = l[i] # Assign updated index to region point
+                    madeChange = true # Change made so update now
+                    push!(indGrowNext, j)                    
                 end
             end            
         end
@@ -3836,7 +3840,10 @@ function distmarch(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, indStart
             madeChange = false # Set back to false
         else # madeChange == false, so no changes were made i.e stuck
             break # Stop and exit while loop
-        end        
+        end 
+        if maxD>=dist_stop # Current largest distance equals/exceeds stopping distance
+            break
+        end
     end
     d[isinf.(d)] .= NaN # Change Inf to NaN
     return d, dd, l
@@ -10742,7 +10749,7 @@ function cutends(FM::Vector{TriangleFace{Int}}, VM::Vector{Point{3, TV}}, P_cut_
 end
 
 """
-subedge(E::Vector{LineFace{Int}}, V::Vector{Point{N, TV}}, n::Int; method=:linear) where {N, TV<:Real}
+    subedge(E::Vector{LineFace{Int}}, V::Vector{Point{N, TV}}, n::Int; method=:linear) where {N, TV<:Real}
 
 Splits edges iteratively
 
@@ -10797,6 +10804,57 @@ function subedge(E::Vector{LineFace{Int}}, V::Vector{Point{N, TV}}, n::Int; meth
         return E, V
     end
 end
+
+"""
+    meshgeodesic(F::Vector{NgonFace{N, Int}}, V::Vector{Point{ND, TV}}, indStart, indEnd; con_V2V=nothing) where {N, ND, TV<:Real}
+
+Computes geodesic paths
+
+# Description
+This function computes the on-mesh geodesic path from the start point defined by
+`indStart` and the end point defined by `indEnd`. 
+
+Input parameters: 
+    `F`         : Vector of faces
+    `V`         : Vector of points
+    `indStart`  : Index of path start point in `V`
+    `indEnd`    : Index of path end point in `V`
+    
+Keyword arguments: 
+    `con_V2V`   : The vertex-vertex connectivity e.g. as per functions like
+                  `con_vertex_vertex_f`   
+"""
+function meshgeodesic(F::Vector{NgonFace{N, Int}}, V::Vector{Point{ND, TV}}, indStart, indEnd; con_V2V=nothing) where {N, ND, TV<:Real}
+    # Get/compute point-point connectivity
+    if isnothing(con_V2V)              
+        con_V2V = con_vertex_vertex_f(F, V) # Get point-point connectivity array
+    end        
+
+    # Compute allong surface distance from start point 
+    d, dd, _ = distmarch(F, V, [indStart]; con_V2V=con_V2V) # Compute distances marched from start 
+    
+    # Now walk back from end to start using nearest point path
+    pathVec = Vector{Int}() # Vector to store path point indices
+    distVec = Vector{Float64}() # Vector to store allong path distances 
+    if !isnan(d[indEnd])        
+        indStep = indEnd # Initial step is end 
+        push!(pathVec, indStep) # Add end index to path point indices 
+        push!(distVec, d[indStep]) # Add end distance to path distances
+        while indStep != indStart # While the current step is not the start point 
+            indUmbrella = con_V2V[indStep] # Indices of "Laplacian" umbrella i.e. neighours        
+            for j in indUmbrella
+                if d[indStep] == d[j]+dd[sort((indStep, j))]                
+                    indStep = j # Update indStep
+                    pushfirst!(pathVec, j) # Add new index to path point index vector
+                    pushfirst!(distVec, d[j]) # Add new distance to path distance vector
+                    break
+                end
+            end
+        end        
+    end
+    return pathVec, distVec
+end
+   
 
 #= 
    Copyright 2024-2026 Kevin Mattheus Moerman

@@ -10501,6 +10501,53 @@ end
     @test isapprox(p2, P_cut_origins[1], atol=pointSpacing) || isapprox(p2, P_cut_origins[2], atol=pointSpacing)
 end
 
+@testset "meshgeodesic" verbose=true begin   
+    @testset "Triangulated sphere north-south" begin
+        sigdigits = 3
+        # Create sphere and get path from north to south which should approximate π*r
+        r = 10.0 # Sphere radius
+        F, V = geosphere(5,r) # Sphere faces and vertices 
+        z = [v[3] for v ∈ V] # Z coordinates to help find north and south 
+        indStart = findmax(z)[2] # North pole  
+        indEnd = findmin(z)[2] # South pole
+        pathVec, distVec = meshgeodesic(F, V, indStart, indEnd) # Get geodesic path
+
+        @test pathVec[1] == indStart
+        @test pathVec[end] == indEnd
+        @test round(distVec[end], sigdigits=sigdigits) == round(π*r, sigdigits=sigdigits)
+    end
+
+    @testset "Quadrangulated sphere north-south" begin
+        sigdigits = 3
+        r = 1.0
+        n = 5 # Number of refinement steps from cube
+        F, V, C = subquadsphere(n, r)                
+        z = [v[3] for v ∈ V] # Z coordinates to help find north and south 
+        indStart = findmax(z)[2] # North pole  
+        indEnd = findmin(z)[2] # South pole
+        pathVec, distVec = meshgeodesic(F, V, indStart, indEnd) # Get geodesic path
+
+        @test pathVec[1] == indStart
+        @test pathVec[end] == indEnd
+        @test round(distVec[end], sigdigits=sigdigits) == round(π*r, sigdigits=sigdigits)
+    end
+
+    @testset "Quad cube lead diagonal corners" begin
+        sigdigits = 6
+        w = 3.0     
+        boxDim = [w, w, w] # Dimensions for the box in each direction
+        boxEl = [5, 5, 5] # Number of elements to use in each direction 
+        F, V, C = quadbox(boxDim,boxEl)
+        _, indStart = findmin(norm.(V.-Point{3, Float64}(boxEl[1]/2.0, boxEl[2]/2.0, boxEl[3]/2.0)))
+        _, indEnd = findmin(norm.(V.-Point{3, Float64}(-boxEl[1]/2.0, -boxEl[2]/2.0, -boxEl[3]/2.0)))
+        pathVec, distVec = meshgeodesic(F, V, indStart, indEnd) # Get geodesic path
+
+        @test pathVec[1] == indStart
+        @test pathVec[end] == indEnd
+        @test round(distVec[end], sigdigits=sigdigits) == round(w+sqrt(2)*w, sigdigits=sigdigits)
+    end
+end
+
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
 #     @testset "Demos" begin

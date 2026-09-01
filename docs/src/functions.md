@@ -1050,3 +1050,8 @@ Comodo.cutends
 ```@docs 
 Comodo.subedge
 ```
+
+## `meshgeodesic`
+```@docs 
+Comodo.meshgeodesic
+```
