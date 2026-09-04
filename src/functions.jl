@@ -10855,6 +10855,192 @@ function meshgeodesic(F::Vector{NgonFace{N, Int}}, V::Vector{Point{ND, TV}}, ind
     return pathVec, distVec
 end
    
+"""
+    hextube(Ri, Ro, L, nθ::Int64, nr::Int64, nz::Int64)
+
+Generate a structured hexahedral mesh for a tube.
+
+Input parameters:
+    `Ri`  : Inner radius of the tube.
+    `Ro`  : Outer radius of the tube.
+    `L`   : Length of the tube in the positive z-direction.
+    `nθ`  : Number of circumferential elements.
+    `nr`  : Number of radial elements.
+    `nz`  : Number of axial elements.
+
+Returns:
+    `E_hex` : Hexahedral element connectivity.
+    `V_hex` : Mesh vertex coordinates.
+    `F`     : All faces of the hexahedral mesh.
+    `Fb`    : Boundary faces of the mesh.
+    `Cb`    : Boundary face labels:
+              1 = bottom surface (z = 0),
+              2 = top surface (z = L),
+              3 = inner cylindrical wall,
+              4 = outer cylindrical wall.
+
+The function creates a quadrilateral annular cross-section between the
+inner and outer radii and extrudes it in the positive z-direction to
+generate the hexahedral tube mesh.
+"""
+function hextube(Ri, Ro, L, nθ::Int64, nr::Int64, nz::Int64)
+
+    V1 = circlepoints(Ri, nθ)
+    V2 = circlepoints(Ro, nθ)
+
+    Fb, V = loftlinear(V1, V2; num_steps=nr+1, close_loop=true, face_type=:quad)
+
+    N = fill(GeometryBasics.Vec{3,Float64}(0.0, 0.0, 1.0), length(V))
+
+    E_hex, V_hex = extrudefaces(Fb, V; extent=L, direction=:positive, num_steps=nz+1, N=N)
+
+    F = element2faces(E_hex)
+
+    Fb = boundaryfaces(E_hex)
+
+    Nb = facenormal(Fb, V_hex)
+    c = facecentroid(Fb, V_hex)
+
+    Cb = zeros(Int, length(Fb))
+
+    for (i, n) in enumerate(Nb)
+        d = dot(n, [0.0, 0.0, 1.0])
+        if d > 0.5
+            Cb[i] = 1                                    # bottom, z = 0
+        elseif d < -0.5
+            Cb[i] = 2                                    # top,    z = L
+        else
+            if n[1]*c[i][1] + n[2]*c[i][2] > 0.0
+                Cb[i] = 3                                # inner wall
+            else
+                Cb[i] = 4                                # outer wall
+            end
+        end
+    end
+
+    return E_hex, V_hex, F,Fb,Cb
+
+end
+
+
+"""
+    tettube(Ri, Ro, L, nθ::Int64, nr::Int64, nz::Int64; meshType=1)
+
+Generate a tetrahedral mesh for a tube.
+
+Input parameters::
+    `Ri`       : Inner radius of the tube.
+    `Ro`       : Outer radius of the tube.
+    `L`        : Length of the tube in the positive z-direction.
+    `nθ`        : Number of circumferential elements.
+    `nr`        : Number of radial elements.
+    `nz`        : Number of axial elements.
+    `meshType` : Tetrahedral conversion type. If an integer in the range
+                 1–14 is provided, the same conversion type is applied
+                 to all hexahedral elements. Alternatively, a vector of
+                 integers can be provided to specify the conversion type
+                 for each hexahedral element individually.
+
+Returns:
+    `E_tet` : Tetrahedral element connectivity.
+    `V_tet` : Mesh vertex coordinates.
+    `F`     : All faces of the tetrahedral mesh.
+    `Fb`    : Boundary faces of the mesh.
+    `Cb`    : Boundary face labels:
+              1 = bottom surface (z = 0),
+              2 = top surface (z = L),
+              3 = inner cylindrical wall,
+              4 = outer cylindrical wall.
+
+The function first generates a structured hexahedral mesh of the 
+tube and then converts the hexahedral elements into
+tetrahedral elements according to `meshType`. The boundary faces are
+subsequently identified and classified based on their outward normals
+and centroid positions.
+"""
+function tettube(Ri, Ro, L, nθ::Int64, nr::Int64, nz::Int64;  meshType=1)
+
+    V1 = circlepoints(Ri, nθ)
+    V2 = circlepoints(Ro, nθ)
+
+    Fb, V = loftlinear(V1, V2; num_steps=nr+1, close_loop=true, face_type=:quad)
+
+    N = fill(GeometryBasics.Vec{3,Float64}(0.0, 0.0, 1.0), length(V))
+
+    E_hex, V_hex = extrudefaces(Fb, V; extent=L, direction=:positive, num_steps=nz+1, N=N)
+
+    V_tet = V_hex
+    E_tet = hex2tet(E_hex, meshType)
+    Fb = boundaryfaces(E_tet)
+    F = element2faces(E_tet)
+
+
+    Nb = facenormal(Fb, V_tet)
+    c = facecentroid(Fb, V_tet)
+
+    Cb = zeros(Int, length(Fb))
+
+    for (i, n) in enumerate(Nb)
+        d = dot(n, [0.0, 0.0, 1.0])
+        if d > 0.5
+            Cb[i] = 1                                    # bottom, z = 0
+        elseif d < -0.5
+            Cb[i] = 2                                    # top,    z = L
+        else
+            if n[1]*c[i][1] + n[2]*c[i][2] > 0.0
+                Cb[i] = 3                                # inner wall
+            else
+                Cb[i] = 4                                # outer wall
+            end
+        end
+    end
+    return E_tet, V_tet, F, Fb,Cb
+end
+
+"""
+    tetgen_tube(Ri, Ro, L, pointSpacing)
+
+Generate a tetrahedral mesh of a tube using TetGen.
+
+Arguments:
+    `Ri`          : Inner radius of the tube.
+    `Ro`          : Outer radius of the tube.
+    `L`           : Length of the tube in the positive z-direction.
+    `pointSpacing`: Target spacing between mesh points.
+
+Returns:
+    `E_tet`   : Tetrahedral element connectivity.
+    `V_tet`   : Coordinates of the mesh vertices.
+    `F`       : All faces of the tetrahedral mesh.
+    `CE`      : Element markers associated with the tetrahedral elements.
+    `Fb_out`  : Boundary faces of the tetrahedral mesh.
+    `Cb_out`  : Boundary face markers.
+
+"""
+function tetgen_tube(Ri, Ro, L, pointSpacing)
+
+    n_in = ceil(Int, 2π*Ri/pointSpacing)
+    n_out = ceil(Int, 2π*Ro/pointSpacing)
+
+    V_in = circlepoints(Ri, n_in)
+    V_out = circlepoints(Ro, n_out)
+
+    F_wi, V_wi = extrudecurve(V_in; extent=L, direction=:positive, close_loop=true, face_type=:tri)
+    F_wo, V_wo = extrudecurve(V_out; extent=L, direction=:positive, close_loop=true, face_type=:tri)
+
+    F_bot, V_bot, _ = regiontrimesh((V_out, V_in), ([1, 2],), (pointSpacing,))
+    F_top = F_bot
+    V_top = V_bot .+ Point{3,Float64}(0.0, 0.0, L)
+
+    Fb, Vb, Cb = joingeom(F_bot, V_bot, F_top, V_top, F_wi, V_wi, F_wo, V_wo)
+    Fb, Vb, _, _ = mergevertices(Fb, Vb; pointSpacing=pointSpacing)
+
+    E_tet, V_tet, CE, Fb_out, Cb_out = tetgenmesh(Fb, Vb; facetmarkerlist=Cb, stringOpt="paAqQ")
+
+    F = element2faces(E_tet)
+
+    return E_tet, V_tet, F,  CE, Fb_out, Cb_out
+end
 
 #= 
    Copyright 2024-2026 Kevin Mattheus Moerman
