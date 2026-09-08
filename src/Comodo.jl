@@ -95,6 +95,7 @@ module Comodo
     export cartesianIndexOffset, gradient, mixture_VonMisesFisher, hex8_hex20, hex8_hex27
     export svdRotPerms, surface_svd, surface_align_svd, icp, cylinder, tricylinder, quadcylinder
     export wsdf, cutends, subedge, meshgeodesic
+    export hextube, tettube, tetgen_tube
 end # module
 
 #= 

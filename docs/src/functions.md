@@ -1055,3 +1055,18 @@ Comodo.subedge
 ```@docs 
 Comodo.meshgeodesic
 ```
+
+## `hextube`
+```@docs 
+Comodo.hextube
+```
+
+## `tettube`
+```@docs 
+Comodo.tettube
+```
+
+## `tetgen_tube`
+```@docs 
+Comodo.tetgen_tube
+```
