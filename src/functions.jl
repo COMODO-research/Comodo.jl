@@ -10855,6 +10855,26 @@ function meshgeodesic(F::Vector{NgonFace{N, Int}}, V::Vector{Point{ND, TV}}, ind
     return pathVec, distVec
 end
    
+function spiralpoints_sphere(N::Int; φ=Base.MathConstants.golden)
+    V = Vector{Point{3, Float64}}(undef, N)      
+    for i in 1:N
+        z = 2.0*i/(N+1.0)-1.0
+        r = sqrt(1.0 - z^2)        
+        theta = (2.0*π)*i/φ        
+        V[i] = Point{3, Float64}(r*cos(theta), r*sin(theta), z);        
+    end
+    return V
+end
+
+function spiralpoints_disc(N::Int; φ=Base.MathConstants.golden)
+    V = Vector{Point{3, Float64}}(undef, N)      
+    for i in 1:N        
+        r = sqrt(1.0 - i/(N+1.0))        
+        theta = (2.0*π)*i/φ        
+        V[i] = Point{3, Float64}(r*cos(theta), r*sin(theta), 0.0);        
+    end
+    return V
+end
 
 #= 
    Copyright 2024-2026 Kevin Mattheus Moerman
