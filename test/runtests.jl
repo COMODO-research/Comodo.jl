@@ -10548,6 +10548,66 @@ end
     end
 end
 
+@testset "hextube" verbose = true begin
+    @testset "5x2x2 hex tube" begin
+        Ri, Ro = 20.0, 25.0;
+        L = 80.0; nθ = 5;  nr = 2; nz = 2
+        E, V, F, Fb, CFb_type = hextube(Ri, Ro, L, nθ, nr, nz)
+        @test E[10] ==  [10, 6, 11, 15, 25, 21, 26, 30]
+        end
+    @testset "5x5x5 hex tube" begin
+        Ri, Ro = 20.0, 25.0
+        L = 80.0 ; nθ = 5 ; nr = 5; nz = 5
+        E, V, F, Fb, CFb_type = hextube(Ri, Ro, L, nθ, nr, nz)
+        @test length(E) == nθ * nr * nz
+    end
+end
+
+@testset "tettube" verbose = true begin
+    @testset "1x1x1 tet tube with meshType=3" begin
+        Ri, Ro = 20.0, 25.0;
+        L = 80.0; nθ = 1;  nr = 1; nz = 1
+        @test_throws ArgumentError tettube(Ri, Ro, L, nθ, nr, nz; meshType=3)
+    end
+    @testset "5x5x5 tet tube with meshType=3" begin
+        Ri, Ro = 20.0, 25.0
+        L = 80.0 ; nθ = 5 ;nr = 5; nz = 5
+        E, V, F, Fb, CFb_type = tettube(Ri, Ro, L, nθ, nr, nz; meshType=3)
+        @test length(E) == 6 * nθ * nr * nz
+    end
+    @testset "5x5x5 tet tube meshType=1" begin
+        Ri, Ro = 20.0, 25.0
+        L = 80.0 ; nθ = 5 ;nr = 5; nz = 5
+        E, V, F, Fb, CFb_type = tettube(Ri, Ro, L, nθ, nr, nz; meshType=1)
+        @test length(E) == 5 * nθ * nr * nz
+    end
+    @testset "5x5x5 tet tube meshType=2" begin
+        Ri, Ro = 20.0, 25.0
+        L = 80.0 ; nθ = 5 ;nr = 5; nz = 5
+        E, V, F, Fb, CFb_type = tettube(Ri, Ro, L, nθ, nr, nz; meshType=2)
+        @test length(E) == 5 * nθ * nr * nz
+    end
+end
+
+@testset "tetgen tube" verbose = true begin
+    @testset "pointSpacing 2.0" begin
+        Ri, Ro = 20.0, 25.0 ; L = 80.0
+        pointSpacing = 2.0
+        E, V, F, CE, Fbq, CFb_type = tetgen_tube(Ri, Ro, L, pointSpacing)
+        Fb1 = boundaryfaces(F)        
+        @test length(Fb1) == length(Fbq)
+        @test typeof(Fb1) == typeof(F)
+    end
+    @testset "pointSpacing 0.1" begin
+        Ri, Ro = 20.0, 25.0 ; L = 80.0
+        pointSpacing = 0.8
+        E, V, F, CE, Fbq, CFb_type = tetgen_tube(Ri, Ro, L, pointSpacing)
+        Fb1 = boundaryfaces(F)        
+        @test length(Fb1) == length(Fbq)
+        @test typeof(Fb1) == typeof(F)
+    end
+end
+
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
 #     @testset "Demos" begin
