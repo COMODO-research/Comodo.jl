@@ -2754,31 +2754,58 @@ end
 @testset "subquadsphere" begin
     eps_level = 1e-4
     
-    # Test cube case with no refinement
-    r = 1.5
-    F, V = subquadsphere(0, r)    
-    @test length(V) == 8
-    @test length(F) == 6
-    @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
-    
-    # Test 1-step refinement (uses linear subdivision)
-    r = 2.0
-    F, V = subquadsphere(1, r)
-    @test length(V) == 8+3*4+6
-    @test length(F) == 6*4
-    @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
+    @testset "cube" begin
+        # Test cube case with no refinement
+        r = 1.5
+        F, V, C = subquadsphere(0, r)    
+        @test length(V) == 8
+        @test length(F) == 6
+        @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
+        @test length(unique(C)) == 6
 
-    # Test >1 step refinement 
-    r = 1.0
-    F, V = subquadsphere(3, r)
-    ind = round.(Int,range(1,length(V),6))
-    V_true = Point{3, Float64}[[-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], [-0.3689702423132517, 0.8530661876868645, 0.3689702423132517], [0.35078880366009596, 0.5289708759735062, -0.7727464186902068], [-0.20218457191067402, 0.0, 0.9793474352247509], [0.18095633824105684, -0.5526166627775921, -0.8135537030036464], [0.49847402263276075, -0.7092582727896996, -0.49847402263276075]]
-    @test V isa Vector{Point3{Float64}}
-    @test length(V) == 386
-    @test isapprox(V[ind], V_true, atol=eps_level)
-    @test F isa Vector{QuadFace{Int}}
-    @test length(F) == 384
-    @test F[1] == [1, 99, 291, 285]
+        # Test 1-step refinement (uses linear subdivision)
+        r = 2.0
+        F, V, C = subquadsphere(1, r)
+        @test length(V) == 8+3*4+6
+        @test length(F) == 6*4
+        @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
+        @test length(unique(C)) == 6
+
+        # Test >1 step refinement 
+        r = 1.0
+        F, V, C = subquadsphere(3, r)
+        ind = round.(Int,range(1,length(V),6))
+        V_true = Point{3, Float64}[[-0.5773502691896258, -0.5773502691896257, -0.5773502691896257], [-0.3694576301676106, 0.8526441925104903, 0.3694576301676106], [0.3546415409651608, 0.5281590848186655, -0.7715421949222], [-0.19905462210160246, 0.0, 0.9799883965741574], [0.18400808576774796, -0.5502420980049302, -0.8144781506923449], [0.5000945816212081, -0.7069729972680836, -0.5000945816212081]]
+        @test V isa Vector{Point3{Float64}}
+        @test length(V) == 386
+        @test isapprox(V[ind], V_true, atol=eps_level)
+        @test F isa Vector{QuadFace{Int}}
+        @test length(F) == 384
+        @test F[1] == [1, 99, 291, 285]
+        @test length(unique(C)) == 6
+    end
+
+
+    @testset "rhombicdodecahedron" begin       
+        # Test cube case with no refinement
+        r = 1.5
+        n = 0
+        F, V, C = subquadsphere(n, r; template=:rhombicdodecahedron)
+
+        @test length(V) == 14
+        @test length(F) == 12
+        @test isapprox(norm.(V), fill(r, length(V)), atol=eps_level)
+        @test length(unique(C)) == 12
+
+        # Test refined version 
+        r = 1.5
+        n = 3
+        F, V, C = subquadsphere(n, r; template=:rhombicdodecahedron)
+
+        @test length(F) == 12*4^n
+        @test isapprox(norm.(V), fill(r, length(V)), atol=eps_level)
+        @test length(unique(C)) == 12
+    end
 end
 
 @testset "simplex2vertexdata" verbose = true begin
@@ -3070,7 +3097,7 @@ end
         ind = round.(Int,range(1,length(VC),5))
         @test VC isa typeof(V)
         @test length(VC) == length(F)
-        VC_true = Point{3, Float64}[[-0.48624303129694313, -0.48624303129694313, -0.6913184394948764], [-0.5330679123349682, -0.1754002930303379, -0.7870889972738774], [0.1897860460691325, -0.9236437317570111, -0.1897860460691325], [0.17540029303033788, -0.7870889972738774, -0.5330679123349682], [0.48624303129694313, -0.6913184394948764, -0.48624303129694313]]
+        VC_true = Point{3, Float64}[[-0.4880862135232343, -0.48808621352323434, -0.6899970245250848], [-0.5315713537976239, -0.17776434703183086, -0.7868413826784946], [0.18881035930699008, -0.9244699175360369, -0.18881035930699008], [0.17776434703183086, -0.7868413826784945, -0.5315713537976239], [0.4880862135232342, -0.6899970245250847, -0.4880862135232342]]
         @test isapprox(VC[ind], VC_true, atol=eps_level)
     end
 end
@@ -3701,9 +3728,9 @@ end
     eps_level = 1e-2
 
     r = 2.5 # Sphere radius
-    F,V = geosphere(3,r)
+    F, V = geosphere(3,r)
     A = sum(facearea(F, V))
-    p = [0.0, 0.0, 0.0]  # Point on cutting plane
+    p = Point{3, Float64}(0.0, 0.0, 0.0)  # Point on cutting plane
     
     function checkRad(En, Vn, rTrue, eps_level)
         ind_En = unique(reduce(vcat,En))
@@ -3718,7 +3745,7 @@ end
                 Vec{3, Float64}(0.0, 0.0, 1.0)]
         for output_type = [:full, :above, :below]            
             for n in N # For each cutting plane normal                
-                Fn, Vn, Cn, En = trisurfslice(F,V,n,p; output_type=output_type, snapTolerance=snapTolerance)
+                Fn, Vn, Cn, En = trisurfslice(F, V, n, p; output_type=output_type, snapTolerance=snapTolerance)
                 An = sum(facearea(Fn, Vn))
                 println(An)
                 if output_type == :full
@@ -4443,9 +4470,52 @@ end
     end
 end
 
-# @testset "distseedpoints" verbose = true begin
+@testset "distseedpoints" verbose=true begin
+    F, V = geosphere(3, 1.0)
+    for numPoints = 1:2:10
+        ind, d, l = distseedpoints(F, V, numPoints)   
+        @test length(d) == length(V)
+        @test length(l) == length(V)
+        @test length(ind) == numPoints
+        @test sort(unique(l)) == collect(1:numPoints)
+    end
 
-# end
+    # Check the use of initial seed points: equal lengths
+    indSeed = [1,2, length(V)]
+    numPoints = length(indSeed)
+    ind, d, l = distseedpoints(F, V, numPoints; indSeed = indSeed)   
+    @test ind == indSeed
+
+    # Less points
+    indSeed = [1,2, length(V)]
+    numPoints = length(indSeed)-1
+    ind, d, l = distseedpoints(F, V, numPoints; indSeed = indSeed)   
+    @test ind == indSeed
+
+    # More points
+    indSeed = [1,2, length(V)]
+    numPoints = length(indSeed)+1
+    ind, d, l = distseedpoints(F, V, numPoints; indSeed = indSeed)   
+    @test all([in(i, ind) for i in indSeed])
+    @test length(ind) == numPoints
+end
+
+@testset "seedpoints2mesh" verbose=true begin
+    F, V = geosphere(4, 1.0) # Fine mesh
+
+    # Number of desired points
+    numPoints = 250  
+
+    # Do distance marching based point seeding 
+    ind,d,l = distseedpoints(F, V, numPoints)   
+
+    # Convert seeds to downsampled mesh 
+    Fp, Vp = seedpoints2mesh(F, V, ind, l)
+
+    @test isa(Fp, Vector{TriangleFace{Int}})
+    @test isa(Vp, Vector{Point{3, Float64}})
+    @test length(Vp) == numPoints
+end
 
 @testset "ray_triangle_intersect" verbose = true begin
     eps_level = 1e-4
@@ -4701,8 +4771,7 @@ end
     @test L isa Vector{Float64}
 end
 
-@testset "evenly_sample" begin
-    
+@testset "evenly_sample" verbose = true begin
     eps_level = 1e-4
 
     # Even sampling should be nearly perfect for a linear curve 
@@ -4752,10 +4821,9 @@ end
         @test typeof(V) == typeof(Vi) # Did not manipulate input type
         @test length(Vi) == n # Correct length
     end
-
 end
 
-@testset "Comodo.integrate_segment_" begin
+@testset "Comodo.integrate_segment_" verbose = true begin
     eps_level = 1e-6
     r = 3.25
     nc = 1000
@@ -4766,20 +4834,20 @@ end
     @test isapprox(L,2*pi*r,atol=eps_level)
 end
 
-@testset "Comodo.make_geospline" begin
+@testset "make_geospline" verbose = true begin
     eps_level = 1e-6
     r = 3.25
     nc = 10
     V = circlepoints(r,nc)
-    S,L,D = Comodo.make_geospline(V; rtol=1e-8, niter=10, spline_order=4, close_loop=true)
+    S, L, D = make_geospline(V; rtol=1e-8, niter=10, spline_order=4, close_loop=true)
     
     @test isa(S,SplineInterpolation)
-    @test isapprox(V,S.(L),atol=eps_level)
+    @test isapprox(V, S.(L), atol=eps_level)
 
-    S,L,D = Comodo.make_geospline(V; rtol=1e-8, niter=10, spline_order=4, close_loop=false)
+    S, L, D = make_geospline(V; rtol=1e-8, niter=10, spline_order=4, close_loop=false)
     
     @test isa(S,SplineInterpolation)
-    @test isapprox(V,S.(L),atol=eps_level)
+    @test isapprox(V, S.(L), atol=eps_level)
 end
 
 @testset "evenly_space" verbose = true begin
@@ -10192,6 +10260,352 @@ end
     @test isapprox(maximum(z),  h/2.0, atol=eps_level)
     @test isapprox(minimum(z), -h/2.0, atol=eps_level)
     @test isapprox(mean(rV), r, atol=eps_level)
+end
+
+@testset "wsdf" verbose=true begin
+    eps_level = 1e-2
+
+    # Upward line point set
+    n = 20
+    h = 15.0
+    V = collect(range(Point{3,Float64}(0.0, 0.0, -h/2.0), Point{3,Float64}(0.0, 0.0, h/2.0), n))
+    r = 10.0
+    R = fill(10.0, n)
+
+    # Define grid ranges
+    voxelSize = (1.0, 1.0, 1.0)
+    xr = -1.2*r:voxelSize[1]:1.2*r
+    yr = -1.3*r:voxelSize[2]:1.3*r
+    zr = -h/2.0:voxelSize[3]:h/2.0
+
+    @testset "weighted" begin
+        # Now compute radius weighted signed distance field
+        M = wsdf(xr, yr, zr, V, R; closest_type=:weighted)
+        siz = size(M)
+
+        # Check type
+        @test isa(M, Array{Float64, 3})
+
+        # Check size
+        @test siz[1] == length(xr)
+        @test siz[2] == length(yr)
+        @test siz[3] == length(zr)
+
+        # Check geometry retrievable from image 
+        FM, VM = getisosurface(M; x=xr, y=yr, z=zr, level=0.0, cap=false, padValue=1e8) # level set surface
+
+        rM = mean([sqrt(p[1]^2+p[2]^2) for p in VM]) # Mean radius
+        @test isapprox(rM, r, atol=eps_level) # Check radius
+
+        z = [p[3] for p in VM]
+        hM = maximum(z)-minimum(z)
+        @test isapprox(hM, h, atol=eps_level)
+    end
+
+    @testset "nearest" begin
+        # Now compute radius weighted signed distance field
+        M = wsdf(xr, yr, zr, V, R; closest_type=:nearest)
+        siz = size(M)
+
+        # Check type
+        @test isa(M, Array{Float64, 3})
+
+        # Check size
+        @test siz[1] == length(xr)
+        @test siz[2] == length(yr)
+        @test siz[3] == length(zr)
+
+        # Check geometry retrievable from image 
+        FM, VM = getisosurface(M; x=xr, y=yr, z=zr, level=0.0, cap=false, padValue=1e8) # level set surface
+
+        rM = mean([sqrt(p[1]^2+p[2]^2) for p in VM]) # Mean radius
+        @test isapprox(rM, r, atol=eps_level) # Check radius
+
+        z = [p[3] for p in VM]
+        hM = maximum(z)-minimum(z)
+        @test isapprox(hM, h, atol=eps_level)
+    end
+
+    @testset "Errors" begin
+        @test_throws ArgumentError wsdf(xr, yr, zr, V, R; closest_type=:wrong)      
+    end
+end
+
+@testset "quadsphere" verbose=true begin
+    eps_level = 1e-4
+    
+    # Test cube case with no refinement
+    r = 1.5
+    pointSpacing = r*10.0
+    F, V, C = quadsphere(r, pointSpacing)
+
+    @test length(V) == 8
+    @test length(F) == 6
+    @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
+    @test length(unique(C)) == 6
+
+    # Test refined version with point spacing
+    r = 2.0
+    pointSpacing = r/10.0
+    F, V, C = quadsphere(r, pointSpacing)
+
+    @test isapprox(norm.(V), fill(r,length(V)), atol=eps_level)
+    @test length(unique(C)) == 6
+end
+
+@testset "subedge" verbose=true begin
+    @testset "Single edge" begin
+        V = [   Point{3, Float64}( 0.0,  0.0,  0.0),
+                Point{3, Float64}( 1.0,  0.0,  0.0)]
+
+        E = [   LineFace{Int}(1, 2)]
+
+        # Test no splitting
+        Es, Vs = subedge(E, V, 0)
+        @test Es == E
+        @test Vs == V
+
+        # Test single split step
+        Es, Vs = subedge(E, V, 1)
+        @test Vs[end] == mean(V) # New point is mid edge
+
+        for method in (:linear, :smooth)
+            indInitial = 1:length(V)
+            for n = 0:2
+                Es, Vs = subedge(E, V, n; method=method)
+
+                # No type changes
+                @test typeof(V) == typeof(Vs)
+                @test typeof(E) == typeof(Es)
+
+                # Correct number of points and edges
+                @test length(Vs) == length(V) + (2^n-1)*length(E)
+                @test length(Es) == (2^n)*length(E) 
+
+                # Initial unchanged for both methods for straight line
+                @test V== Vs[indInitial]
+            end
+        end
+    end
+
+    @testset "Branched edges" begin
+        V = [   Point{3, Float64}( 0.0,  0.0,  0.0),
+                Point{3, Float64}( 0.5,  0.0,  0.0), 
+                Point{3, Float64}( 1.0,  0.0, -0.5), 
+                Point{3, Float64}( 0.0,  0.5,  0.0),
+                Point{3, Float64}( 0.0,  1.0,  0.5),
+                Point{3, Float64}(-0.5,  0.0,  0.0),
+                Point{3, Float64}(-1.0,  0.0,  0.5),
+                Point{3, Float64}( 0.0, -0.5,  0.0),
+                Point{3, Float64}( 0.0, -1.0, -0.5),
+                ]
+
+        E = [   LineFace{Int}(1, 2),
+                LineFace{Int}(2, 3),
+                LineFace{Int}(1, 4),
+                LineFace{Int}(4, 5),
+                LineFace{Int}(1, 6),
+                LineFace{Int}(6, 7), 
+                LineFace{Int}(1, 8),
+                LineFace{Int}(8, 9), 
+            ]
+        
+        for method in (:linear, :smooth)
+            indInitial = 1:length(V)
+            con_V2V = con_vertex_vertex(E, V)
+            indBranch = findall(length.(con_V2V) .>2)         
+            for n = 0:2
+                Es, Vs = subedge(E, V, n; method=method)
+
+                # No type changes
+                @test typeof(V) == typeof(Vs)
+                @test typeof(E) == typeof(Es)
+
+                # Correct number of points and edges
+                @test length(Vs) == length(V) + (2^n-1)*length(E)
+                @test length(Es) == (2^n)*length(E) 
+
+                if method==:linear
+                    # Initial unchanged for linear
+                    @test V == Vs[indInitial]
+                elseif method==:smooth
+                    # Branch points remain unchanged
+                    @test V[indBranch] == Vs[indBranch]
+                end
+            end
+        end
+    end
+
+    @testset "Errors" begin
+        V = [   Point{3, Float64}( 0.0,  0.0,  0.0),
+                Point{3, Float64}( 1.0,  0.0,  0.0)]
+        E = [   LineFace{Int}(1, 2)]
+        @test_throws ArgumentError subedge(E, V, 1; method=:wrong) 
+    end
+end
+
+@testset "cutends" verbose=true begin
+    voxelSize = (2.0, 2.0, 2.0)
+
+    pointSpacing = 2.0 
+    rb = 60.0
+    nc = 150
+    V1 = [Point{3, Float64}(rb*cos(t), rb*sin(t), 0.0) for t in range(0.0, 1.3*pi, nc)]
+    R1 = collect(range(40.0, 20.0, nc))
+
+    # Define grid for distance computation, here based on input curve
+    rMax = maximum(R1)
+    p_min = minp(V1)
+    p_max = maxp(V1)
+    numVoxelsAdd = 2
+    p_offset = Point{3,Float64}(rMax+numVoxelsAdd*voxelSize[1], rMax+numVoxelsAdd*voxelSize[2], rMax+numVoxelsAdd*voxelSize[3])
+    p_origin = p_min - p_offset
+    p_end = p_max + p_offset
+
+    # Define grid ranges
+    xr = p_origin[1]:voxelSize[1]:p_end[1]
+    yr = p_origin[2]:voxelSize[2]:p_end[2]
+    zr = p_origin[3]:voxelSize[3]:p_end[3]
+
+    # Now computed radius weighted signed distance field
+    M = wsdf(xr, yr, zr, V1, R1; closest_type=:weighted)
+    siz = size(M)
+
+    # Compute level set surface for visualisation
+    FM, VM = getisosurface(M; x=xr, y=yr, z=zr, level=0.0, cap=false, padValue=1e8)      
+    # VM = smoothmesh_hc(FM, VM, 25)
+
+    ## Cut branches
+
+    # Define cutting vectors and origins e.g. graph end points and end directions
+    nz = Point{3, Float64}(0.0, 0.0, 1.0)
+    P_cut_vec = normalizevector.([cross(V1[1], nz), cross(nz, V1[end])]) # Vectors pointing to distance origin
+    # P_cut_vec = [normalizevector(V1[1]-V1[2]), normalizevector(V1[end]-V1[end-1])] # Vectors pointing to distance origin
+    P_cut_origins = [V1[1], V1[end]] # Origins for vectors
+    D_cut_vec = [π.*R1[1], π.*R1[end]] # Distance from origin to consider for cut
+
+    FMc, VMc = cutends(FM, VM, P_cut_origins, P_cut_vec, D_cut_vec)
+
+    Eb = boundaryedges(FMc)
+    G = meshgroup(Eb)
+    numGroups = maximum(G)
+
+    ind1 = elements2indices(Eb[G.==1])
+    ind2 = elements2indices(Eb[G.==2])
+    p1 = mean(VMc[ind1])
+    p2 = mean(VMc[ind2])
+    @test numGroups == 2 # Should have two boundary curves after cut
+
+    # Rough check if centers of boundaries are close to P_cut_origins
+    @test isapprox(p1, P_cut_origins[1], atol=pointSpacing) || isapprox(p1, P_cut_origins[2], atol=pointSpacing)
+    @test isapprox(p2, P_cut_origins[1], atol=pointSpacing) || isapprox(p2, P_cut_origins[2], atol=pointSpacing)
+end
+
+@testset "meshgeodesic" verbose=true begin   
+    @testset "Triangulated sphere north-south" begin
+        sigdigits = 3
+        # Create sphere and get path from north to south which should approximate π*r
+        r = 10.0 # Sphere radius
+        F, V = geosphere(5,r) # Sphere faces and vertices 
+        z = [v[3] for v ∈ V] # Z coordinates to help find north and south 
+        indStart = findmax(z)[2] # North pole  
+        indEnd = findmin(z)[2] # South pole
+        pathVec, distVec = meshgeodesic(F, V, indStart, indEnd) # Get geodesic path
+
+        @test pathVec[1] == indStart
+        @test pathVec[end] == indEnd
+        @test round(distVec[end], sigdigits=sigdigits) == round(π*r, sigdigits=sigdigits)
+    end
+
+    @testset "Quadrangulated sphere north-south" begin
+        sigdigits = 3
+        r = 1.0
+        n = 5 # Number of refinement steps from cube
+        F, V, C = subquadsphere(n, r)                
+        z = [v[3] for v ∈ V] # Z coordinates to help find north and south 
+        indStart = findmax(z)[2] # North pole  
+        indEnd = findmin(z)[2] # South pole
+        pathVec, distVec = meshgeodesic(F, V, indStart, indEnd) # Get geodesic path
+
+        @test pathVec[1] == indStart
+        @test pathVec[end] == indEnd
+        @test round(distVec[end], sigdigits=sigdigits) == round(π*r, sigdigits=sigdigits)
+    end
+
+    @testset "Quad cube lead diagonal corners" begin
+        sigdigits = 6
+        w = 3.0     
+        boxDim = [w, w, w] # Dimensions for the box in each direction
+        boxEl = [5, 5, 5] # Number of elements to use in each direction 
+        F, V, C = quadbox(boxDim,boxEl)
+        _, indStart = findmin(norm.(V.-Point{3, Float64}(boxEl[1]/2.0, boxEl[2]/2.0, boxEl[3]/2.0)))
+        _, indEnd = findmin(norm.(V.-Point{3, Float64}(-boxEl[1]/2.0, -boxEl[2]/2.0, -boxEl[3]/2.0)))
+        pathVec, distVec = meshgeodesic(F, V, indStart, indEnd) # Get geodesic path
+
+        @test pathVec[1] == indStart
+        @test pathVec[end] == indEnd
+        @test round(distVec[end], sigdigits=sigdigits) == round(w+sqrt(2)*w, sigdigits=sigdigits)
+    end
+end
+
+@testset "hextube" verbose = true begin
+    @testset "5x2x2 hex tube" begin
+        Ri, Ro = 20.0, 25.0;
+        L = 80.0; nθ = 5;  nr = 2; nz = 2
+        E, V, F, Fb, CFb_type = hextube(Ri, Ro, L, nθ, nr, nz)
+        @test E[10] ==  [10, 6, 11, 15, 25, 21, 26, 30]
+        end
+    @testset "5x5x5 hex tube" begin
+        Ri, Ro = 20.0, 25.0
+        L = 80.0 ; nθ = 5 ; nr = 5; nz = 5
+        E, V, F, Fb, CFb_type = hextube(Ri, Ro, L, nθ, nr, nz)
+        @test length(E) == nθ * nr * nz
+    end
+end
+
+@testset "tettube" verbose = true begin
+    @testset "1x1x1 tet tube with meshType=3" begin
+        Ri, Ro = 20.0, 25.0;
+        L = 80.0; nθ = 1;  nr = 1; nz = 1
+        @test_throws ArgumentError tettube(Ri, Ro, L, nθ, nr, nz; meshType=3)
+    end
+    @testset "5x5x5 tet tube with meshType=3" begin
+        Ri, Ro = 20.0, 25.0
+        L = 80.0 ; nθ = 5 ;nr = 5; nz = 5
+        E, V, F, Fb, CFb_type = tettube(Ri, Ro, L, nθ, nr, nz; meshType=3)
+        @test length(E) == 6 * nθ * nr * nz
+    end
+    @testset "5x5x5 tet tube meshType=1" begin
+        Ri, Ro = 20.0, 25.0
+        L = 80.0 ; nθ = 5 ;nr = 5; nz = 5
+        E, V, F, Fb, CFb_type = tettube(Ri, Ro, L, nθ, nr, nz; meshType=1)
+        @test length(E) == 5 * nθ * nr * nz
+    end
+    @testset "5x5x5 tet tube meshType=2" begin
+        Ri, Ro = 20.0, 25.0
+        L = 80.0 ; nθ = 5 ;nr = 5; nz = 5
+        E, V, F, Fb, CFb_type = tettube(Ri, Ro, L, nθ, nr, nz; meshType=2)
+        @test length(E) == 5 * nθ * nr * nz
+    end
+end
+
+@testset "tetgen tube" verbose = true begin
+    @testset "pointSpacing 2.0" begin
+        Ri, Ro = 20.0, 25.0 ; L = 80.0
+        pointSpacing = 2.0
+        E, V, F, CE, Fbq, CFb_type = tetgen_tube(Ri, Ro, L, pointSpacing)
+        Fb1 = boundaryfaces(F)        
+        @test length(Fb1) == length(Fbq)
+        @test typeof(Fb1) == typeof(F)
+    end
+    @testset "pointSpacing 0.1" begin
+        Ri, Ro = 20.0, 25.0 ; L = 80.0
+        pointSpacing = 0.8
+        E, V, F, CE, Fbq, CFb_type = tetgen_tube(Ri, Ro, L, pointSpacing)
+        Fb1 = boundaryfaces(F)        
+        @test length(Fb1) == length(Fbq)
+        @test typeof(Fb1) == typeof(F)
+    end
 end
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------

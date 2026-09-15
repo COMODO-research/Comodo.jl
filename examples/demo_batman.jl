@@ -7,7 +7,7 @@ The curve is useful for testing surface meshing algorithms since it contains
 sharp transitions and pointy features. 
 =#
 
-n = 100
+n = 150
 V1 = batman(n; stepwise = true, dir=:acw)
 V2 = batman(n; stepwise = false, dir=:cw)
 

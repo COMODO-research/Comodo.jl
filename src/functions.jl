@@ -484,10 +484,10 @@ of control points provided.
 
 This function returns `n` points for an m-th order Bézier spline, based on the 
 m control points contained in the input vector `P`. This function supports point
-vectors with elements of the type `AbstractPoint{3}` (e.g.
-`Point{3, Float64}`) or `Vector{Float64}`.
+vectors with elements of the type `Point{ND, TV}` (e.g.
+`Point{3, Float64}`).
 """
-function nbezier(P::Vector{Point{ND,TV}},n::Integer) where ND where TV<:Real
+function nbezier(P::Vector{Point{ND,TV}}, n::Integer) where ND where TV<:Real
     if n<2
         throw(ArgumentError("n is too low. Request at least two data points"))
     end
@@ -584,7 +584,7 @@ point set is provided twice, then the optional parameter `skipSelf` can be set
 t0 `true` (default is `false`) if "self distances" (e.g. the nth point to the 
 nth point) are to be avoided.  
 """
-function mindist(V1,V2; getIndex::Val{B1}=Val(false), skipSelf = false ) where {B1}
+function mindist(V1::Union{Vector{Point{ND,TV1}}, Vector{Vec{ND,TV1}}}, V2::Union{Vector{Point{ND,TV2}}, Vector{Vec{ND,TV2}}}; getIndex::Val{B1}=Val(false), skipSelf = false ) where {B1} where ND where TV1<:Real where TV2<:Real
     T = promote_type(eltype(eltype(V1)), eltype(eltype(V2)))
     D, d = similar(V1, T), similar(V2, T)
     if B1
@@ -595,7 +595,7 @@ function mindist(V1,V2; getIndex::Val{B1}=Val(false), skipSelf = false ) where {
             if skipSelf && i==j
                 d[j] = Inf
             else
-                d[j] = euclidean(v1,v2) # norm(v1,v2) 
+                d[j] = euclidean(v1, v2) # norm(v1,v2) 
             end       
         end
         if B1
@@ -610,6 +610,7 @@ function mindist(V1,V2; getIndex::Val{B1}=Val(false), skipSelf = false ) where {
         return D
     end
 end
+
 
 """
     occursonce(X::Union{Tuple{Vararg{T, N}}, Array{T, N}}; sort_entries=false) where T <: Any where N  
@@ -1124,9 +1125,9 @@ function tofaces(FM::Vector{<:NgonFace} )
 end
 
 """
-    topoints(VM::Matrix{T}) where T<: Real
-    topoints(VM::Union{Array{Vec{N, T}, 1}, GeometryBasics.StructArray{TT,1} }) where TT <: AbstractPoint{N,T} where T <: Real where N   
-    topoints(VM::Vector{Vector{T}}) where T <: Real  
+    topoints(VM::Matrix{TV}) where TV<:Real
+    topoints(VM::Array{Vec{N, TV}, 1}) where N where TV<:Real
+    topoints(VM::Vector{Vector{TV}}) where TV<:Real
     topoints(VM::Vector{Point{ND,TV}}) where ND where TV <: Real    
 
 Converts input to GeometryBasics compliant simple points without meta content.
@@ -1346,24 +1347,24 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
         return F,V
     elseif isone(n)
         E = meshedges(F)
-        Eu,indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
+        Eu, indReverse = gunique(E; return_unique=Val(true), return_inverse=Val(true), sort_entries=true)
         # Check for boundary edges        
-        count_E2F = count_edge_face(F,Eu,indReverse)
+        count_E2F = count_edge_face(F, Eu, indReverse)
         B_boundary = isone.(count_E2F)
         if any(B_boundary)
             treatBoundary = true
             Eb = @view Eu[B_boundary]
-            indB = unique(reduce(vcat,Eb))
-            con_V2V = con_vertex_vertex(Eb,V)
+            indB = unique(reduce(vcat, Eb))
+            con_V2V = con_vertex_vertex(Eb, V)
         else
             treatBoundary = false
         end
 
         nv = length(V)
         nf = length(F)
-        Fn = Vector{TriangleFace{TF}}(undef,4*nf)        
-        for (i,f) in enumerate(F)                        
-            Fn[i]      = TriangleFace{TF}(indReverse[i],indReverse[i+nf],indReverse[i+2*nf]) .+ nv
+        Fn = Vector{TriangleFace{TF}}(undef, 4*nf)        
+        for (i, f) in enumerate(F)                        
+            Fn[i]      = TriangleFace{TF}(indReverse[i], indReverse[i+nf], indReverse[i+2*nf]) .+ nv
             Fn[i+nf]   = TriangleFace{TF}(Fn[i][1], Fn[i][3], f[1])
             Fn[i+2*nf] = TriangleFace{TF}(Fn[i][2], Fn[i][1], f[2])
             Fn[i+3*nf] = TriangleFace{TF}(Fn[i][3], Fn[i][2], f[3])
@@ -1374,10 +1375,10 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
         # Create new vertices depending on method
         if method == :linear # Simple linear splitting
             # Create complete point set
-            Vn = [V; simplexcenter(Eu,V)]  # Old and new mid-edge points          
+            Vn = [V; simplexcenter(Eu, V)]  # Old and new mid-edge points          
         elseif method == :Loop #Loop subdivision 
             # New mid-edge like vertices
-            Vm = Vector{Point{ND,TV}}(undef,length(Eu)) 
+            Vm = Vector{Point{ND,TV}}(undef, length(Eu)) 
             for (i,e) in enumerate(Eu) # For each edge index       
                 if treatBoundary && B_boundary[i]              
                     Vm[i] = 1/2 .*(V[e[1]] .+ V[e[2]]) # Normal mid-edge point
@@ -1409,19 +1410,19 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
                         indTouch = filter(!=(i), f)    
                         for i in indTouch 
                             if i ∉ indVerticesTouch 
-                                push!(indVerticesTouch,i)
+                                push!(indVerticesTouch, i)
                             end
                         end
                     end
                     N = length(indVerticesTouch)                
 
-                    v_sum = sum(@view(V[indVerticesTouch]),dims=1)[1]                
+                    v_sum = sum(@view(V[indVerticesTouch]), dims=1)[1]                
                     β = 1/N * (5/8-(3/8 +1/4*cos((2*π)/N))^2)        
                     Vv[i] = (1-N*β) .* v_i .+ β*v_sum   
                 end
             end    
             # Create complete point set
-            Vn = [Vv;Vm] # Updated originals and new "mid-edge-ish" points
+            Vn = [Vv; Vm] # Updated originals and new "mid-edge-ish" points
         else
             throw(ArgumentError("Incorrect method :$method. Use :linear or :Loop"))
         end
@@ -1430,7 +1431,7 @@ function subtri(F::Vector{NgonFace{3,TF}},V::Vector{Point{ND,TV}},n::Int; method
 
     elseif n>1
         for _ = 1:n
-            F,V = subtri(F,V,1; method=method, constrain_boundary=constrain_boundary)
+            F,V = subtri(F, V, 1; method=method, constrain_boundary=constrain_boundary)
         end
         return F,V
     else
@@ -2098,13 +2099,12 @@ only the number of vertices, i.e. `length(V)` is needed, if `V` is not provided
 it is assumed that `length(V)` corresponds to the largest index in `F`. The 
 vertex-face connectivity `con_V2F` is needed, hence is computed when not provided.  
 """
-function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
+function con_vertex_vertex_f(F, V=nothing, con_V2F=nothing)
     if isnothing(V)
         n = maximum(reduce(vcat,F))
     else 
         n = length(V)
-    end
-    
+    end    
     if isnothing(con_V2F)
         con_V2F = con_vertex_face(F,V)
     end
@@ -2120,7 +2120,6 @@ function con_vertex_vertex_f(F,V=nothing,con_V2F=nothing)
         end
     end
     return con_V2V
-
 end
 
 """
@@ -2138,28 +2137,34 @@ only the number of vertices, i.e. `length(V)` is needed, if `V` is not provided
 it is assumed that `length(V)` corresponds to the largest index in `E`. The 
 vertex-edge connectivity `con_V2E` is needed, hence is computed when not provided.  
 """
-function con_vertex_vertex(E,V=nothing,con_V2E=nothing)
-    if isnothing(V)
-        n = maximum(reduce(vcat,E))
-    else 
-        n = length(V)
-    end
-    if isnothing(con_V2E)
-        con_V2E = con_vertex_edge(E,V)
-    end
-
-    con_V2V = [Vector{Int}() for _ in 1:n]
-    @inbounds for i_v in 1:n
-        if !isempty(con_V2E[i_v])
-            for i in unique(reduce(vcat,E[con_V2E[i_v]]))
-                if i_v!=i
-                    push!(@views(con_V2V[i_v]),i)
+function con_vertex_vertex(E, V=nothing, con_V2E=nothing)
+    if isempty(E)
+        return Vector{Vector{Int}}() # Empty connectivity set 
+    else
+        N = length(E[1])        
+        if N>2 # The input consists of faces rather than edges 
+            E = meshedges(E)    
+        end
+        if isnothing(V)
+            n = maximum(reduce(vcat,E))
+        else 
+            n = length(V)
+        end
+        if isnothing(con_V2E)
+            con_V2E = con_vertex_edge(E,V)
+        end
+        con_V2V = [Vector{Int}() for _ in 1:n]
+        @inbounds for i_v in 1:n
+            if !isempty(con_V2E[i_v])
+                for i in unique(reduce(vcat,E[con_V2E[i_v]]))
+                    if i_v!=i
+                        push!(@views(con_V2V[i_v]),i)
+                    end
                 end
             end
         end
+        return con_V2V    
     end
-
-    return con_V2V
 end
 
 """
@@ -2316,7 +2321,7 @@ function mag(n::T) where T <: Real
 end
 
 """
-    smoothmesh_laplacian(F,V,con_V2V=nothing; n=1, λ=0.5)
+    smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, λ=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
 
 # Description
 
@@ -2330,7 +2335,7 @@ in the range (0,1). If `λ=0` then no smoothing occurs. If `λ=1` then pure
 Laplacian mean based smoothing occurs. For intermediate values a linear blending
 between the two occurs.  
 """
-function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}},V::Vector{Point{ND,TV}}, n=1, λ=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
+function smoothmesh_laplacian(F::Vector{NgonFace{N,TF}}, V::Vector{Point{ND,TV}}, n=1, λ=0.5; con_V2V=nothing, tolDist=nothing, constrained_points=nothing) where N where TF<:Integer where ND where TV<:Real
     
     if λ>1.0 || λ<0.0
         throw(ArgumentError("λ should be in the range 0-1"))
@@ -2521,17 +2526,29 @@ returns a cube. For subdivision the `:Catmull_Clark` subquad algorithm is used
 pushing nodes to the sphere surface. The ouput consists of the faces `F` and the 
 vertices `V`. 
 """
-function subquadsphere(n::Int,r::T) where T <: Real
-    F,V = platonicsolid(2,r)    
-    if n>0
-        if n==1
-            F,V = subquad(F,V,1;method=:linear)    
-        else
-            F,V = subquad(F,V,n;method=:Catmull_Clark)
+function subquadsphere(n::Int, r::T; method=:Catmull_Clark, template=:cube) where T <: Real
+    if template == :cube
+        F, V = platonicsolid(2, r)    
+    elseif template == :rhombicdodecahedron
+        F, V = rhombicdodecahedron(r.*sqrt(2))
+        _pushtoradius!(V, r)
+    else
+        throw(ArgumentError("Invalid template option provided, use one of the following: :cube, :rhombicdodecahedron"))
+    end
+    C = collect(1:length(F))
+
+    if n>0 # If refinement steps are requested
+        @inbounds for i in 1:n # Now iteratively refine
+            if i==1
+                F, V = subquad(F, V, 1; method=:linear) # Refine once using linear method
+            else
+                F, V = subquad(F, V, 1; method=method) # Refine once using method provided
+            end
+            _pushtoradius!(V, r) # Push nodes to sphere
         end
-        _pushtoradius!(V,r)
-    end    
-    return F, V
+        C = repeat(C, outer=4^n) # Expand labels as each split needs 4x replication
+    end
+    return F, V, C
 end
 
 """
@@ -3154,13 +3171,29 @@ function remove_unused_vertices!(F::Union{Vector{<: NgonFace},Vector{<: Abstract
     end
 end
 
+"""
+    trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{3,TV1}}, 
+                n :: Union{Point{3,TV2}, Vec{3, TV2}}, 
+                p :: Union{Point{3,TV3}, Vec{3, TV3}}; 
+                snapTolerance = 0.0, output_type=:full) where {TF<:Integer, TV1<:Real, TV2<:Real, TV3<:Real} 
 
+Slices triangulated surface
 
-function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = Vec{3, Float64}(0.0,0.0,1.0), p = mean(V,dims=1); snapTolerance = 0.0, output_type=:full) where TF<:Integer where ND where TV<:Real 
+# Description 
+This slices the triangulated surface defined by the faces `F` and the vertices 
+`V`. 
+"""
+function trisurfslice(F::Vector{TriangleFace{TF}}, 
+                      V::Vector{Point{3,TV1}}, 
+                      n :: Union{Point{3,TV2}, Vec{3, TV2}}, 
+                      p :: Union{Point{3,TV3}, Vec{3, TV3}}; 
+                      snapTolerance = 0.0, output_type=:full, indCut=nothing) where {TF<:Integer, TV1<:Real, TV2<:Real, TV3<:Real} 
+
     if !in(output_type,(:full,:above,:below))
         throw(ArgumentError("Invalid output_type :$output_type provided, use :full,:above, or :below"))
     end
-    intersectFunc(v1,v2,d,n) = v1 .- d/dot(n,v2.-v1) .* (v2.-v1)
+
+    intersectFunc(v1,v2,d) = v1 .- d/dot(n,v2.-v1) .* (v2.-v1)
     
     # Compute dot product with normal of slicing plane
     d = map(v-> dot(n,v.-p),V)
@@ -3174,10 +3207,10 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
     Cn =  Vector{Int}()
     Vn = deepcopy(V)
     D = Dict{Vector{Int},Int}() # For pointing from edge to intersection point index
-    for f in F
+    for (indexFace, f) in enumerate(F)
         lf = LV[f]
         
-        if any(lf) # Some or all below
+        if any(lf) && (isnothing(indCut) || in(indexFace, indCut)) # Some or all below
             if all(lf) # All below
                 if output_type == :full || output_type == :below            
                     push!(Fn,f)
@@ -3190,13 +3223,13 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
                     
                     e1 = sort(indP[[1,2]])
                     if !haskey(D,e1)
-                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[2]],d[indP[1]],n))
+                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[2]],d[indP[1]]))
                         D[e1] = length(Vn)
                     end
                     
                     e2 = sort(indP[[1,3]])
                     if !haskey(D,e2)
-                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[3]],d[indP[1]],n))
+                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[3]],d[indP[1]]))
                         D[e2] = length(Vn)
                     end
 
@@ -3222,13 +3255,13 @@ function trisurfslice(F::Vector{TriangleFace{TF}}, V::Vector{Point{ND,TV}}, n = 
 
                     e1 = sort(indP[[1,2]])
                     if !haskey(D,e1)
-                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[2]],d[indP[1]],n))
+                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[2]],d[indP[1]]))
                         D[e1] = length(Vn)
                     end                    
 
                     e2 = sort(indP[[1,3]])
                     if !haskey(D,e2)
-                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[3]],d[indP[1]],n))
+                        push!(Vn,intersectFunc(Vn[indP[1]],Vn[indP[3]],d[indP[1]]))
                         D[e2] = length(Vn)
                     end
                     
@@ -3714,94 +3747,184 @@ function meshgroup(F; con_type = :v, indStart=1, stop_at = nothing)
 end
 
 """
-    distmarch(F,V::Vector{Point{ND,TV}},indStart; d=nothing, dd=nothing, dist_tol=1e-3,con_V2V=nothing,l=nothing) where ND where TV<:Real
+    distmarch(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, indStart::Vector{Int}; d=nothing, dd=nothing, l=nothing, con_V2V=nothing, dist_stop=Inf) where {N, ND, TV<:Real}
 
 Compute on surface distance
 
 # Description
 This function computes along mesh-edge distances for the points with the 
-indices contained in `indStart`. 
+indices contained in `indStart`. The surface mesh is defined by the faces `F` 
+and the vertices `V`. The distance computation method is akin to the Dijkstra 
+algorithm. 
+The input consists of: 
+    `F`         : A vector of faces
+    `V`         : A vector of points
+    `indStart`  : A vector of integer indices into `V`
+Optional keyword arguments: 
+    `d`         : A precomputed/initial distance field (equivalent to the output
+                  `d`). Default is `nothing`.
+    `dd`        : A precomputed point pair distance dictionary (equivalent to 
+                  the output `dd`). Default is `nothing`.
+    `l`         : A precomputed/initial region labelling (equivalent to the 
+                  output `l`). Default is `nothing`.
+    `con_V2V`   : A precomputed vertex-to-vertex connectivity. Default is 
+                  `nothing`.
+    `dist_stop` : A distance after which the algorithm terminates. Default is 
+                  `Inf` such that is completes the complete distances. 
+The output consists of: 
+    `d`     : The distance for each point in `V`
+    `dd`    : A dict containing point-to-point (edge or quasi-edge) distances 
+              for each point pair. The point pair indices are the keys. 
+    `l`     : The nearest point labelling wrt `indStart` for each point in `V`. 
+              A value of 1 indicates point `indStart[1]` is closest.  
 """
-function distmarch(F,V::Vector{Point{ND,TV}},indStart; d=nothing, dd=nothing, dist_tol=1e-3,con_V2V=nothing,l=nothing) where ND where TV<:Real
-
-    # Get vertex-vertex connectivity
-    if isnothing(con_V2V)
-        con_V2V = con_vertex_vertex_f(F,V) 
+function distmarch(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, indStart::Vector{Int}; d=nothing, dd=nothing, l=nothing, con_V2V=nothing, dist_stop=Inf) where {N, ND, TV<:Real}   
+    # Get/compute vertex-vertex connectivity
+    if isnothing(con_V2V)        
+        con_V2V = con_vertex_vertex_f(F, V) # Face connectivity is used such that "diagonals" for n-gons with n>3 are included
     end
 
-    # Compute "Laplacian umbrella" distances
+    # Compute "Laplacian umbrella" point-to-point distances 
     if isnothing(dd)
-        dd = Dict{Vector{Int},Float64}()  
-        for (i,v) in enumerate(V)
-            for j in con_V2V[i]
-                k = sort([i,j])
-                if !haskey(dd,k)
-                    dd[sort(k)] = norm(v-V[j])
+        numEdgesEst = length(V)+length(F)-2 # Estimate of number of edges based on Euler's characteristic X = nV-nE+nF = 2 
+        dd = Dict{Tuple{Int64, Int64}, Float64}(); sizehint!(dd, numEdgesEst)
+        for (i, v) in enumerate(V) # For each point 
+            @inbounds for j in con_V2V[i] # For each point in Laplacian umbrella
+                k = sort((i, j)) # Create the sorted edge key
+                if !haskey(dd, k) # If this is a new edge key
+                    dd[k] = norm(v-V[j]) # Store distance for this edge
                 end 
             end
         end
     end
 
-    # Get/allocate distance vector
     if isnothing(d)
-        d = fill(Inf,length(V))
+        d = fill(Inf, length(V)) # Initialise distance vector as all Inf values
     end
 
     if isnothing(l)
-        l = fill(0,length(V))
+        l = fill(0, length(V)) # Initialise region/group indices as just zeros
     end
 
-    # Set start distances to zero 
-    is_isolated =  isempty.(con_V2V)
-    d[is_isolated] .= NaN # Set isolated (non-connected) points to NaN
-    d[indStart] .= 0.0
-    l[indStart] .= 1:length(indStart)
+    # Set isolated (non-connected) point distances to NaN 
+    for (i, c) in enumerate(con_V2V)
+        if isempty(c)
+            d[i] = NaN
+        end
+    end
+
+    # Set start distances and start group ids
+    for (groupId, i) in enumerate(indStart)
+        d[i] = 0.0 # Set to zero
+        l[i] = groupId # Set as start group
+    end
     
-    notGrowing = false
-    dist_sum_previous = -1.0 # Set negative initially 
-    count_inf_previous = length(d)-length(indStart) # number of Inf values currently
-    while true                          
-        for i in eachindex(V) # For each point            
-            for j in con_V2V[i] # Check umbrella neighbourhood
-                # Get closest point and distance from umbrella
-                minVal,minInd = findmin([d[j],dd[sort([i,j])]+d[i]])            
-                if minInd==2
-                    d[j] = minVal # Distance                          
-                    l[j] = l[i] # Index
+    # Start marching
+    indGrow = Set{Int}(indStart) # Current set to check distance for
+    madeChange = false # Keep track of update flag
+    maxD = 0.0
+    while true                     
+        indGrowNext = Set{Int}()#; sizehint!(indGrowNext, length(V))   
+        @inbounds for i in indGrow # For each point in current grow set           
+            @inbounds for j in con_V2V[i] # Check umbrella neighbourhood
+                minVal, minInd = findmin([ d[j], d[i] + dd[sort((i, j))] ]) # Get closest point and distance from umbrella
+                if minInd==2 # If shortcut found
+                    maxD = max(maxD, minVal)                    
+                    d[j] = minVal # Assign updated distance to region point                          
+                    l[j] = l[i] # Assign updated index to region point
+                    madeChange = true # Change made so update now
+                    push!(indGrowNext, j)                    
                 end
             end            
         end
-        bool_inf = isinf.(d) # Booling to check number of points left at Inf
-        count_inf = count(bool_inf)
-        if count_inf == count_inf_previous #!any(isinf.(d)) # Start checking once all are no longer Inf
-            dist_sum = sum(d[.!is_isolated .&& .!bool_inf])
-            if notGrowing # If we were here before
-                if abs(dist_sum-dist_sum_previous)<dist_tol                                        
-                    break                    
-                end
-            end
-            notGrowing = true # Flip to denote we've been here           
-            dist_sum_previous = dist_sum # Now start computing the sum to check convergence
+        indGrow = indGrowNext # Update grow set
+        if madeChange == true
+            madeChange = false # Set back to false
+        else # madeChange == false, so no changes were made i.e stuck
+            break # Stop and exit while loop
+        end 
+        if maxD>=dist_stop # Current largest distance equals/exceeds stopping distance
+            break
         end
-        count_inf_previous = count_inf
     end
     d[isinf.(d)] .= NaN # Change Inf to NaN
-    return d,dd,l
+    return d, dd, l
 end
 
-# function distseedpoints(F,V,numPoints; ind=[1],dist_tol=1e-3)
-    
-#     con_V2V = con_vertex_vertex_f(F,V) 
-#     d,dd,l = distmarch(F,V,ind; dist_tol=dist_tol,con_V2V=con_V2V)
+"""
+    distseedpoints(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, numPoints::Int; indSeed=[1], con_V2V=nothing) where {N, ND, TV<:Real}
 
-#     if numPoints>1
-#         @showprogress 1 "<distseedpoints>: Seeding points..." for q in 2:numPoints            
-#             push!(ind,findmax(d)[2])
-#             d,dd,l = distmarch(F,V,ind; dist_tol=dist_tol, dd=dd,d=d,con_V2V=con_V2V,l=l)        
-#         end
-#     end
-#     return ind,d,l
-# end
+Seeds approximately equidistant points
+
+# Description
+This function uses geodesic distance marching (see `distmarch`) to find the 
+indices `ind` for `numPoints` points in `V` which are located as far away from 
+eachother as possible given the input mesh. As such the points can be 
+approximately equidistant.  
+
+The input consists of: 
+    `F`         : A vector of faces
+    `V`         : A vector of points
+    `numPoints` : The number of desired seed points 
+Optional keyword arguments: 
+    `indSeed`  : The initial seed point index vector (indices into `V`)
+    `con_V2V`   : A precomputed vertex-to-vertex connectivity. Default is 
+                  `nothing`.
+The output consists of: 
+    `indSeed    : The seed point index vector (indices into `V`)
+    `d`         : The distance to the nearest seed point for each point in `V`
+    `l`         : The nearest point labelling wrt `indSeed` for each point in `V`. 
+                  A value of 1 indicates point `indStart[1]` is closest.  
+"""
+function distseedpoints(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, numPoints::Int; indSeed=[1], con_V2V=nothing) where {N, ND, TV<:Real}
+    # Get/compute vertex-vertex connectivity
+    if isnothing(con_V2V)
+        con_V2V = con_vertex_vertex_f(F, V) # Face connectivity is used such that "diagonals" for n-gons with n>3 are included
+    end
+    
+    # Compute initial distances
+    d, dd, l = distmarch(F, V, indSeed; con_V2V=con_V2V)
+
+    # Iteratively find new points furthest away from others
+    if numPoints>length(indSeed)
+        for _ in length(indSeed):1:numPoints-1            
+            push!(indSeed, findmax(d)[2]) # Add furthest point to set
+            d, dd, l = distmarch(F, V, indSeed; dd=dd, d=d, con_V2V=con_V2V, l=l) # Recompute distances       
+        end
+    end
+    return indSeed, d, l
+end
+
+"""
+    seedpoints2mesh(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, ind::Vector{Int}, l::Vector{Int}) where {N, ND, TV<:Real}
+
+Generates mesh from seed points
+
+# Description
+This function aims to produce a Delaunay like surface from the input seed point
+specification. 
+
+The input consists of: 
+    `F`         : A vector of faces
+    `V`         : A vector of points
+    `indSeed`   : A vector of seed point indices into `V`
+    `l`         : The nearest point labelling wrt `indSeed` for each point in `V`. 
+                  A value of 1 indicates point `indStart[1]` is closest. 
+The output consists of: 
+    `Fp`        : A vector of faces for the output surface
+    `Vp`        : A vector of points for the output surface (the input seed points)
+"""
+function seedpoints2mesh(F::Vector{NgonFace{N,Int}}, V::Vector{Point{ND,TV}}, indSeed::Vector{Int}, l::Vector{Int}) where {N, ND, TV<:Real}
+    Vp = V[indSeed] # The seed point vector
+    Fp = Vector{TriangleFace{Int}}() # The output face set
+    for f in F
+        ii = l[f] # The region labels for the point in f
+        if length(unique(ii))==3
+            push!(Fp, TriangleFace{Int}(ii))
+        end
+    end
+    return Fp, Vp
+end
 
 """
     ray_triangle_intersect(F::Vector{TriangleFace{Int}},V,ray_origin,ray_vector; rayType = :ray, triSide = 1, tolEps = eps(Float64))
@@ -4022,6 +4145,10 @@ end
 """
     curve_length(V::Vector{Point{ND,TV}}; close_loop=false) where ND where TV<:Real
 
+Computes curve length
+
+# Description
+
 This function computes the stepwise length of the input curve defined by the ND 
 points in `V`. The output is a vector containing the distance for each point, 
 and the total length therefore the last entry. 
@@ -4061,56 +4188,94 @@ end
 """
     evenly_sample(V::Vector{Point{ND,TV}}, n::Int; rtol = 1e-8, niter = 1) where ND where TV<:Real
 
-Evenly samples curves. 
+Evenly samples curve 
 
 # Description
 
 This function aims to evenly resample the input curve defined by the ND points 
-`V` using `n` points. The function returns the resampled points as well as the 
-spline interpolator `S` used. The output points can also be retriebed by using: 
-`S.(range(0.0, 1.0, n))`. 
+`V` using `n` points. 
 Note that the even sampling is defined in terms of the curve length for a 4th 
 order natural B-spline that interpolates the input data. Hence if significant 
 curvature exists for the B-spline between two adjacent data points then the 
 spacing between points in the output may be non-uniform (despite the along 
 B-spline distance being uniform). 
+
+Input parameters: 
+    `V` : A vector of points defining the curve
+    `n` : The number of points to use for resampling
+
+Keyword arguments: 
+    `rtol`  : The `rtol` parameter, default is 1e-8, for `quadgk` based 
+              integration
+    `niter` : The number of iterations for repeated geodesic distance 
+              estimation. The default is 1.          
+    `spline_order`  : The `BSplineOrder` spline order, default is 4. 
+    `close_loop`    : `true` or `false` to set if the curve is to be assumed 
+                      closed or not. 
 """
 function evenly_sample(V::Vector{Point{ND,TV}}, n::Int; rtol=1e-8, niter=1, spline_order=4, close_loop=false) where ND where TV<:Real
+    S, _, D = make_geospline(V; rtol=rtol, niter=niter, spline_order=spline_order, close_loop=close_loop)
 
-    S,_,D = make_geospline(V; rtol=rtol, niter=niter, spline_order=spline_order, close_loop=close_loop)
-
-    # Even range for curve distance 
-    if close_loop 
-        l_end = D - D/n
-    else
-        l_end = D
+    if close_loop # Closed curve so interpolate up to 1 step back from closed end distance 
+        l_end = D - D/n 
+    else # Open curve
+        l_end = D # End is simply D which is the total curve length 
     end
-    l = range(0.0, l_end, n)     
+    l = range(0.0, l_end, n) # Even range for curve distance
 
     return S.(l) # Evaluate interpolator at even distance increments
 end
 
-function make_geospline(V::Vector{Point{ND,TV}}; rtol = 1e-8, niter = 10, spline_order=4, close_loop=false) where ND where TV<:Real
+"""
+    make_geospline(V::Vector{Point{ND,TV}}; rtol = 1e-8, niter = 10, spline_order=4, close_loop=false) where ND where TV<:Real
+
+Creates geodesic spline 
+
+# Description
+
+This function returns a geodesic spline interpolator for the input curve defined 
+by the ND points `V`. The spline interpolator `S` is parameterised using 
+curve length. Hence for a curve of length L an evenly spaced set of n points 
+can be obtained using: `S.(range(0.0, L, n))`.  
+Note that the even sampling is defined in terms of the curve length for a 4th 
+order natural B-spline that interpolates the input data. Hence if significant 
+curvature exists for the B-spline between two adjacent data points then the 
+spacing between points in the output may be non-uniform (despite the along 
+B-spline distance being uniform). 
+
+Input parameters: 
+    `V`  : A vector of points defining the curve
+
+Keyword arguments: 
+    `rtol`  : The `rtol` parameter, default is 1e-8, for `quadgk` based 
+              integration
+    `niter` : The number of iterations for repeated geodesic distance 
+              estimation. The default is 1.          
+    `spline_order`  : The `BSplineOrder` spline order, default is 4. 
+    `close_loop`    : `true` or `false` to set if the curve is to be assumed 
+                      closed or not.          
+"""
+function make_geospline(V::Vector{Point{ND,TV}}; rtol = 1e-8, niter = 1, spline_order=4, close_loop=false) where ND where TV<:Real
     LL = curve_length(V) # Initialise as along curve (multi-linear) distance
     if close_loop
-        D = last(LL) + norm(V[1]-V[end])
+        D = last(LL) + norm(V[1]-V[end]) # Use last plus end step to close loop
         bc = BSplineKit.Periodic(D) # Use periodic bc for closed curves
     else
-        D = last(LL)  
-        bc = BSplineKit.Natural() # Otherwise use natural
+        D = last(LL) # Just last distance
+        bc = BSplineKit.Natural() # Use natural
     end
     S = BSplineKit.interpolate(LL, deepcopy(V), BSplineOrder(spline_order), bc) # Create interpolator
 
-    L = zeros(eltype(LL),length(LL)) # Initialise spline length vector
+    L = zeros(eltype(LL), length(LL)) # Initialise spline length vector
     @inbounds for _ in 1:niter
         dS = BSplineKit.Derivative() * S  # spline derivative        
         @inbounds for i in 2:lastindex(LL) 
             # Compute length of segment [i-1, i]   
-            L[i] = L[i - 1] + integrate_segment_(dS,LL[i-1], LL[i],rtol)    
+            L[i] = L[i - 1] + integrate_segment_(dS, LL[i-1], LL[i], rtol)    
         end
         
         if close_loop 
-            D = last(L) + integrate_segment_(dS,LL[end], D,rtol)           
+            D = last(L) + integrate_segment_(dS, LL[end], D, rtol)           
             bc = BSplineKit.Periodic(D)                   
         else
             D = last(L)
@@ -4118,16 +4283,47 @@ function make_geospline(V::Vector{Point{ND,TV}}; rtol = 1e-8, niter = 10, spline
         S = BSplineKit.interpolate(L, deepcopy(V), BSplineOrder(spline_order), bc) # Create interpolator
         LL = L
     end
-    return S,L,D
+    return S, L, D
 end
 
-function integrate_segment_(dS,l1,l2,rtol)
+function integrate_segment_(dS, l1, l2, rtol)
     segment_length, _ = quadgk(l1, l2; rtol) do t
         norm(dS(t))  # integrate |S'(t)| in segment [i, i + 1]
     end    
     return segment_length
 end
 
+"""
+    evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8, niter = 1, spline_order=4, close_loop=false, must_points=nothing) where ND where TV<:Real
+
+Evenly space curve points. 
+
+# Description
+
+This function aims to evenly space the input curve defined by the ND points 
+`V` using the point spacing `pointSpacing` points. 
+The function returns the resampled points as well as the 
+spline interpolator `S` used. The output points can also be retriebed by using: 
+`S.(range(0.0, 1.0, n))`. 
+Note that the even sampling is defined in terms of the curve length for a 4th 
+order natural B-spline that interpolates the input data. Hence if significant 
+curvature exists for the B-spline between two adjacent data points then the 
+spacing between points in the output may be non-uniform (despite the along 
+B-spline distance being uniform). 
+
+Input parameters: 
+    `V` : A vector of points defining the curve
+    `pointSpacing` : The point spacing to use for resampling
+    
+Keyword arguments: 
+    `rtol`  : The `rtol` parameter, default is 1e-8, for `quadgk` based 
+              integration
+    `niter` : The number of iterations for repeated geodesic distance 
+              estimation. The default is 1.          
+    `spline_order`  : The `BSplineOrder` spline order, default is 4. 
+    `close_loop`    : `true` or `false` to set if the curve is to be assumed 
+                      closed or not. 
+"""
 function evenly_space(V::Vector{Point{ND,TV}}, pointSpacing=nothing; rtol = 1e-8, niter = 1, spline_order=4, close_loop=false, must_points=nothing) where ND where TV<:Real
     if isnothing(pointSpacing)
         pointSpacing = pointspacingmean(V)
@@ -4631,8 +4827,8 @@ function regiontrimesh(VT,R,P; numSmoothSteps=25, gridtype=:equilateral)
         end
         
         # Adding interior points 
-        xSpan =[minimum([v[1] for v in Vn]),maximum([v[1] for v in Vn])]
-        ySpan =[minimum([v[2] for v in Vn]),maximum([v[2] for v in Vn])]
+        xSpan =[minimum([v[1] for v in Vn]), maximum([v[1] for v in Vn])]
+        ySpan =[minimum([v[2] for v in Vn]), maximum([v[2] for v in Vn])]
         if gridtype == :equilateral
             Vg = gridpoints_equilateral(xSpan,ySpan,pointSpacing)        
         elseif gridtype == :Cartesian
@@ -4640,9 +4836,14 @@ function regiontrimesh(VT,R,P; numSmoothSteps=25, gridtype=:equilateral)
             Vg = gridpoints(xSpan[1]:pointSpacing:xSpan[2], ySpan[1]:pointSpacing:ySpan[2], 0.0)
         end
 
-        zMean = mean([v[3] for v in Vn])
+        if length(Vn[1]) == 3
+            zMean = mean([v[3] for v in Vn])
+        else
+            zMean = 0.0
+        end
+
         Vn = append!(Vn,Vg)        
-        Vn = [Point{3,Float64}(v[1],v[2],zMean) for v in Vn] # Force zero z-coordinate
+        Vn = [Point{3,Float64}(v[1],v[2], zMean) for v in Vn] # Force mean z-coordinate
         if gridtype == :Cartesian
             f = [1.0 γ 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0] # Deformation gradient tensor
             Vn = [Point{3,Float64}(f*v) for v in Vn] # Deform grid
@@ -5992,15 +6193,15 @@ Computes the Euler characteristic
 This function computes the Euler characteristic for the input surface defined by 
 the faces `F` and vertices `V`. The edges `E` are on optional input. 
 The Euler characteristic is defined as: 
-`X = nV-nE-nF`
+`X = nV-nE+nF`
 , where `nV`, `nE`, and `nF` define the number of surface vertices, edges, and 
 faces respectively. It is assumed all inputs are set of unique entities, e.g. 
 no vertices, edges, or faces occur multiple times. 
 """
-function eulerchar(F,V=nothing,E=nothing)
+function eulerchar(F, V=nothing, E=nothing)
     nf = length(F)
     if isnothing(V)
-        nv = maximum(reduce(vcat,F)) # Use largest index (assumes all points used in mesh)
+        nv = maximum(reduce(vcat, F)) # Use largest index (assumes all points used in mesh)
     else
         nv = length(V)
     end
@@ -10431,6 +10632,397 @@ function quadcylinder(r::Tr, h::Th, n::Int; nh=0) where Tr<:Real where Th<:Real
     F, V, C = joingeom(F1, V1, F2, V2, F3, V3) # Just join 
     F, V = mergevertices(F, V) # Now merge nodes 
     return F, V, C
+end
+
+"""
+    wsdf(xr::Union{Vector{T}, AbstractRange{T}}, yr::Union{Vector{T}, AbstractRange{T}}, zr::Union{Vector{T}, AbstractRange{T}}, P::Union{Vector{Point{ND,TV}}, Vector{Vec{ND,TV}}}, R::Vector{TR}; closest_type=:weighted) where {T<:Real, TV<:Real, TR<:Real, ND}
+
+Weighted signed distance function
+
+# Description
+This function computes the weighted signed distance function. The input consists 
+of coordinates ranges `xr`, `yr`, and `zr`, which define a 3D grid of 
+coordinates for the voxel centres for the output image array `M`. The input `P` 
+is a vector of points and `R` defines the weight for each of these points. The 
+output consists of the 3D array `M` whose values are the weighted 
+distance of the type `(d/r - 1.0)`, where d is the distance from a voxel centre 
+to a point in `P` and `r` is the corresponding weight for that point in `R`. 
+If the point set `P` define a vessel centre line structure then `R` is 
+equivalent to a radius for each point. The distance metric in `M` will then be 
+0.0 at the vessel surface, be positive outside the vessel, and be negative 
+inside the vessel. The returned distance values in `M` are for the closests 
+points in `P`. The optional keyword argument `closest_type` controls what are 
+considered the closests points, i.e. if the normals Euclidian distance is used 
+to find the closest points or if the weighted distance is used. Note that the 
+output features the weighted distance irrespective of `closest_type`, in other 
+words the choice of `closest_type` only influences what is considered the 
+closest point, not what distance is returned.  
+
+    `closest_type`: If set to `:weighted` (default) then the closest point check
+                    is based on the weighted distance `(d/r - 1.0)`. 
+                    If set to `:nearest` then the closest point check is based 
+                    on the Euclidean distance `d`. 
+
+"""
+function wsdf(xr::Union{Vector{T}, AbstractRange{T}}, 
+              yr::Union{Vector{T}, AbstractRange{T}}, 
+              zr::Union{Vector{T}, AbstractRange{T}}, 
+              P::Union{Vector{Point{ND,TV}}, Vector{Vec{ND,TV}}}, 
+              R::Vector{TR}; closest_type=:weighted) where {T<:Real, TV<:Real, TR<:Real, ND}
+    M = Array{Float64, 3}(undef, (length(xr), length(yr), length(zr))) # Allocate distance image
+    for (i, x) in enumerate(xr)
+        for (j, y) in enumerate(yr)
+            for (k, z) in enumerate(zr)
+                p_ijk = Point{3,Float64}(x, y, z) # Current grid point
+                M[i, j, k] = _wsdf(p_ijk, P, R; closest_type=closest_type)
+            end
+        end
+    end        
+    return M
+end
+
+"""
+    _wsdf(p_ijk::Point{ND,TV}, P::Union{Vector{Point{ND,TV}}, Vector{Vec{ND,TV}}}, R::Vector{TR}; closest_type=:weighted) where {TV<:Real, TR<:Real, ND}
+
+Local function for wsdf
+
+# Description
+This is a local function for wsdf which computes the weighted signed distance 
+for a single point of the input grid. 
+
+See also: `wsdf`
+"""
+function _wsdf(p_ijk::Point{ND,TV}, 
+              P::Union{Vector{Point{ND,TV}}, Vector{Vec{ND,TV}}}, 
+              R::Vector{TR}; closest_type=:weighted) where {TV<:Real, TR<:Real, ND}
+
+    dMin = Inf # Initialise minimum as Inf so any distance will be lower
+    if closest_type == :nearest
+        indMin = 0 # Start of index for lowest distance point as zero
+        for (indNow, p) in enumerate(P) # Loop over all object points                            
+            dNow = norm(p_ijk-p)
+            if dNow<dMin # Current distance smallest so far
+                dMin = dNow # Update minimum
+                indMin = indNow # Update index of minimum
+            end                    
+        end                
+        return dMin/R[indMin] - 1.0 # Weighted signed distance 
+    elseif closest_type == :weighted
+        for (indNow, p) in enumerate(P) # Loop over all object points                            
+            dNow = norm(p_ijk-p)/R[indNow] - 1.0 # Weighted signed distance 
+            if dNow<dMin # Current distance smallest so far
+                dMin = dNow # Update minimum
+            end                    
+        end                
+        return dMin     
+    else
+        throw(ArgumentError("Invalid closest_type option provided, valid options are :nearest and :weighted"))
+    end 
+end
+
+"""
+    cutends(FM::Vector{TriangleFace{Int}}, VM::Vector{Point{3, TV}}, P_cut_origins, P_cut_vec, D_cut_vec) where {TV<:Real}
+
+Cuts surfaces locally 
+
+# Description
+This function cuts the input surface, defined by the faces `FM` and points `VM`, 
+locally using cutting slices. The vector `P_cut_origins` defines a point on each
+cutting plate. The vector `P_cut_vec` contains the cutting plane normal vectors, 
+in addition the vectors define the direction of cutting. The vector `D_cut_vec`
+contains the distances to use to define the local cutting. The local cutting 
+takes place by ray tracing from the points in `P_cut_origins` allong the 
+directions `P_cut_vec`, next distance marching up to `D_cut_vec` defines the 
+region subjected to cutting.  
+"""
+function cutends(FM::Vector{TriangleFace{Int}}, VM::Vector{Point{3, TV}}, P_cut_origins, P_cut_vec, D_cut_vec) where {TV<:Real}
+    for (ray_origin, ray_vector, dNow) in zip(P_cut_origins, P_cut_vec, D_cut_vec)
+        _, indFaceIntersect, T, _, _ = ray_triangle_intersect(FM, VM, ray_origin, ray_vector; rayType = :ray, triSide = -1)
+        if !isempty(indFaceIntersect)
+            _, indMin = findmin(abs.(T))
+            indIntersect = collect(FM[indFaceIntersect[indMin]])            
+            d, _, _ = distmarch(FM, VM, indIntersect)
+            indCut = findall([maximum(d[f])<=dNow for f in FM])
+            FM, VM, CM, _ = trisurfslice(FM, VM, -ray_vector, ray_origin; output_type=:full, indCut=indCut)
+            FM = FM[CM.>0]
+        end
+    end
+    return FM, VM
+end
+
+"""
+    subedge(E::Vector{LineFace{Int}}, V::Vector{Point{N, TV}}, n::Int; method=:linear) where {N, TV<:Real}
+
+Splits edges iteratively
+
+# Description
+This function splits the edges defined by the edges `E` an and points `V`. The 
+algorithm runs `n` times and uses the method specified by the user. The 
+following methods are supported: 
+`:linear`   : This is the default method and uses linear splitting of each edge
+`:smooth`   : This uses "Loop" like edge subdivision for non branch/end points. 
+              For this method the original points are replaced by a 6/8 and 1/8 
+              weighted averaged for the original and the neighbouring points 
+              respectively.  
+"""
+function subedge(E::Vector{LineFace{Int}}, V::Vector{Point{N, TV}}, n::Int; method=:linear) where {N, TV<:Real}
+    if !in(method,(:linear, :smooth))
+        throw(ArgumentError("Invalid method provided, valid options are :linear, and :smooth"))
+    end
+
+    if iszero(n) 
+        # n=0 so just return input 
+        return E, V
+    elseif isone(n)
+        # n=1 so do one iteration 
+        m = length(V)
+        if method==:smooth
+            Vs = Vector{Point{N, TV}}(undef, m)
+            con_V2V = con_vertex_vertex(E, V) # Get vertex-vertex connectivity
+            for (i, v_i) in enumerate(V)
+                if length(con_V2V[i])==2 # If non-branch or end point
+                    # Replace input points with weighted/smoothed point
+                    Vs[i] = 6/8*v_i + 1/8*(V[con_V2V[i][1]]+V[con_V2V[i][2]]) 
+                else
+                    Vs[i] = v_i
+                end
+            end
+        else
+            Vs = deepcopy(V)
+        end
+        append!(Vs, simplexcenter(E, V)) 
+        Es = Vector{LineFace{Int}}(undef, 2*length(E))
+        @inbounds for (i, e) in enumerate(E)
+            ii = 1 + (i-1)*2
+            Es[ii]   = LineFace{Int}(e[1], i+m)
+            Es[ii+1] = LineFace{Int}(i+m, e[2])
+        end
+        return Es, Vs
+    elseif n>1
+        # n is more than 1 so repeat single iteration n times
+        for _ in 1:n
+            E, V = subedge(E, V, 1; method=method)
+        end
+        return E, V
+    end
+end
+
+"""
+    meshgeodesic(F::Vector{NgonFace{N, Int}}, V::Vector{Point{ND, TV}}, indStart, indEnd; con_V2V=nothing) where {N, ND, TV<:Real}
+
+Computes geodesic paths
+
+# Description
+This function computes the on-mesh geodesic path from the start point defined by
+`indStart` and the end point defined by `indEnd`. 
+
+Input parameters: 
+    `F`         : Vector of faces
+    `V`         : Vector of points
+    `indStart`  : Index of path start point in `V`
+    `indEnd`    : Index of path end point in `V`
+    
+Keyword arguments: 
+    `con_V2V`   : The vertex-vertex connectivity e.g. as per functions like
+                  `con_vertex_vertex_f`   
+"""
+function meshgeodesic(F::Vector{NgonFace{N, Int}}, V::Vector{Point{ND, TV}}, indStart, indEnd; con_V2V=nothing) where {N, ND, TV<:Real}
+    # Get/compute point-point connectivity
+    if isnothing(con_V2V)              
+        con_V2V = con_vertex_vertex_f(F, V) # Get point-point connectivity array
+    end        
+
+    # Compute allong surface distance from start point 
+    d, dd, _ = distmarch(F, V, [indStart]; con_V2V=con_V2V) # Compute distances marched from start 
+    
+    # Now walk back from end to start using nearest point path
+    pathVec = Vector{Int}() # Vector to store path point indices
+    distVec = Vector{Float64}() # Vector to store allong path distances 
+    if !isnan(d[indEnd])        
+        indStep = indEnd # Initial step is end 
+        push!(pathVec, indStep) # Add end index to path point indices 
+        push!(distVec, d[indStep]) # Add end distance to path distances
+        while indStep != indStart # While the current step is not the start point 
+            indUmbrella = con_V2V[indStep] # Indices of "Laplacian" umbrella i.e. neighours        
+            for j in indUmbrella
+                if d[indStep] == d[j]+dd[sort((indStep, j))]                
+                    indStep = j # Update indStep
+                    pushfirst!(pathVec, j) # Add new index to path point index vector
+                    pushfirst!(distVec, d[j]) # Add new distance to path distance vector
+                    break
+                end
+            end
+        end        
+    end
+    return pathVec, distVec
+end
+   
+"""
+    hextube(Ri, Ro, L, nθ::Int64, nr::Int64, nz::Int64)
+
+Generate a structured hexahedral mesh for a tube.
+
+Input parameters:
+    `Ri`  : Inner radius of the tube.
+    `Ro`  : Outer radius of the tube.
+    `L`   : Length of the tube in the positive z-direction.
+    `nθ`  : Number of circumferential elements.
+    `nr`  : Number of radial elements.
+    `nz`  : Number of axial elements.
+
+Returns:
+    `E_hex` : Hexahedral element connectivity.
+    `V_hex` : Mesh vertex coordinates.
+    `F`     : All faces of the hexahedral mesh.
+    `Fb`    : Boundary faces of the mesh.
+    `Cb`    : Boundary face labels:
+              1 = bottom surface (z = 0),
+              2 = top surface (z = L),
+              3 = inner cylindrical wall,
+              4 = outer cylindrical wall.
+
+The function creates a quadrilateral annular cross-section between the
+inner and outer radii and extrudes it in the positive z-direction to
+generate the hexahedral tube mesh.
+"""
+function hextube(Ri, Ro, L, nθ::Int64, nr::Int64, nz::Int64)
+
+    V1 = circlepoints(Ri, nθ)
+    V2 = circlepoints(Ro, nθ)
+    Fb, V = loftlinear(V1, V2; num_steps=nr+1, close_loop=true, face_type=:quad)
+    N = fill(GeometryBasics.Vec{3,Float64}(0.0, 0.0, 1.0), length(V))
+    E_hex, V_hex = extrudefaces(Fb, V; extent=L, direction=:positive, num_steps=nz+1, N=N)
+    F = element2faces(E_hex)
+    Fb = boundaryfaces(E_hex)
+    Nb = facenormal(Fb, V_hex)
+    c = facecentroid(Fb, V_hex)
+
+    Cb = zeros(Int, length(Fb))
+    for (i, n) in enumerate(Nb)
+        d = dot(n, [0.0, 0.0, 1.0])
+        if d > 0.5
+            Cb[i] = 1                                    # bottom, z = 0
+        elseif d < -0.5
+            Cb[i] = 2                                    # top,    z = L
+        else
+            if n[1]*c[i][1] + n[2]*c[i][2] > 0.0
+                Cb[i] = 3                                # inner wall
+            else
+                Cb[i] = 4                                # outer wall
+            end
+        end
+    end
+    return E_hex, V_hex, F,Fb,Cb
+end
+
+"""
+    tettube(Ri, Ro, L, nθ::Int64, nr::Int64, nz::Int64; meshType=1)
+
+Generate a tetrahedral mesh for a tube.
+
+Input parameters::
+    `Ri`       : Inner radius of the tube.
+    `Ro`       : Outer radius of the tube.
+    `L`        : Length of the tube in the positive z-direction.
+    `nθ`        : Number of circumferential elements.
+    `nr`        : Number of radial elements.
+    `nz`        : Number of axial elements.
+    `meshType` : Tetrahedral conversion type. If an integer in the range
+                 1–14 is provided, the same conversion type is applied
+                 to all hexahedral elements. Alternatively, a vector of
+                 integers can be provided to specify the conversion type
+                 for each hexahedral element individually.
+
+Returns:
+    `E_tet` : Tetrahedral element connectivity.
+    `V_tet` : Mesh vertex coordinates.
+    `F`     : All faces of the tetrahedral mesh.
+    `Fb`    : Boundary faces of the mesh.
+    `Cb`    : Boundary face labels:
+              1 = bottom surface (z = 0),
+              2 = top surface (z = L),
+              3 = inner cylindrical wall,
+              4 = outer cylindrical wall.
+
+The function first generates a structured hexahedral mesh of the 
+tube and then converts the hexahedral elements into
+tetrahedral elements according to `meshType`. The boundary faces are
+subsequently identified and classified based on their outward normals
+and centroid positions.
+"""
+function tettube(Ri, Ro, L, nθ::Int64, nr::Int64, nz::Int64;  meshType=1)
+
+    if nθ < 3
+        throw(ArgumentError("nθ is too low. Must be larger than 2"))
+    end 
+    V1 = circlepoints(Ri, nθ)
+    V2 = circlepoints(Ro, nθ)
+    Fb, V = loftlinear(V2, V1; num_steps=nr+1, close_loop=true, face_type=:quad)
+    N = fill(GeometryBasics.Vec{3,Float64}(0.0, 0.0, 1.0), length(V))
+    E_hex, V_hex = extrudefaces(Fb, V; extent=L, direction=:positive, num_steps=nz+1, N=N)
+    V_tet = V_hex
+    E_tet = hex2tet(E_hex, meshType)
+    Fb = boundaryfaces(E_tet)
+    F = element2faces(E_tet)
+    Nb = facenormal(Fb, V_tet)
+    c = facecentroid(Fb, V_tet)
+
+    Cb = zeros(Int, length(Fb))
+    for (i, n) in enumerate(Nb)
+        d = dot(n, [0.0, 0.0, 1.0])
+        if d > 0.5
+            Cb[i] = 2                                    # top, z = L
+        elseif d < -0.5
+            Cb[i] = 1                                    # bottom, z = 0
+        else
+            if n[1]*c[i][1] + n[2]*c[i][2] > 0.0
+                Cb[i] = 4                                # outer wall
+            else
+                Cb[i] = 3                                # inner wall
+            end
+        end
+    end
+    return E_tet, V_tet, F, Fb,Cb
+end
+
+"""
+    tetgen_tube(Ri, Ro, L, pointSpacing)
+
+Generate a tetrahedral mesh of a tube using TetGen.
+
+Arguments:
+    `Ri`          : Inner radius of the tube.
+    `Ro`          : Outer radius of the tube.
+    `L`           : Length of the tube in the positive z-direction.
+    `pointSpacing`: Target spacing between mesh points.
+
+Returns:
+    `E_tet`   : Tetrahedral element connectivity.
+    `V_tet`   : Coordinates of the mesh vertices.
+    `F`       : All faces of the tetrahedral mesh.
+    `CE`      : Element markers associated with the tetrahedral elements.
+    `Fb_out`  : Boundary faces of the tetrahedral mesh.
+    `Cb_out`  : Boundary face markers.
+
+"""
+function tetgen_tube(Ri, Ro, L, pointSpacing)
+
+    n_in = ceil(Int, 2π*Ri/pointSpacing)
+    n_out = ceil(Int, 2π*Ro/pointSpacing)
+    V_in = circlepoints(Ri, n_in)
+    V_out = circlepoints(Ro, n_out)
+    F_wi, V_wi = extrudecurve(V_in; extent=L, direction=:positive, close_loop=true, face_type=:tri)
+    invert_faces!(F_wi)
+    F_wo, V_wo = extrudecurve(V_out; extent=L, direction=:positive, close_loop=true, face_type=:tri)
+    F_top, V_top, _ = regiontrimesh((V_out, V_in), ([1, 2],), (pointSpacing,))
+    F_bot = invert_faces(F_top)
+    V_bot = deepcopy(V_top)
+    V_top .+= Point{3,Float64}(0.0, 0.0, L)
+    Fb, Vb, Cb = joingeom(F_bot, V_bot, F_top, V_top, F_wi, V_wi, F_wo, V_wo)
+    Fb, Vb, _, _ = mergevertices(Fb, Vb; pointSpacing=pointSpacing)
+    E_tet, V_tet, CE, Fb_out, Cb_out = tetgenmesh(Fb, Vb; facetmarkerlist=Cb, stringOpt="paAqQ")
+    F = element2faces(E_tet)
+    return E_tet, V_tet, F, CE, Fb_out, Cb_out
 end
 
 #= 

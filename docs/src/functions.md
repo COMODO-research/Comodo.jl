@@ -341,6 +341,31 @@ Comodo.pointspacingmin
 Comodo.pointspacingmax
 ```
 
+## `extrudecurve`
+```@docs
+Comodo.extrudecurve
+```
+
+## `meshgroup`
+```@docs
+Comodo.meshgroup
+```
+
+## `distmarch`
+```@docs
+Comodo.distmarch
+```
+
+## `distseedpoints`
+```@docs
+Comodo.distseedpoints
+```
+
+## `seedpoints2mesh`
+```@docs
+Comodo.seedpoints2mesh
+```
+
 ## `ray_triangle_intersect`
 ```@docs
 Comodo.ray_triangle_intersect
@@ -1004,4 +1029,44 @@ Comodo.tricylinder
 ## `quadcylinder`
 ```@docs 
 Comodo.quadcylinder
+```
+
+## `wsdf`
+```@docs 
+Comodo.wsdf
+```
+
+## `_wsdf`
+```@docs 
+Comodo._wsdf
+```
+
+## `cutends`
+```@docs 
+Comodo.cutends
+```
+
+## `subedge`
+```@docs 
+Comodo.subedge
+```
+
+## `meshgeodesic`
+```@docs 
+Comodo.meshgeodesic
+```
+
+## `hextube`
+```@docs 
+Comodo.hextube
+```
+
+## `tettube`
+```@docs 
+Comodo.tettube
+```
+
+## `tetgen_tube`
+```@docs 
+Comodo.tetgen_tube
 ```

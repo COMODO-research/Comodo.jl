@@ -12,7 +12,7 @@ for a 3D sphere domain.
 r = 1.0 # Radius
 
 pointSpacing = 0.5
-F,V,C = quadsphere(r,pointSpacing)
+F,V,C = quadsphere(r, pointSpacing)
 
 ## Visualization
 GLMakie.closeall()

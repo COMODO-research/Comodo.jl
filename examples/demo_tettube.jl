@@ -4,17 +4,21 @@ using Comodo.GeometryBasics
 using Comodo.Statistics
 
 #=
-This demo shows the use of `hexbox` to generate a hexahedral mesh for a 3D box
+This demo shows the use of `tettube` to generate a tetrahedral mesh for a tube
 domain. 
 =#
 
-pointSpacing = 0.5
-boxDim = [2.5,3.1,4] # Dimensionsions for the box in each direction
-boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
+Ri, Ro = 20.0, 25.0
+L = 80.0
+nθ = 30
+nr = 4
+nz = 10
 
-E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
+E,V,F,Fb,CFb_type = tettube(Ri, Ro, L, nθ, nr, nz; meshType=3)
 
 # Visualisation
+GLMakie.closeall()
+
 cmap = Makie.Categorical(:Spectral) 
 
 Fbs,Vbs = separate_vertices(Fb,V)
@@ -23,13 +27,13 @@ M = GeometryBasics.Mesh(Vbs,Fbs)
 
 fig = Figure(size=(1600,800))
 
-ax1 = AxisGeom(fig[1, 1], title = "Boundary faces with boundary markers for the hexahedral mesh")
+ax1 = AxisGeom(fig[1, 1], title = "Boundary faces with boundary markers for the tetrahedral mesh")
 hp2 = meshplot!(ax1, Fbs, Vbs; strokewidth=3, color=Cbs_V, colormap=cmap)
-hp3 = normalplot(ax1, Fbs, Vbs; type_flag=:face, color=:black,linewidth=3)
+# hp3 = normalplot(ax1, Fbs, Vbs; type_flag=:face, color=:black,linewidth=3)
 
 Colorbar(fig[1, 2], hp2)
 
-ax2 = AxisGeom(fig[1, 3], title = "Cut view of hexahedral mesh")
+ax2 = AxisGeom(fig[1, 3], title = "Cut view of tetrahedral mesh")
 hp3 = meshplot!(ax2, Fbs, Vbs; strokewidth=3, color=:white)
 
 VE  = simplexcenter(E,V)
@@ -57,4 +61,5 @@ on(hSlider.value) do z
 end
 slidercontrol(hSlider,ax2)
 
-fig
+display(GLMakie.Screen(), fig)
+

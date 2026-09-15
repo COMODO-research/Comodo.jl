@@ -10,10 +10,18 @@ for testCase = 1:2
         F,V = platonicsolid(4,r) # Get icosahedron    
         F = F[2:end-1]
         F,V = subtri(F,V,1)
+
+        indE = 41
+        indF = 5
+        indV = 2
     elseif testCase ==2
         r = 1 
         F,V = platonicsolid(2,r) # Get icosahedron    
         F,V = subquad(F,V,2)
+
+        indE = 41
+        indF = 8
+        indV = 5
     end
 
     E = meshedges(F)
@@ -35,9 +43,7 @@ for testCase = 1:2
     con_V2F = C.vertex_face
     con_V2V = C.vertex_vertex
 
-    indE = 41
-    indF = 5
-    indV = 2
+
 
     fig = Figure(size=(1200,800))
 

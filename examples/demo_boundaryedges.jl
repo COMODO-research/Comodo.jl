@@ -20,7 +20,7 @@ GLMakie.closeall()
 
 fig = Figure(size=(1200,800))
 ax1 = AxisGeom(fig[1, 1]; title = "Boundary curve")
-hp1 = meshplot!(ax1, F, V)
+hp1 = meshplot!(ax1, F, V; color=(:white, 0.5), transparency=true)
 hp2 = edgeplot!(ax1, Eb, V; color=:red, linewidth=4.0f0)
 Legend(fig[1, 2],[hp1,hp2],["Surface","Boundary edges"])
 fig

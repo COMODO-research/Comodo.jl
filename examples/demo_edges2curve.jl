@@ -38,7 +38,6 @@ for testCase = 1:3
         
         VC = simplexcenter(Eb,V) # Finding triangle centre coordinates
         Eb = [Eb[i] for i in findall(map(v-> v[3]>tol_level,VC))] # Remove some faces using z of central coordinates
-        
     end 
 
     # Using `edges2curve` to convert the set of boundary edges to a list of points defining a curve
@@ -51,7 +50,7 @@ for testCase = 1:3
     fig = Figure(size=(1200,1200))
     ax1 = AxisGeom(fig[1, 1], title = "Boundary edges converted to curve")
 
-    hp1 = meshplot!(ax1, F, V)
+    hp1 = meshplot!(ax1, F, V; color=(:white, 0.5), transparency=true)
 
     if !isempty(ind)
         hp2 = lines!(ax1,V[ind], color = :red, linewidth = linewidth)

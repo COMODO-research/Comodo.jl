@@ -4,17 +4,21 @@ using Comodo.GeometryBasics
 using Comodo.Statistics
 
 #=
-This demo shows the use of `hexbox` to generate a hexahedral mesh for a 3D box
+This demo shows the use of `hextube` to generate a hexahedral mesh for a tube
 domain. 
 =#
 
-pointSpacing = 0.5
-boxDim = [2.5,3.1,4] # Dimensionsions for the box in each direction
-boxEl = ceil.(Int,boxDim./pointSpacing) # Number of elements to use in each direction 
+Ri, Ro = 20.0, 25.0
+L = 80.0
+nθ = 50
+nr = 2
+nz = 5 
 
-E,V,F,Fb,CFb_type = hexbox(boxDim,boxEl)
+E,V,F,Fb,CFb_type = hextube(Ri, Ro, L, nθ, nr, nz)
 
 # Visualisation
+GLMakie.closeall()
+
 cmap = Makie.Categorical(:Spectral) 
 
 Fbs,Vbs = separate_vertices(Fb,V)
@@ -57,4 +61,4 @@ on(hSlider.value) do z
 end
 slidercontrol(hSlider,ax2)
 
-fig
+display(GLMakie.Screen(), fig)

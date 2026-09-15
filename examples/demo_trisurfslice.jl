@@ -32,7 +32,7 @@ for testCase = 1:3
     end
 
     # Input parameters
-    p = mean(V,dims=1)[1]; # Point on cutting plane
+    p = surface_centroid(F, V); # Point on cutting plane
     n = normalizevector(Vec{3, Float64}(0.0, 1.0, 1.0))# Cutting plane normal
     snapTolerance = 1e-6
 
@@ -56,13 +56,14 @@ for testCase = 1:3
     fig = Figure(size=(1200, 800))
 
     ax1 = AxisGeom(fig[1, 1], title = "")    
-    hp1 = edgeplot!(ax1, FG1, VGn, linewidth=5, color=:red) # Show plate 
-    hp2 = meshplot!(ax1, Fns, Vns, color=Cns_V, colorrange = (-2.5, 2.5), colormap=cmap) # Show mesh colored to sliced state
+    hp1 = meshplot!(ax1, FG1, VGn; strokewidth=2, strokecolor=:red, color=(:red, 0.1), transparency=true) # Show plate 
+    hp2 = meshplot!(ax1, Fns, Vns; color=Cns_V, colorrange = (-2.5, 2.5), colormap=cmap) # Show mesh colored to sliced state
     Colorbar(fig[1, 2], hp2, ticks=-2:1:2)
 
     ax2 = AxisGeom(fig[1, 3], title = "A sliced mesh")    
     hp3 = meshplot!(ax2, Fn[Cn.<=0], Vn) # Show one side of sliced mesh 
     hp4 = edgeplot!(ax2, En, Vn, linewidth=3, color=:blue) # Show cut edge
+    hp5 = meshplot!(ax2, FG1, VGn; strokewidth=2, strokecolor=:red, color=(:red, 0.1), transparency=true) # Show plate 
 
     Legend(fig[1, 4], [hp3, hp4], ["Sliced surface", "Cut boundary edges"])
     stepRange = range(-s, s, 500)
@@ -93,6 +94,7 @@ for testCase = 1:3
             hp4.visible=true
             hp4[1] = GeometryBasics.Mesh(Vn, En)
         end
+        hp5[1] = GeometryBasics.Mesh(VGn, FG1)
     end
 
     slidercontrol(hSlider,ax1)
