@@ -7,6 +7,7 @@ GeometryBasics.@fixed_vector HexahedronElement = AbstractElement
 GeometryBasics.@fixed_vector TruncatedoctahedronElement = AbstractElement
 GeometryBasics.@fixed_vector RhombicdodecahedronElement = AbstractElement
 GeometryBasics.@fixed_vector TriangleElement = AbstractElement
+GeometryBasics.@fixed_vector QuadElement = AbstractElement
 GeometryBasics.@fixed_vector PolygonElement = AbstractElement
 
 const Tet4{T} = TetrahedronElement{4,T} where T<:Integer
@@ -21,6 +22,7 @@ const Truncatedocta24{T} = TruncatedoctahedronElement{24,T} where T<:Integer
 const Rhombicdodeca14{T} = RhombicdodecahedronElement{14,T} where T<:Integer
 const Tri3{T} = TriangleElement{3,T} where T<:Integer
 const Tri6{T} = TriangleElement{6,T} where T<:Integer
+const Quad8{T} = QuadElement{8,T} where T<:Integer
 const PolyN{T} = PolygonElement{N,T} where T<:Integer where N
 
 """

@@ -41,7 +41,7 @@ export Distributions
 
 # Export (finite) element types
 export AbstractElement, TetrahedronElement, PentahedronElement, HexahedronElement, TruncatedoctahedronElement, RhombicdodecahedronElement
-export Tet4, Tet10, Tet15, Hex8, Hex20, Hex27, Penta6, Penta15, Rhombicdodeca14, Truncatedocta24, Tri3, Tri6,  PolyN
+export Tet4, Tet10, Tet15, Hex8, Hex20, Hex27, Penta6, Penta15, Rhombicdodeca14, Truncatedocta24, Tri3, Tri6, Quad8, PolyN
 
 # Export types/structs
 export ConnectivitySet
