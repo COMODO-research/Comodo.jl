@@ -11025,6 +11025,46 @@ function tetgen_tube(Ri, Ro, L, pointSpacing)
     return E_tet, V_tet, F, CE, Fb_out, Cb_out
 end
 
+function ngon6_tri6(e::NgonFace{6, Int})
+    indOrder = [1, 3, 5, 2, 4, 6]
+    return Tri6{Int}(e[indOrder])
+end
+
+function ngon6_tri6(E::Vector{NgonFace{6, Int}})
+    indOrder = [1, 3, 5, 2, 4, 6]
+    return [Tri6{Int}(e[indOrder]) for e in E]    
+end
+
+function tri6_ngon6(e::Tri6{Int})
+    indOrder = [1, 4, 2, 5, 3, 6]
+    return NgonFace{6, Int}(e[indOrder])
+end
+
+function tri6_ngon6(E::Vector{Tri6{Int}})
+    indOrder = [1, 4, 2, 5, 3, 6]
+    return [NgonFace{6, Int}(e[indOrder]) for e in E]    
+end
+
+function ngon8_quad8(e::NgonFace{8, Int})
+    indOrder = [1, 3, 5, 7, 2, 4, 6, 8]
+    return Quad8{Int}(e[indOrder])
+end
+
+function ngon8_quad8(E::Vector{NgonFace{8, Int}})
+    indOrder = [1, 3, 5, 7, 2, 4, 6, 8]
+    return [Quad8{Int}(e[indOrder]) for e in E]    
+end
+
+function quad8_ngon8(e::Quad8{Int})
+    indOrder = [1, 5, 2, 6, 3, 7, 4, 8]
+    return NgonFace{8, Int}(e[indOrder])
+end
+
+function quad8_ngon8(E::Vector{Quad8{Int}})
+    indOrder = [1, 5, 2, 6, 3, 7, 4, 8]
+    return [NgonFace{8, Int}(e[indOrder]) for e in E]    
+end
+
 #= 
    Copyright 2024-2026 Kevin Mattheus Moerman
 
