@@ -7,6 +7,7 @@ GeometryBasics.@fixed_vector HexahedronElement = AbstractElement
 GeometryBasics.@fixed_vector TruncatedoctahedronElement = AbstractElement
 GeometryBasics.@fixed_vector RhombicdodecahedronElement = AbstractElement
 GeometryBasics.@fixed_vector TriangleElement = AbstractElement
+GeometryBasics.@fixed_vector QuadElement = AbstractElement
 GeometryBasics.@fixed_vector PolygonElement = AbstractElement
 
 const Tet4{T} = TetrahedronElement{4,T} where T<:Integer
@@ -21,6 +22,7 @@ const Truncatedocta24{T} = TruncatedoctahedronElement{24,T} where T<:Integer
 const Rhombicdodeca14{T} = RhombicdodecahedronElement{14,T} where T<:Integer
 const Tri3{T} = TriangleElement{3,T} where T<:Integer
 const Tri6{T} = TriangleElement{6,T} where T<:Integer
+const Quad8{T} = QuadElement{8,T} where T<:Integer
 const PolyN{T} = PolygonElement{N,T} where T<:Integer where N
 
 """
@@ -10854,24 +10856,60 @@ function meshgeodesic(F::Vector{NgonFace{N, Int}}, V::Vector{Point{ND, TV}}, ind
     end
     return pathVec, distVec
 end
-   
-function spiralpoints_sphere(N::Int; φ=Base.MathConstants.golden)
+
+"""
+    spiralpoints_sphere(N::Int; φ=Base.MathConstants.golden)
+
+Spiral points on sphere
+
+# Description
+This function generations `N` points on a sphere which are distributed using a 
+3D spiral function. The default spiral angle `φ` is the golden ratio, which 
+means a 3D Fibonacci spiral is used. The points are approximately evenly 
+distributed on the sphere with a minor "North pole artifact". 
+
+Inputs: 
+    `N`: An integer defining the number of points 
+    `r`: The sphere radius
+
+Keyword arguments: 
+    `φ`: The spiral angle (default is: Base.MathConstants.golden)
+"""
+function spiralpoints_sphere(N::Int, r=1.0; φ=Base.MathConstants.golden)
     V = Vector{Point{3, Float64}}(undef, N)      
     for i in 1:N
         z = 2.0*i/(N+1.0)-1.0
-        r = sqrt(1.0 - z^2)        
+        rs = sqrt(1.0 - z^2)        
         theta = (2.0*π)*i/φ        
-        V[i] = Point{3, Float64}(r*cos(theta), r*sin(theta), z);        
+        V[i] = r .* Point{3, Float64}(rs*cos(theta), rs*sin(theta), z);        
     end
     return V
 end
 
-function spiralpoints_disc(N::Int; φ=Base.MathConstants.golden)
+"""
+    spiralpoints_disc(N::Int; φ=Base.MathConstants.golden)
+
+Spiral points on a disc
+
+# Description
+This function generations `N` points on a disc which are distributed using a 
+2D spiral function. The default spiral angle `φ` is the golden ratio, which 
+means a 2D Fibonacci spiral is used. The points are approximately evenly 
+distributed on the disc with a minor "central artifact". 
+
+Inputs: 
+    `N`: An integer defining the number of points 
+    `r`: The disc radius
+    
+Keyword arguments: 
+    `φ`: The spiral angle (default is: Base.MathConstants.golden)
+"""
+function spiralpoints_disc(N::Int, r=1.0; φ=Base.MathConstants.golden)
     V = Vector{Point{3, Float64}}(undef, N)      
     for i in 1:N        
-        r = sqrt(1.0 - i/(N+1.0))        
+        rs = r .* sqrt(1.0 - i/(N+1.0))        
         theta = (2.0*π)*i/φ        
-        V[i] = Point{3, Float64}(r*cos(theta), r*sin(theta), 0.0);        
+        V[i] = Point{3, Float64}(rs*cos(theta), rs*sin(theta), 0.0);        
     end
     return V
 end
@@ -11042,6 +11080,98 @@ function tetgen_tube(Ri, Ro, L, pointSpacing)
     E_tet, V_tet, CE, Fb_out, Cb_out = tetgenmesh(Fb, Vb; facetmarkerlist=Cb, stringOpt="paAqQ")
     F = element2faces(E_tet)
     return E_tet, V_tet, F, CE, Fb_out, Cb_out
+end
+
+"""
+    ngon6_tri6(e::NgonFace{6, Int})
+    ngon6_tri6(E::Vector{NgonFace{6, Int}})
+
+Converts 6-point NgonFace to Tri6 elements
+
+# Description
+This function converts 6-point NgonFace type faces to Tri6 type elements. The 
+main difference is the point order. 
+
+Inputs: 
+    `e` or `E`: An face or vector of faces 
+"""
+function ngon6_tri6(e::NgonFace{6, Int})
+    indOrder = [1, 3, 5, 2, 4, 6]
+    return Tri6{Int}(e[indOrder])
+end
+
+function ngon6_tri6(E::Vector{NgonFace{6, Int}})
+    indOrder = [1, 3, 5, 2, 4, 6]
+    return [Tri6{Int}(e[indOrder]) for e in E]    
+end
+
+"""
+    tri6_ngon6(e::Tri6{Int})
+    tri6_ngon6(E::Vector{Tri6{Int}})
+
+Converts Tri6 elements to NgonFace faces
+
+# Description
+This function converts Tri6 elements to 6-point NgonFace type faces. The 
+main difference is the point order. 
+
+Inputs: 
+    `e` or `E`: An element or vector of elements 
+"""
+function tri6_ngon6(e::Tri6{Int})
+    indOrder = [1, 4, 2, 5, 3, 6]
+    return NgonFace{6, Int}(e[indOrder])
+end
+
+function tri6_ngon6(E::Vector{Tri6{Int}})
+    indOrder = [1, 4, 2, 5, 3, 6]
+    return [NgonFace{6, Int}(e[indOrder]) for e in E]    
+end
+
+"""
+    ngon8_quad8(e::NgonFace{8, Int})
+    ngon8_quad8(E::Vector{NgonFace{8, Int}})
+
+Converts 8-point NgonFace to Quad8 elements
+
+# Description
+This function converts 8 point NgonFace type faces to Quad8 type elements. The
+main difference is the point order. 
+
+Inputs: 
+    `e` or `E`: An face or vector of faces 
+"""
+function ngon8_quad8(e::NgonFace{8, Int})
+    indOrder = [1, 3, 5, 7, 2, 4, 6, 8]
+    return Quad8{Int}(e[indOrder])
+end
+
+function ngon8_quad8(E::Vector{NgonFace{8, Int}})
+    indOrder = [1, 3, 5, 7, 2, 4, 6, 8]
+    return [Quad8{Int}(e[indOrder]) for e in E]    
+end
+
+"""
+    quad8_ngon8(e::Quad8{Int})
+    quad8_ngon8(E::Vector{Quad8{Int}})
+
+Converts Quad8 elements to NgonFace faces
+
+# Description
+This function converts Quad8 elements to 8-point NgonFace type faces. The 
+main difference is the point order. 
+
+Inputs: 
+    `e` or `E`: An element or vector of elements 
+"""
+function quad8_ngon8(e::Quad8{Int})
+    indOrder = [1, 5, 2, 6, 3, 7, 4, 8]
+    return NgonFace{8, Int}(e[indOrder])
+end
+
+function quad8_ngon8(E::Vector{Quad8{Int}})
+    indOrder = [1, 5, 2, 6, 3, 7, 4, 8]
+    return [NgonFace{8, Int}(e[indOrder]) for e in E]    
 end
 
 #= 

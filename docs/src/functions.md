@@ -1056,6 +1056,16 @@ Comodo.subedge
 Comodo.meshgeodesic
 ```
 
+## `spiralpoints_sphere`
+```@docs 
+Comodo.spiralpoints_sphere
+```
+
+## `spiralpoints_disc`
+```@docs 
+Comodo.spiralpoints_disc
+```
+
 ## `hextube`
 ```@docs 
 Comodo.hextube
@@ -1066,7 +1076,22 @@ Comodo.hextube
 Comodo.tettube
 ```
 
-## `tetgen_tube`
+## `ngon6_tri6`
 ```@docs 
-Comodo.tetgen_tube
+Comodo.ngon6_tri6
+```
+
+## `tri6_ngon6`
+```@docs 
+Comodo.tri6_ngon6
+```
+
+## `ngon8_quad8`
+```@docs 
+Comodo.ngon8_quad8
+```
+
+## `quad8_ngon8`
+```@docs 
+Comodo.quad8_ngon8
 ```

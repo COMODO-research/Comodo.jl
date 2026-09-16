@@ -40,7 +40,7 @@ module Comodo
 
     # Export (finite) element types
     export AbstractElement, TetrahedronElement, PentahedronElement, HexahedronElement, TruncatedoctahedronElement, RhombicdodecahedronElement
-    export Tet4, Tet10, Tet15, Hex8, Hex20, Hex27, Penta6, Penta15, Rhombicdodeca14, Truncatedocta24, Tri3, Tri6,  PolyN
+    export Tet4, Tet10, Tet15, Hex8, Hex20, Hex27, Penta6, Penta15, Rhombicdodeca14, Truncatedocta24, Tri3, Tri6, Quad8, PolyN
 
     # Export types/structs
     export ConnectivitySet
@@ -94,8 +94,8 @@ module Comodo
     export rand_incircle, rand_oncircle, rand_insphere, rand_onsphere, rand_onsphere_cone
     export cartesianIndexOffset, gradient, mixture_VonMisesFisher, hex8_hex20, hex8_hex27
     export svdRotPerms, surface_svd, surface_align_svd, icp, cylinder, tricylinder, quadcylinder
-    export wsdf, cutends, subedge, meshgeodesic, spiralpoints_sphere, spiralpoints_disc
-    export hextube, tettube, tetgen_tube
+    export wsdf, cutends, subedge, meshgeodesic, spiralpoints_sphere, spiralpoints_disc    
+    export hextube, tettube, tetgen_tube, ngon6_tri6, tri6_ngon6, ngon8_quad8, quad8_ngon8
 end # module
 
 #= 

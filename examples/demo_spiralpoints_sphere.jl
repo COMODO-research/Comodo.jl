@@ -3,12 +3,12 @@ using Comodo.GLMakie
 using Comodo.GeometryBasics
 
 N = 75
-V = spiralpoints_sphere(N)
+r = 2.25
+V = spiralpoints_sphere(N, r)
 
 # Visualisation
 GLMakie.closeall()
 
-r = 1.0 # radius
 F1, V1 = geosphere(6, r)
 N1 = vertexnormal(F1, V1)
 
@@ -36,7 +36,7 @@ stepRange1 = 1:2*N
 hSlider1 = Slider(fig[2, :][1, 2], range = stepRange1, startvalue = N,linewidth=32)
 
 on(hSlider1.value) do N
-    V = spiralpoints_sphere(N)
+    V = spiralpoints_sphere(N, r)
     V1m, D1 = morphSphere(V1, N1, V)   
     hp2[1] = V
     hp1[1] = GeometryBasics.Mesh(V1m, F1)

@@ -10589,7 +10589,7 @@ end
     end
 end
 
-@testset "tetgen tube" verbose = true begin
+@testset "tetgen_tube" verbose = true begin
     @testset "pointSpacing 2.0" begin
         Ri, Ro = 20.0, 25.0 ; L = 80.0
         pointSpacing = 2.0
@@ -10606,6 +10606,54 @@ end
         @test length(Fb1) == length(Fbq)
         @test typeof(Fb1) == typeof(F)
     end
+end
+
+@testset "ngon6_tri6" verbose = true begin
+    f = NgonFace{6, Int}(1, 4, 2, 5, 3, 6)
+    f_Tri6 = ngon6_tri6(f)
+    @test f_Tri6 == Tri6{Int}(collect(1:6))
+
+    F = [NgonFace{6, Int}(1, 4, 2, 5, 3, 6), 
+         NgonFace{6, Int}(7, 10, 8, 11, 9, 12)]
+    F_Tri6 = ngon6_tri6(F)
+    @test F_Tri6[1] == Tri6{Int}(collect(1:6))
+    @test F_Tri6[2] == Tri6{Int}(collect(7:12))
+end
+
+@testset "tri6_ngon6" verbose = true begin
+    f = Tri6{Int}(collect(1:6))    
+    f_Ngon6 = tri6_ngon6(f)
+    @test f_Ngon6 == NgonFace{6, Int}(1, 4, 2, 5, 3, 6)
+
+    F = [Tri6{Int}(collect(1:6)), 
+         Tri6{Int}(collect(7:12))]
+    F_Ngon6 = tri6_ngon6(F)
+    @test F_Ngon6[1] == NgonFace{6, Int}(1, 4, 2, 5, 3, 6)
+    @test F_Ngon6[2] == NgonFace{6, Int}(7, 10, 8, 11, 9, 12)
+end
+
+@testset "ngon8_quad8" verbose = true begin
+    f = NgonFace{8, Int}(1, 5, 2, 6, 3, 7, 4, 8)
+    f_Quad8 = ngon8_quad8(f)
+    @test f_Quad8 == Quad8{Int}(collect(1:8))
+
+    F = [NgonFace{8, Int}(1, 5, 2, 6, 3, 7, 4, 8), 
+         NgonFace{8, Int}(9, 13, 10, 14, 11, 15, 12, 16)]
+    F_Quad8 = ngon8_quad8(F)
+    @test F_Quad8[1] == Quad8{Int}(collect(1:8))
+    @test F_Quad8[2] == Quad8{Int}(collect(9:16))
+end
+
+@testset "quad8_ngon8" verbose = true begin
+    f = Quad8{Int}(collect(1:8))    
+    f_Ngon8 = quad8_ngon8(f)
+    @test f_Ngon8 == NgonFace{8, Int}(1, 5, 2, 6, 3, 7, 4, 8)
+
+    F = [Quad8{Int}(collect(1:8)), 
+         Quad8{Int}(collect(9:16))]
+    F_Ngon6 = quad8_ngon8(F)
+    @test F_Ngon6[1] == NgonFace{8, Int}(1, 5, 2, 6, 3, 7, 4, 8)
+    @test F_Ngon6[2] == NgonFace{8, Int}(9, 13, 10, 14, 11, 15, 12, 16)
 end
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
