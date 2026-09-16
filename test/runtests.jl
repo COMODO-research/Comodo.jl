@@ -10548,6 +10548,29 @@ end
     end
 end
 
+
+@testset "spiralpoints_sphere" verbose = true begin
+    N = 125 # Number of points
+    r = 2.25 # Radius of sphere
+    V = spiralpoints_sphere(N, r)
+    
+    # Testing 
+    R = norm.(V)
+    @test length(V) == N 
+    @test all(isapprox.(R, r, atol=1e-9))   
+end
+
+@testset "spiralpoints_disc" verbose = true begin
+    N = 125 # Number of points
+    r = 2.25 # Radius of disc
+    V = spiralpoints_disc(N, r)
+    
+    # Testing 
+    R = norm.(V)
+    @test length(V) == N 
+    @test all(R.<=r)    
+end
+
 @testset "hextube" verbose = true begin
     @testset "5x2x2 hex tube" begin
         Ri, Ro = 20.0, 25.0;
