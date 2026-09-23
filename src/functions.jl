@@ -8005,6 +8005,7 @@ hood" but features defaults that are common for mesh visualisation and geometry
 processing. Optional inputs include the full set for `poly`. 
 """
 function meshplot!(ax, F::Vector{NgonFace{N,Int}}, V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.001f0, color=:white, strokewidth=0.5f0, shading=true, strokecolor=:black, kwargs...) where N where NV where TV<:Real
+    # This version is for a mesh with a single face type i.e. N is constant
     if N == 2 # Edges, throw error
         throw(ArgumentError("Edge mesh detected. Use edgeplot! since meshplot! is for face based meshes."))
     else
@@ -8013,14 +8014,15 @@ function meshplot!(ax, F::Vector{NgonFace{N,Int}}, V::Vector{Point{NV,TV}}; stro
 end
 
 function meshplot!(ax, F::Vector{NgonFace{M,Int} where M}, V::Vector{Point{NV,TV}}; stroke_depth_shift=-0.001f0, color=:white, strokewidth=0.5f0, shading=true, strokecolor=:black, kwargs...) where NV where TV<:Real
+    # This version is for a mesh with a mixed face type i.e. N is not constant
     return poly!(ax, GeometryBasics.Mesh(V, F); color=color, shading = shading, stroke_depth_shift=stroke_depth_shift, strokewidth=strokewidth, strokecolor=strokecolor, kwargs...)
 end
 
-function meshplot!(ax, f::NgonFace{N,Int}, V::Vector{Point{NV,TV}}; kwargs...) where N where NV where TV<:Real
+function meshplot!(ax, f::NgonFace{N,Int}, V::Vector{Point{NV,TV}}; kwargs...) where N where NV where TV<:Real    
     return meshplot!(ax, [f], V; kwargs...)
 end
 
-function meshplot!(ax,M::GeometryBasics.Mesh; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=true, strokecolor=:black, kwargs...)
+function meshplot!(ax, M::GeometryBasics.Mesh; stroke_depth_shift=-0.01f0, color=:white, strokewidth=0.5f0, shading=true, strokecolor=:black, kwargs...)
     return poly!(ax, M; color=color, shading = shading, stroke_depth_shift=stroke_depth_shift, strokewidth=strokewidth, strokecolor=strokecolor, kwargs...)
 end
 
@@ -11175,7 +11177,7 @@ function quad8_ngon8(E::Vector{Quad8{Int}})
 end
 
 #= 
-   Copyright 2024-2026 Kevin Mattheus Moerman
+   Copyright 2024-2026 Kevin Mattheus Moerman and the Comodo developers
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
