@@ -972,11 +972,11 @@ function cube(r=1.0)
     # Create faces
     F = Vector{QuadFace{Int}}(undef,6)
     F[1 ] = QuadFace{Int}(1,2,3,4)
-    F[2 ] = QuadFace{Int}(8,7,6,5)
-    F[3 ] = QuadFace{Int}(5,6,2,1)
+    F[2 ] = QuadFace{Int}(8,7,6,5)    
+    F[3 ] = QuadFace{Int}(8,5,1,4)
     F[4 ] = QuadFace{Int}(6,7,3,2)    
     F[5 ] = QuadFace{Int}(7,8,4,3)    
-    F[6 ] = QuadFace{Int}(8,5,1,4)    
+    F[6 ] = QuadFace{Int}(5,6,2,1)    
 
     return F, V
 end
