@@ -22,9 +22,12 @@ authors:
   - name: Daniel VandenHeuvel
     orcid: 0000-0001-6462-0135
     affiliation: 5  
+  - name: Amin Alibakhshi
+    orcid: 0000-0003-3010-3548
+    affiliation: 6
   - name: Juan Ignacio Polanco
     orcid: 0000-0001-7705-753X
-    affiliation: 6  
+    affiliation: 7  
 affiliations:
   - name: University of Galway, Galway, Ireland.
     index: 1
@@ -36,29 +39,63 @@ affiliations:
     index: 4    
   - name: Department of Mathematics, Imperial College London, United Kingdom
     index: 5
-  - name: Univ.Grenoble Alpes, CNRS, Grenoble INP, LEGI, 38000 Grenoble, France
+  - name: 'Universidad de La Coruña: A Coruña, Galicia, Spain'
     index: 6
-date: 8 January 2025
+  - name: Univ.Grenoble Alpes, CNRS, Grenoble INP, LEGI, 38000 Grenoble, France
+    index: 7
+date: 8 November 2026
 bibliography: paper.bib   
 ---
 
 # Summary
 Summary of core functionality
 
+
+
 # Statement of need
 Why Comodo 
 GIBBON [@moerman_gibbon_2018] 
-[TetGen.jl](https://github.com/JuliaGeometry/TetGen.jl) 
-TetGen ([@si_tetgen_2015])
+[TetGen.jl](https://github.com/JuliaGeometry/TetGen.jl) is a Julia wrapper for the tetrahedral meshing library C++ TetGen [@si_tetgen_2015]. 
 Other packages
 Current research 
-[FEBio.jl](https://github.com/febiosoftware/FEBio.jl), FEBio [@maas_febio_2012]
-[Geogram.jl](https://github.com/COMODO-research/Geogram.jl)
+
 Gridap.jl [@badia_gridap_2020]
 [Ferrite.jl](https://github.com/Ferrite-FEM/Ferrite.jl) [@carlsson_ferritejl_2024] 
+[Imago.jl](https://github.com/COMODO-research/Imago.jl) [@Imago_2025]
+
+Related packages
+[FEBio.jl](https://github.com/febiosoftware/FEBio.jl) [@FEBiojl_2026] is a wrapper for the finite element solver FEBio [@maas_febio_2012]
+[Geogram.jl](https://github.com/COMODO-research/Geogram.jl) is a wrapper for the triangulated surface remeshing functionality (see also [@levy_variational_2013]) of the [Geogram library](https://github.com/BrunoLevy/geogram). 
+
+https://github.com/COMODO-research/ComodoGridap.jl
+
+# **State of the field**
+GIBBON [@moerman_gibbon_2018] 
+
+# **Software design**
+Comodo
+Larger ecosystem of funcitionality, e.g. Imago.jl, FEBio.jl, AbaqusTools.jl. 
+
+# **Research impact statement**
+
+Papers 
+Reference to ISC paper
+https://github.com/COMODO-research/ISC.jl
+
+Reference to auxetic bilayer paper and https://github.com/COMODO-research/Auxetic_Bilayered_Cylinder
+
+Ref to FerriteHyperelastic pre-print
+
+Packages using Comodo: 
+https://github.com/Aminofa70/FerriteHyperelastic.jl
+https://github.com/COMODO-research/ComodoGridap.jl
+https://github.com/COMODO-research/Mammo.jl
+https://github.com/COMODO-research/ISC.jl
+
+
 
 # Acknowledgements
-Comodo development was funded in part through LERO, the Science Foundation Ireland centre for software research. 
+Comodo development was supported in part by the Research Ireland Centre for Software Research, LERO, under Grant 13/RC/2094_P2. 
 
 # References
 
