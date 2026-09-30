@@ -2,12 +2,12 @@ using Comodo
 using Comodo.GLMakie
 
 #=
-This demo shows the use of `dodecahedron` to generate the faces and vertices of a cube. 
+This demo shows the use of `cube` to generate the faces and vertices of a cube. 
 =#
 
-r = 1.0
-F, V = dodecahedron(r)
-C = collect(1:length(F))
+w = 1.0
+F, V = cube(w/2.0*sqrt(3))
+C = collect(1:6)
 
 # Visualisation
 cmap = Makie.Categorical(:Spectral) 
@@ -17,7 +17,7 @@ Cbs_V = simplex2vertexdata(Fbs, C)
 
 fig = Figure(size=(1600,800))
 
-ax1 = AxisGeom(fig[1, 1], title = "Dodecahedron mesh")
+ax1 = AxisGeom(fig[1, 1], title = "Cube mesh")
 hp2 = meshplot!(ax1, Fbs, Vbs; strokewidth=3, color=Cbs_V, colormap=cmap)
 hp3 = normalplot(ax1, Fbs, Vbs; type_flag=:face, color=:black,linewidth=3)
 

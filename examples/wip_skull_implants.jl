@@ -161,11 +161,11 @@ function dualclad_solid(F, V, s)
     append!(F_dual_quad, [QuadFace{Int}(f.+numVertices_V_dual) for f in F1q])
     append!(V_dual, V1q)
     F_dual_quad, V_dual = mergevertices(F_dual_quad, V_dual)
-    F_dual_quad, V_dual = subquad(F_dual_quad, V_dual, 2; method=:Catmull_Clark)
+    # F_dual_quad, V_dual = subquad(F_dual_quad, V_dual, 2; method=:Catmull_Clark)
 
-    n=25
-    λ=0.5
-    V_dual = smoothmesh_laplacian(F_dual_quad, V_dual, n, λ)
+    # n=25
+    # λ=0.5
+    # V_dual = smoothmesh_laplacian(F_dual_quad, V_dual, n, λ)
 
     return F_dual_quad, V_dual
 end
@@ -219,5 +219,6 @@ on(hSlider2.value) do replaceLabel
     hp2[1] = GeometryBasics.Mesh(V_dual, F_dual_quad)
 end
 
+slidercontrol(hSlider2,ax1)
 
 screen = display(GLMakie.Screen(), fig2)
