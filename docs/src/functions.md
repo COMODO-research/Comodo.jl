@@ -1095,3 +1095,13 @@ Comodo.ngon8_quad8
 ```@docs 
 Comodo.quad8_ngon8
 ```
+
+## `fitplane`
+```@docs 
+Comodo.fitplane
+```
+
+## `hexhemisphere`
+```@docs 
+Comodo.hexhemisphere
+```
