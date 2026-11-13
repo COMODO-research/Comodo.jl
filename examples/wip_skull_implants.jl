@@ -3,17 +3,13 @@ using Comodo.GLMakie
 using Comodo.GeometryBasics
 using Comodo.Rotations
 using Comodo.GLMakie.Colors
-
-using Geogram
 using FileIO
 
-#=
-This demo is for the `kabsch_rot` function. The Kabsch method allows one to 
-determine the rotation that occurred between two meshes (or point sets) with 
-point-to-point correspondence. In this demo a triangulated surface is loaded 
-from an STL file. Next the coordinates are rotated, and the Kabsch method is 
-used to retrieve the rotation performed, allowing one to "unrotate" the data.  
-=#
+# This demo uses the following non-registered packages 
+using Geogram # https://github.com/COMODO-research/geogram.jl
+using BodyParts3D # https://github.com/Kevin-Mattheus-Moerman/BodyParts3D.git
+
+##
 
 pointSpacing = 5.0
 
@@ -21,8 +17,8 @@ cBone = RGBf(0.89, 0.855, 0.788)
 cBoneA = RGBA(0.89, 0.855, 0.788, 0.25)
 cPurple = RGBf(1.0, 0.30196078431372547, 0.023529411764705882)
 
-# Loading a mesh
-pathName = "/home/kevin/DATA/Code/Julia/BodyParts3D/assets/BodyParts3D_data/stl/"
+# Loading meshes (these are from the )
+pathName = joinpath(bp3ddir(), "stl") 
 fileNames = ["FMA52734.stl", # Frontal bone
             "FMA52735.stl", # Occipital bone
             "FMA52736.stl", # Sphenoid bone
@@ -71,7 +67,7 @@ fileNames = ["FMA52734.stl", # Frontal bone
             "FMA57141.stl", # Left lower lateral incisor tooth
             "FMA57142.stl", # Right lower central incisor tooth
             "FMA57143.stl", # Left lower central incisor tooth
-             ] #joinpath(comododir(),"assets","stl","stanford_bunny_low.stl")
+             ] 
 
 function getModels(pathName::String, fileNames::Vector{String})
     FM = Vector{Vector{TriangleFace{Int}}}(undef, length(fileNames))
