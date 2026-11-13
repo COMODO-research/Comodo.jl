@@ -18,11 +18,14 @@ M = load(fileName_mesh)
 F = [TriangleFace{Int}(f) for f in faces(M)]
 V = coordinates(M)
 
+# Merge vertices 
+F, V = mergevertices(F, V) 
+
 # Define a rotation tensor using Euler angles
 Q = RotXYZ(0.0,0.25*π,0.25*π)
 
 # Rotate the coordinates
-V2 = [GeometryBasics.Point{3, Float64}(Q*v) for v ∈ V] 
+V2 = [Point{3, Float64}(Q*v) for v ∈ V] 
 
 # Visualisation
 GLMakie.closeall()
