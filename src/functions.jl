@@ -3464,7 +3464,7 @@ function edges2curve(Eb::Vector{LineFace{T}}; remove_last = false) where T <: In
             throw(ErrorException("Invalid edges. Edges may contain branches or multiple disconnected sets"))
         end
 
-        seen = fill(false,numEdges) # Bool to keep track of visited points
+        seen = falses(numEdges) # Bool to keep track of visited points
         ind = [Eb[i][1]] # Add first edge point and grow this list
         while !all(seen) # loop until all edges have been visited        
             push!(ind,Eb[i][2]) # Add edge end point (start is already in list)
@@ -4120,7 +4120,7 @@ unshared vertices. Note that any unused points are not returned in the output
 point array `Vn`. Indices for the mapping are not created here but can simply be
 obtained using `reduce(vcat,F)`.
 """
-function separate_vertices(F::Union{Vector{NgonFace{N, TF}},Vector{<: AbstractElement{N, TF}}},V::Vector{Point{ND,TV}}; scaleFactor = nothing) where N where TF<:Integer where ND where TV<:Real
+function separate_vertices(F::Union{Vector{NgonFace{N, TF}}, Vector{<: AbstractElement{N, TF}}},V::Vector{Point{ND,TV}}; scaleFactor = nothing) where N where TF<:Integer where ND where TV<:Real
     Vn = Vector{eltype(V)}(undef,length(F)*N)
     Fn = Vector{eltype(F)}(undef,length(F))
     for (i,f) in enumerate(F)   
@@ -4133,6 +4133,24 @@ function separate_vertices(F::Union{Vector{NgonFace{N, TF}},Vector{<: AbstractEl
         end
     end
     return Fn,Vn
+end
+
+function separate_vertices(F::Vector{NgonFace{M, Int} where M}, V::Vector{Point{ND,TV}}; scaleFactor = nothing) where ND where TV<:Real
+    Vn = Vector{eltype(V)}(undef, sum(length.(F)))
+    Fn = Vector{eltype(F)}(undef, length(F))
+    j = 0
+    for (i, f) in enumerate(F)           
+        N = length(f)
+        Fn[i] = (typeof(f))(collect(j+1 : j+N))       
+        j += N
+        if isnothing(scaleFactor)
+            Vn[Fn[i]] = V[f]
+        else
+            vf = mean(V[f])    
+            Vn[Fn[i]] = scaleFactor * (V[f] .- vf) .+ vf
+        end
+    end
+    return Fn, Vn
 end
 
 function separate_vertices(M::GeometryBasics.Mesh; scaleFactor = nothing)
@@ -7866,8 +7884,7 @@ function hexsphere(r=1.0,pointSpacing=r/10.0; f=0.75, nSmooth=5)
         F = element2faces(E)
         Fu = gunique(F; sort_entries=true)
         Fb = boundaryfaces(F)    
-        indBoundary = elements2indices(Fb)
-        nSmooth = 5
+        indBoundary = elements2indices(Fb)        
         V = smoothmesh_laplacian(Fu,V,nSmooth,0.5; constrained_points = indBoundary)
     end
     return E,V
@@ -9299,21 +9316,21 @@ function tpms_sheet(type=:P, s=0.1; x::T, y=x, z=x, level=0.0, cap = true, padVa
 end
 
 """
-    pointsvd(V::Vector{T}) where T <: AbstractVector
+    pointsvd(P::Vector{T}) where T <: AbstractVector
 
 Point vector singular value decomposition 
 
 # Description
 This function computes the singular value decomposition for the points defined 
-by the point vector `V`.    
+by the point vector `P`.    
 """
-function pointsvd(V::Vector{T}; centre=nothing) where T <: AbstractVector
+function pointsvd(P::Vector{T}; centre=nothing) where T <: AbstractVector
     # Form matrix
     if isnothing(centre)
-        centre = mean(V) # Compute point set mean as centre
+        centre = mean(P) # Compute point set mean as centre
     end
-    M = Matrix{Float64}(undef, length(V), 3)
-    for (i,v) in enumerate(V)
+    M = Matrix{Float64}(undef, length(P), 3)
+    for (i,v) in enumerate(P)
         M[i,:] = v-centre # Centre point around mean and make row of matrix
     end    
     S = svd(M) # Singular value decomposition
@@ -11174,6 +11191,110 @@ end
 function quad8_ngon8(E::Vector{Quad8{Int}})
     indOrder = [1, 5, 2, 6, 3, 7, 4, 8]
     return [NgonFace{8, Int}(e[indOrder]) for e in E]    
+end
+
+"""
+    fitplane(V; direction=3)    
+    
+Fits plane to points
+
+# Description 
+This function fits a plane to a set of points defined by the point vector `V`.
+In particular it returns the coefficients A, B, C for a plane of the form: 
+    x=Ay+Bz+C, when `direction=1`
+    y=Ax+Bz+C, when `direction=2`
+    z=Ax+By+C, when `direction=3`
+The default behaviour is `direction=3`. 
+"""
+function fitplane(P; direction=3)    
+    centre = mean(P)
+    S = pointsvd(P; centre=centre) 
+    N = S.V[:,3] # Least dominant vector is plane normal      
+    if direction==1 # x=Ay+Bz+C
+        M = - N./N[1]
+        A = M[2]
+        B = M[3]
+        C = -dot(centre, M)    
+    elseif direction==2 # y=Ax+Bz+C
+        M = - N./N[2]
+        A = M[1]
+        B = M[3]
+        C = -dot(centre, M)    
+    elseif direction==3 # z=Ax+By+C
+        M = - N./N[3]
+        A = M[1]
+        B = M[2]
+        C = -dot(centre, M)    
+    end
+    return A, B, C
+end
+
+"""
+    hexhemisphere(r=1.0, pointSpacing=r/10.0; f=0.75, nSmooth=5)
+
+Creates hexahedral hemisphere mesh 
+
+# Description
+This function returns a hexahedral mesh for a hemisphere. The inputs include the 
+radius `r`, and the point spacing `pointSpacing`. The optional inputs include 
+the factor `f` which sets where width of the central cube, which is defined as:
+`f/sqrt(3.0)*2.0*r`. 
+The output features hexahedral elements `E` and the vertices `V`. 
+"""
+function hexhemisphere(r=1.0, pointSpacing=r/10.0; f=0.75, nSmooth=5)   
+    # Create a hexahedral mesh for a box
+    s = f/sqrt(3.0)*2.0*r
+    boxDim = [s, s, s/2.0] # Dimensionsions for the box in each direction
+    np = ceil(Int, (r*π/2.0)./pointSpacing) # Number of elements to use in each direction 
+    if !iseven(np) 
+        np+=1 # Force even so it can be split in two for hemisphere
+    end
+    boxEl = [np, np, Int(np/2)] # Number of elements in each direction for box
+    E, V, _, Fb, Cb = hexbox(boxDim, boxEl) # Create the box mesh 
+    V = [Point{3, Float64}(v[1], v[2], v[3]+s/4.0) for v in V] # Shift so bottom is at zero
+
+    # Now extrude the box non-bottom boundary faces outwards
+    Fb_extrude = Fb[Cb.!==1]  
+    ind = elements2indices(Fb_extrude)    
+    V2 = V[ind]
+    for (i,v) in enumerate(V2)        
+        vp = tan.(v/(r*f/sqrt(3.0))*π/4.0)
+        V2[i] = r*vp/norm(vp)        
+    end 
+    numSteps = spacing2numsteps(r-s/2.0,pointSpacing; close_loop=false)
+    append!(E, fromtomesh!(Fb_extrude, V, V2, numSteps; correspondence=:faces))
+
+    # Get faces and boundary faces 
+    F = element2faces(E)        
+    Fu = gunique(F; sort_entries=true)
+    Fb = boundaryfaces(F)    
+
+    Cb = fill(1, length(Fb))
+    for (i, f) in enumerate(Fb)
+        n = facenormal(f, V)
+        if n[3]<-0.5 
+            Cb[i] = 2
+        end
+    end
+    
+    # Smoothen mesh by nSmooth steps if requested
+    if nSmooth > 0            
+        indBoundary_1 = elements2indices(Fb[Cb.==1])
+        indBoundary_2 = elements2indices(Fb[Cb.==2])
+        for _ in 1:nSmooth
+            V = smoothmesh_laplacian(Fu, V, 1, 0.5)
+            for i in indBoundary_2
+                v = V[i]
+                V[i] = Point{3, Float64}(v[1], v[2], 0.0)
+            end
+            for i in indBoundary_1
+                v = V[i]
+                n = norm(v)
+                V[i] = r/n .* v
+            end
+        end
+    end   
+    return E, V, F, Fb, Cb
 end
 
 #= 

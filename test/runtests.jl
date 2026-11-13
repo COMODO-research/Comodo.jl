@@ -7835,11 +7835,24 @@ end
     r = 2.0
     f = 0.75
     pointSpacing = 0.2
-    E,V = hexsphere(r,pointSpacing; f=f, nSmooth=nSmooth)   
+    E, V = hexsphere(r, pointSpacing; f=f, nSmooth=nSmooth)   
     Fb = boundaryfaces(E)
     indBoundary = elements2indices(Fb)
     @test isa(E,Vector{Hex8{Int}}) 
     @test isa(V,Vector{Point{3,Float64}}) 
+    @test isapprox(norm.(V[indBoundary]),fill(r,length(indBoundary)),atol=eps_level)
+end
+
+@testset "hexhemisphere" verbose = true begin                       
+    eps_level = 1e-6
+    nSmooth = 5
+    r = 2.0
+    f = 0.75
+    pointSpacing = 0.2
+    E, V, F, Fb, Cb = hexhemisphere(r, pointSpacing; f=f, nSmooth=nSmooth)   
+    indBoundary = elements2indices(Fb[Cb.==1])
+    @test isa(E, Vector{Hex8{Int}}) 
+    @test isa(V, Vector{Point{3,Float64}}) 
     @test isapprox(norm.(V[indBoundary]),fill(r,length(indBoundary)),atol=eps_level)
 end
 
@@ -10630,6 +10643,41 @@ end
     F_Ngon6 = quad8_ngon8(F)
     @test F_Ngon6[1] == NgonFace{8, Int}(1, 5, 2, 6, 3, 7, 4, 8)
     @test F_Ngon6[2] == NgonFace{8, Int}(9, 13, 10, 14, 11, 15, 12, 16)
+end
+
+@testset "fitplane" verbose = true begin
+    eps_level = 1e-6 # Precission level for testing
+    
+    # True coefficients
+    A_true =  0.25
+    B_true = -0.3
+    C_true = -5.0
+
+    # Create nominal plane data 
+    plateDim = [4.0, 8.0]
+    plateElem = [12, 12]
+    F, V, _, _ = quadplate(plateDim, plateElem; orientation=:up)
+    for testCase = 1:3
+        if testCase==1 # x=Ay+Bz+C            
+            # Rotate the coordinates
+            Q = RotXYZ(0.0, 0.5*π, 0.0) # Define a rotation tensor using Euler angles
+            Vt = [Point{3, Float64}(Q*v) for v ∈ V] # Rotate the coordinates 
+            Vt = [Point{3, Float64}((A_true*p[2]+B_true*p[3]+C_true), p[2], p[3]) for p in Vt]
+            A, B, C = fitplane(Vt; direction=1) # Now fit plane of form x=Ay+Bz+C
+        elseif testCase==2 # y=Ax+Bz+C
+            # Rotate the coordinates
+            Q = RotXYZ(0.5*π, 0.0, 0.0) # Define a rotation tensor using Euler angles
+            Vt = [Point{3, Float64}(Q*v) for v ∈ V] # Rotate the coordinates
+            Vt = [Point{3, Float64}(p[1], (A_true*p[1]+B_true*p[3]+C_true), p[3]) for p in Vt]
+            A, B, C = fitplane(Vt; direction=2) # Now fit plane of form y=Ax+Bz+C
+        elseif testCase==3 # z=Ax+By+C
+            Vt = [Point{3, Float64}(p[1], p[2], (A_true*p[1]+B_true*p[2]+C_true)) for p in V]            
+            A, B, C = fitplane(Vt; direction=3) # Now fit plane of form z=Ax+By+C
+        end
+        @test isapprox(A, A_true, atol=eps_level)
+        @test isapprox(B, B_true, atol=eps_level)
+        @test isapprox(C, C_true, atol=eps_level)
+    end
 end
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
