@@ -7950,19 +7950,30 @@ end
     n1 = 0 # Number of refinement iterations
     F1,V1 = geosphere(n1,r)
     E1 = meshedges(F1)
+    F2,V2 = quadsphere(r, r/10.0)
+    F12 = [F1; [f.+length(V1) for f in F2]]
+    V12 = [V1; V2]
 
     #Visualize mesh
     fig = Figure(size = (1600,800))
     ax1 = AxisGeom(fig[1, 1], title = "Visualised mesh")
 
-    # Faces     
+    # Faces (triangles)    
     hp1 = meshplot!(ax1, F1, V1; strokewidth=2)    
     @test typeof(hp1) == Poly{Tuple{GeometryBasics.Mesh{3, Float64, TriangleFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{TriangleFace{Int64}}}}} 
+
+    # Faces (quads)    
+    hp1 = meshplot!(ax1, F2, V2; strokewidth=2)    
+    @test typeof(hp1) == Poly{Tuple{GeometryBasics.Mesh{3, Float64, QuadFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{QuadFace{Int64}}}}}  
 
     # Single face    
     hp1 = meshplot!(ax1, F1[1], V1; strokewidth=2)    
     @test typeof(hp1) == Poly{Tuple{GeometryBasics.Mesh{3, Float64, TriangleFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{TriangleFace{Int64}}}}} 
 
+    # Mixed mesh
+    hp1 = meshplot!(ax1, F12, V12; strokewidth=2)    
+    @test typeof(hp1) == Poly{Tuple{GeometryBasics.Mesh{3, Float64, NgonFace{M, Int64} where M, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{NgonFace{M, Int64} where M}}}}
+    
     # GeometryBasics.Mesh     
     hp1 = meshplot!(ax1, GeometryBasics.Mesh(V1,F1); strokewidth=2)    
     @test typeof(hp1) == Poly{Tuple{GeometryBasics.Mesh{3, Float64, TriangleFace{Int64}, (:position,), Tuple{Vector{Point{3, Float64}}}, Vector{TriangleFace{Int64}}}}} 
@@ -9504,26 +9515,54 @@ end
 end
 
 @testset "inmesh" verbose=true begin 
-    r = 1.0 
-    F, V = geosphere(3, r) 
-    P_test = [Point{3, Float64}(  0.0, 0.0, 0.0), # In
-              Point{3, Float64}(r/2.0, 0.0, 0.0), # In
-              Point{3, Float64}(2.0*r, 0.0, 0.0), # Out 
-              Point{3, Float64}(0.0, 2.0*r, 0.0), # Out
-              Point{3, Float64}(0.0, 0.0, 2.0*r), # Out
-              Point{3, Float64}(0.0, 0.0, r)] # On
+    @testset "sphere" begin 
+        r = 1.0 
+        F, V = geosphere(3, r) 
+        P_test = [Point{3, Float64}(  0.0, 0.0, 0.0), # In
+                Point{3, Float64}(r/2.0, 0.0, 0.0), # In
+                Point{3, Float64}(2.0*r, 0.0, 0.0), # Out 
+                Point{3, Float64}(0.0, 2.0*r, 0.0), # Out
+                Point{3, Float64}(0.0, 0.0, 2.0*r), # Out
+                Point{3, Float64}(0.0, 0.0, r)] # On
 
-    # Single point
-    b = inmesh(F,V, P_test[1], tolEps = eps(Float64), include_on=false)
-    @test b == true
+        # Single point
+        b = inmesh(F,V, P_test[1], tolEps = eps(Float64), include_on=false)
+        @test b == true
 
-    # Vector of points, include_on=false
-    B = inmesh(F,V, P_test, tolEps = eps(Float64), include_on=false)
-    @test B == [true, true, false, false, false, false] 
+        # Vector of points, include_on=false
+        B = inmesh(F,V, P_test, tolEps = eps(Float64), include_on=false)
+        @test B == [true, true, false, false, false, false] 
 
-    # Vector of points, include_on=true
-    B = inmesh(F,V, P_test, tolEps = eps(Float64), include_on=true)
-    @test B == [true, true, false, false, false, true] 
+        # Vector of points, include_on=true
+        B = inmesh(F,V, P_test, tolEps = eps(Float64), include_on=true)
+        @test B == [true, true, false, false, false, true] 
+    end
+
+    @testset "torus" begin 
+        r1 = 3.0
+        r2 = 5.0
+        n1 = 16
+        n2 = 51
+        F, V = torus(r1, r2, n1, n2; face_type=:tri)
+        P_test = [Point{3, Float64}(  0.0, 0.0, 0.0), # Out (in middle hole)
+                  Point{3, Float64}((r2+r1)/2.0, 0.0, 0.0), # In
+                  Point{3, Float64}(0.0, (r2+r1)/2.0, 0.0), # In
+                  Point{3, Float64}(r2+r1+1.0, 0.0, 0.0), # Out
+                  Point{3, Float64}(0.0, r2+r1+1.0, 0.0), # Out
+                  V[1]] # On
+
+        # Single point
+        b = inmesh(F,V, P_test[1], tolEps = eps(Float64), include_on=false)
+        @test b == false
+
+        # Vector of points, include_on=false
+        B = inmesh(F,V, P_test, tolEps = eps(Float64), include_on=false)
+        @test B == [false, true, true, false, false, false] 
+
+        # Vector of points, include_on=true
+        B = inmesh(F,V, P_test, tolEps = eps(Float64), include_on=true)
+        @test B == [false, true, true, false, false, true] 
+    end
 end
 
 @testset "mesh2bool" verbose=true begin 
@@ -10214,7 +10253,7 @@ end
     @test isapprox(minimum(z), -h/2.0, atol=eps_level)
     @test isapprox(mean(rV), r, atol=eps_level)
 
-    n = 2
+    pointSpacing = r/10.0
     F, V, C = tricylinder(r, h, n; nh=0, face_type=:tri)
     F_side = F[C.==3]
     indSide = elements2indices(F_side)
@@ -10739,7 +10778,6 @@ end
         @test isapprox(minimum(R), r2-r1, atol=eps_level)
         @test isapprox(maximum(R), r2+r1, atol=eps_level)
     end
-
     @test_throws Exception torus(r1, r2, pointSpacings[1]; face_type=:quad, spacing_type=:wrong)
 end
 
