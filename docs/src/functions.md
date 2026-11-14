@@ -1105,3 +1105,8 @@ Comodo.fitplane
 ```@docs 
 Comodo.hexhemisphere
 ```
+
+## `torus`
+```@docs 
+Comodo.torus
+```

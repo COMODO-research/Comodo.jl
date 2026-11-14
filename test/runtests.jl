@@ -2271,7 +2271,13 @@ end
         E = meshedges(F;unique_only=false)
         con_V2V = con_vertex_vertex(E)
         @test con_V2V == [[2, 4], [1, 3], [4, 2, 6], [3, 5, 1], [4, 6], [5, 3]]
+        
+        con_V2V = con_vertex_vertex(F)
+        @test con_V2V == [[2, 4], [1, 3], [4, 2, 6], [3, 5, 1], [4, 6], [5, 3]]
     end
+
+    @test isempty(con_vertex_vertex(Vector{LineFace{Int}}()))
+
 end
 
 @testset "meshconnectivity" verbose = true begin    
@@ -2791,7 +2797,6 @@ end
         @test length(unique(C)) == 6
     end
 
-
     @testset "rhombicdodecahedron" begin       
         # Test cube case with no refinement
         r = 1.5
@@ -2812,6 +2817,11 @@ end
         @test isapprox(norm.(V), fill(r, length(V)), atol=eps_level)
         @test length(unique(C)) == 12
     end
+
+    # Check errors
+    r = 1.5
+    n = 0
+    @test_throws Exception subquadsphere(n, r; template=:wrong)
 end
 
 @testset "simplex2vertexdata" verbose = true begin
@@ -4463,6 +4473,13 @@ end
         d,dd,l = distmarch(F,V,indStart)
         @test isapprox(maximum(d),π,atol=0.01)
     end
+
+    dist_stop = r/4.0
+    r = 1.0
+    F,V = subquadsphere(4, r)     
+    pointSpacing = pointspacingmax(F, V)  
+    d,dd,l = distmarch(F,V,[1]; dist_stop=dist_stop)
+    @test maximum(d[.!isnan.(d)])<= (dist_stop+pointSpacing)
 end
 
 @testset "distseedpoints" verbose=true begin
@@ -4730,6 +4747,29 @@ end
 
     @testset "Triangulated mesh" begin
         F,V = tetrahedron(1.0)
+        Fn, Vn = separate_vertices(F, V)    
+        @test Vn isa Vector{Point3{Float64}}
+        @test typeof(Fn) == typeof(F)
+        @test length(Fn) == length(F)    
+        @test length(Vn) == length(F)*length(F[1])
+    end
+
+    @testset "Mixed mesh" begin
+        F1, V1 = cube(1.0)   
+        F2, V2 = tetrahedron(1.0)
+        F = [F1; [f.+length(V1) for f in F2]]
+        V = [V1; V2]
+        Fn, Vn = separate_vertices(F, V)    
+
+        ind = round.(Int,range(1,length(Vn),5))
+        @test Vn isa Vector{Point3{Float64}}
+        @test typeof(Fn) == typeof(F)
+        @test length(Fn) == length(F)    
+        @test length(Vn) == sum([length(f) for f in F])
+        @test Vn[ind] == Point{3, Float64}[[-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], [-0.5773502691896258, -0.5773502691896258, 0.5773502691896258], [0.5773502691896258, -0.5773502691896258, 0.5773502691896258], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]
+    end
+
+    @testset "Triangulated mesh" begin
         Fn, Vn = separate_vertices(F, V)    
         @test Vn isa Vector{Point3{Float64}}
         @test typeof(Fn) == typeof(F)
@@ -5310,51 +5350,66 @@ end
     V5 = circlepoints(r5,n5)
     V5 = [Point{3,Float64}(v[1]-2,v[2],v[3]) for v in V5]
 
-    VT = (V1,V2,V3,V4,V5) # Curves
-    R = ([1,2,3],[2,4,5],[5]) # Regions 
-    P = (1,0.75,0.5)  # Point spacings
+    @testset "2D input" begin  
+        V1_2D = [Point{2, Float64}(v) for v in V1]
+        VT = (V1_2D, ) # Curves
+        R = ([1],) # Regions 
+        P = (1.0) # Point spacings
 
-    F,V,C = regiontrimesh(VT,R,P)
+        F, V, C = regiontrimesh(VT,R,P)
+        @test isa(F,Vector{TriangleFace{Int}})
+        @test isa(V,Vector{Point{3,Float64}})
+        @test isa(C,Vector{Float64})
+        @test length(F) == length(C) # Color length matches faces
+    end
+    
+    @testset "3D input" begin  
+        VT = (V1,V2,V3,V4,V5) # Curves
+        R = ([1,2,3],[2,4,5],[5]) # Regions 
+        P = (1,0.75,0.5)  # Point spacings
 
-    @test isa(F,Vector{TriangleFace{Int}})
-    @test isa(V,Vector{Point{3,Float64}})
-    @test isa(C,Vector{Float64})
-    @test length(F) == length(C) # Color length matches faces
+        F,V,C = regiontrimesh(VT,R,P)
 
-    # Single region case which should trigger treatment of an "on boundary point"
-    n = 50
-    r = 2.0
-    V = circlepoints(r,n;dir=:acw) 
-    pointSpacing = pointspacingmean(V)
+        @test isa(F,Vector{TriangleFace{Int}})
+        @test isa(V,Vector{Point{3,Float64}})
+        @test isa(C,Vector{Float64})
+        @test length(F) == length(C) # Color length matches faces
 
-    VT = (V,)
-    R = ([1],)
-    P = (pointSpacing)
-    F,V,C = regiontrimesh(VT,R,P)
-    @test isa(F,Vector{TriangleFace{Int}})
-    @test isa(V,Vector{Point{3,Float64}})
-    @test isa(C,Vector{Float64})
-    @test length(F) == length(C)
+        # Single region case which should trigger treatment of an "on boundary point"
+        n = 50
+        r = 2.0
+        V = circlepoints(r,n;dir=:acw) 
+        pointSpacing = pointspacingmean(V)
 
-    # Test Cartesian grid type
-    w = 40.0
-    h = 20.0
-    pointSpacing = 2.0
-    V1 = rectanglepoints(w, h, pointSpacing; dir=:acw) 
-    VT = (V1,)
-    R = ([1],)
-    P = (pointSpacing)
-    gridtYpe = :Cartesian
-    numSmoothSteps = 0
-    F,V,C = regiontrimesh(VT,R,P; gridtype=gridtYpe, numSmoothSteps=numSmoothSteps)
+        VT = (V,)
+        R = ([1],)
+        P = (pointSpacing)
+        F,V,C = regiontrimesh(VT,R,P)
+        @test isa(F,Vector{TriangleFace{Int}})
+        @test isa(V,Vector{Point{3,Float64}})
+        @test isa(C,Vector{Float64})
+        @test length(F) == length(C)
 
-    @test isa(F,Vector{TriangleFace{Int}})
-    @test isa(V,Vector{Point{3,Float64}})
-    @test isa(C,Vector{Float64})
-    @test length(F) == length(C) # Color length matches faces
+        # Test Cartesian grid type
+        w = 40.0
+        h = 20.0
+        pointSpacing = 2.0
+        V1 = rectanglepoints(w, h, pointSpacing; dir=:acw) 
+        VT = (V1,)
+        R = ([1],)
+        P = (pointSpacing)
+        gridtYpe = :Cartesian
+        numSmoothSteps = 0
+        F,V,C = regiontrimesh(VT,R,P; gridtype=gridtYpe, numSmoothSteps=numSmoothSteps)
 
-    # A = edgeangles(F,V; deg = true)
-    # @test isapprox(A[1], [45.0, 45.0, 90.0], atol=1e-6)
+        @test isa(F,Vector{TriangleFace{Int}})
+        @test isa(V,Vector{Point{3,Float64}})
+        @test isa(C,Vector{Float64})
+        @test length(F) == length(C) # Color length matches faces
+        
+        # A = edgeangles(F,V; deg = true)
+        # @test isapprox(A[1], [45.0, 45.0, 90.0], atol=1e-6)
+    end
 end
 
 @testset "scalesimplex" verbose = true begin
