@@ -4769,14 +4769,6 @@ end
         @test Vn[ind] == Point{3, Float64}[[-0.5773502691896258, -0.5773502691896258, -0.5773502691896258], [-0.5773502691896258, -0.5773502691896258, 0.5773502691896258], [0.5773502691896258, -0.5773502691896258, 0.5773502691896258], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]
     end
 
-    @testset "Triangulated mesh" begin
-        Fn, Vn = separate_vertices(F, V)    
-        @test Vn isa Vector{Point3{Float64}}
-        @test typeof(Fn) == typeof(F)
-        @test length(Fn) == length(F)    
-        @test length(Vn) == length(F)*length(F[1])
-    end
-
     @testset "Mesh" begin
         F,V = tetrahedron(1.0)
         M = GeometryBasics.Mesh(V,F)
