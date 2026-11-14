@@ -17,7 +17,7 @@ f = 0.75
 pointSpacing = 0.75
 nSmooth = 5
 
-E, V, F, Fb, Cb = hexhemisphere(r,pointSpacing; f=f, nSmooth=nSmooth)    
+E, V, F, Fb, Cb = hexhemisphere(r, pointSpacing; f=f, nSmooth=nSmooth)    
 
 ##
 Fn = element2faces(E)
@@ -43,8 +43,8 @@ hp3 = meshplot!(ax2, Fbs, Vbs, strokewidth=1, color=:white)
 VE  = simplexcenter(E,V)
 ZE = [v[3] for v in VE]
 Z = [v[3] for v in V]
-zMax = maximum(Z)
-zMin = minimum(Z)
+zMax = maximum(ZE)
+zMin = minimum(ZE) - 1e-3
 numSlicerSteps = 3*ceil(Int,(zMax-zMin)/pointSpacing)
 
 stepRange = range(zMin,zMax,numSlicerSteps)

@@ -7848,7 +7848,14 @@ end
     nSmooth = 5
     r = 2.0
     f = 0.75
-    pointSpacing = 0.2
+    pointSpacing = 0.25 
+    
+    # Note the combination forces an even np below which triggers an if 
+    # statement in hexhemisphere. 
+    # s = f/sqrt(3.0)*2.0*r
+    # boxDim = [s, s, s/2.0] 
+    # np = ceil(Int, (r*π/2.0)./pointSpacing)
+
     E, V, F, Fb, Cb = hexhemisphere(r, pointSpacing; f=f, nSmooth=nSmooth)   
     indBoundary = elements2indices(Fb[Cb.==1])
     @test isa(E, Vector{Hex8{Int}}) 
@@ -10147,7 +10154,7 @@ end
     n_set = (1, 1, 2, 2)
     pointSpacing_set = (1.0, 0.5, 0.3, 0.3)
     face_type_set = (:tri, :tri, :backslash, :forwardslash)
-    nh = 5
+    nh = 5 # uneven 
 
     # Loop over options
     for i in eachindex(n_set)
@@ -10178,8 +10185,24 @@ end
         @test isapprox(maximum(z),  h/2.0, atol=eps_level)
         @test isapprox(minimum(z), -h/2.0, atol=eps_level)
         @test isapprox(mean(rV), r, atol=eps_level)
+
+        @test_throws Exception tricylinder(r, h, n_set[i]; nh=0, face_type=:wrong)
+        @test_throws Exception tricylinder(r, h, pointSpacing_set[i]; nh=0, face_type=:wrong)
     end
     
+    # Even nh and :tri
+    n = 2
+    F, V, C = tricylinder(r, h, n; nh=4, face_type=:tri)
+    F_side = F[C.==3]
+    indSide = elements2indices(F_side)
+    z = [v[3] for v in V]
+    rV = [norm(v[1:2]) for v in V[indSide]]
+    @test isa(F, Vector{TriangleFace{Int}})
+    @test isapprox(maximum(z),  h/2.0, atol=eps_level)
+    @test isapprox(minimum(z), -h/2.0, atol=eps_level)
+    @test isapprox(mean(rV), r, atol=eps_level)
+
+    # nh=0
     n = 2
     F, V, C = tricylinder(r, h, n; nh=0, face_type=:forwardslash)
     F_side = F[C.==3]
@@ -10190,6 +10213,18 @@ end
     @test isapprox(maximum(z),  h/2.0, atol=eps_level)
     @test isapprox(minimum(z), -h/2.0, atol=eps_level)
     @test isapprox(mean(rV), r, atol=eps_level)
+
+    n = 2
+    F, V, C = tricylinder(r, h, n; nh=0, face_type=:tri)
+    F_side = F[C.==3]
+    indSide = elements2indices(F_side)
+    z = [v[3] for v in V]
+    rV = [norm(v[1:2]) for v in V[indSide]]
+    @test isa(F, Vector{TriangleFace{Int}})
+    @test isapprox(maximum(z),  h/2.0, atol=eps_level)
+    @test isapprox(minimum(z), -h/2.0, atol=eps_level)
+    @test isapprox(mean(rV), r, atol=eps_level)
+
 end
 
 @testset "quadcylinder" verbose=true begin
@@ -10678,6 +10713,34 @@ end
         @test isapprox(B, B_true, atol=eps_level)
         @test isapprox(C, C_true, atol=eps_level)
     end
+end
+
+@testset "torus" verbose = true begin
+    eps_level = 0.05 # Rough due to point spacing effect
+    r1 = 3.0
+    r2 = 5.0
+    n1 = 24
+    n2 = 75 # Use an uneven number for :tri and :tri_even if a homogeneous result is needed
+    face_types = (:quad, :forwardslash, :backslash, :tri, :tri_even)
+    pointSpacings = (0.5,    0.2,   0.5,  0.3,   0.5) 
+    spacing_types = (:inner, :middle, :middle, :middle, :outer)
+
+    for (i, face_type) in enumerate(face_types)
+        F, V = torus(r1, r2, n1, n2; face_type=face_type)
+        R = norm.(V)
+        @test isapprox(minimum(R), r2-r1, atol=eps_level)
+        @test isapprox(maximum(R), r2+r1, atol=eps_level)
+    end
+
+    for (i, pointSpacing) in enumerate(pointSpacings)
+        spacing_type = spacing_types[i]
+        F, V = torus(r1, r2, pointSpacing; face_type=:quad, spacing_type=spacing_type)
+        R = norm.(V)
+        @test isapprox(minimum(R), r2-r1, atol=eps_level)
+        @test isapprox(maximum(R), r2+r1, atol=eps_level)
+    end
+
+    @test_throws Exception torus(r1, r2, pointSpacings[1]; face_type=:quad, spacing_type=:wrong)
 end
 
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------

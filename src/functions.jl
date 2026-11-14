@@ -11297,6 +11297,62 @@ function hexhemisphere(r=1.0, pointSpacing=r/10.0; f=0.75, nSmooth=5)
     return E, V, F, Fb, Cb
 end
 
+"""
+    torus(r1::T1, r2::T2, n1::Int, n2::Int; face_type=:quad) where T1<:Real where T2<:Real
+    torus(r1::T1, r2::T2, pointSpacing::T3; face_type=:quad, spacing_type=:max) where T1<:Real where T2<:Real where T3<:Real
+
+Creates a torus mesh 
+
+# Description
+This function returns the faces `F` and vertices `V` for a torus. 
+
+When using number of points:
+
+Inputs: 
+    `r1`: The minor or tube radius 
+    `r2`: The major radius
+    `n1`: The number of points in the minor radius direction
+    `n2`: The number of points in the major radius direction
+
+Keyword arguments: 
+    `face_type`: The face type to use e.g. `:quad`, `:tri`, etc, see also `revolvecurve`
+
+When point spacing is used:
+
+Inputs: 
+    `r1`: The minor or tube radius 
+    `r2`: The major radius
+    `pointSpacing`: The point spacing on which the number of points will based
+
+Keyword arguments: 
+    `face_type`: The face type to use e.g. `:quad`, `:tri`, etc, see also `revolvecurve`
+    `spacing_type`: Sets if in :inner, :outer, or :middle radius is used to 
+    determine number of points in the along tube direction. 
+"""
+function torus(r1::T1, r2::T2, n1::Int, n2::Int; face_type=:quad) where T1<:Real where T2<:Real
+    θ = 2.0*pi-(2.0*pi/n2)
+    t = range(2.0*π-(2.0*π/n1), 0.0, n1)
+    Vc = [Point{3, Float64}(r2+r1*cos(tt), 0.0, r1*sin(tt)) for tt ∈ t]    
+    n = Vec{3, Float64}(0.0,0.0,1.0)    
+    return revolvecurve(Vc; extent=θ, direction=:positive, n=n , num_steps=n2, periodicity=(true, true), face_type=face_type)
+end 
+
+function torus(r1::T1, r2::T2, pointSpacing::T3; face_type=:quad, spacing_type=:max) where T1<:Real where T2<:Real where T3<:Real
+    n1 = ceil(Int, (r1*2.0*π)/pointSpacing)
+    if spacing_type==:middle
+        r2p = r2 # Use middle radius
+    elseif spacing_type==:inner
+        r2p = r2-r1 # Use inner radius
+    elseif spacing_type==:outer
+        r2p = r2+r1 # Use inner radius
+    else 
+        throw(ArgumentError("Invalid spacing_type, valid options are: :middle, :inner, and :outer"))
+    end
+    n2 = ceil(Int, (r2p*2.0*π)/pointSpacing)
+    println(n2)
+    return torus(r1, r2, n1, n2; face_type=face_type)
+end
+
 #= 
    Copyright 2024-2026 Kevin Mattheus Moerman and the Comodo developers
 

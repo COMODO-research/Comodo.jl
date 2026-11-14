@@ -96,7 +96,7 @@ module Comodo
     export svdRotPerms, surface_svd, surface_align_svd, icp, cylinder, tricylinder, quadcylinder
     export wsdf, cutends, subedge, meshgeodesic, spiralpoints_sphere, spiralpoints_disc    
     export hextube, tettube, tetgen_tube, ngon6_tri6, tri6_ngon6, ngon8_quad8, quad8_ngon8
-    export fitplane, hexhemisphere
+    export fitplane, hexhemisphere, torus
 end # module
 
 #= 
