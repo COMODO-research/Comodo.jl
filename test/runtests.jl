@@ -7903,11 +7903,17 @@ end
     # boxDim = [s, s, s/2.0] 
     # np = ceil(Int, (r*π/2.0)./pointSpacing)
 
-    E, V, F, Fb, Cb = hexhemisphere(r, pointSpacing; f=f, nSmooth=nSmooth)   
+    E, V, F, Fb, Cb = hexhemisphere(r, pointSpacing; f=f, nSmooth=nSmooth, element_type=Hex8{Int})   
     indBoundary = elements2indices(Fb[Cb.==1])
     @test isa(E, Vector{Hex8{Int}}) 
     @test isa(V, Vector{Point{3,Float64}}) 
-    @test isapprox(norm.(V[indBoundary]),fill(r,length(indBoundary)),atol=eps_level)
+    @test isapprox(norm.(V[indBoundary]),fill(r,length(indBoundary)),atol=eps_level)    
+
+    E, V, F, Fb, Cb = hexhemisphere(r, pointSpacing; f=f, nSmooth=nSmooth, element_type=Hex20{Int})   
+    indBoundary = elements2indices(Fb[Cb.==1])
+    @test isa(E, Vector{Hex20{Int}}) 
+    @test isa(V, Vector{Point{3,Float64}}) 
+    @test isapprox(norm.(V[indBoundary]),fill(r,length(indBoundary)),atol=eps_level)    
 end
 
 @testset "hexspherehollow" verbose = true begin                       

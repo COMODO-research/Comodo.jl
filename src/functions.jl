@@ -11241,7 +11241,7 @@ the factor `f` which sets where width of the central cube, which is defined as:
 `f/sqrt(3.0)*2.0*r`. 
 The output features hexahedral elements `E` and the vertices `V`. 
 """
-function hexhemisphere(r=1.0, pointSpacing=r/10.0; f=0.75, nSmooth=5)   
+function hexhemisphere(r=1.0, pointSpacing=r/10.0; f=0.75, nSmooth=5, element_type=Hex8{Int})   
     # Create a hexahedral mesh for a box
     s = f/sqrt(3.0)*2.0*r
     boxDim = [s, s, s/2.0] # Dimensionsions for the box in each direction
@@ -11264,6 +11264,10 @@ function hexhemisphere(r=1.0, pointSpacing=r/10.0; f=0.75, nSmooth=5)
     numSteps = spacing2numsteps(r-s/2.0,pointSpacing; close_loop=false)
     append!(E, fromtomesh!(Fb_extrude, V, V2, numSteps; correspondence=:faces))
 
+    if element_type == Hex20{Int}
+        E, V = hex8_hex20(E, V)
+    end
+    
     # Get faces and boundary faces 
     F = element2faces(E)        
     Fu = gunique(F; sort_entries=true)
@@ -11277,6 +11281,14 @@ function hexhemisphere(r=1.0, pointSpacing=r/10.0; f=0.75, nSmooth=5)
         end
     end
     
+    if element_type == Hex20{Int}
+        ind = elements2indices(Fb[Cb.==1])            
+        for i in ind
+            v = V[i]            
+            V[i] = r/norm(v)*v       
+        end 
+    end
+
     # Smoothen mesh by nSmooth steps if requested
     if nSmooth > 0            
         indBoundary_1 = elements2indices(Fb[Cb.==1])

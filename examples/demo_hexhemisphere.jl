@@ -11,13 +11,12 @@ hemisphere.
 
 ##
 
-nSmooth = 50
 r = 5.0
 f = 0.75
 pointSpacing = 0.75
-nSmooth = 5
+nSmooth = 50
 
-E, V, F, Fb, Cb = hexhemisphere(r, pointSpacing; f=f, nSmooth=nSmooth)    
+E, V, F, Fb, Cb = hexhemisphere(r, pointSpacing; f=f, nSmooth=nSmooth, element_type=Hex20{Int})    
 
 ##
 Fn = element2faces(E)
