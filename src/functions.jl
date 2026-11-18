@@ -9847,7 +9847,7 @@ users can choose the following:
 `:faces`, this will generate quadrilateral faces for all elements 
 `:boundaryfaces`, this will generate only the boundary quadrilateral faces. 
 """
-function image2voxelmesh(I::Array{TM, 3}, B::Array{Bool, 3}; meshType=:elements, voxelSize=(1.0, 1.0, 1.0), origin=Point{3,Float64}(0.0, 0.0, 0.0)) where TM <:Real
+function image2voxelmesh(I::Array{TM, 3}, B::Union{Array{Bool, 3}, BitArray{3}}; meshType=:elements, voxelSize=(1.0, 1.0, 1.0), origin=Point{3,Float64}(0.0, 0.0, 0.0)) where TM <:Real
     C = findall(B) # Cartesian indices for voxels of interest
     
     return image2voxelmesh(I, C; meshType=meshType, voxelSize=voxelSize, origin=origin)
@@ -11363,6 +11363,70 @@ function torus(r1::T1, r2::T2, pointSpacing::T3; face_type=:quad, spacing_type=:
     n2 = ceil(Int, (r2p*2.0*π)/pointSpacing)
     println(n2)
     return torus(r1, r2, n1, n2; face_type=face_type)
+end
+
+
+"""
+    _interleaved_range(x::AbstractRange{T}) where T<:Real
+
+Creates an interleaved range for the input range `x`. The interleaved range uses 
+the same step size but starts half the step size before the range `x` and 
+terminates half a step size after `x`. 
+An example application is when `x` defines a voxel centre coordinate component. 
+The interleaved range would then define the voxel corner coordinate components. 
+"""
+function _interleaved_range(x::AbstractRange{T}) where T<:Real
+    half_step = step(x)/2.0
+    return range(x[1]-half_step, x[end]+half_step, length(x)+1)
+end
+
+"""
+    inmesh_voxels(F::AbstractVector{NgonFace{N, TF}}, V::Vector{Point{3, TV}}, xr::AbstractRange{T}, yr::AbstractRange{T}, zr::AbstractRange{T}; tolEps = eps(Float64))  where N where TF<:Integer where TV<:Real where T<:Real
+
+Counts voxel corners inside mesh
+
+# Description
+This function takes as input vectors of faces `F` and vertices `V` as well as a 
+set of ranges which define a grid of voxel centre coordinates for a 3D image. 
+Next an image `C` is constructed where the intensity for each voxel is the 
+number of corners for that voxel that are found within the surface defined by 
+`F` and `V`. 
+
+When using number of points:
+
+Inputs: 
+    `F`: The minor or tube radius 
+    `V`: The major radius
+    `xr`: The number of points in the minor radius direction
+    `yr`: The number of points in the major radius direction
+    `zr`: The number of points in the major radius direction
+
+Keyword arguments: 
+    `tolEps`: A tolerance for `mesh2bool`. 
+"""
+function inmesh_voxels(F::AbstractVector{NgonFace{N, TF}}, V::Vector{Point{3, TV}}, xr::AbstractRange{T}, yr::AbstractRange{T}, zr::AbstractRange{T}; tolEps = eps(T))  where N where TF<:Integer where TV<:Real where T<:Real
+    # Get boolean for voxel corners 
+    B = mesh2bool(F, V, _interleaved_range(xr), _interleaved_range(yr), _interleaved_range(zr); tolEps=tolEps)   
+    # Count voxel corners inside mesh 
+    C = zeros(Int, size(B).-1)
+    for i in eachindex(yr)
+        for j in eachindex(xr)
+            for k in eachindex(zr)                
+                c = 0
+                for i_B in i:i+1
+                    for j_B in j:j+1
+                        for k_B in k:k+1
+                            if B[i_B, j_B, k_B]
+                                c+=1
+                            end
+                        end
+                    end
+                end
+                C[i, j, k] = c
+            end
+        end
+    end
+    return C
 end
 
 #= 

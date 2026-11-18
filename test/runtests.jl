@@ -10834,6 +10834,30 @@ end
     @test_throws Exception torus(r1, r2, pointSpacings[1]; face_type=:quad, spacing_type=:wrong)
 end
 
+@testset "Comodo._interleaved_range" verbose = true begin   
+    x = range(0.0, 2.0, 5)
+    xi = Comodo._interleaved_range(x)
+    @test xi == -0.25:0.5:2.25
+
+    x = -3.0:1.0:3.0
+    xi = Comodo._interleaved_range(x)
+    @test xi == -3.5:1.0:3.5
+end
+
+@testset "inmesh_voxels" verbose = true begin   
+    # Create a 1x1x1 cube
+    w = 1.0
+    F, V = cube(w/2.0*sqrt(3)) # Cube quad mesh data 
+    F = quad2tri(F, V) # Convert to triangles 
+
+    # Create 3-step range from edge to opposing edge in 3 steps
+    xr = range(-w/2.0, w/2.0, 3)
+    C = inmesh_voxels(F, V, xr, xr, xr; tolEps = eps(Float64))
+    
+    # Check for known result, corners get 1, mid-edge get 2, mid-face get 4, mid element gets 8. 
+    @test C == [1 2 1; 2 4 2; 1 2 1;;; 2 4 2; 4 8 4; 2 4 2;;; 1 2 1; 2 4 2; 1 2 1]
+end
+
 # # UNCOMMENT TO RUN ALL DEMOS ------------------------------------------------
 # if get(ENV, "CI", "false") != "true"
 #     @testset "Demos" begin

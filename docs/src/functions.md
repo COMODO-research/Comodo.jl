@@ -1110,3 +1110,13 @@ Comodo.hexhemisphere
 ```@docs 
 Comodo.torus
 ```
+
+## `_interleaved_range`
+```@docs 
+Comodo._interleaved_range
+```
+
+## `inmesh_voxels`
+```@docs 
+Comodo.inmesh_voxels
+```
